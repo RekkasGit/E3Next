@@ -50,6 +50,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 		// Ifs import (sample) modal state
 		private static List<KeyValuePair<string, string>> _cfgIfSampleLines = new List<KeyValuePair<string, string>>();
 		private static string _cfgIfSampleStatus = string.Empty;
+		private enum IfSampleUsageMode { ImportToConfig, ApplyToAddForm }
+		private static IfSampleUsageMode _cfgIfSampleMode = IfSampleUsageMode.ImportToConfig;
 
 		// Config UI toggle: "/e3imgui".
 		private static bool _imguiContextReady = false;
@@ -913,46 +915,69 @@ namespace E3Core.UI.Windows.CharacterSettings
 						&& string.Equals(state.SelectedAddInLine, state.SelectedSection, StringComparison.OrdinalIgnoreCase)
 						&& string.IsNullOrEmpty(state.SelectedKey))
 					{
-						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, $"Add New {state.SelectedAddInLine}");
-						imgui_Text("Name:");
+					imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, $"Add New {state.SelectedAddInLine}");
+					imgui_Text("Name:");
+					imgui_SameLine();
+					float inlineFieldAvail = imgui_GetContentRegionAvailX();
+					float inlineFieldWidth = Math.Max(320f, inlineFieldAvail * 0.45f);
+					inlineFieldWidth = Math.Min(inlineFieldWidth, Math.Max(260f, inlineFieldAvail - 60f));
+					imgui_SetNextItemWidth(inlineFieldWidth);
+					if (imgui_InputText("##inline_new_key", state.Buffer_NewKey))
+					{
+						state.Buffer_NewKey = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
+					}
+					if (string.Equals(state.SelectedAddInLine, "Ifs", StringComparison.OrdinalIgnoreCase))
+					{
 						imgui_SameLine();
-						float inlineFieldAvail = imgui_GetContentRegionAvailX();
-						float inlineFieldWidth = Math.Max(320f, inlineFieldAvail * 0.45f);
-						inlineFieldWidth = Math.Min(inlineFieldWidth, Math.Max(260f, inlineFieldAvail - 60f));
-						imgui_SetNextItemWidth(inlineFieldWidth);
-						if (imgui_InputText("##inline_new_key", state.Buffer_NewKey))
+						if (imgui_Button("Pick Sample..."))
 						{
-							state.Buffer_NewKey = imgui_InputText_Get("##inline_new_key") ?? string.Empty;
+							_cfgIfSampleMode = IfSampleUsageMode.ApplyToAddForm;
+							try
+							{
+								LoadSampleIfsForModal();
+								_state.Show_IfSampleModal = true;
+							}
+							catch (Exception ex)
+							{
+								_cfgIfSampleStatus = "Load failed: " + (ex.Message ?? "error");
+								_state.Show_IfSampleModal = true;
+							}
 						}
-						//imgui_Text("Value:");
-						//float inlineValueAvail = imgui_GetContentRegionAvailX();
-						//float inlineValueWidth = Math.Max(420f, inlineValueAvail * 0.70f);
-						//inlineValueWidth = Math.Min(inlineValueWidth, Math.Max(320f, inlineValueAvail - 80f));
-						//float inlineValueHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
-						//if (imgui_InputTextMultiline("##inline_new_value", state.Buffer_NewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
-						//{
-						//	state.Buffer_NewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
-						//}
-						if (imgui_Button("Add##inline_add"))
+						imgui_Text("Value:");
+						float inlineValueAvail = imgui_GetContentRegionAvailX();
+						float inlineValueWidth = Math.Max(420f, inlineValueAvail * 0.70f);
+						inlineValueWidth = Math.Min(inlineValueWidth, Math.Max(320f, inlineValueAvail - 80f));
+						float inlineValueHeight = Math.Max(140f, imgui_GetTextLineHeightWithSpacing() * 6f);
+						if (imgui_InputTextMultiline("##inline_new_value", state.Buffer_NewValue ?? string.Empty, inlineValueWidth, inlineValueHeight))
 						{
-							string key = (state.Buffer_NewKey ?? string.Empty).Trim();
-							string val = state.Buffer_NewValue ?? string.Empty;
-							bool added = false;
-							if (state.SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
-							{
-								added = data.AddIfToActiveIni(key, String.Empty);
-							}
-							else if (state.SelectedAddInLine.Equals("Burn", StringComparison.OrdinalIgnoreCase))
-							{
-								added = data.AddBurnToActiveIni(key, string.Empty);
-							}
-							else
-							{
-								added = data.AddToActiveIni(state.SelectedAddInLine, key, String.Empty);
-							}
-							_state.ClearAddInLine();
+							state.Buffer_NewValue = imgui_InputText_Get("##inline_new_value") ?? string.Empty;
+						}
+						imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, "Optional IF expression to assign immediately.");
+					}
+					else
+					{
+						state.Buffer_NewValue = string.Empty;
+					}
+					if (imgui_Button("Add##inline_add"))
+					{
+						string key = (state.Buffer_NewKey ?? string.Empty).Trim();
+						string val = state.Buffer_NewValue ?? string.Empty;
+						bool added = false;
+						if (state.SelectedAddInLine.Equals("Ifs", StringComparison.OrdinalIgnoreCase))
+						{
+							added = data.AddIfToActiveIni(key, val);
+						}
+						else if (state.SelectedAddInLine.Equals("Burn", StringComparison.OrdinalIgnoreCase))
+						{
+							added = data.AddBurnToActiveIni(key, val);
+						}
+						else
+						{
+							added = data.AddToActiveIni(state.SelectedAddInLine, key, val);
+						}
+						_state.ClearAddInLine();
 
-						}
+					}
 						imgui_SameLine();
 						if (imgui_Button("Cancel##inline_cancel"))
 						{
@@ -1690,7 +1715,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			//if (mainWindowState.Currently_EditableSpell == null) return;
 			var kd = data.GetCurrentEditedSpellKeyData();
-			if (kd == null) return;
 
 			bool isBardIni = data.IsActiveIniBard();
 			if (isBardIni)
@@ -1724,7 +1748,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Separator();
 
 			// Value actions at the top (when a value is selected)
-			if (mainWindowState.SelectedValueIndex >= 0 && hasKeySelected)
+			if (kd != null && mainWindowState.SelectedValueIndex >= 0 && hasKeySelected)
 			{
 				var values = GetValues(kd);
 				if (mainWindowState.SelectedValueIndex < values.Count)
@@ -1827,6 +1851,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				if (imgui_Button("Sample If's"))
 				{
+					_cfgIfSampleMode = IfSampleUsageMode.ImportToConfig;
 					try { LoadSampleIfsForModal(); _state.Show_IfSampleModal = true; }
 					catch (Exception ex) { _cfgIfSampleStatus = "Load failed: " + (ex.Message ?? "error"); _state.Show_IfSampleModal = true; }
 				}
@@ -1841,7 +1866,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_Separator();
 
 			// Display selected value information
-			if (mainWindowState.Currently_EditableSpell!=null && mainWindowState.SelectedValueIndex >= 0)
+			if (kd != null && mainWindowState.Currently_EditableSpell!=null && mainWindowState.SelectedValueIndex >= 0)
 			{
 				var values = GetValues(kd);
 				if (mainWindowState.SelectedValueIndex < values.Count)
@@ -3624,112 +3649,24 @@ namespace E3Core.UI.Windows.CharacterSettings
 			return matches;
 		}
 
-		// Ifs sample import helpers and modal
-		private static string ResolveSampleIfsPath()
-		{
-			var dirs = new List<string>();
-			try
-			{
-				string cfg = data.GetActiveSettingsPath();
-				if (!string.IsNullOrEmpty(cfg))
-				{
-					var dir = Path.GetDirectoryName(cfg);
-					if (!string.IsNullOrEmpty(dir)) dirs.Add(dir);
-				}
-			}
-			catch { }
-			try
-			{
-				string botIni = data.GetCurrentCharacterIniPath();
-				if (!string.IsNullOrEmpty(botIni))
-				{
-					var botDir = Path.GetDirectoryName(botIni);
-					if (!string.IsNullOrEmpty(botDir)) dirs.Add(botDir);
-				}
-			}
-			catch { }
-			try { dirs.Add(AppDomain.CurrentDomain.BaseDirectory ?? string.Empty); } catch { }
-			dirs.Add(Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? string.Empty, "E3Next"));
-			dirs.Add(Directory.GetCurrentDirectory());
-			dirs.Add(Path.Combine(Directory.GetCurrentDirectory(), "E3Next"));
-
-			string[] names = new[] { "sample ifs", "sample ifs.txt", "Sample Ifs.txt", "sample_ifs.txt" };
-			foreach (var d in dirs)
-			{
-				if (string.IsNullOrEmpty(d)) continue;
-				foreach (var n in names)
-				{
-					try
-					{
-						var p = Path.Combine(d, n);
-						if (File.Exists(p)) return p;
-					}
-					catch { }
-				}
-				try
-				{
-					foreach (var f in Directory.EnumerateFiles(d, "*", SearchOption.TopDirectoryOnly))
-					{
-						string fn = Path.GetFileNameWithoutExtension(f) ?? string.Empty;
-						if (fn.Equals("sample ifs", StringComparison.OrdinalIgnoreCase)) return f;
-					}
-				}
-				catch { }
-			}
-			return string.Empty;
-		}
-
 		private static void LoadSampleIfsForModal()
 		{
 			_cfgIfSampleLines.Clear();
 			_cfgIfSampleStatus = string.Empty;
 			try
 			{
-				string sample = ResolveSampleIfsPath();
-				if (string.IsNullOrEmpty(sample)) { _cfgIfSampleStatus = "Sample file not found."; return; }
-				_cfgIfSampleStatus = "Loaded: " + Path.GetFileName(sample);
-				int added = 0;
-				foreach (var raw in File.ReadAllLines(sample))
+				var samples = data.EmbeddedSampleIfs;
+				if (samples == null || samples.Count == 0)
 				{
-					var line = (raw ?? string.Empty).Trim();
-					if (line.Length == 0) continue;
-					if (line.StartsWith("#") || line.StartsWith(";")) continue;
-					string key = string.Empty; string val = string.Empty;
-					int eq = line.IndexOf('=');
-					if (eq > 0)
-					{
-						key = (line.Substring(0, eq).Trim());
-						val = (line.Substring(eq + 1).Trim());
-					}
-					else
-					{
-						int colon = line.IndexOf(':');
-						int dash = line.IndexOf('-');
-						int pos = -1;
-						if (colon > 0) pos = colon; else if (dash > 0) pos = dash;
-						if (pos > 0)
-						{
-							key = line.Substring(0, pos).Trim();
-							val = line.Substring(pos + 1).Trim();
-						}
-						else
-						{
-							key = line;
-							val = string.Empty;
-						}
-					}
-					if (!string.IsNullOrEmpty(key))
-					{
-						_cfgIfSampleLines.Add(new KeyValuePair<string, string>(key, val));
-						added++;
-					}
+					_cfgIfSampleStatus = "No sample IFs available.";
+					return;
 				}
-				if (added == 0) _cfgIfSampleStatus = "No entries found in sample file.";
-				if (_cfgIfSampleLines.Count == 0) _cfgIfSampleStatus = "No entries found in sample file.";
+				_cfgIfSampleLines.AddRange(samples);
+				_cfgIfSampleStatus = $"Loaded embedded sample IFs ({samples.Count}).";
 			}
 			catch (Exception ex)
 			{
-				_cfgIfSampleStatus = "Error reading sample IFs: " + (ex.Message ?? "error");
+				_cfgIfSampleStatus = "Error loading sample IFs: " + (ex.Message ?? "error");
 			}
 		}
 
@@ -3741,6 +3678,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				if (window.Begin(_state.WinName_IfSampleModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
+					bool applyToAddForm = _cfgIfSampleMode == IfSampleUsageMode.ApplyToAddForm;
+					if (applyToAddForm)
+					{
+						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Select a sample to populate the Add New IFs form.");
+					}
 					if (!string.IsNullOrEmpty(_cfgIfSampleStatus)) imgui_Text(_cfgIfSampleStatus);
 					float h = 300f; float w = 640f;
 					using (var child = ImGUIChild.Aquire())
@@ -3753,20 +3695,43 @@ namespace E3Core.UI.Windows.CharacterSettings
 								string display = string.IsNullOrEmpty(kv.Value) ? kv.Key : (kv.Key + " = " + kv.Value);
 								if (imgui_Selectable($"{display}##IF_{i}", false))
 								{
-									data.AddIfToActiveIni(kv.Key, kv.Value);
+									if (applyToAddForm)
+									{
+										var mainWindowState = _state.GetState<State_MainWindow>();
+										mainWindowState.Show_AddKey = true;
+										mainWindowState.SelectedAddInLine = "Ifs";
+										mainWindowState.SelectedSection = "Ifs";
+										mainWindowState.SelectedKey = string.Empty;
+										mainWindowState.Buffer_NewKey = kv.Key;
+										mainWindowState.Buffer_NewValue = kv.Value;
+										_state.Show_IfSampleModal = false;
+										_cfgIfSampleMode = IfSampleUsageMode.ImportToConfig;
+										break;
+									}
+									else
+									{
+										data.AddIfToActiveIni(kv.Key, kv.Value);
+									}
 								}
 							}
 						}
 					}
 					imgui_SameLine();
-					if (imgui_Button("Import All"))
+					if (!applyToAddForm)
 					{
-						int cnt = 0;
-						for (int i = 0; i < _cfgIfSampleLines.Count; i++) { var kv = _cfgIfSampleLines[i]; if (data.AddIfToActiveIni(kv.Key, kv.Value)) cnt++; }
-						_cfgIfSampleStatus = cnt > 0 ? ($"Imported {cnt} If(s)") : "No new If's to import.";
+						if (imgui_Button("Import All"))
+						{
+							int cnt = 0;
+							for (int i = 0; i < _cfgIfSampleLines.Count; i++) { var kv = _cfgIfSampleLines[i]; if (data.AddIfToActiveIni(kv.Key, kv.Value)) cnt++; }
+							_cfgIfSampleStatus = cnt > 0 ? ($"Imported {cnt} If(s)") : "No new If's to import.";
+						}
+						imgui_SameLine();
 					}
-					imgui_SameLine();
-					if (imgui_Button("Close")) { _state.Show_IfSampleModal = false; }
+					if (imgui_Button("Close")) { _state.Show_IfSampleModal = false; _cfgIfSampleMode = IfSampleUsageMode.ImportToConfig; }
+				}
+				else
+				{
+					_cfgIfSampleMode = IfSampleUsageMode.ImportToConfig;
 				}
 			}
 		}
@@ -4488,63 +4453,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 			state.SampleIfStatus = string.Empty;
 			try
 			{
-				string samplePath = ResolveSampleIfsPath();
-				if (string.IsNullOrEmpty(samplePath))
+				var samples = data.EmbeddedSampleIfs;
+				if (samples == null || samples.Count == 0)
 				{
-					state.SampleIfStatus = "Sample file not found.";
+					state.SampleIfStatus = "No sample IFs available.";
 					return false;
 				}
 
-				state.SampleIfStatus = "Loaded: " + Path.GetFileName(samplePath);
-				int added = 0;
-				foreach (var raw in File.ReadAllLines(samplePath))
-				{
-					var line = (raw ?? string.Empty).Trim();
-					if (line.Length == 0) continue;
-					if (line.StartsWith("#") || line.StartsWith(";")) continue;
-
-					string key = string.Empty;
-					string val = string.Empty;
-
-					int eq = line.IndexOf('=');
-					if (eq > 0)
-					{
-						key = line.Substring(0, eq).Trim();
-						val = line.Substring(eq + 1).Trim();
-					}
-					else
-					{
-						int colon = line.IndexOf(':');
-						int dash = line.IndexOf('-');
-						int pos = -1;
-						if (colon > 0) pos = colon; else if (dash > 0) pos = dash;
-						if (pos > 0)
-						{
-							key = line.Substring(0, pos).Trim();
-							val = line.Substring(pos + 1).Trim();
-						}
-						else
-						{
-							key = line;
-							val = string.Empty;
-						}
-					}
-
-					if (!string.IsNullOrEmpty(key))
-					{
-						state.SampleIfLines.Add(new KeyValuePair<string, string>(key, val));
-						added++;
-					}
-				}
-
-				if (added == 0)
-				{
-					state.SampleIfStatus = "No entries found in sample file.";
-				}
+				state.SampleIfLines.AddRange(samples);
+				state.SampleIfStatus = $"Loaded embedded sample IFs ({samples.Count}).";
 			}
 			catch (Exception ex)
 			{
-				state.SampleIfStatus = "Error reading sample IFs: " + (ex.Message ?? "error");
+				state.SampleIfStatus = "Error loading sample IFs: " + (ex.Message ?? "error");
 			}
 
 			return state.SampleIfLines.Count > 0;

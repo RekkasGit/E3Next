@@ -1875,19 +1875,19 @@ namespace E3Core.Settings
 		public static readonly Dictionary<string, List<string>> ConfigKeyDescriptionsForImGUI = new Dictionary<string, List<string>>();
 		public static readonly Dictionary<string, string> ConfigKeyDescriptionsBySection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
-			{"Misc::AutoFood", "Monitors hunger & thirst to ensure you don't consume stat food/drink."},
-			{"Misc::Food", "Define what you would like to eat. This can be used to keep stat food from getting consumed. Entries here look like: \n     [color=teal]Misty Thicket Picnic[/color] \n     [color=teal]Fuzzlecutter Formula 5000[/color] \nNote: Multiple Food and Drink can be defined"},
-			{"Misc::Drink", "Define what you would like to drink. This can be used to keep stat drink from getting consumed. Entries here look like: \n     [color=teal]Misty Thicket Picnic[/color] \n     [color=teal]Fuzzlecutter Formula 5000[/color] \nNote: Multiple Food and Drink can be defined"},
-			{"Misc::End MedBreak in Combat(On/Off)", "When enabled, you will cancel medding to assist in combat even if you are not at defined mana percentage."},
-			{"Misc::AutoMedBreak (On/Off)", "Will sit and med when below the defined Mana percentage in your general_settings.ini"},
-			{"Misc::Auto-Loot (On/Off)", "When enabled your character will use E3's autoloot once combat is over. In-Combat Looting can be enabled in general_settings.ini"},
-			{"Misc::Anchor (Char to Anchor to)", "When a character is defined, this toon will stick to that character. They will go out and fight, loot (if enabled) and then return to the defined anchored character."},
-			{"Misc::Remove Torpor After Combat", "Enable if you would like Torpor automatically removed once combat is over."},
-			{"Misc::Auto-Forage (On/Off)", "When enabled you will start foraging. You can leverage [Cursor Delete] section in this Ini to manage the junk loot."},
-			{"Misc::Dismount On Interrupt (On/Off)", "If you are on a mount and your priority requires you to inturrupt a spell for a higher priority spell (ex: Nuking -> Heal)."},
-			{"Misc::Delay in MS After CastWindow Drops For Spell Completion", "Will delay the defined MS before beginning a new action. Useful when server lag creates an issue where you're finished castingt but the server hasn't caught up."},
-			{"Misc::If FD stay down (true/false)", "When enabled, if you are Feigned when an /assist command is issued, E3 will stand you up."},
-			{"Misc::Debuffs/Dots are visible", "If you have Leadership AA 'Inspect Buffs', set this to On. If not, E3 will internally track timers to determine when to recast DoTs and Debuffs."},
+            {"Misc::AutoFood", "Monitors hunger & thirst to ensure you don't consume stat food/drink."},
+            {"Misc::Food", "Define what you would like to eat. This can be used to keep stat food from getting consumed. Entries here look like: \n     [color=teal]Misty Thicket Picnic[/color] \n     [color=teal]Fuzzlecutter Formula 5000[/color] \nNote: Multiple Food and Drink can be defined"},
+            {"Misc::Drink", "Define what you would like to drink. This can be used to keep stat drink from getting consumed. Entries here look like: \n     [color=teal]Misty Thicket Picnic[/color] \n     [color=teal]Fuzzlecutter Formula 5000[/color] \nNote: Multiple Food and Drink can be defined"},
+            {"Misc::End MedBreak in Combat(On/Off)", "When enabled, you will cancel medding to assist in combat even if you are not at defined mana percentage."},
+            {"Misc::AutoMedBreak (On/Off)", "Will sit and med when below the defined Mana percentage in your general_settings.ini"},
+            {"Misc::Auto-Loot (On/Off)", "When enabled your character will use E3's autoloot once combat is over. In-Combat Looting can be enabled in general_settings.ini"},
+            {"Misc::Anchor (Char to Anchor to)", "When a character is defined, this toon will stick to that character. They will go out and fight, loot (if enabled) and then return to the defined anchored character."},
+            {"Misc::Remove Torpor After Combat", "Enable if you would like Torpor automatically removed once combat is over."},
+            {"Misc::Auto-Forage (On/Off)", "When enabled you will start foraging. You can leverage [Cursor Delete] section in this Ini to manage the junk loot."},
+            {"Misc::Dismount On Interrupt (On/Off)", "If you are on a mount and your priority requires you to inturrupt a spell for a higher priority spell (ex: Nuking -> Heal)."},
+            {"Misc::Delay in MS After CastWindow Drops For Spell Completion", "Will delay the defined MS before beginning a new action. Useful when server lag creates an issue where you're finished castingt but the server hasn't caught up."},
+            {"Misc::If FD stay down (true/false)", "When enabled, if you are Feigned when an /assist command is issued, E3 will stand you up."},
+            {"Misc::Debuffs/Dots are visible", "If you have Leadership AA 'Inspect Buffs', set this to On. If not, E3 will internally track timers to determine when to recast DoTs and Debuffs."},
             {"Assist Settings::Assist Type (Melee/Ranged/Off)",
                 "Defines how your character will behave in combat.\n\n"
                 + "     [color=teal]Melee[/color] - Engages in melee combat, uses /stick, and follows all configured abilities.\n"
@@ -1897,19 +1897,19 @@ namespace E3Core.Settings
                 + "     [color=teal]Off[/color] - Disables all movement, facing, and /stick; only uses configuration-based abilities."
             },
             {"Assist Settings::SmartTaunt(On/Off)", "If enabled, WAR/SK/PAL classes will automatically try and taunt off non-tank PCs to maintain aggro control."},
-			{"Assist Settings::Melee Stick Point", "The position you want your character to stand during combat.\n\n"
-				+ "     [color=teal]behind[/color] - Stay behind the target and constantly readjust to keep position.\n"
-				+ "     [color=teal]behindonce[/color] - Move behind the target once and only readjust when /assist is issued again.\n"
-				+ "     [color=teal]front[/color] - Plant yourself in front of the mob facing it. Ideal for tanks.\n"
-				+ "     [color=teal]pin[/color] - Stick to the side of the target, not quite front or rear.\n"
-				+ "     [color=teal]!front[/color] - Stand anywhere that is not the target's front arc."},
-			{"Assist Settings::Delayed Strafe Enabled (On/Off)", "If Enabled, E3 will delay before readjusting position to a moved target."},
-			{"Assist Settings::CommandOnAssist", "E3 will execute these values as a command each time an assist is called. Useful for triggering custom actions or macros when engaging targets.  Examples: \n\n   [color=teal]/stick 15 moveback[/color]  \n\n   [color=teal]/g Engaging %T[/color]"},
-			{"Assist Settings::Melee Distance", "The distance you wish to stand from the target when melee'ing. MaxMelee - Will calculate based off the target the furthest point to melee, between 25 - 33."},
-			{"Assist Settings::Ranged Distance", "When Ranged is specified as Assist Type will keep you the defined distance away from target. Clamped - Doesn't care about a defined distance as long as you are between 30 and 200."},
-			{"Assist Settings::Auto-Assist Engage Percent", "Off by default.  When this character's target hits the specfied hit point percentage E3 will automatically issue /assistme.\n\n [color=red] It is generally recommended to not use Auto Assist.  Instead, manually issue the /assistme command for greater character control.[/color]"},
-			{"Assist Settings::Pet back off on Enrage (On/Off)", "When Enrage is detected, E3 will automatically tell your pet to back off."},
-			{"Assist Settings::Back off on Enrage (On/Off)", "If enabled, E3 will stop melee when NPC Enrage is detected."},
+            {"Assist Settings::Melee Stick Point", "The position you want your character to stand during combat.\n\n"
+                + "     [color=teal]behind[/color] - Stay behind the target and constantly readjust to keep position.\n"
+                + "     [color=teal]behindonce[/color] - Move behind the target once and only readjust when /assist is issued again.\n"
+                + "     [color=teal]front[/color] - Plant yourself in front of the mob facing it. Ideal for tanks.\n"
+                + "     [color=teal]pin[/color] - Stick to the side of the target, not quite front or rear.\n"
+                + "     [color=teal]!front[/color] - Stand anywhere that is not the target's front arc."},
+            {"Assist Settings::Delayed Strafe Enabled (On/Off)", "If Enabled, E3 will delay before readjusting position to a moved target."},
+            {"Assist Settings::CommandOnAssist", "E3 will execute these values as a command each time an assist is called. Useful for triggering custom actions or macros when engaging targets.  Examples: \n\n   [color=teal]/stick 15 moveback[/color]  \n\n   [color=teal]/g Engaging %T[/color]"},
+            {"Assist Settings::Melee Distance", "The distance you wish to stand from the target when melee'ing. MaxMelee - Will calculate based off the target the furthest point to melee, between 25 - 33."},
+            {"Assist Settings::Ranged Distance", "When Ranged is specified as Assist Type will keep you the defined distance away from target. Clamped - Doesn't care about a defined distance as long as you are between 30 and 200."},
+            {"Assist Settings::Auto-Assist Engage Percent", "Off by default.  When this character's target hits the specfied hit point percentage E3 will automatically issue /assistme.\n\n [color=red] It is generally recommended to not use Auto Assist.  Instead, manually issue the /assistme command for greater character control.[/color]"},
+            {"Assist Settings::Pet back off on Enrage (On/Off)", "When Enrage is detected, E3 will automatically tell your pet to back off."},
+            {"Assist Settings::Back off on Enrage (On/Off)", "If enabled, E3 will stop melee when NPC Enrage is detected."},
             {"Melee Abilities::Ability",
                 "Defines which [color=teal]Ability[/color] you want to utilize.\n"
                 + "These are executed from top to bottom, using each ability as soon as it becomes available.\n\n"
@@ -1928,46 +1928,50 @@ namespace E3Core.Settings
                 + "Entries here look like:\n"
                 + "[color=teal]Armor of the Crusader/Gem|5[/color]\n"
                 + "[color=teal]Voice of Thule[/color]"},
-			{"Buffs::Bot Buff",
-				"Used for buffing your other characters.\n"
-				+ "Will only cast [color=purple]outside of combat[/color].\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Spirit of Wolf/Gem|3/MyTank\n"
-				+ "Spirit of Wolf/Gem|3/MyHealer\n"
-				+ "Armor of the Crusader/Gem|5/MyCleric[/color]"},
-			{"Buffs::Combat Buff", 
-				"Buffs or Casts that are only used [color=purple]during combat[/color].\n"
-				+ "Can use Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Artifact of the Leopard\n"
-				+ "Spirit of the Puma/Gem|5/TargetName\n"
-				+ "Thief's Eyes[/color]"},
-			{"Buffs::Group Buff",
-				"Used for [color=purple]triggered buffing requests[/color] from other players.\n"
-				+ "This has nothing to do with automating buffs for your 6-person group.\n"
-				+ "Will buff anyone who asks with the phrase [color=teal]\"Buff Me\"[/color] or [color=teal]\"Buff my Pet\"[/color].\n"
-				+ "Who can request buffs can be defined in your [color=orange]general_settings.ini[/color].\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Blessing of Aegolism[/color]\n\n"
-				+ "Note: You may need to use [color=teal]/tgb on[/color] for group buffs to apply to people outside your group."},
-			{"Buffs::Pet Buff",
-				"Used for buffing [color=purple]other characters' pets[/color] on your bot network.\n"
-				+ "Must be a part of your bot network.\n"
-				+ "If your class has a pet, it will be defined in the [color=orange][Pets][/color] section.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Artifact of the Leopard/Copperjacx\n"
-				+ "Spirit of the Leopard/MyPetOwnerName[/color]"},
-			{"Buffs::Group Buff Request",
-				"Request a buff from someone else running E3 [color=red]not part of your bot network[/color].\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Torpor Rk. V/Tophet/Ifs|TorporIf[/color]\n\n"
-				+ "Tip: To avoid spamming, use an [color=purple]If Statement[/color]:\n"
-				+ "[color=teal]TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000[/color]"},
-			{"Buffs::Raid Buff Request",
-				"Request a buff from someone else running E3 [color=red]not part of your bot network[/color].\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Torpor Rk. V/Tophet/Ifs|TorporIf[/color]\n\n"
-				+ "Tip: To avoid spamming, use an [color=purple]If Statement[/color]:\n"
-				+ "[color=teal]TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000[/color]"},
+            {"Buffs::Bot Buff",
+                "Used for buffing your other characters.\n"
+                + "Will only cast [color=purple]outside of combat[/color].\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Spirit of Wolf/Gem|3/MyTank\n"
+                + "Spirit of Wolf/Gem|3/MyHealer\n"
+                + "Protection of Vie/Gem|5/MyCleric[/color]"},
+            {"Buffs::Combat Buff",
+                "Buffs or Casts that are only used [color=purple]during combat[/color].\n"
+                + "Can use Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Artifact of the Leopard\n"
+                + "Spirit of the Puma/Gem|5/TargetName\n"
+                + "Thief's Eyes[/color]"},
+            {"Buffs::Group Buff",
+                "Used for [color=purple]triggered buffing requests[/color] from other players.\n"
+                + "This has nothing to do with automating buffs for your 6-person group.\n"
+                + "Will buff anyone who asks with the phrase [color=teal]\"Buff Me\"[/color] or [color=teal]\"Buff my Pet\"[/color].\n"
+                + "Who can request buffs can be defined in your [color=orange]general_settings.ini[/color].\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Blessing of Aegolism[/color]\n\n"
+                + "Note: You may need to use [color=teal]/tgb on[/color] for group buffs to apply"
+                + "to people outside your group."},
+            {"Buffs::Pet Buff",
+                "Used for buffing [color=purple]other characters' pets[/color] on your bot network.\n"
+                + "Must be a part of your bot network.\n"
+                + "If your class has a pet, it will be defined in the [color=orange][Pets][/color] section.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Artifact of the Leopard/MyPetOwnerName\n"
+                + "Spirit of the Leopard/MyPetOwnerName[/color]"},
+            {"Buffs::Group Buff Request",
+                "Request a buff from someone else running E3 [color=red]not part of your bot network[/color].\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Torpor Rk. V/Tophet/Ifs|TorporIf[/color]\n\n"
+                + "Tip: To avoid spamming, use an [color=purple]If Statement[/color]:\n"
+                + "[color=teal]TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000[/color]"},
+            {"Buffs::Raid Buff Request",
+                "Request a buff from someone else running E3 [color=red]not part of your bot network[/color].\n"
+                + "Note - this is designed to coordinate between two players who are both running E3.  This would allow you to"
+                + "designate buffs that their characters have, that you cannot cast (e.g., you have the tank, they have the shaman)."
+                + "Entries here look like:\n"
+                + "[color=teal]Torpor Rk. V/CasterName/Ifs|TorporIf[/color]\n\n"
+                + "Spell Name/CasterName/Conditionals\n"
+                + "Tip: To avoid spamming, use an [color=purple]If Statement[/color]:\n"
+                + "[color=teal]TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000[/color]"},
             {"Buffs::Stack Buff Request",
                 "Allows you to request the same buff from multiple characters who can provide it.\n\n"
                 + "This system processes requests in [color=teal]First In, First Out (FIFO)[/color] order.\n\n"
@@ -1976,297 +1980,298 @@ namespace E3Core.Settings
                 + "     [color=teal]/StackRecastDelay[/color] - How long to wait before asking for the buff again.\n"
                 + "     [color=teal]/StackCheckInterval[/color] - How often to check whether you still have the buff.\n"
                 + "     [color=teal]/StackRequestItem[/color] - The item to click if the buff requires an item-based cast."},
-			{"Buffs::Cast Aura(On/Off)", "This will automatically cast your class's highest level aura if your class has one."},
-			{"Nukes::Main",
-				"Add the Spells, Items or Abilities you'd like to use for your main nuke rotation here.\n"
-				+ "E3 will cast them in order from [color=purple]top to bottom[/color].\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+            {"Buffs::Cast Aura(On/Off)", "This will automatically cast your class's highest level aura if your class has one."},
+            {"Nukes::Main",
+                "Add the Spells, Items or Abilities you'd like to use for your main nuke rotation here.\n"
+                + "E3 will cast them in order from [color=purple]top to bottom[/color].\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
                 + "[color=teal]Chaos Flame/Gem|10\n"
                 + "Concussive Intuition/Ifs|AggroCheck\n"
                 + "Foresaken Sorcerer's Sleeves[/color]"},
-			{"Nukes/Stuns/PBAE::Main",
-				"Name of the spell you wish to cast.\n\n"
-				+ "Valid Entries look like:\n"
+            {"Nukes/Stuns/PBAE::Main",
+                "Name of the spell you wish to cast.\n\n"
+                + "Valid Entries look like:\n"
                 + "[color=teal]Color Shift/Gem|5[/color]"},
-			{"Nukes/Stuns/PBAE::PBAE",
-				"Point Blank Area of Effect (PBAE) is [color=red]turned off by default[/color].\n"
-				+ "To toggle on or off use [color=teal]/pbaeon[/color] and [color=teal]/pbaeoff[/color].\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Spear of Ro[/color]\n\n"
-				+ "Reminder: Priority matters [color=purple](FIFO - First In, First Out)[/color] for Advanced Settings AE Order and spell cooldowns."},
-			{"DoTs on Assist::Main",
-				"The spells or items here will be automatically cast or used on [color=purple]each assist call[/color].\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Envenomed Bolt/Gem|8\n"
-				+ "Dark Nightmare/Gem|9/MaxTries|3[/color]"},
-			{"Debuffs::Debuff on Assist",
-				"The spells or items here will be automatically cast or used on [color=purple]each assist call[/color].\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Malosinete/Gem|7\n"
-				+ "Malo Totem/Gem|8[/color]"},
-			{"DoTs on Command::Main",
-				"These items/spells will be used/cast [color=purple]on command[/color] ([color=teal]/dot[/color]).\n"
-				+ "This allows for additional control on when they should be utilized.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Envenomed Bolt/Gem|8\n"
-				+ "Dark Nightmare/Gem|9[/color]"},
-			{"Debuffs::Debuff on Command",
-				"These items/spells will be used/cast [color=purple]on command[/color] ([color=teal]/debuff[/color]).\n"
-				+ "This allows for additional control on when they should be utilized.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Malosinete/Gem|7\n"
-				+ "Slow Totem/Gem|8[/color]"},
-			{"Dots/Debuffs::Main",
-				"This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Assist][/color] and [color=orange]Debuff on Assist=[/color].\n"
-				+ "These will automatically fire off once they receive one of the assist commands.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
-			{"Dots/Debuffs::Debuff on Assist",
-				"This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Assist][/color] and [color=orange]Debuff on Assist=[/color].\n"
-				+ "These will automatically fire off once they receive one of the assist commands.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
-			{"Dots/Debuffs::Debuff on Command",
-				"This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Command][/color] and [color=orange]Debuff on Command=[/color].\n"
-				+ "These are [color=red]turned off by default[/color], and allow for more control if you want.\n"
-				+ "To toggle on and off use [color=teal]/dot[/color] to toggle for dots and [color=teal]/debuff[/color] for debuffs."},
-			{"Off Assist Spells::Debuff on Assist",
-				"These spells will be cast on [color=purple]every mob in the XTargets list[/color] when the bot receives an assist command.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Scent of Terris/Gem|7/MinDurationBeforeRecast|30000\n"
-				+ "Malosinete/Gem|8[/color]"},
-			{"Dispel::Main",
-				"Spell or Item you wish to use to dispel your current target.\n"
-				+ "This looks for any beneficial spells on the target.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Abashi's Rod of Disempowerment[/color]"},
-			{"Dispel::Ignore",
-				"Buffs on the target you wish to [color=red]ignore[/color] from trying to debuff.\n"
-				+ "Each buff you wish to ignore is a new [color=orange]Ignore=[/color] entry.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Yaulp III\n"
-				+ "Spirit of Wolf[/color]"},
-			{"LifeSupport::Life Support",
-				"This is [color=purple]top priority[/color] when it comes to what to process first.\n"
-				+ "It is based on your character's health percentage.\n"
-				+ "Use this for self heal, mitigation, immunity, or evasions.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Hymn of the Last Stand/HealPct|30\n"
-				+ "Shield of Notes/HealPct|40\n"
-				+ "Cazel's Distillate of Celestial Healing/HealPct|80[/color]"},
-			{"Rez::AutoRez", "If turned on will rez [color=purple]in and out of combat[/color]."},
-			{"Rez::Auto Rez Spells",
-				"This is the spell to be used if [color=orange]AutoRez=On[/color].\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Blessing of Resurrection[/color]"},
-			{"Rez::Rez Spells",
-				"These are the spells that will be used for the slash commands.\n"
-				+ "You can use multiple rez spells for ones with longer cooldowns.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Blessing of Resurrection\n"
-				+ "Resurrection[/color]"},
-			{"Burn::Quick Burn",
-				"Will accept any spell or item and the concept is for [color=purple]\"short\" cooldown[/color] spells.\n"
-				+ "Your preference on what \"short\" is.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
-			{"Burn::Long Burn",
-				"Will accept any spell or item and the concept is for [color=purple]\"long\" cooldown[/color] spells.\n"
-				+ "Your preference on what \"long\" is.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
-			{"Burn::Full Burn",
-				"The spells or items you want to use in a [color=purple]full send[/color] moment.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
-			{"Pets::Pet Spell",
-				"The pet spell you wish to use for summoning.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Servant of Ro[/color]"},
-			{"Pets::Pet Heal",
-				"Spells you wish to use to heal your pet.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Healing of Mikkily/Gem|1/HealPct|55[/color]"},
-			{"Pets::Pet Buff",
-				"Buff you wish for your pet to have.\n"
-				+ "You can configure multiple [color=orange]Pet Buff=[/color] entries.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Spirit of Irionu\n"
-				+ "Growl of the Beast[/color]"},
-			{"Pets::Pet Mend (Pct)",
-				"What percentage you want your character to use Mend AA.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Pet Mend(Pct)=40[/color]\n\n"
-				+ "This will trigger at [color=purple]40% of pet's health[/color]."},
-			{"Pets::Pet Taunt (On/Off)", "Sets whether your pet taunts or not."},
-			{"Pets::Pet Auto-Shrink (On/Off)", "Will auto shrink your pet when summoned or illusioned."},
-			{"Pets::Pet Summon Combat (On/Off)",
-				"If your pet dies during combat will [color=purple]prioritize summoning[/color] your pet based on what is defined in [color=orange]Pet Spell=[/color]."},
-			{"Pets::Pet Buff Combat (On/Off)",
-				"If a buff drops off during combat your bot will rebuff during combat.\n"
-				+ "Good if you're casting puma/leopard line spells in combat."},
-			{"Cures::AutoRadiant (On/Off)",
-				"Default is [color=purple]On[/color].\n"
-				+ "Will leverage your [color=orange]Radiant Cure AA[/color] if defined."},
-			{"Cures::Cure",
-				"Specify a cure to a particular debuff to a [color=purple]particular person[/color] [color=gold](Higher Priority 2)[/color].\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Remove Greater Curse/Steeljacx/CheckFor|Feeblemind/Gem|12\n"
-				+ "Crusader's Touch/Metaljacx/CheckFor|Ikaav's Venom[/color]"},
-			{"Cures::CureAll",
-				"Specify a cure to a particular debuff to [color=purple]anyone in group[/color] [color=gold](Lower Priority 3)[/color].\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Remove Greater Curse/CheckFor|Relinquish Spirit/Gem|12\n"
-				+ "Remove Greater Curse/CheckFor|Torment of Body/Gem|12[/color]"},
-			{"Cures::RadiantCure",
-				"Specify a type of debuff to use radiant cure if at least this many people have it [color=gold](Highest Priority 1)[/color].\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Fulmination/MinSick|1/Zone|txevu\n"
-				+ "Fabled Destruction/MinSick|1/Zone|Unrest[/color]"},
-			{"Cures::CurseCounters",
-				"Catch All [color=gold](Lowest Priority 4)[/color].\n"
-				+ "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Remove Greater Curse[/color]"},
-			{"Cures::PoisonCounters",
-				"Catch All [color=gold](Lowest Priority 4)[/color].\n"
-				+ "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Blood of Nadox[/color]"},
-			{"Cures::DiseaseCounters",
-				"Catch All [color=gold](Lowest Priority 4)[/color].\n"
-				+ "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Blood of Nadox[/color]"},
-			{"Cures::CorruptedCounters",
-				"Catch All [color=gold](Lowest Priority 4)[/color].\n"
-				+ "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Remove Corruption[/color]"},
-			{"Cures::CurseCountersIgnore",
-				"Specify debuff names with curse counters that should [color=red]NOT[/color] be cured automatically.\n"
-				+ "This is for catch all counter curing only.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Aura of Destruction[/color]"},
-			{"Cures::PoisonCountersIgnore",
-				"Specify debuff names with poison counters that should [color=red]NOT[/color] be cured automatically.\n"
-				+ "This is for catch all counter curing only.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Aura of Destruction[/color]"},
-			{"Cures::DiseaseCountersIgnore",
-				"Specify debuff names with disease counters that should [color=red]NOT[/color] be cured automatically.\n"
-				+ "This is for catch all counter curing only.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Aura of Destruction[/color]"},
-			{"Cures::CorruptedCountersIgnore",
-				"Specify debuff names with corruption counters that should [color=red]NOT[/color] be cured automatically.\n"
-				+ "This is for catch all counter curing only.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Aura of Destruction[/color]"},
-			{"Heals::Who to Heal",
-				"Default: [color=purple]Tanks/ImportantBots/XTargets/Pets/Party[/color]\n"
-				+ "Defines which key you would like to be healed.\n"
-				+ "This allows for quick on and off without having to comment lines out."},
-			{"Heals::Who to HoT",
-				"Same as [color=orange]Who to Heal=[/color] just for [color=orange]Heal Over Time Spell=[/color] defined keys.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Who to HoT=Tanks[/color]"},
-			{"Heals::Tank",
-				"Define who your tank/tanks will be.\n"
-				+ "The bots defined here will receive the [color=purple]highest priority for heals[/color].\n"
-				+ "Must be a part of your bot network.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Tank=Metaljacx[/color]"},
-			{"Heals::Tank Heal",
-				"Heal spell/item/aa you wish to use on your tanks.\n"
-				+ "Recommend you order from [color=purple]lowest HealPct to highest[/color].\n"
-				+ "One exception might be for spells like Reptile.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Artifact of the Reptile/HealPct|100/CheckFor|Skin of the Reptile\n"
-				+ "Aged Dragon Spine Staff/HealPct|50/NoInterrupt\n"
-				+ "Mask of the Ancients/HealPct|60/NoInterrupt\n"
-				+ "Chlorotrope/Gem|1/HealPct|85/NoInterrupt[/color]"},
-			{"Heals::Important Bot",
-				"Define which bots you would like to pay close attention to just behind the tank priority.\n"
-				+ "In essence [color=purple]\"second priority\"[/color].\n"
-				+ "Often used for other healers, offtanks, or high threat classes.\n"
-				+ "Must be a part of your bot network.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Orihime\n"
-				+ "Rukia\n"
-				+ "Mayuri[/color]"},
-			{"Heals::Important Heal",
-				"Heal spell/item/aa you wish to use on your important bots.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Chlorotrope/Gem|1/HealPct|65[/color]"},
-			{"Heals::Group Heal",
-				"This is not based on individual group members, but on the [color=purple]average missing health of the group[/color].\n"
-				+ "There is a minimal number required to be injured which can be controlled with the next setting.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Wave of Marr/Gem|10/HealPct|20/NoInterrupt\n"
-				+ "Wave of Trushar/HealPct|40/NoInterrupt\n"
-				+ "Healing Wave of Prexus/HealPct|65\n"
-				+ "Wave of Life/HealPct|70[/color]"},
-			{"Heals::Number Of Injured Members For Group Heal",
-				"Default: [color=purple]3[/color]\n"
-				+ "This defines how many people need to be injured before triggering average Group heal."},
-			{"Heals::Party Heal",
-				"This heals your individual party members based on your configured [color=orange]/HealPct[/color] tag.\n"
-				+ "Whether they are part of your bot network or not.\n"
-				+ "[color=red]Heals outside your bot network[/color].\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Touch of Piety/HealPct|60[/color]"},
-			{"Heals::Heal Over Time Spell",
-				"The HoT spell/item/aa you wish to use for the groups defined in [color=orange]Who to HoT=[/color].\n"
-				+ "Must be a part of your bot network.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Breath of Trushar/Gem|9/HealPct|95[/color]"},
-			{"Heals::All Heal",
-				"Heals all bots part of your network [color=purple]whether bots are in your group or not[/color].\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Yoppa's Mending/Gem|1/HealPct|65[/color]"},
-			{"Heals::XTarget Heal",
-				"How to heal individuals [color=red]not part of your bot network[/color] but in your group.\n"
-				+ "You will need to assign each player you want to heal to your [color=orange]XTarget Window[/color].\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Chlorotrope/Gem|1/HealPct|65[/color]"},
-			{"Heals::Pet Owner",
-				"The bot in your network whose pet you would like to heal.\n\n"
-				+ "Entries here look like:\n"
-				+ "[color=teal]Pet Owner=Mayuri[/color]"},
-			{"Heals::Pet Heal",
-				"Heal spell/item/aa you wish to use on pets.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Chlorotrope/Gem|1/HealPct|55[/color]"},
-			{"Heals::Emergency Heal",
-				"Heal spell/item/aa that will be used [color=red]immediately (cancels other casts)[/color] when health drops below the threshold for the specified target.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Burst of Life/Uguk/HealPct|40[/color]"},
-			{"Heals::Emergency Group Heal",
-				"Heal spell/item/aa that will be used [color=red]immediately (cancels other casts)[/color] when health of any character drops below the threshold.\n\n"
-				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-				+ "[color=teal]Divine Arbitration/HealPct|40[/color]"},
-			{"Bando Buff::Enabled", "Default: On Turn on and off"},
-			{"Bando Buff::BuffName", "The Buff Name on yourself you wish to monitor"},
-			{"Bando Buff::DebuffName", "The Debuff Name on target you wish to monitor"},
-			{"Bando Buff::PrimaryWithBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-			{"Bando Buff::SecondaryWithBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-			{"Bando Buff::PrimaryWithoutBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-			{"Bando Buff::SecondaryWithoutBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-			{"Bando Buff::BandoNameWithBuff", "The name of the bandolier when you have buff"},
-			{"Bando Buff::BandoNameWithoutBuff", "The name of the bandolier when you don't have buff"},
-			{"Bando Buff::BandoNameWithoutDeBuff", "When the mob doesn't have debuff. Should move back to BandoNameWithBuff= when debuff detected and you have your buff on"},
-			{"Events::_EventName_", "Allows you to define arbitrary commands for your bot to perform. These commands must be triggered by a /BeforeEvent or /AfterEvent conditional, or by a line in the [EventLoop] section. You make up your own _EventName_ on the left side of the equal sign, and then on the right side you write the command that will be performed when the event is triggered. The command will be executed whenever the event is triggered by a /BeforeEvent or /AfterEvent conditional, or by a line in the [EventLoop] section. Example: [Life Support] Life Support=Divine Barrier/HealPct|20/Gem|7/AfterEvent|TellGroupIUsedDivineBarrier [Events] TellGroupIUsedDivineBarrier=/g I just used Divine Barrier!"},
-			{"EventLoop::_EventName_", "Allows you to define conditions that will trigger lines from the [Events] section to execute. Lines in the [EventLoop] section are evaluated about once every second, and whenever one of the lines evaluates to True, its associated event is executed. On the left side of the equal sign you put the name of an event that's defined in your [Events] section, and on the right side you put the condition that you want to trigger the event and execute its command. Example: [Events] DropInvisCombat=/makemevisible [EventLoop] DropInvisCombat=(${Me.CombatState.Equal[Combat]} && ${Me.Invis})"},
-			{"AutoMed::Override Old Settings and use This(On/Off)", "Use the AutoMed section instead of the legacy med break settings."},
-			{"AutoMed::PctMana", "Minimum mana percent that will trigger the automatic med break routine."},
-			{"AutoMed::PctStam", "Minimum endurance percent that will trigger the automatic med break routine."},
-			{"AutoMed::PctHealth", "Minimum health percent that will trigger the automatic med break routine."},
-			{"Heals::AutoFood", "Allow the heal routine to eat/drink automatically when hunger or thirst is low."},
-			{"Heals::Food", "Food item used by the healer when AutoFood is enabled."},
-			{"Heals::Drink", "Drink item used by the healer when AutoFood is enabled."},
-			{"Buffs::AutoBuff (On/Off)", "Toggle automatic buffing for the entries configured in this section."},
-			{"Buffs::Check Interval", "Delay between automatic buff checks (supports s/m suffix)."},
-			{"Assist::Auto-Assist (On/Off)", "Automatically assist the designated main assist when the routine is active."},
-			{"Assist::Assist Target", "Name or alias of the character that this toon should assist."},
-			{"Assist::PctAggro", "Maximum aggro percent allowed before backing off when assisting."},
-			{"Burn::Auto-Burn (On/Off)", "Enable burn routines to trigger discs and abilities based on configured criteria."},
-			{"Burn::Trigger", "Condition or command that activates the burn routine (e.g. /burn)."},
-		};
+            {"Nukes/Stuns/PBAE::PBAE",
+                "Point Blank Area of Effect (PBAE) is [color=red]turned off by default[/color].\n"
+                + "To toggle on or off use [color=teal]/pbaeon[/color] and [color=teal]/pbaeoff[/color].\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Spear of Ro[/color]\n\n"
+                + "Reminder: Priority matters [color=purple](FIFO - First In, First Out)[/color] for Advanced Settings AE Order and spell cooldowns."},
+            {"DoTs on Assist::Main",
+                "The spells or items here will be automatically cast or used on [color=purple]each assist call[/color].\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Envenomed Bolt/Gem|8\n"
+                + "Dark Nightmare/Gem|9/MaxTries|3[/color]"},
+            {"Debuffs::Debuff on Assist",
+                "The spells or items here will be automatically cast or used on [color=purple]each assist call[/color].\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Malosinete/Gem|7\n"
+                + "Malo Totem/Gem|8[/color]"},
+            {"DoTs on Command::Main",
+                "These items/spells will be used/cast [color=purple]on command[/color] ([color=teal]/dot[/color]).\n"
+                + "This allows for additional control on when they should be utilized.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Envenomed Bolt/Gem|8\n"
+                + "Dark Nightmare/Gem|9[/color]"},
+            {"Debuffs::Debuff on Command",
+                "These items/spells will be used/cast [color=purple]on command[/color] ([color=teal]/debuff[/color]).\n"
+                + "This allows for additional control on when they should be utilized.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Malosinete/Gem|7\n"
+                + "Slow Totem/Gem|8[/color]"},
+            {"Dots/Debuffs::Main",
+                "This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Assist][/color] and [color=orange]Debuff on Assist=[/color].\n"
+                + "These will automatically fire off once they receive one of the assist commands.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
+            {"Dots/Debuffs::Debuff on Assist",
+                "This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Assist][/color] and [color=orange]Debuff on Assist=[/color].\n"
+                + "These will automatically fire off once they receive one of the assist commands.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
+            {"Dots/Debuffs::Debuff on Command",
+                "This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Command][/color] and [color=orange]Debuff on Command=[/color].\n"
+                + "These are [color=red]turned off by default[/color], and allow for more control if you want.\n"
+                + "To toggle on and off use [color=teal]/dot[/color] to toggle for dots and [color=teal]/debuff[/color] for debuffs."},
+            {"Off Assist Spells::Debuff on Assist",
+                "These spells will be cast on [color=purple]every mob in the XTargets list[/color] when the bot receives an assist command.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Scent of Terris/Gem|7/MinDurationBeforeRecast|30000\n"
+                + "Malosinete/Gem|8[/color]"},
+            {"Dispel::Main",
+                "Spell or Item you wish to use to dispel your current target.\n"
+                + "This looks for any beneficial spells on the target.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Abashi's Rod of Disempowerment[/color]"},
+            {"Dispel::Ignore",
+                "Buffs on the target you wish to [color=red]ignore[/color] from trying to debuff.\n"
+                + "Each buff you wish to ignore is a new [color=orange]Ignore=[/color] entry.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Yaulp III\n"
+                + "Spirit of Wolf[/color]"},
+            {"LifeSupport::Life Support",
+                "This is [color=purple]top priority[/color] when it comes to what to process first.\n"
+                + "It is based on your character's health percentage.\n"
+                + "Use this for self heal, mitigation, immunity, or evasions.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Hymn of the Last Stand/HealPct|30\n"
+                + "Shield of Notes/HealPct|40\n"
+                + "Cazel's Distillate of Celestial Healing/HealPct|80[/color]"},
+            {"Rez::AutoRez", "If turned on will rez [color=purple]in and out of combat[/color]."},
+            {"Rez::Auto Rez Spells",
+                "This is the spell to be used if [color=orange]AutoRez=On[/color].\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Blessing of Resurrection[/color]"},
+            {"Rez::Rez Spells",
+                "These are the spells that will be used for the slash commands.\n"
+                + "You can use multiple rez spells for ones with longer cooldowns.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Blessing of Resurrection\n"
+                + "Resurrection[/color]"},
+            {"Burn::Quick Burn",
+                "Will accept any spell or item and the concept is for [color=purple]\"short\" cooldown[/color] spells.\n"
+                + "Your preference on what \"short\" is.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
+            {"Burn::Long Burn",
+                "Will accept any spell or item and the concept is for [color=purple]\"long\" cooldown[/color] spells.\n"
+                + "Your preference on what \"long\" is.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
+            {"Burn::Full Burn",
+                "The spells or items you want to use in a [color=purple]full send[/color] moment.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
+            {"Pets::Pet Spell",
+                "The pet spell you wish to use for summoning.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Servant of Ro[/color]"},
+            {"Pets::Pet Heal",
+                "Spells you wish to use to heal your pet.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Healing of Mikkily/Gem|1/HealPct|55[/color]"},
+            {"Pets::Pet Buff",
+                "Buff you wish for your pet to have.\n"
+                + "You can configure multiple [color=orange]Pet Buff=[/color] entries.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Spirit of Irionu\n"
+                + "Growl of the Beast[/color]"},
+            {"Pets::Pet Mend (Pct)",
+                "What percentage you want your character to use Mend AA.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Pet Mend(Pct)=40[/color]\n\n"
+                + "This will trigger at [color=purple]40% of pet's health[/color]."},
+            {"Pets::Pet Taunt (On/Off)", "Sets whether your pet taunts or not."},
+            {"Pets::Pet Auto-Shrink (On/Off)", "Will auto shrink your pet when summoned or illusioned."},
+            {"Pets::Pet Summon Combat (On/Off)",
+                "If your pet dies during combat will [color=purple]prioritize summoning[/color] your pet based on what is defined in [color=orange]Pet Spell=[/color]."},
+            {"Pets::Pet Buff Combat (On/Off)",
+                "If a buff drops off during combat your bot will rebuff during combat.\n"
+                + "Good if you're casting puma/leopard line spells in combat."},
+            {"Cures::AutoRadiant (On/Off)",
+                "Default is [color=purple]On[/color].\n"
+                + "Will leverage your [color=orange]Radiant Cure AA[/color] if defined."},
+            {"Cures::Cure",
+                "Specify a cure to a particular debuff to a [color=purple]particular person[/color] [color=gold](Higher Priority 2)[/color].\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Remove Greater Curse/CharName/CheckFor|Feeblemind/Gem|12\n"
+                + "Crusader's Touch/TankName/CheckFor|Ikaav's Venom[/color]"},
+            {"Cures::CureAll",
+                "Specify a cure to a particular debuff to [color=purple]anyone in group[/color] [color=gold](Lower Priority 3)[/color].\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Remove Greater Curse/CheckFor|Relinquish Spirit/Gem|12\n"
+                + "Remove Greater Curse/CheckFor|Torment of Body/Gem|12[/color]"},
+            {"Cures::RadiantCure",
+                "Specify a type of debuff to use radiant cure if at least this many people have it [color=gold](Highest Priority 1)[/color].\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Fulmination/MinSick|1/Zone|txevu\n"
+                + "Fabled Destruction/MinSick|1/Zone|Unrest[/color]"},
+            {"Cures::CurseCounters",
+                "Catch All [color=gold](Lowest Priority 4)[/color].\n"
+                + "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Remove Greater Curse[/color]"},
+            {"Cures::PoisonCounters",
+                "Catch All [color=gold](Lowest Priority 4)[/color].\n"
+                + "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Blood of Nadox[/color]"},
+            {"Cures::DiseaseCounters",
+                "Catch All [color=gold](Lowest Priority 4)[/color].\n"
+                + "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Blood of Nadox[/color]"},
+            {"Cures::CorruptedCounters",
+                "Catch All [color=gold](Lowest Priority 4)[/color].\n"
+                + "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Remove Corruption[/color]"},
+            {"Cures::CurseCountersIgnore",
+                "Specify debuff names with curse counters that should [color=red]NOT[/color] be cured automatically.\n"
+                + "This is for catch all counter curing only.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Aura of Destruction[/color]"},
+            {"Cures::PoisonCountersIgnore",
+                "Specify debuff names with poison counters that should [color=red]NOT[/color] be cured automatically.\n"
+                + "This is for catch all counter curing only.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Aura of Destruction[/color]"},
+            {"Cures::DiseaseCountersIgnore",
+                "Specify debuff names with disease counters that should [color=red]NOT[/color] be cured automatically.\n"
+                + "This is for catch all counter curing only.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Aura of Destruction[/color]"},
+            {"Cures::CorruptedCountersIgnore",
+                "Specify debuff names with corruption counters that should [color=red]NOT[/color] be cured automatically.\n"
+                + "This is for catch all counter curing only.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Aura of Destruction[/color]"},
+            {"Heals::Who to Heal",
+                "Default: [color=purple]Tanks/ImportantBots/XTargets/Pets/Party[/color]\n"
+                + "Defines which key you would like to be healed.\n"
+                + "This allows for quick on and off without having to comment lines out."},
+            {"Heals::Who to HoT",
+                "Same as [color=orange]Who to Heal=[/color] just for [color=orange]Heal Over Time Spell=[/color] defined keys.\n"
+                + "Same options as Who to Heal: Tanks/ImportantBots/XTargets/Pets/Party\n"
+                + "Entries here look like:\n"
+                + "[color=teal]Tanks[/color]"},
+            {"Heals::Tank",
+                "Define who your tank/tanks will be.\n"
+                + "The bots defined here will receive the [color=purple]highest priority for heals[/color].\n"
+                + "Must be a part of your bot network.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]TankName[/color]"},
+            {"Heals::Tank Heal",
+                "Heal spell/item/aa you wish to use on your tanks.\n"
+                + "Recommend you order from [color=purple]lowest HealPct to highest[/color].\n"
+                + "One exception might be for spells like Reptile.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "Aged Dragon Spine Staff/HealPct|50/NoInterrupt\n"
+                + "Mask of the Ancients/HealPct|60/NoInterrupt\n"
+                + "Chlorotrope/Gem|1/HealPct|85/NoInterrupt[/color]"
+                + "[color=teal]Artifact of the Reptile/HealPct|100/CheckFor|Skin of the Reptile\n" },
+            {"Heals::Important Bot",
+                "Define which bots you would like to pay close attention to just behind the tank priority.\n"
+                + "In essence [color=purple]\"second priority\"[/color].\n"
+                + "Often used for other healers, offtanks, or high threat classes.\n"
+                + "Must be a part of your bot network.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]BotName\n"
+                + "Bot2Name\n"
+                + "Bot3Name[/color]"},
+            {"Heals::Important Heal",
+                "Heal spell/item/aa you wish to use on your important bots.\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Chlorotrope/Gem|1/HealPct|65[/color]"},
+            {"Heals::Group Heal",
+                "This is not based on individual group members, but on the [color=purple]average missing health of the group[/color]\n"
+                + "There is a minimal number required to be injured which can be controlled with the next setting.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Wave of Marr/Gem|10/HealPct|20/NoInterrupt\n"
+                + "Wave of Trushar/HealPct|40/NoInterrupt\n"
+                + "Healing Wave of Prexus/HealPct|65\n"
+                + "Wave of Life/HealPct|70[/color]"},
+            {"Heals::Number Of Injured Members For Group Heal",
+                "Default: [color=purple]3[/color]\n"
+                + "This defines how many people need to be injured before triggering average Group heal."},
+            {"Heals::Party Heal",
+                "This heals your individual party members based on your configured [color=orange]/HealPct[/color] tag.\n"
+                + "Whether they are part of your bot network or not.\n"
+                + "[color=red]Heals outside your bot network[/color].\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Touch of Piety/HealPct|60[/color]"},
+            {"Heals::Heal Over Time Spell",
+                "The HoT spell/item/aa you wish to use for the groups defined in [color=orange]Who to HoT=[/color].\n"
+                + "Must be a part of your bot network.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Breath of Trushar/Gem|9/HealPct|95[/color]"},
+            {"Heals::All Heal",
+                "Heals all bots part of your network [color=purple]whether bots are in your group or not[/color].\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Yoppa's Mending/Gem|1/HealPct|65[/color]"},
+            {"Heals::XTarget Heal",
+                "How to heal individuals [color=red]not part of your bot network[/color] but in your group.\n"
+                + "You will need to assign each player you want to heal to your [color=orange]XTarget Window[/color].\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Chlorotrope/Gem|1/HealPct|65[/color]"},
+            {"Heals::Pet Owner",
+                "The bot in your network whose pet you would like to heal.\n\n"
+                + "Entries here look like:\n"
+                + "[color=teal]MageName[/color]"},
+            {"Heals::Pet Heal",
+                "Heal spell/item/aa you wish to use on pets.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Chlorotrope/Gem|1/HealPct|55[/color]"},
+            {"Heals::Emergency Heal",
+                "Heal spell/item/aa that will be used [color=red]immediately (cancels other casts)[/color] when health drops below the threshold for the specified target.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Burst of Life/MyTank/HealPct|40[/color]"},
+            {"Heals::Emergency Group Heal",
+                "Heal spell/item/aa that will be used [color=red]immediately (cancels other casts)[/color] when health of any character drops below the threshold.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+                + "[color=teal]Divine Arbitration/HealPct|40[/color]"},
+            {"Bando Buff::Enabled", "Turns on the automated bandolier swapper that watches the BuffName on you (and DebuffName on your target) and flips between your configured Bando sets accordingly."},
+            {"Bando Buff::BuffName", "The Buff Name on yourself you wish to monitor"},
+            {"Bando Buff::DebuffName", "The Debuff Name on target you wish to monitor"},
+            {"Bando Buff::PrimaryWithBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
+            {"Bando Buff::SecondaryWithBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
+            {"Bando Buff::PrimaryWithoutBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
+            {"Bando Buff::SecondaryWithoutBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
+            {"Bando Buff::BandoNameWithBuff", "The name of the bandolier when you have buff"},
+            {"Bando Buff::BandoNameWithoutBuff", "The name of the bandolier when you don't have buff"},
+            {"Bando Buff::BandoNameWithoutDeBuff", "When the mob doesn't have debuff. Should move back to BandoNameWithBuff= when debuff detected and you have your buff on"},
+            {"Events::_EventName_", "Allows you to define arbitrary commands for your bot to perform. These commands must be triggered by a /BeforeEvent or /AfterEvent conditional, or by a line in the [EventLoop] section. You make up your own _EventName_ on the left side of the equal sign, and then on the right side you write the command that will be performed when the event is triggered. The command will be executed whenever the event is triggered by a /BeforeEvent or /AfterEvent conditional, or by a line in the [EventLoop] section. Example: [Life Support] Life Support=Divine Barrier/HealPct|20/Gem|7/AfterEvent|TellGroupIUsedDivineBarrier [Events] TellGroupIUsedDivineBarrier=/g I just used Divine Barrier!"},
+            {"EventLoop::_EventName_", "Allows you to define conditions that will trigger lines from the [Events] section to execute. Lines in the [EventLoop] section are evaluated about once every second, and whenever one of the lines evaluates to True, its associated event is executed. On the left side of the equal sign you put the name of an event that's defined in your [Events] section, and on the right side you put the condition that you want to trigger the event and execute its command. Example: [Events] DropInvisCombat=/makemevisible [EventLoop] DropInvisCombat=(${Me.CombatState.Equal[Combat]} && ${Me.Invis})"},
+            {"AutoMed::Override Old Settings and use This(On/Off)", "Use the AutoMed section instead of the legacy med break settings."},
+            {"AutoMed::PctMana", "Minimum mana percent that will trigger the automatic med break routine."},
+            {"AutoMed::PctStam", "Minimum endurance percent that will trigger the automatic med break routine."},
+            {"AutoMed::PctHealth", "Minimum health percent that will trigger the automatic med break routine."},
+            {"Heals::AutoFood", "Allow the heal routine to eat/drink automatically when hunger or thirst is low."},
+            {"Heals::Food", "Food item used by the healer when AutoFood is enabled."},
+            {"Heals::Drink", "Drink item used by the healer when AutoFood is enabled."},
+            {"Buffs::AutoBuff (On/Off)", "Toggle automatic buffing for the entries configured in this section."},
+            {"Buffs::Check Interval", "Delay between automatic buff checks (supports s/m suffix)."},
+            {"Assist::Auto-Assist (On/Off)", "Automatically assist the designated main assist when the routine is active."},
+            {"Assist::Assist Target", "Name or alias of the character that this toon should assist."},
+            {"Assist::PctAggro", "Maximum aggro percent allowed before backing off when assisting."},
+            {"Burn::Auto-Burn (On/Off)", "Enable burn routines to trigger discs and abilities based on configured criteria."},
+            {"Burn::Trigger", "Condition or command that activates the burn routine (e.g. /burn)."},
+        };
 	}
 }
