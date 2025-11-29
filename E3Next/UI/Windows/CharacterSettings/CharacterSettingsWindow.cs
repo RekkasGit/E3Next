@@ -1263,12 +1263,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_String(List<string> parts, SectionData selectedSection)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
-			imgui_SetNextItemWidth(800);
+			float availWidth = imgui_GetContentRegionAvailX();
+			float inputWidth = availWidth > 0f ? Math.Min(availWidth, 800f) : 800f;
+			imgui_SetNextItemWidth(inputWidth);
 			if (imgui_InputText($"##edit_string_{mainWindowState.SelectedKey}", parts[0]))
 			{
 				//parts is a direct pointer to ValuesList from the IniData, so can update it directly. 
 				parts[0] = imgui_InputText_Get($"##edit_string_{mainWindowState.SelectedKey}");
 				mainWindowState.ConfigIsDirty = true;
+			}
+			if (IsFoodOrDrinkKey(mainWindowState.SelectedKey))
+			{
+				RenderFoodDrinkPickerToggle(mainWindowState);
 			}
 			imgui_Separator();
 		}
@@ -1552,6 +1558,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var catalogState = _state.GetState<State_CatalogWindow>();
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			bool listChanged = false;
+			bool isFoodOrDrink = IsFoodOrDrinkKey(mainWindowState.SelectedKey);
 			imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "Configuration Values");
 
 			for (int i = 0; i < parts.Count; i++)
@@ -1670,9 +1677,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_Separator();
 				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Values");
 
-				// Check if this is a Food or Drink key
-				bool isFoodOrDrink = mainWindowState.SelectedKey.Equals("Food", StringComparison.OrdinalIgnoreCase) || mainWindowState.SelectedKey.Equals("Drink", StringComparison.OrdinalIgnoreCase);
-
 				if (imgui_Button("Add Manual"))
 				{
 					mainWindowState.InLineEditIndex = parts.Count;
@@ -1680,28 +1684,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 				imgui_SameLine();
 
-				// For Food/Drink keys, show "Pick From Inventory" instead of "Add From Catalog"
-				if (isFoodOrDrink)
-				{
-					var foodDrinkState = _state.GetState<State_FoodDrink>();
-
-					if (imgui_Button("Pick From Inventory"))
-					{
-						// Reset scan state so results don't carry over between Food/Drink
-						foodDrinkState.Key = mainWindowState.SelectedKey; // "Food" or "Drink"
-						foodDrinkState.Status = string.Empty;
-						foodDrinkState.Candidates.Clear();
-						foodDrinkState.ScanRequested = true; // auto-trigger scan for new kind
-						_state.Show_FoodDrinkModal = true;
-					}
-				}
-				else
+				// For non Food/Drink keys, allow catalog import
+				if (!isFoodOrDrink)
 				{
 					if (imgui_Button("Add From Catalog"))
 					{
 						catalogState.Mode = CatalogMode.Standard;
 						_state.Show_AddModal = true;
 					}
+				}
+				else
+				{
+					imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, "Use the inventory picker button above to scan bags.");
 				}
 			}
 		}
@@ -4096,6 +4090,67 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		}
 
+		private static bool IsFoodOrDrinkKey(string key)
+		{
+			return !string.IsNullOrEmpty(key)
+				&& (key.Equals("Food", StringComparison.OrdinalIgnoreCase) || key.Equals("Drink", StringComparison.OrdinalIgnoreCase));
+		}
+
+		private static void RenderFoodDrinkPickerToggle(State_MainWindow mainWindowState)
+		{
+			if (mainWindowState == null || string.IsNullOrEmpty(mainWindowState.SelectedKey)) return;
+			var foodDrinkState = _state.GetState<State_FoodDrink>();
+			bool pickerOpen = _state.Show_FoodDrinkModal;
+			bool sameContext = pickerOpen
+				&& string.Equals(foodDrinkState.Key, mainWindowState.SelectedKey, StringComparison.OrdinalIgnoreCase)
+				&& string.Equals(foodDrinkState.Section ?? string.Empty, mainWindowState.SelectedSection ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+			string buttonLabel = sameContext ? "Hide Inventory Picker" : "Pick From Inventory";
+			if (imgui_Button(buttonLabel))
+			{
+				if (sameContext)
+				{
+					_state.Show_FoodDrinkModal = false;
+				}
+				else
+				{
+					OpenFoodDrinkPicker(mainWindowState.SelectedSection, mainWindowState.SelectedKey, requestScan: true, resetState: true);
+				}
+			}
+			if (imgui_IsItemHovered())
+			{
+				using (var tooltip = ImGUIToolTip.Aquire())
+				{
+					imgui_Text("Scan inventory and select Food/Drink without typing manually.");
+				}
+			}
+		}
+
+		private static void OpenFoodDrinkPicker(string sectionName, string keyName, bool requestScan = false, bool resetState = false)
+		{
+			if (!IsFoodOrDrinkKey(keyName)) return;
+
+			var foodDrinkState = _state.GetState<State_FoodDrink>();
+			foodDrinkState.Section = sectionName ?? string.Empty;
+			foodDrinkState.Key = keyName ?? string.Empty;
+
+			if (resetState)
+			{
+				foodDrinkState.Candidates.Clear();
+				foodDrinkState.Pending = false;
+				foodDrinkState.PendingToon = string.Empty;
+				foodDrinkState.PendingType = string.Empty;
+				foodDrinkState.TimeoutAt = 0;
+				foodDrinkState.Status = requestScan ? "Scanning..." : string.Empty;
+			}
+			else if (requestScan)
+			{
+				foodDrinkState.Status = "Scanning...";
+			}
+
+			foodDrinkState.ScanRequested = requestScan;
+			_state.Show_FoodDrinkModal = true;
+		}
+
 		// Inventory scanning for Food/Drink using MQ TLOs (non-blocking via ProcessBackgroundWork trigger)
 		private static void RenderFoodDrinkPicker(SectionData selectedSection)
 		{
@@ -4108,8 +4163,69 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					var mainWindowState = _state.GetState<State_MainWindow>();
 					var foodDrinkState = _state.GetState<State_FoodDrink>();
+					string keyName = string.IsNullOrEmpty(foodDrinkState.Key) ? mainWindowState.SelectedKey : foodDrinkState.Key;
+					if (!IsFoodOrDrinkKey(keyName))
+					{
+						_state.Show_FoodDrinkModal = false;
+						return;
+					}
+
 					// Header with better styling
-					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Pick {foodDrinkState.Key} from inventory");
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Pick {keyName} from inventory");
+					imgui_Separator();
+
+					// Show the current Food/Drink entries so the user has context
+					string sectionName = string.IsNullOrEmpty(foodDrinkState.Section) ? mainWindowState.SelectedSection : foodDrinkState.Section;
+					var pdAct = data.GetActiveCharacterIniData();
+					SectionData owningSection = null;
+					if (pdAct != null && !string.IsNullOrEmpty(sectionName))
+					{
+						owningSection = pdAct.Sections.GetSectionData(sectionName);
+					}
+					if (owningSection == null && selectedSection != null)
+					{
+						owningSection = selectedSection;
+						sectionName = selectedSection.SectionName;
+					}
+
+					List<string> configuredEntries = new List<string>();
+					if (owningSection != null && !string.IsNullOrEmpty(keyName))
+					{
+						var keyData = owningSection.Keys?.GetKeyData(keyName);
+						if (keyData != null)
+						{
+							var valuesRef = GetValues(keyData);
+							if (valuesRef != null)
+							{
+								configuredEntries = new List<string>(valuesRef);
+							}
+						}
+					}
+
+					string sectionLabel = string.IsNullOrEmpty(sectionName) ? "(current INI)" : sectionName;
+					imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, $"Configured {keyName} entries in [{sectionLabel}]");
+					if (configuredEntries.Count == 0)
+					{
+						imgui_TextColored(0.7f, 0.75f, 0.8f, 1.0f, "(No values configured)");
+					}
+					else
+					{
+						const float configuredHeight = 110f;
+						float configuredWidth = Math.Max(300f, imgui_GetContentRegionAvailX());
+						using (var child = ImGUIChild.Aquire())
+						{
+							if (child.BeginChild("FoodDrink_ConfigValues", configuredWidth, configuredHeight, 1, 0))
+							{
+								for (int idx = 0; idx < configuredEntries.Count; idx++)
+								{
+									string entry = configuredEntries[idx] ?? string.Empty;
+									string display = string.IsNullOrWhiteSpace(entry) ? "(empty)" : entry.Trim();
+									imgui_Text($"{idx + 1}. {display}");
+								}
+							}
+						}
+					}
+
 					imgui_Separator();
 
 					// Status and scan button
@@ -4147,8 +4263,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 									if (imgui_Selectable($"{item}##item_{i}", false))
 									{
 										// Apply selection
-										var pdAct = data.GetActiveCharacterIniData();
-										var secData = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+										var secData = pdAct?.Sections.GetSectionData(mainWindowState.SelectedSection);
 										var keyData = secData?.Keys.GetKeyData(mainWindowState.SelectedKey);
 										if (keyData != null)
 										{

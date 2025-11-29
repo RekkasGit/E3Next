@@ -197,6 +197,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 	}
 	public class State_FoodDrink
 	{
+		public string Section = string.Empty; // owning INI section (Misc, Heals, etc.)
 		public string Key = string.Empty; // "Food" or "Drink"
 		public string Status = string.Empty;
 		public List<string> Candidates = new List<string>();
