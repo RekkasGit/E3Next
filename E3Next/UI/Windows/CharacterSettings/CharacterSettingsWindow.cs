@@ -2401,7 +2401,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_TwoColumn_TableText("##SpellEditor_ifsKeys", "Ifs Keys:", currentSpell.IfsKeys, (u) => { currentSpell.IfsKeys = u; });
 					Render_InlineHelpButton("SpellEditor_IfsKeysHelp", "Comma-separated keys from the [Ifs] section. Every referenced conditional must evaluate true before this entry can fire.");
 					imgui_SameLine();
-					if (imgui_Button("Select Ifs##IfsGenericPickerBtn"))
+					if (imgui_Button("Pick##IfsGenericPickerBtn"))
 					{
 						//specify what property name on the spells object to update
 						var pd = data.GetActiveCharacterIniData();
