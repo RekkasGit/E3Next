@@ -75,7 +75,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public static readonly HashSet<string> _customKeySections = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Burn", "CommandSets", "Ifs", "Events", "E3BotsPublishData (key/value)", "EventLoopTiming", "EventRegMatches" };
 		public static readonly Dictionary<string, List<string>> _stringCollectionSections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) 
 		{ { "Startup Commands",new List<string>() }, {"CommandSets", new List<string>() }, {"Zoning Commands", new List<string>() },
-		{ "Manastone",new List<string>(){ "ExceptionMQQuery","ExceptionZone"} },{ "Heals",new List<string>(){ "Tank","Important Bot","Pet Owner"} },{"E3ChatChannelsToJoin",new List<string>() }
+		{ "Manastone",new List<string>(){ "ExceptionMQQuery","ExceptionZone"} },{ "Heals",new List<string>(){ "Tank","Important Bot","Pet Owner"} },{"E3ChatChannelsToJoin",new List<string>() },{"Cursor Delete",new List<string>() }
 		};
 
 		public static readonly Dictionary<string, List<string>> _singleEntryKeys = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) 
