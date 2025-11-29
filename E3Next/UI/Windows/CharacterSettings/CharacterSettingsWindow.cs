@@ -1813,10 +1813,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					try
 					{
-						var keys = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys?.ToList() ?? new List<string>();
-						keys.Sort(StringComparer.OrdinalIgnoreCase);
-						_cfgToonCandidates = keys;
-						_cfgToonPickerStatus = keys.Count == 0 ? "No connected toons detected." : $"{keys.Count} connected.";
+						var toons = data.GetOnlineToonNames();
+						_cfgToonCandidates = toons.Keys.ToList();
+						_cfgToonPickerStatus = _cfgToonCandidates.Count == 0 ? "No connected toons detected." : $"{_cfgToonCandidates.Count} connected.";
 					}
 					catch { _cfgToonCandidates = new List<string>(); _cfgToonPickerStatus = "Error loading toons."; }
 					_state.Show_ToonPickerModal = true;
