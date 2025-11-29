@@ -2070,15 +2070,21 @@ namespace E3Core.Settings
             {"Burn::Quick Burn",
                 "Will accept any spell or item and the concept is for [color=purple]\"short\" cooldown[/color] spells.\n"
                 + "Your preference on what \"short\" is.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/quickburns \nor \n/e3burns \"Quick Burn\""},
             {"Burn::Long Burn",
                 "Will accept any spell or item and the concept is for [color=purple]\"long\" cooldown[/color] spells.\n"
                 + "Your preference on what \"long\" is.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/longburns \nor \n/e3burns \"Long Burn\""},
             {"Burn::Full Burn",
-                "The spells or items you want to use in a [color=purple]full send[/color] moment.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
-            {"Pets::Pet Spell",
+                "The spells or items you want to use in a [color=purple]\"and the kitchen sink\"[/color] moment.\n\n"
+                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/fullburns \nor \n/e3burns \"Full Burn\""},
+			 {"Burn::Epic",
+				"if you want to override the default epic 1.5/2.0 calls\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/epicburns \nor \n/e3burns \"Epic\""},
+			  {"Burn::Swarm",
+				"if you want to override the default swarm calls\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/swarmpets \nor \n/e3burns \"Swarm\""},
+			{"Pets::Pet Spell",
                 "The pet spell you wish to use for summoning.\n\n"
                 + "Entries here look like:\n"
                 + "[color=teal]Servant of Ro[/color]"},
