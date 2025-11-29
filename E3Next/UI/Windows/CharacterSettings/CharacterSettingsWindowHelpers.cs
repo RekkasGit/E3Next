@@ -1307,7 +1307,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 				try
 				{
-					var connected = E3Core.Server.NetMQServer.SharedDataClient?.UsersConnectedTo?.Keys;
+					var connected = E3.Bots.BotsConnected();
 					if (connected != null)
 					{
 						foreach (var name in connected)
