@@ -2188,10 +2188,10 @@ namespace E3Core.Settings
                 + "Recommend you order from [color=purple]lowest HealPct to highest[/color].\n"
                 + "One exception might be for spells like Reptile.\n\n"
                 + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "Aged Dragon Spine Staff/HealPct|50/NoInterrupt\n"
-                + "Mask of the Ancients/HealPct|60/NoInterrupt\n"
-                + "Chlorotrope/Gem|1/HealPct|85/NoInterrupt[/color]"
-                + "[color=teal]Artifact of the Reptile/HealPct|100/CheckFor|Skin of the Reptile\n" },
+                + "[color=teal]Aged Dragon Spine Staff/HealPct|50/NoInterrupt[/color]\n"
+				+ "[color=teal]Mask of the Ancients/HealPct|60/NoInterrupt[/color]\n"
+				+ "[color=teal]Chlorotrope/Gem|1/HealPct|85/NoInterrupt[/color]\n"
+				+ "[color=teal]Artifact of the Reptile/HealPct|100/CheckFor|Skin of the Reptile[/color]\n" },
             {"Heals::Important Bot",
                 "Define which bots you would like to pay close attention to just behind the tank priority.\n"
                 + "In essence [color=purple]\"second priority\"[/color].\n"
