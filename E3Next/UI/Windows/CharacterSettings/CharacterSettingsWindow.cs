@@ -170,7 +170,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				E3ImGUI.PushCurrentTheme();
 				// No size constraints - allow window to be resized to any size
 
-				imgui_SetNextWindowSizeWithCond(1500, 1050, (int)ImGuiCond.FirstUseEver);
+				imgui_SetNextWindowSizeWithCond(1530, 1050, (int)ImGuiCond.FirstUseEver);
 				try
 				{
 					using (var window = ImGUIWindow.Aquire())

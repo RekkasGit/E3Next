@@ -138,9 +138,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public string ManualEditBuffer = String.Empty;
 		public bool ManualInputBufferInUse = false;
 		public bool IsDirty = false;
-		public readonly string WinName_CastTargetHelperWindow = "Cast Target Helper";
-		public readonly string WinName_CastTargetPickerWindowTitle = "Cast Target Picker";
-		public readonly string WinName_GenericPickerWindow = "Generic Picker";
+		public readonly string WinName_CastTargetHelperWindow = "E3 Cast Target Helper";
+		public readonly string WinName_CastTargetPickerWindowTitle = "E3 Cast Target Picker";
+		public readonly string WinName_GenericPickerWindow = "E3 Generic Picker";
 	
 		public const float SpellEditorDefaultTextWidth = 320f;
 		public const float SpellEditorDefaultNumberWidth = 140f;
