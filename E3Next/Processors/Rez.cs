@@ -64,7 +64,7 @@ namespace E3Core.Processors
 
             //don't do this on live as a GM will kill you and see if you auto accept a rez.
             if (e3util.IsEQLive()) return;
-            if (Basics.InCombat()) return;
+            if (Basics.InCombat(skipBotCheck:true)) return;
 
             if (e3util.IsRezDiaglogBoxOpen())
             {

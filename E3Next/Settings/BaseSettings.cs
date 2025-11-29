@@ -34,7 +34,16 @@ namespace E3Core.Settings
 
 
 		}
-        public static string GetBoTFilePath(string characterName,string serverName,string characterClass)
+        public static string GetBotPath()
+        {
+            return _configFolder + _botFolder;
+        }
+        public static string GetBotFilePath(string fileName)
+        {
+			string botFileInConfigFolder = _configFolder + _botFolder;
+			return botFileInConfigFolder + fileName;
+		}
+		public static string GetBoTFilePath(string characterName,string serverName,string characterClass)
         {
             string fileName = $"{characterName}_{serverName}.ini";
             string classFileName = $"_{characterClass}_{serverName}.ini";
@@ -135,6 +144,29 @@ namespace E3Core.Settings
                         if (!String.IsNullOrWhiteSpace(data))
                         {
                             valueToSet = data;
+                        }
+                    }
+                }
+            }
+        }
+        
+        public static void LoadFloatKeyData(string sectionKey, string Key, IniData parsedData, ref float valueToSet)
+        {
+            _log.Write($"{sectionKey} {Key}");
+            var section = parsedData.Sections[sectionKey];
+            if (section != null)
+            {
+                var keyData = section.GetKeyData(Key);
+                if (keyData != null)
+                {
+                    foreach (var data in keyData.ValueList)
+                    {
+                        if (!String.IsNullOrWhiteSpace(data))
+                        {
+                            if (float.TryParse(data, out float result))
+                            {
+                                valueToSet = result;
+                            }
                         }
                     }
                 }

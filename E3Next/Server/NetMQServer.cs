@@ -68,7 +68,7 @@ namespace E3Core.Server
                 PrintCharConfigLaunch();
 			});
 
-			EventProcessor.RegisterCommand("/e3config", (x) =>
+			EventProcessor.RegisterCommand("/e3config-old", (x) =>
 			{
 				LaunchCharConfig();
 			});

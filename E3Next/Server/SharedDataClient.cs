@@ -1,8 +1,9 @@
-﻿using E3Core.Classes;
+using E3Core.Classes;
 using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Settings;
 using MonoCore;
+using Google.Protobuf;
 using NetMQ;
 using NetMQ.Sockets;
 using System;
@@ -18,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms.VisualStyles;
 using System.Xml.Linq;
+using System.Diagnostics;
 
 namespace E3Core.Server
 {
@@ -34,6 +36,7 @@ namespace E3Core.Server
 	{
 		public ConcurrentDictionary<string, ConcurrentDictionary<string, ShareDataEntry>> TopicUpdates = new ConcurrentDictionary<string, ConcurrentDictionary<string, ShareDataEntry>>(StringComparer.OrdinalIgnoreCase);
 		public ConcurrentQueue<OnCommandData> CommandQueue = new ConcurrentQueue<OnCommandData>();
+		public ConcurrentQueue<OnCommandData> IMGUICommands = new ConcurrentQueue<OnCommandData>();
 
 		private static IMQ MQ = E3.MQ;
 		public class ConnectionInfo
@@ -57,9 +60,9 @@ namespace E3Core.Server
 		{
 			_isProxyMode = isproxy;
 			//fix situations where it doesn't end in a slash
-			if(!path.EndsWith(@"\"))
+			if (!path.EndsWith(@"\"))
 			{
-				path  += @"\";
+				path += @"\";
 			}
 
 
@@ -68,8 +71,8 @@ namespace E3Core.Server
 				if (!UsersConnectedTo.ContainsKey(user))
 				{
 					//lets see if the file exists
-					string filePath =$"{path}{user}_{E3.ServerName}_pubsubport.txt";
-					if(isproxy)
+					string filePath = $"{path}{user}_{E3.ServerName}_pubsubport.txt";
+					if (isproxy)
 					{
 						filePath = $"{path}{user}_pubsubport.txt";
 					}
@@ -77,21 +80,21 @@ namespace E3Core.Server
 					if (System.IO.File.Exists(filePath))
 					{
 						//lets load up the port information
-							
+
 						string data = System.IO.File.ReadAllText(filePath);
 						//its now port:ipaddress
 						string[] splitData = data.Split(new char[] { ',' });
 						string port = splitData[0];
 						string ipaddress = splitData[1];
 
-						
+
 						ConnectionInfo info = new ConnectionInfo() { User = user, Port = port, IPAddress = ipaddress, FilePath = filePath };
 
 						_usersToConnectTo.Enqueue(info);
 						UsersConnectedTo.TryAdd(info.User, info);
-						if(_mainProcessingTask==null)
+						if (_mainProcessingTask == null)
 						{
-							_mainProcessingTask= Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+							_mainProcessingTask = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 						}
 						//var newTask = Task.Factory.StartNew(() => { Process(user, port,ipaddress, filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 						//_processTasks.Add(user, newTask);
@@ -99,7 +102,7 @@ namespace E3Core.Server
 					}
 				}
 			}
-			
+
 			return false;
 		}
 		public void ProcessE3BCCommands()
@@ -144,9 +147,121 @@ namespace E3Core.Server
 		//primary E3N C# thread, we pull off the collections that was populated by the network thread
 		//this way we can do queries/command/etc.
 
-		
+		public void ProcessIMGUICommands()
+		{
+			while (IMGUICommands.Count > 0)
+			{
+				if (IMGUICommands.TryDequeue(out var data))
+				{
+					string messageTopicReceived = data.Data;
+					string payloaduser = data.Data2.ToLower();
+					string messageReceived = data.Data3;
+
+					var typeInfo = data.TypeOfCommand;
+					data.Dispose(); //put back to be reused ,we have the data we want out of it.
+
+
+					try
+					{
+						if (typeInfo == OnCommandData.CommandType.OnIMGUICommand_GetCatalogData)
+						{
+
+							// e3imgui peer catalog request via PubSub relay
+							// Topic: CatalogReq-<TargetToon>
+							// payloaduser is requester; if TargetToon equals our name, publish base64 SpellDataList frames back
+							string target = messageTopicReceived.Substring("CatalogReq-".Length);
+
+							if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+							{
+
+								var spells = E3Core.Utility.e3util.ListAllBookSpells();
+								var aas = E3Core.Utility.e3util.ListAllActiveAA();
+								var discs = E3Core.Utility.e3util.ListAllDiscData();
+								var skills = E3Core.Utility.e3util.ListAllActiveSkills();
+								var items = E3Core.Utility.e3util.ListAllItemWithClickyData();
+								Func<List<E3Core.Data.Spell>, string> pack = (lst) =>
+								{
+									var sdl = new SpellDataList();
+									foreach (var s in lst) sdl.Data.Add(s.ToProto());
+									return Convert.ToBase64String(sdl.ToByteArray());
+								};
+
+								E3.Log.WriteDelayed($"RSending out data with :CatalogResp-{payloaduser}-Spells", Logging.LogLevels.Debug);
+
+
+								PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Spells", pack(spells));
+								PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-AAs", pack(aas));
+								PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Discs", pack(discs));
+								PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Skills", pack(skills));
+								PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Items", pack(items));
+
+								// Also send memorized spell gems data
+								var gemData = CollectSpellGemData();
+								PubServer.AddTopicMessage($"CatalogResp-{payloaduser}-Gems", gemData);
+
+							}
+						}
+						else if (typeInfo == OnCommandData.CommandType.OnIMGUICommand_GetItemsByType)
+						{
+
+							// e3imgui Food/Drink peer inventory request via PubSub relay
+							// Topic: InvReq-<TargetToon>
+							// payloaduser is requester; messageReceived is type key ("Food" or "Drink")
+							string target = messageTopicReceived.Substring("InvReq-".Length);
+							if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+							{
+
+								string type = (messageReceived ?? string.Empty).Trim();
+								List<string> items = ScanInventoryByType(type);
+								// pack as base64 of newline-delimited names
+								string joined = string.Join("\n", items ?? new List<string>());
+								string b64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(joined));
+								PubServer.AddTopicMessage($"InvResp-{payloaduser}-{type}", b64);
+
+							}
+						}
+						else if (typeInfo == OnCommandData.CommandType.OnIMGUICommand_ConfigValueReq)
+						{
+							string target = messageTopicReceived.Substring("ConfigValueReq-".Length);
+							if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+							{
+
+								string[] parts = messageReceived.Split(new[] { ':' }, 2);
+								string section = parts[0];
+								string key = parts[1];
+								string value = E3.CharacterSettings.ParsedData.Sections[section][key] ?? "";
+								PubServer.AddTopicMessage($"ConfigValueResp-{payloaduser}-{section}:{key}", value);
+							}
+						}
+						else if (typeInfo == OnCommandData.CommandType.OnIMGUICommand_ConfigValueUpdate)
+						{
+							string target = messageTopicReceived.Substring("ConfigValueUpdate-".Length);
+							if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+							{
+								string[] parts = messageReceived.Split(new[] { ':' }, 3);
+								string section = parts[0];
+								string key = parts[1];
+								string value = parts[2];
+								E3.CharacterSettings.ParsedData[section][key] = value;
+								E3.CharacterSettings.SaveData();
+							}
+						}
+					}
+					catch (Exception ex)
+					{
+						MQ.Write($"Exception processing {typeInfo.ToString()}:" + ex.Message);
+
+					}
+
+				}
+			}
+		}
+
 		public void ProcessCommands()
 		{
+			ProcessIMGUICommands();
+
+
 			while (CommandQueue.Count > 0)
 			{
 				if (CommandQueue.TryDequeue(out var data))
@@ -160,9 +275,9 @@ namespace E3Core.Server
 					data.Dispose(); //put back to be reused ,we have the data we want out of it.
 
 					//allow macro escape sequence for tlos to be executed on the dest client
-					if(message.Contains("$\\{")) message = message.Replace("$\\{", "${");
+					if (message.Contains("$\\{")) message = message.Replace("$\\{", "${");
 
-					if (typeInfo == OnCommandData.CommandType.BroadCastMessage || typeInfo== OnCommandData.CommandType.BroadCastMessageZone)
+					if (typeInfo == OnCommandData.CommandType.BroadCastMessage || typeInfo == OnCommandData.CommandType.BroadCastMessageZone)
 					{
 						Int32 indexOfSeperator = message.IndexOf(':');
 						Int32 currentIndex = 0;
@@ -198,8 +313,8 @@ namespace E3Core.Server
 						string command = message.Substring(currentIndex, message.Length - currentIndex);
 						//a command type
 
-						if(typeInfo== OnCommandData.CommandType.OnCommandAllExceptMeZone  || typeInfo == OnCommandData.CommandType.OnCommandAllZone || typeInfo ==OnCommandData.CommandType.OnCommandGroupZone 
-							|| typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone || typeInfo == OnCommandData.CommandType.OnCommandRaidZone || typeInfo == OnCommandData.CommandType.OnCommandRaidZoneNotMe)
+						if (typeInfo == OnCommandData.CommandType.OnCommandAllExceptMeZone || typeInfo == OnCommandData.CommandType.OnCommandAllZone || typeInfo == OnCommandData.CommandType.OnCommandGroupZone
+							|| typeInfo == OnCommandData.CommandType.OnCommandGroupAllZone || typeInfo == OnCommandData.CommandType.OnCommandRaidZone || typeInfo == OnCommandData.CommandType.OnCommandRaidZoneNotMe)
 						{
 
 							//this is a zone type command lets verify zone logic
@@ -253,9 +368,9 @@ namespace E3Core.Server
 						}
 
 						//check to see if we are part of their group
-						if (user == E3.CurrentName && (!(typeInfo == OnCommandData.CommandType.OnCommandName|| typeInfo== OnCommandData.CommandType.OnCommandChannel ||
-							typeInfo== OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo== OnCommandData.CommandType.OnCommandGroupAllZone|| 
-							typeInfo==OnCommandData.CommandType.OnCommandAllZone || typeInfo == OnCommandData.CommandType.OnCommandRaid || typeInfo == OnCommandData.CommandType.OnCommandRaidZone)))
+						if (user == E3.CurrentName && (!(typeInfo == OnCommandData.CommandType.OnCommandName || typeInfo == OnCommandData.CommandType.OnCommandChannel ||
+							typeInfo == OnCommandData.CommandType.OnCommandGroupAll || typeInfo == OnCommandData.CommandType.OnCommandAll || typeInfo == OnCommandData.CommandType.OnCommandGroupAllZone ||
+							typeInfo == OnCommandData.CommandType.OnCommandAllZone || typeInfo == OnCommandData.CommandType.OnCommandRaid || typeInfo == OnCommandData.CommandType.OnCommandRaidZone)))
 						{
 							//if not an all type command and not us, kick out.
 							//not for us only group members
@@ -263,14 +378,14 @@ namespace E3Core.Server
 						}
 
 						MQ.Write($"\ag<\ap{user}\ag> Command:" + command);
-						if (command.StartsWith("/mono ",StringComparison.OrdinalIgnoreCase)|| command.StartsWith("/shutdown", StringComparison.OrdinalIgnoreCase))
+						if (command.StartsWith("/mono ", StringComparison.OrdinalIgnoreCase) || command.StartsWith("/shutdown", StringComparison.OrdinalIgnoreCase))
 						{
 							//in case this is a restart command, we need to delay the command so it happens outside of the OnPulse. just assume all /mono commands are 
 							//delayed
-							if (Core._MQ2MonoVersion>=0.22m)
+							if (Core._MQ2MonoVersion >= 0.22m)
 							{
 								//needs to be delayed, so that the restarts happes outside of the E3N OnPulse
-								MQ.Cmd(command,true);
+								MQ.Cmd(command, true);
 							}
 							else
 							{
@@ -283,7 +398,7 @@ namespace E3Core.Server
 							foreach (var pair in EventProcessor.CommandList)
 							{
 								string compareCommandTo = pair.Key;
-								if(command.Contains(" "))
+								if (command.Contains(" "))
 								{
 									compareCommandTo = pair.Value.commandwithSpace;
 								}
@@ -300,18 +415,18 @@ namespace E3Core.Server
 							if (!internalComand)
 							{
 								//need to be delayed for some commands (such as /notify), so just delay them all. 
-								MQ.Cmd(command,true);
+								MQ.Cmd(command, true);
 
 							}
 						}
-						
+
 					}
 
 
 
 				}
 
-		
+
 			}
 		}
 		/// <summary>
@@ -332,13 +447,13 @@ namespace E3Core.Server
 				commandToSend = $"/noparse /echo \a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")}\ar<\ay{user}\ar> \aw{bcMessage}";
 				Core.mq_DoCommandDelayed(commandToSend);
 			}
-			catch(Exception) 
+			catch (Exception)
 			{
 				//MQ.Write("Error in shared data thread. ProcessBroadcast:" + message + " fullCommand:"+commandToSend);
 				//throw e;
 			}
 
-			
+
 
 		}
 
@@ -349,14 +464,14 @@ namespace E3Core.Server
 		/// <param name="user"></param>
 		/// <param name="messageTopicReceived"></param>
 		/// <param name="messageReceived"></param>
-		private void ProcessTopicMessage(string user,string messageTopicReceived, string messageReceived)
+		private void ProcessTopicMessage(string user, string messageTopicReceived, string messageReceived)
 		{
 
 			//get the user from the payload
 			ConcurrentDictionary<string, ShareDataEntry> usertopics;
-			if (!TopicUpdates.TryGetValue(user,out usertopics))
+			if (!TopicUpdates.TryGetValue(user, out usertopics))
 			{
-				usertopics =  new ConcurrentDictionary<string, ShareDataEntry>();	
+				usertopics = new ConcurrentDictionary<string, ShareDataEntry>(StringComparer.OrdinalIgnoreCase);
 				TopicUpdates.TryAdd(user, usertopics);
 			}
 
@@ -367,12 +482,21 @@ namespace E3Core.Server
 				entry = new ShareDataEntry() { Data = messageReceived, LastUpdate = updateTime };
 				usertopics.TryAdd(messageTopicReceived, entry);
 			}
+
+
 			if (!String.Equals(entry.Data, messageReceived))
 			{
 				lock (entry)
 				{
 					//why do work if its the same data?	
 					entry.Data = messageReceived;
+					entry.LastUpdate = updateTime;
+				}
+			}
+			else
+			{
+				lock (entry)
+				{
 					entry.LastUpdate = updateTime;
 				}
 			}
@@ -392,11 +516,11 @@ namespace E3Core.Server
 			}
 		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public void Process_CheckConnectionsIfStillValid(SubscriberSocket subSocket,ref  Int64 lastConnectionCheck)
+		public void Process_CheckConnectionsIfStillValid(SubscriberSocket subSocket, ref Int64 lastConnectionCheck)
 		{
 			if ((Core.StopWatch.ElapsedMilliseconds - lastConnectionCheck) > 2000)
 			{
-				lastConnectionCheck= Core.StopWatch.ElapsedMilliseconds;
+				lastConnectionCheck = Core.StopWatch.ElapsedMilliseconds;
 
 				//lets been over 2 seconds, lets check to see if there are anyone we need to reconnect to
 				foreach (var userInfo in UsersConnectedTo.Values.ToList())
@@ -406,7 +530,7 @@ namespace E3Core.Server
 						//been at least 2 seconds from this user, lets check to see what has happened to them.
 						try
 						{
-							if(!System.IO.File.Exists(userInfo.FilePath))
+							if (!System.IO.File.Exists(userInfo.FilePath))
 							{
 								//client shut down?
 								subSocket.Disconnect($"tcp://{userInfo.IPAddress}:" + userInfo.Port);
@@ -436,7 +560,7 @@ namespace E3Core.Server
 						catch (Exception ex)
 						{
 
-							MQ.WriteDelayed("\arError, Disconnecting User:\ag" + userInfo.User + " Message:"+ex.Message);
+							MQ.WriteDelayed("\arError, Disconnecting User:\ag" + userInfo.User + " Message:" + ex.Message);
 							UsersConnectedTo.TryRemove(userInfo.User, out var tuserInfo);
 						}
 					}
@@ -458,40 +582,55 @@ namespace E3Core.Server
 			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 2, 0);
 			using (var subSocket = new SubscriberSocket())
 			{
-				try
+
+				subSocket.Options.ReceiveHighWatermark = 100000;
+				subSocket.Options.TcpKeepalive = true;
+				subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
+				subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
+				subSocket.Subscribe(OnCommandName);
+				subSocket.Subscribe("OnCommand-All");
+				subSocket.Subscribe("OnCommand-AllZone");
+				subSocket.Subscribe("OnCommand-AllExceptMe");
+				subSocket.Subscribe("OnCommand-AllExceptMeZone");
+				subSocket.Subscribe("OnCommand-Group");
+				subSocket.Subscribe("OnCommand-GroupAll");
+				subSocket.Subscribe("OnCommand-GroupAllZone");
+				subSocket.Subscribe("OnCommand-Raid");
+				subSocket.Subscribe("OnCommand-Zone");
+				subSocket.Subscribe("BroadCastMessage");
+				subSocket.Subscribe("BroadCastMessageZone");
+				// e3imgui Add From Catalog peer relay topics
+				// Requests addressed to specific toons and responses back to requester
+				subSocket.Subscribe($"CatalogReq-{E3.CurrentName.ToLower()}");
+				subSocket.Subscribe($"CatalogResp-{E3.CurrentName.ToLower()}");
+				// e3imgui Food/Drink inventory peer relay topics
+				subSocket.Subscribe("InvReq-");
+				subSocket.Subscribe("InvResp-");
+				subSocket.Subscribe("ConfigValueReq-");
+				subSocket.Subscribe("ConfigValueResp-");
+				subSocket.Subscribe("ConfigValueUpdate-");
+				subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
+				subSocket.Subscribe("${Data."); //all the custom data keys a user can create
+				subSocket.Subscribe("${DataChannel.");
+
+				while (Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
 				{
-					subSocket.Options.ReceiveHighWatermark = 100000;
-					subSocket.Options.TcpKeepalive = true;
-					subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
-					subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
-					subSocket.Subscribe(OnCommandName);
-					subSocket.Subscribe("OnCommand-All");
-					subSocket.Subscribe("OnCommand-AllZone");
-					subSocket.Subscribe("OnCommand-AllExceptMe");
-					subSocket.Subscribe("OnCommand-AllExceptMeZone");
-					subSocket.Subscribe("OnCommand-Group");
-					subSocket.Subscribe("OnCommand-GroupAll");
-					subSocket.Subscribe("OnCommand-GroupAllZone");
-					subSocket.Subscribe("OnCommand-Raid");
-					subSocket.Subscribe("OnCommand-Zone");
-					subSocket.Subscribe("BroadCastMessage");
-					subSocket.Subscribe("BroadCastMessageZone");
-					subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
-					subSocket.Subscribe("${Data."); //all the custom data keys a user can create
-					subSocket.Subscribe("${DataChannel.");
-				
-					while (Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
+					Process_CheckNewConnections(subSocket);
+					Process_CheckConnectionsIfStillValid(subSocket, ref lastConnectionCheck);
+
+					string messageTopicReceived;
+					if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
 					{
-						Process_CheckNewConnections(subSocket);
-						Process_CheckConnectionsIfStillValid(subSocket, ref lastConnectionCheck);
-
-						string messageTopicReceived;
-						if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
+						string messageReceived;
+						string originalMessage;
+						string payloaduser;
+						try
 						{
-							string messageReceived = subSocket.ReceiveFrameString();
-
+							messageReceived = subSocket.ReceiveFrameString();
+							originalMessage = messageReceived;
+							messageReceived = originalMessage;
 							Int32 indexOfColon = messageReceived.IndexOf(':');
-							string payloaduser = messageReceived.Substring(0, indexOfColon);
+							payloaduser = messageReceived.Substring(0, indexOfColon);
 							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
 							indexOfColon = messageReceived.IndexOf(':');
 							string payloadServer = messageReceived.Substring(0, indexOfColon);
@@ -504,7 +643,7 @@ namespace E3Core.Server
 							}
 							if (UsersConnectedTo.TryGetValue(payloaduser, out var connectionInfo))
 							{
-								connectionInfo.LastMessageTimeStamp=Core.StopWatch.ElapsedMilliseconds;
+								connectionInfo.LastMessageTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 							}
 							//most common goes first
 							if (messageTopicReceived.StartsWith("${Me."))
@@ -627,7 +766,7 @@ namespace E3Core.Server
 							else if (messageTopicReceived.StartsWith("${DataChannel."))
 							{
 								//don't do the command you are issuing out
-								if(payloaduser!=E3.CurrentName)
+								if (payloaduser != E3.CurrentName)
 								{
 									if (E3.CharacterSettings.E3ChatChannelsToJoin.Contains(messageTopicReceived, StringComparer.OrdinalIgnoreCase))
 									{
@@ -638,14 +777,57 @@ namespace E3Core.Server
 									}
 								}
 							}
+							else if (messageTopicReceived.StartsWith("CatalogReq-", StringComparison.Ordinal))
+							{
+								E3.Log.WriteDelayed($"Request recieved for catalog data topic:{messageTopicReceived}", Logging.LogLevels.Debug);
+
+								var data = OnCommandData.Aquire();
+								data.Data = messageTopicReceived;
+								data.Data2 = payloaduser;
+								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_GetCatalogData;
+								IMGUICommands.Enqueue(data);
+							}
+							else if (messageTopicReceived.StartsWith("InvReq-", StringComparison.Ordinal))
+							{
+
+								var data = OnCommandData.Aquire();
+								data.Data = messageTopicReceived;
+								data.Data2 = payloaduser;
+								data.Data3 = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_GetItemsByType;
+								IMGUICommands.Enqueue(data);
+
+							}
+							else if (messageTopicReceived.StartsWith("ConfigValueReq-", StringComparison.Ordinal))
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageTopicReceived;
+								data.Data2 = payloaduser;
+								data.Data3 = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_ConfigValueReq;
+								IMGUICommands.Enqueue(data);
+
+							}
+							else if (messageTopicReceived.StartsWith("ConfigValueResp-", StringComparison.Ordinal))
+							{
+								ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
+							}
+							else if (messageTopicReceived.StartsWith("ConfigValueUpdate-", StringComparison.Ordinal))
+							{
+								var data = OnCommandData.Aquire();
+								data.Data = messageTopicReceived;
+								data.Data2 = payloaduser;
+								data.Data3 = messageReceived;
+								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_ConfigValueUpdate;
+								IMGUICommands.Enqueue(data);
+
+							}
 							else if (messageTopicReceived == OnCommandName)
-							{	//bct commands
+							{   //bct commands
 								var data = OnCommandData.Aquire();
 								data.Data = messageReceived;
 								data.TypeOfCommand = OnCommandData.CommandType.OnCommandName;
-
 								CommandQueue.Enqueue(data);
-
 							}
 							else
 							{
@@ -653,18 +835,138 @@ namespace E3Core.Server
 
 							}
 						}
-		
+						catch (Exception ex)
+						{
+							Debug.WriteLine($"Error{ex.Message}");
+							//MQ.WriteDelayed("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
+						}
 					}
-					
-					subSocket.Dispose();
 				}
-				catch (Exception ex)
-				{
-					//MQ.WriteDelayed("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
-				}
-
+				subSocket.Dispose();
 			}
 			MQ.WriteDelayed($"Shutting down Share Data Thread.");
+		}
+
+		// Helper to scan local inventory for a given item type (e.g., "Food" or "Drink")
+		private static List<string> ScanInventoryByType(string type)
+		{
+			var results = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+			if (string.IsNullOrWhiteSpace(type)) return results.ToList();
+			string key = type.Trim();
+			try
+			{
+				// scan top-level inventory slots generously
+				for (int inv = 1; inv <= 40; inv++)
+				{
+					try
+					{
+						bool present = E3.MQ.Query<bool>($"${{Me.Inventory[{inv}]}}");
+						if (!present) continue;
+						string t = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Type}}") ?? string.Empty;
+						if (!string.IsNullOrEmpty(t) && t.Equals(key, StringComparison.OrdinalIgnoreCase))
+						{
+							string name = E3.MQ.Query<string>($"${{Me.Inventory[{inv}]}}") ?? string.Empty;
+							if (!string.IsNullOrEmpty(name)) results.Add(name);
+						}
+						int slots = E3.MQ.Query<int>($"${{Me.Inventory[{inv}].Container}}");
+						if (slots > 0)
+						{
+							for (int i = 1; i <= slots; i++)
+							{
+								try
+								{
+									bool ipresent = E3.MQ.Query<bool>($"${{Me.Inventory[{inv}].Item[{i}]}}");
+									if (!ipresent) continue;
+									string it = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Item[{i}].Type}}") ?? string.Empty;
+									if (!string.IsNullOrEmpty(it) && it.Equals(key, StringComparison.OrdinalIgnoreCase))
+									{
+										string iname = E3.MQ.Query<string>($"${{Me.Inventory[{inv}].Item[{i}]}}") ?? string.Empty;
+										if (!string.IsNullOrEmpty(iname)) results.Add(iname);
+									}
+								}
+								catch { }
+							}
+						}
+					}
+					catch { }
+				}
+			}
+			catch { }
+			return results.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+		}
+
+		// Collect current memorized spell gem data as pipe-separated string with icon indices
+		private static string CollectSpellGemData()
+		{
+			try
+			{
+				var gemData = new List<string>();
+
+				// Query gems 1-12 safely on the background thread
+				for (int gem = 1; gem <= 12; gem++)
+				{
+					try
+					{
+						string spellName = MQ.Query<string>($"${{Me.Gem[{gem}]}}");
+						Int32 spellID = MQ.Query<Int32>($"${{Me.Gem[{gem}].ID}}");
+						if (string.IsNullOrEmpty(spellName) || spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+						{
+							gemData.Add("-1:-1");
+						}
+						else
+						{
+							// Try to get spell icon index from catalog data
+							int iconIndex = GetSpellIconIndex(spellName);
+							gemData.Add($"{spellID}:{iconIndex}");
+						}
+					}
+					catch
+					{
+						gemData.Add("-2:-1");
+					}
+				}
+
+				// Return as pipe-separated string for easy parsing
+				return string.Join("|", gemData);
+			}
+			catch
+			{
+				// If all fails, return empty gems with no icons
+				return string.Join("|", Enumerable.Repeat("-2:-1", 12));
+			}
+		}
+
+		// Helper method to get spell icon index from catalog lookups
+		private static int GetSpellIconIndex(string spellName)
+		{
+			if (string.IsNullOrEmpty(spellName)) return -1;
+
+			try
+			{
+				// Check spell data lookup first
+				if (E3Core.Data.Spell.SpellDataLookup.TryGetValue(spellName, out var spellData) && spellData.SpellIcon >= 0)
+					return spellData.SpellIcon;
+
+				// Check alt data lookup
+				if (E3Core.Data.Spell.AltDataLookup.TryGetValue(spellName, out var altData) && altData.SpellIcon >= 0)
+					return altData.SpellIcon;
+
+				// Check disc data lookup
+				if (E3Core.Data.Spell.DiscDataLookup.TryGetValue(spellName, out var discData) && discData.SpellIcon >= 0)
+					return discData.SpellIcon;
+
+				// Check item data lookup
+				if (E3Core.Data.Spell.ItemDataLookup.TryGetValue(spellName, out var itemData) && itemData.SpellIcon >= 0)
+					return itemData.SpellIcon;
+
+				// Fallback: Query MQ directly for spell icon (safe on background thread)
+				int iconIndex = MQ.Query<int>($"${{Spell[{spellName}].SpellIcon}}");
+				return iconIndex > 0 ? iconIndex : -1;
+			}
+			catch
+			{
+				return -1;
+			}
 		}
 
 		public class OnCommandData
@@ -687,9 +989,22 @@ namespace E3Core.Server
 				BroadCastMessage,
 				BroadCastMessageZone,
 				OnCommandName,
-				OnCommandChannel
+				OnCommandChannel,
+				OnIMGUICommand_ListAA,
+				OnIMGUICommand_ListSpells,
+				OnIMGUICommand_ListSkills,
+				OnIMGUICommand_ListDiscs,
+				OnIMGUICommand_ListItemsWithSpells,
+				OnIMGUICommand_GetCatalogData,
+				OnIMGUICommand_GetItemsByType,
+				OnIMGUICommand_ConfigValueReq,
+				OnIMGUICommand_ConfigValueUpdate
+
 			}
 			public string Data { get; set; }
+			public string Data2 { get; set; }
+
+			public string Data3 { get; set; }
 			public CommandType TypeOfCommand { get; set; }
 
 			public Dictionary<Int32, Int64> BuffDurations = new Dictionary<int, Int64>();
@@ -709,6 +1024,8 @@ namespace E3Core.Server
 			{
 				TypeOfCommand = CommandType.None;
 				Data = String.Empty;
+				Data2 = String.Empty;
+				Data3 = String.Empty;
 				StaticObjectPool.Push(this);
 			}
 			~OnCommandData()

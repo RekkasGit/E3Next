@@ -14,6 +14,7 @@ namespace E3Core.Settings.FeatureSettings
 		public IniData parsedData;
 		public HashSet<string> AlwaysStackableItems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 		public List<string> AlwaysStackableItemsContains = new List<string>();
+		public List<string> ExcludeStackableItemsContains = new List<string>();
 		public Boolean LootOnlyCommonTradeSkillItems = false;
 		public Boolean LootAllTradeSkillItems = false;
 		public Int32 LootValueGreaterThanInCopper = 1;
@@ -36,6 +37,7 @@ namespace E3Core.Settings.FeatureSettings
 			LoadKeyData("Settings", "Honor Loot File Skip Settings (On/Off)", parsedData, ref HonorLootFileSkips);
 			LoadKeyData("AlwaysLoot", "Entry", parsedData, AlwaysStackableItems);
 			LoadKeyData("AlwaysLootContains", "Entry", parsedData, AlwaysStackableItemsContains);
+			LoadKeyData("ExcludeLootContains", "Entry", parsedData, ExcludeStackableItemsContains);
 		}
 		public IniData CreateSettings(string fileName)
 		{
@@ -51,6 +53,9 @@ namespace E3Core.Settings.FeatureSettings
 			section.Keys.AddKey("Loot common tradeskill items ie:pelts ores silks etc (On/Off)", "Off");
 			section.Keys.AddKey("Loot all Tradeskill items (On/Off)", "Off");
 			section.Keys.AddKey("Honor Loot File Skip Settings (On/Off)", "Off");
+			newFile.Sections.AddSection("ExcludeLootContains");
+			section = newFile.Sections.GetSectionData("ExcludeLootContains");
+			section.Keys.AddKey("Entry", "");
 			newFile.Sections.AddSection("AlwaysLoot");
 		    section = newFile.Sections.GetSectionData("AlwaysLoot");
 			section.Keys.AddKey("Entry", "");

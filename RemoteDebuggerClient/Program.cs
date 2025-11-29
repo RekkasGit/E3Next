@@ -422,7 +422,7 @@ namespace MQServerClient
             return true;
         }
 
-        public T Query<T>(string query)
+        public T Query<T>(string query, bool delayPossible = true)
         {
             // Console.WriteLine(query);
             if (_requestMsg.IsInitialised)

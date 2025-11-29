@@ -4,7 +4,6 @@ using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
-using E3NextUI;
 using IniParser.Model;
 using MonoCore;
 using System;
@@ -935,7 +934,7 @@ namespace E3Core.Processors
 						//if (targetid > 0)
 						{
 
-							Spawn s;
+							//Spawn s;
 							//if (_spawns.TryByID(targetid, out s))
 							{
 								if (e3util.IsEQLive())
@@ -1365,9 +1364,13 @@ namespace E3Core.Processors
         /// Am I in combat?
         /// </summary>
         /// <returns>Returns a bool indicating whether or not you're in combat</returns>
-        public static bool InCombat()
+        public static bool InCombat(bool skipBotCheck = false)
         {
             bool inCombat = Assist.IsAssisting || MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
+            if (!skipBotCheck)
+            {
+                if (E3.Bots.BotsInCombat().Count > 0) inCombat = true;
+            }
             return inCombat;
         }
         public static bool InGameCombat()

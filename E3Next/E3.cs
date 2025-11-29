@@ -45,8 +45,8 @@ namespace E3Core.Processors
 			//did someone send us a command? lets process it. 
 			ProcessExternalCommands();
 
-			//update all states, important.
-			StateUpdates();
+            //update all states, important.
+            StateUpdates();
 			RefreshCaches();
 
 			//don't eat stat food even if paused!
@@ -86,8 +86,8 @@ namespace E3Core.Processors
             //final cleanup/actions after the main loop has done processing
             FinalCalls();
         }
-	
-		private static void BeforeAdvancedSettingsCalls()
+
+        private static void BeforeAdvancedSettingsCalls()
 		{
 			if (PctHPs < 98)
 			{
@@ -314,7 +314,9 @@ namespace E3Core.Processors
 		}
 		public static void StateUpdates_Misc()
 		{
-			PubServer.AddTopicMessage("${InCombat}", CurrentInCombat.ToString());
+			string combatString = Basics.InCombat(skipBotCheck: true).ToString();
+			PubServer.AddTopicMessage("${InCombat}", combatString);
+			PubServer.AddTopicMessage("${Me.InCombat}", combatString);
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 			//PubServer.AddTopicMessage("${EQ.CurrentHoveredWindowName}", MQ.GetHoverWindowName());
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
@@ -350,6 +352,7 @@ namespace E3Core.Processors
 			RouterServer.ProcessRequests();//process any tlo request from the UI, or anything really.
 			//process any commands we need to process from the UI
 			PubClient.ProcessRequests();
+			
 		}
 		public static void StateUpdates()
         {
@@ -414,6 +417,13 @@ namespace E3Core.Processors
 					{
 						LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 					}
+					E3.IsFD = MQ.Query<bool>("${Me.Feigning}");
+					if (E3.IsFD)
+					{
+						LastFDTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+					}
+
+
 
 					if (MQ.Query<bool>("${MoveUtils.GM}"))
 					{
@@ -490,15 +500,6 @@ namespace E3Core.Processors
 				if (Bots == null)
 				{
                    	Bots = new SharedDataBots();
-
-                    //if ("DANNET".Equals(E3.GeneralSettings.General_NetworkMethod, StringComparison.OrdinalIgnoreCase) && Core._MQ2MonoVersion > 0.20m)
-                    //{
-                    //    Bots = new DanBots();
-                    //}
-                    //else
-                    //{
-                    //    Bots = new Bots();
-                    //}
                 }
 				GlobalIfs = new GlobalIfs();
 				GlobalCursorDelete = new GlobalCursorDelete();
@@ -575,6 +576,8 @@ namespace E3Core.Processors
         public static int CurrentId;
 		[ExposedData("Core", "LastMovementTimeStamp")]
         public static Int64 LastMovementTimeStamp;
+		[ExposedData("Core", "LastFDTimeStamp")]
+		public static Int64 LastFDTimeStamp;
         public static string CurrentLongClassString;
         public static string CurrentShortClassString;
 		public static System.Random Random = new System.Random();
@@ -582,6 +585,7 @@ namespace E3Core.Processors
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
 		public static bool IsMoving;
+		public static bool IsFD;
 
 		private static Int64 _nextReloadSettingsCheck = 0;
         private static Int64 _nextReloadSettingsInterval = 2000;

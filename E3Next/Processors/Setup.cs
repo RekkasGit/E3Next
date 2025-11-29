@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.UI;
 
 namespace E3Core.Processors
 {
@@ -44,9 +45,9 @@ namespace E3Core.Processors
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
 		[ExposedData("Setup", "Version")]
-		public const string _e3Version = "1.49.2";
+		public const string E3Version = "1.50-devbuild";
 		[ExposedData("Setup", "BuildDate")]
-		public static string _buildDate = string.Empty;
+		public static string BuildDate = string.Empty;
         public static Boolean _debug = true;
         public const string _macroData_Ini = @"e3 Macro Inis\e3 Data.ini";
         public static string _generalSettings_Ini = @"e3 Macro Inis\General Settings.ini";
@@ -81,9 +82,9 @@ namespace E3Core.Processors
                 {
                     _serverNameForIni = "Lazarus";
                 }
-				_buildDate = Properties.Resources.BuildDate;
-				_buildDate = _buildDate.Replace("\r\n", "");
-				MQ.Write($"Loading nE³xt v{_e3Version} builddate:{_buildDate}...Mq2Mono v{Core._MQ2MonoVersion}");
+				BuildDate = Properties.Resources.BuildDate;
+				BuildDate = BuildDate.Replace("\r\n", "");
+				MQ.Write($"Loading nE³xt v{E3Version} builddate:{BuildDate}...Mq2Mono v{Core._MQ2MonoVersion}");
 
                 //setup the library path loading, mainly used for sqlite atm
 				string MQPath = MQ.Query<String>("${MacroQuest.Path}");
@@ -135,7 +136,7 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3version", (x) =>
 			{
 
-				MQ.Write($"nE³xt v{_e3Version} builddate:{_buildDate}...Mq2Mono v{Core._MQ2MonoVersion}");
+				MQ.Write($"nE³xt v{E3Version} builddate:{BuildDate}...Mq2Mono v{Core._MQ2MonoVersion}");
 
 			}, "Shows current version");
 
@@ -145,6 +146,20 @@ namespace E3Core.Processors
 				{
 					E3.Bots.Broadcast(pair.Key,true);
 				}
+				E3.Bots.Broadcast("${Assisting}", true);
+				E3.Bots.Broadcast("${InCombat}", true);
+				E3.Bots.Broadcast("${AssistTarget}", true);
+				E3.Bots.Broadcast("${AssistType}", true);
+				E3.Bots.Broadcast("${use_QUICKBurns}", true);
+				E3.Bots.Broadcast("${use_LONGBurns}", true);
+				E3.Bots.Broadcast("${use_FULLBurns}", true);
+				E3.Bots.Broadcast("${use_EPICBurns}", true);
+				E3.Bots.Broadcast("${use_Swarms}", true);
+				E3.Bots.Broadcast("${StandingStillForTimePeriod}", true);
+				E3.Bots.Broadcast("${NotStandingStillForTimePeriod}", true);
+				E3.Bots.Broadcast("${IsSafeZone}", true);
+				E3.Bots.Broadcast("${IsNotSafeZone}", true);
+				E3.Bots.Broadcast("${PBAEON}", true);
 
 			});
 			EventProcessor.RegisterCommand("/e3broadcastwrites", (x) =>
@@ -154,8 +169,11 @@ namespace E3Core.Processors
 
 
 			},"Have your toon broadcast writes out to the MQ window for a conssolidated view.");
-		}
-			private static void InitSubSystems()
+
+           
+
+        }
+		private static void InitSubSystems()
         {
             var methods = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(x => x.GetTypes())

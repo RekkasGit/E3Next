@@ -1184,7 +1184,7 @@ namespace E3Core.Utility
 		public static Int32 GetXtargetMinAggro()
 		{
 			Int32 currentAggro = 0;
-			Int32 tempMinAggro = 0;
+			Int32 tempMinAggro = 101;
 
 			for (Int32 i = 1; i <= 13; i++)
 			{
@@ -1207,6 +1207,8 @@ namespace E3Core.Utility
 					}
 				}
 			}
+
+			if (tempMinAggro == 101) return 0;
 
 			return tempMinAggro;
 		}
@@ -1577,6 +1579,11 @@ namespace E3Core.Utility
 
 		public static bool OpenMerchant()
 		{
+
+			bool merchantWindowOpen = MQ.Query<bool>("${Window[MerchantWnd].Open}");
+
+			if (merchantWindowOpen) { return true; }
+
 			var target = MQ.Query<int>("${Target.ID}");
 
 			if (target <= 0 || MQ.Query<String>("${Target.Class}") != "Merchant")
@@ -1924,6 +1931,22 @@ namespace E3Core.Utility
 
 			}
 			return returnValue;
+		}
+		public static void OpenUrl(string url)
+		{
+			try
+			{
+				var psi = new ProcessStartInfo
+				{
+					FileName = url,
+					UseShellExecute = true
+				};
+				Process.Start(psi);
+			}
+			catch (Exception ex)
+			{
+				E3.Log.Write($"Failed to open URL: {url} - {ex.Message}", Logging.LogLevels.Error);
+			}
 		}
 		public static bool IsGenericList(this FieldInfo o, Type typeToCheck)
 		{

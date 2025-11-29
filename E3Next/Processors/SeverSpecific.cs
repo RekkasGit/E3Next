@@ -44,9 +44,9 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterCommand("/e3laz-count-nv", (x) =>
 			{
-				List<string> items = new List<string>() {"Glass Key to the Nowhere Door","Blacksalt Compass","Coldfire Lantern","Fragment of the Maestra","the bone violin",
-				"Phantom's Bride Doll","Eternal Jack-o-Lantern","Shroud of the Forgotten King","Withered Rose","Map of Midnight", "The Ash Crown","The Witche's Bell","Fragment of Vzith","Crown of Radiant Dominion","Hat of the Forsaken Jester",
-				"Obsidian Chalice","the crimson dice","death quill","mirror of the last gaze","Scythe of Silence","Quill of Tomorrow","Ancient Alpha Skull"};
+				List<string> items = new List<string>() {"Sword of the Celestial Dawn","Glass Key to the Nowhere Door","Blacksalt Compass","Coldfire Lantern","Fragment of the Maestra","the bone violin",
+				"Phantom's Bride Doll","Eternal Jack-o-Lantern","Shroud of the Forgotten King","Withered Rose","Map of Midnight", "The Ash Crown","The Witch's Bell","Fragment of Vzith","Crown of Radiant Dominion","Hat of the Forsaken Jester",
+				"Obsidian Chalice","the crimson dice","death quill","mirror of the last gaze","Scythe of Silence","Quill of Tomorrow","Ancient Alpha Skull","charred obulus relic"};
 
 				Int32 totalCount = 0;
 				foreach(string item in items)
@@ -147,7 +147,6 @@ namespace E3Core.Processors
 
 					_petrequester = x.match.Groups[1].ToString();
 
-					Spawn s;
 					//[AoC] EQMight Specific
 
 					if (!_spawns.TryByName(_petrequester, out var s1))

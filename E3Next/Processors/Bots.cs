@@ -11,10 +11,13 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.UI;
 using System.Xml.Linq;
 using static MonoCore.EventProcessor;
 
@@ -25,8 +28,10 @@ namespace E3Core.Processors
        
      //   Boolean InZone(string Name);
         Int32 PctHealth(string name);
+		Boolean InCombat(string name);
+		List<string> BotsInCombat();
 		Int32 PctMana(string name);
-		List<string> BotsConnected();
+		List<string> BotsConnected(bool readOnly = false);
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
@@ -164,7 +169,15 @@ namespace E3Core.Processors
 				int spellDamage = MQ.Query<Int32>("${Me.SpellDamageBonus}");
 				int hitPoints = MQ.Query<Int32>("${Me.CurrentHPs}");
 				int manaPoints = MQ.Query<Int32>("${Me.CurrentMana}");
-				Broadcast($"HP:\ag{hitPoints}\aw MP:\ag{manaPoints} \awSpellShield:\ag{spellShield} \awSpell DMG:\ag{spellDamage}");
+
+				Int32 plat = MQ.Query<Int32>("${Me.Platinum}") + MQ.Query<Int32>("${PlatinumBank}");
+
+				Int32 AAPts = MQ.Query<Int32>("${Me.AAPoints}");
+				Int32 AAAsigned = MQ.Query<Int32>("${Me.AAPointsAssigned}");
+				Int32 AASpent = MQ.Query<Int32>("${Me.AAPointsSpent}");
+				string AATotal = MQ.Query<string>("${Me.AAPointsTotal}");
+	
+				Broadcast($"HP:\ag{hitPoints}\aw MP:\ag{manaPoints} \awSpellShield:\ag{spellShield} \awSpell DMG:\ag{spellDamage} \awAA:\ag{AAPts.ToString("N0")} \awAA Total:\ag{AASpent.ToString("N0")}  \awPlat:\ag {plat.ToString("N0")}");
 				if (x.args.Count == 0)
 				{
 					BroadcastCommand("/e3botreport me");
@@ -491,20 +504,63 @@ namespace E3Core.Processors
 			return DebuffCounterFunction(name, "${Me.CountersCorrupted}", _debuffCorruptedCounterCollection);
 
 		}
-		private Int32 _botsConnectedCount = 0;
+
+		[ExposedData("Bots", "BotsConnected")]
 		private List<string> _botsConnectedCache = new List<string>();
-		public List<string> BotsConnected()
+		Int64 _botsConnectredTimeStamp = 0;
+		Int64 _botsConnectedTimeInterval = 2000;
+		public List<string> BotsConnected(bool readOnly = false)
         {
-			if(NetMQServer.SharedDataClient.TopicUpdates.Keys.Count!=_botsConnectedCount)
+			if(!readOnly && e3util.ShouldCheck(ref _botsConnectredTimeStamp,_botsConnectedTimeInterval))
 			{
-				//need to udpate
-				_botsConnectedCount = NetMQServer.SharedDataClient.TopicUpdates.Keys.Count;
-				_botsConnectedCache = NetMQServer.SharedDataClient.TopicUpdates.Keys.ToList();
+				//prevent issues with forloops and the like, just create a new list every timestamp.
+				var tempList = new List<string>();
+				foreach (var pair in NetMQServer.SharedDataClient.TopicUpdates)
+				{
+					//this key should always be there and always be updated
+					if(pair.Value.TryGetValue("${Me.PctHPs}",out var data))
+					{
+						if(Core.StopWatch.ElapsedMilliseconds < (data.LastUpdate + 5000))
+						{
+							tempList.Add(pair.Key);
+						}
+					}
+				}
+				tempList.Sort(StringComparer.OrdinalIgnoreCase);
+				_botsConnectedCache = tempList;
+		
 			}
 			return _botsConnectedCache;
 		}
 
-        public void Broadcast(string message, bool noparse = false)
+		Int64 _botsInCombatTimeStamp = 0;
+		Int64 _botsInCombatTimeInterval = 1000;
+
+		[ExposedData("Bots", "BotsInCombat")]
+		List<string> _botsInCombatResultCache = new List<string>();
+		public List<string> BotsInCombat()
+		{
+			if(!e3util.ShouldCheck(ref _botsInCombatTimeStamp,_botsInCombatTimeInterval))
+			{
+				return _botsInCombatResultCache;
+			}
+			//create new list to deal with other threads accessing this and hitting the update
+			
+			var tempList = new List<string>();
+			var botsConnected = BotsConnected();
+			foreach(var bot in botsConnected)
+			{
+				if(InCombat(bot))
+				{
+					tempList.Add(bot);
+				}
+			}
+			_botsInCombatResultCache = tempList;
+			return _botsInCombatResultCache;
+		}
+
+
+		public void Broadcast(string message, bool noparse = false)
         {
 			//have to parse out all the MQ macro information
 			if (!noparse)
@@ -915,8 +971,49 @@ namespace E3Core.Processors
                 return true;
             }
             return false;
-	    }
+		}
+		Dictionary<string, SharedNumericDataBool> _inCombatCollection = new Dictionary<string, SharedNumericDataBool>();
+		public bool InCombat(string name)
+		{
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				return false; //dunno just say full health
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string keyToUse = "${Me.InCombat}";
+			if (!userTopics.ContainsKey(keyToUse))
+			{
+				//don't have the data yet kick out and assume everything is ok.
+				return false;
+			}
+			var entry = userTopics[keyToUse];
+			if (!_inCombatCollection.ContainsKey(name))
+			{
+				_inCombatCollection.Add(name, new SharedNumericDataBool { Data = false });
+			}
+			var sharedInfo = _inCombatCollection[name];
+			lock (entry)
+			{
+				if (entry.LastUpdate > sharedInfo.LastUpdate)
+				{
+					if (Boolean.TryParse(entry.Data, out var result))
+					{
+						sharedInfo.Data = result;
+						sharedInfo.LastUpdate = entry.LastUpdate;
+					}
+				}
+			}
+			//is the data too old?
+			if(Core.StopWatch.ElapsedMilliseconds > sharedInfo.LastUpdate+5000)
+			{
+				//haven't updated in 5 seconds, return false
+				return false;
+			}
 
+			return sharedInfo.Data;
+		}
         Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
 		public int PctHealth(string name)
 		{
@@ -1048,6 +1145,11 @@ namespace E3Core.Processors
             public Int32 Data { get; set; }
             public Int64 LastUpdate { get; set; }
         }
+		class SharedNumericDataBool
+		{
+			public Boolean Data { get; set; }
+			public Int64 LastUpdate { get; set; }
+		}
 
 	}
 	/*

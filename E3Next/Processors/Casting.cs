@@ -377,7 +377,7 @@ namespace E3Core.Processors
 						}
 
 						_log.Write("Checking for Feigning....");
-						if (MQ.Query<bool>("${Me.Feigning}"))
+						if (MQ.Query<bool>("${Me.Feigning}") && String.Compare(spell.CastName,"Mend",true)!=0)
 						{
 							E3.Bots.Broadcast($"skipping [{spell.CastName}] , i am feigned.");
 							MQ.Delay(200);
@@ -991,24 +991,29 @@ namespace E3Core.Processors
 				string tevent = Ifs_Results(spell.BeforeEvent);
 
 				bool internalComand = false;
-				foreach (var pair in EventProcessor.CommandList)
+
+				//if we don't have any tlo calls
+				if (!tevent.Contains("${"))
 				{
-					string compareCommandTo = pair.Key;
-					if (tevent.Contains(" "))
+					foreach (var pair in EventProcessor.CommandList)
 					{
-						compareCommandTo = pair.Value.commandwithSpace;
-					}
-					if (tevent.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
-					{
-						internalComand = true;
-						//no need to send this to mq if its our own command, just drop it into the queues to be processed. 
-						EventProcessor.ProcessInternalCommandAndExecute(tevent, pair.Value.command);
-						break;
+						string compareCommandTo = pair.Key;
+						if (tevent.Contains(" "))
+						{
+							compareCommandTo = pair.Value.commandwithSpace;
+						}
+						if (tevent.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
+						{
+							internalComand = true;
+							//no need to send this to mq if its our own command, just drop it into the queues to be processed. 
+							EventProcessor.ProcessInternalCommandAndExecute(tevent, pair.Value.command);
+							break;
+						}
 					}
 				}
+				
 				if (!internalComand)
 				{
-				
 					MQ.Cmd($"/docommand {tevent}");
 				}
 				if (spell.BeforeEvent.StartsWith("/exchange", StringComparison.OrdinalIgnoreCase)) MQ.Delay(500);
@@ -1031,29 +1036,28 @@ namespace E3Core.Processors
 				string tevent = Ifs_Results(spell.AfterEvent);
 
 				bool internalComand = false;
-				foreach (var pair in EventProcessor.CommandList)
+				if (!tevent.Contains("${"))
 				{
-					string compareCommandTo = pair.Key;
-					if (tevent.Contains(" "))
+					foreach (var pair in EventProcessor.CommandList)
 					{
-						compareCommandTo = pair.Value.commandwithSpace;
-					}
-					if (tevent.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
-					{
-						internalComand = true;
-						EventProcessor.ProcessInternalCommandAndExecute(tevent, pair.Value.command);
-						break;
+						string compareCommandTo = pair.Key;
+						if (tevent.Contains(" "))
+						{
+							compareCommandTo = pair.Value.commandwithSpace;
+						}
+						if (tevent.StartsWith(compareCommandTo, StringComparison.OrdinalIgnoreCase))
+						{
+							internalComand = true;
+							EventProcessor.ProcessInternalCommandAndExecute(tevent, pair.Value.command);
+							break;
+						}
 					}
 				}
 				if (!internalComand)
 				{
-
 					MQ.Cmd($"/docommand {tevent}");
 				}
-
-				
 			}
-
 		}
 		private static void AfterSpellCheck(Spell spell, Int32 targetID)
 		{
@@ -1794,6 +1798,18 @@ namespace E3Core.Processors
 			{
 				return false;
 			}
+			if (spell.MinAggro > 0 || spell.MaxAggro > 0)
+			{
+				Int32 pctAggro = MQ.Query<Int32>("${Me.PctAggro}");
+				if (spell.MinAggro > 0 && pctAggro < spell.MinAggro)
+				{
+					return false;
+				}
+				if (spell.MaxAggro > 0 && pctAggro >= spell.MaxAggro)
+				{
+					return false;
+				}
+			}
 			//if your stunned nothing is ready
 			if (MQ.Query<bool>("${Me.Stunned}"))
 			{
@@ -2137,6 +2153,7 @@ namespace E3Core.Processors
 						var field = pair.Value;
 						if (field.IsGenericList(typeof(String)))
 						{
+
 							List<string> fieldValue = (List<string>)field.GetValue(E3.CharacterSettings);
 							string finallist = string.Join(",", fieldValue);
 							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
@@ -2179,7 +2196,60 @@ namespace E3Core.Processors
 					}
 				}
 			}
-			if (tIF.IndexOf("${E3N.State", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			if (tIF.IndexOf("${E3N.State.Bots.", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+
+				foreach (var pair in Setup.ExposedDataReflectionLookup)
+				{
+					if (tIF.IndexOf(pair.Key, 0, StringComparison.OrdinalIgnoreCase) > -1)
+					{
+						var field = pair.Value;
+						if (field.IsGenericList(typeof(String)))
+						{
+
+							List<string> fieldValue = (List<string>)field.GetValue((SharedDataBots)E3.Bots);
+							string finallist = string.Join(",", fieldValue);
+							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+						}
+						else if (field.IsGenericList(typeof(Int32)))
+						{
+							List<Int32> fieldValue = (List<Int32>)field.GetValue(E3.Bots);
+							string finallist = string.Join(",", fieldValue);
+							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+						}
+						else if (field.IsGenericList(typeof(Spell)))
+						{
+							List<Spell> fieldValue = (List<Spell>)field.GetValue(E3.Bots);
+							_ifsStringBuilder.Clear();
+							foreach (var spell in fieldValue)
+							{
+								if (_ifsStringBuilder.Length == 0)
+								{
+									_ifsStringBuilder.Append(spell.CastName);
+								}
+								else
+								{
+									_ifsStringBuilder.Append("," + spell.CastName);
+								}
+							}
+							tIF = tIF.ReplaceInsensitive(pair.Key, _ifsStringBuilder.ToString());
+						}
+						else if (field.IsGenericList(typeof(Int64)))
+						{
+							List<Int64> fieldValue = (List<Int64>)field.GetValue(E3.Bots);
+							string finallist = string.Join(",", fieldValue);
+							tIF = tIF.ReplaceInsensitive(pair.Key, finallist);
+						}
+						else
+						{
+							tIF = tIF.ReplaceInsensitive(pair.Key, pair.Value.GetValue(E3.Bots).ToString());
+
+						}
+
+					}
+				}
+			}
+			else if (tIF.IndexOf("${E3N.State", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
 				foreach (var pair in Setup.ExposedDataReflectionLookup)
 				{
@@ -2231,12 +2301,12 @@ namespace E3Core.Processors
 								string[] keylookupArray = pair.Key.Split('.');
 								string keytoUse = keylookupArray[3].Replace("}", "");
 
-								Dictionary<string, Burn> fieldValue = (Dictionary<string,Burn>)field.GetValue(E3.CharacterSettings);
-								if(fieldValue.TryGetValue(keytoUse,out var tburn))
+								Dictionary<string, Burn> fieldValue = (Dictionary<string, Burn>)field.GetValue(E3.CharacterSettings);
+								if (fieldValue.TryGetValue(keytoUse, out var tburn))
 								{
-									tIF = tIF.ReplaceInsensitive(pair.Key,tburn.Active.ToString());
+									tIF = tIF.ReplaceInsensitive(pair.Key, tburn.Active.ToString());
 								}
-								
+
 							}
 							else
 							{

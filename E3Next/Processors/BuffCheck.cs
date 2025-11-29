@@ -533,17 +533,26 @@ namespace E3Core.Processors
 			{
 				using (_log.Trace())
 				{
-					
+
 					/*if you are NOT following someone, and not moving, it will buff instantly. 
 					If you ARE following someone and not moving for 10+ seconds, it will buff.*/
-					if (((String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName))) || Movement.StandingStillForTimePeriod() || Assist.IsAssisting)
+
+					bool IsNotFollowing = (String.IsNullOrWhiteSpace(Movement.FollowTargetName) && String.IsNullOrWhiteSpace(Movement.ChaseTargetName));
+					bool inCombat = Basics.InCombat();
+					bool isManualControl = e3util.IsManualControl();
+
+					if (inCombat || Nukes.PBAEEnabled)
 					{
-						if (E3.CurrentInCombat || Nukes.PBAEEnabled)
-						{
-							BuffBots(E3.CharacterSettings.CombatBuffs);
-							BuffBots(E3.CharacterSettings.CombatPetBuffs, true);
-							BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
-						}
+						BuffBots(E3.CharacterSettings.CombatBuffs);
+						BuffBots(E3.CharacterSettings.CombatPetBuffs, true);
+						BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
+					}
+				
+					//if not manual control, and not in combat and your either not following or standing still for 10 sec
+					//if manual control, and not in combat and wait at least 3 seconds of standing still before you buff
+					if (( !isManualControl && !inCombat && (IsNotFollowing || Movement.StandingStillForTimePeriod()) && Movement.MillisecondsSinceLastFD(3000)) 
+						  || (isManualControl && !inCombat && Movement.StandingStillForTimePeriod(3000) && Movement.MillisecondsSinceLastFD(3000)))
+					{
 
 						if (!E3.CurrentInCombat)
 						{
@@ -684,8 +693,6 @@ namespace E3Core.Processors
 	
 		private static void BuffBots(List<Data.Spell> buffs, bool usePets = false)
 		{
-			
-
 			foreach (var spell in buffs)
 			{
 				try
@@ -694,7 +701,64 @@ namespace E3Core.Processors
 					if (e3util.IsActionBlockingWindowOpen()) return;
 					if (e3util.IsRezDiaglogBoxOpen()) return;
 					//if it the target is one of our base class short names, check all bots and their short name type for possible targets.
-					if (String.Equals(spell.CastTarget, "bots", StringComparison.OrdinalIgnoreCase))
+					if(spell.CastTarget.Contains(","))
+					{
+						//can be name or classes
+						string[] targets = spell.CastTarget.Split(',');
+						foreach(var target in targets)
+						{
+							if (String.IsNullOrWhiteSpace(target)) continue;
+
+							var t_target = target.Trim();
+
+							if (EQClasses.ClassShortNamesLookup.Contains(t_target))
+							{
+								//this is cached, so its ok in this context
+								foreach (var name in E3.Bots.BotsConnected())
+								{
+									if (_spawns.TryByName(name, out var s))
+									{
+										string classShortName = s.ClassShortName;
+										if (t_target.Equals(classShortName, StringComparison.OrdinalIgnoreCase))
+										{
+											string previousTarget = spell.CastTarget;
+											try
+											{
+												spell.CastTarget = name;
+												//change the name
+												if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
+												{
+													return;
+												}
+											}
+											finally
+											{
+												spell.CastTarget = previousTarget;
+											}
+										}
+									}
+								}
+							}
+							else
+							{
+								string previousTarget = spell.CastTarget;
+								try
+								{
+									spell.CastTarget = t_target;
+									//change the name
+									if (BuffBots_SingleBuff(spell, usePets) == BuffBots_ReturnType.ExitOut)
+									{
+										return;
+									}
+								}
+								finally
+								{
+									spell.CastTarget = previousTarget;
+								}
+							}
+						}
+					}
+					else if (String.Equals(spell.CastTarget, "bots", StringComparison.OrdinalIgnoreCase))
 					{
 						foreach (var name in E3.Bots.BotsConnected())
 						{
@@ -719,7 +783,7 @@ namespace E3Core.Processors
 							}
 						}
 					}
-					if (String.Equals(spell.CastTarget, "gbots", StringComparison.OrdinalIgnoreCase))
+					else if (String.Equals(spell.CastTarget, "gbots", StringComparison.OrdinalIgnoreCase))
 					{
 						foreach (var name in E3.Bots.BotsConnected())
 						{

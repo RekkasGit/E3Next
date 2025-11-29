@@ -36,7 +36,12 @@ namespace E3NextConfigEditor.Client
 			return 0;
 		}
 
-		public List<string> BotsConnected()
+		public List<string> BotsConnected(bool readOnly = false)
+		{
+			return new List<string>();
+		}
+
+		public List<string> BotsInCombat()
 		{
 			return new List<string>();
 		}
@@ -82,6 +87,11 @@ namespace E3NextConfigEditor.Client
 		}
 
 		public bool HasShortBuff(string name, int buffid)
+		{
+			return false;
+		}
+
+		public bool InCombat(string name)
 		{
 			return false;
 		}
