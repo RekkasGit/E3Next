@@ -1907,8 +1907,8 @@ namespace E3Core.Settings
 			{"Assist Settings::CommandOnAssist", "E3 will execute these values as a command each time an assist is called. Useful for triggering custom actions or macros when engaging targets.  Examples: \n\n   [color=teal]/stick 15 moveback[/color]  \n\n   [color=teal]/g Engaging %T[/color]"},
 			{"Assist Settings::Melee Distance", "The distance you wish to stand from the target when melee'ing. MaxMelee - Will calculate based off the target the furthest point to melee, between 25 - 33."},
 			{"Assist Settings::Ranged Distance", "When Ranged is specified as Assist Type will keep you the defined distance away from target. Clamped - Doesn't care about a defined distance as long as you are between 30 and 200."},
-			{"Assist Settings::Auto-Assist Engage Percent", "Off by default.  When this character's target hits the specfied hit point percentage E3 will automatically issue /assistme.\n\n [color=red] It is generally recommended to not use Auto Assist.  Instead, manually issue the /assistme command for greater bot control.[/color]"},
-			{"Assist Settings::Pet back off on Enrage (On/Off)", "When Enrage is detected, E3 will automatically back off your pet."},
+			{"Assist Settings::Auto-Assist Engage Percent", "Off by default.  When this character's target hits the specfied hit point percentage E3 will automatically issue /assistme.\n\n [color=red] It is generally recommended to not use Auto Assist.  Instead, manually issue the /assistme command for greater character control.[/color]"},
+			{"Assist Settings::Pet back off on Enrage (On/Off)", "When Enrage is detected, E3 will automatically tell your pet to back off."},
 			{"Assist Settings::Back off on Enrage (On/Off)", "If enabled, E3 will stop melee when NPC Enrage is detected."},
             {"Melee Abilities::Ability",
                 "Defines which [color=teal]Ability[/color] you want to utilize.\n"
@@ -2187,9 +2187,9 @@ namespace E3Core.Settings
 				+ "Often used for other healers, offtanks, or high threat classes.\n"
 				+ "Must be a part of your bot network.\n\n"
 				+ "Entries here look like:\n"
-				+ "[color=teal]Important Bot=Orihime\n"
-				+ "Important Bot=Rukia\n"
-				+ "Important Bot=Mayuri[/color]"},
+				+ "[color=teal]Orihime\n"
+				+ "Rukia\n"
+				+ "Mayuri[/color]"},
 			{"Heals::Important Heal",
 				"Heal spell/item/aa you wish to use on your important bots.\n\n"
 				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
