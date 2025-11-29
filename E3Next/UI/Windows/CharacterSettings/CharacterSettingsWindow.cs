@@ -169,6 +169,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 				// Apply current theme
 				E3ImGUI.PushCurrentTheme();
 				// No size constraints - allow window to be resized to any size
+
+				imgui_SetNextWindowSizeWithCond(1500, 1050, (int)ImGuiCond.FirstUseEver);
 				try
 				{
 					using (var window = ImGUIWindow.Aquire())
@@ -430,7 +432,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_SectionTreePane", leftPaneWidth, regionHeight, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_SectionTreePane", 300, 800, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
 					Render_MainWindow_ConfigEditor_SelectionTree(pd);
 				}
@@ -439,7 +441,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			imgui_SameLine();
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_EditorPane", 0, regionHeight, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_EditorPane", 1200, 800, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
 				{
 					Render_MainWindow_ConfigEditor_RightPane(pd);
 				}
@@ -467,7 +469,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_EditorPane_Content", 0, paneAvailY, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+				imgui_SetNextWindowSizeWithCond(1200, 1000, (int)ImGuiCond.FirstUseEver);
+				if (child.BeginChild("E3Config_EditorPane_Content", 1200, 800, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
 					Render_MainWindow_ConfigEditor_RightPaneContent(pd, showSpellEditor);
 
@@ -476,6 +479,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 						using (var child2 = ImGUIChild.Aquire())
 						{
+							imgui_SetNextWindowSizeWithCond(1200, 600, (int)ImGuiCond.FirstUseEver);
+
 							if (child2.BeginChild("E3Config_EditorPane_Content_SpellEditor", 0, 0, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 							{
 
@@ -553,9 +558,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				//if(parent.BeginChild("E3Config_Values_UpperContainer",valuesWidth,400f, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
+					imgui_SetNextWindowSizeWithCond(600, 400, (int)ImGuiCond.FirstUseEver);
 					using (var child = ImGUIChild.Aquire())
 					{
-						if (child.BeginChild("E3Config_ValuesPane", 0, 400f, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+						if (child.BeginChild("E3Config_ValuesPane", 600, 400, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 						{
 							Render_MainWindow_ConfigEditor_Values(pd);
 						}
@@ -570,9 +576,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 
 					imgui_SameLine();
+					imgui_SetNextWindowSizeWithCond(600, 400, (int)ImGuiCond.FirstUseEver);
 					using (var child = ImGUIChild.Aquire())
 					{
-						if (child.BeginChild("E3Config_ToolsPane", 0, 400f, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+						if (child.BeginChild("E3Config_ToolsPane", 600, 400, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
 						{
 							Render_MainWindow_ConfigEditor_Tools(pd);
 						}
@@ -1045,7 +1052,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_GemDataArea", 0, 0, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_GemDataArea", 1500,110, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
 				{
 					try
 					{
