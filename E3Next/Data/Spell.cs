@@ -771,9 +771,9 @@ namespace E3Core.Data
 
                 Double AERange = MQ.Query<Double>($"${{Me.AltAbility[{CastName}].Spell.AERange}}");
                 MyRange = MQ.Query<double>($"${{Me.AltAbility[{CastName}].Spell.MyRange}}");
-                SpellType = MQ.Query<String>($"${{Spell[{CastName}].SpellType}}");
-				SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
-                Description = MQ.Query<String>($"${{Spell[{CastName}].Description}}");
+                SpellType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.SpellType}}");
+				SpellIcon = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.SpellIcon}}");
+                Description = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Description}}");
 				ResistType = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.ResistType}}");
 				ResistAdj = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].Spell.ResistAdj}}");
 				AAID = MQ.Query<Int32>($"${{Me.AltAbility[{CastName}].ID}}");
