@@ -1027,7 +1027,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_GemDataArea", 1500,110, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_GemDataArea", 1500,110, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY | ImGuiChildFlags.ResizeX), 0))
 				{
 					try
 					{
