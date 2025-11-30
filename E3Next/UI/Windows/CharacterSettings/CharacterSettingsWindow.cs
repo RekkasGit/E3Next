@@ -188,12 +188,31 @@ namespace E3Core.UI.Windows.CharacterSettings
 							if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
 							if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
 							if (_state.Show_Donate) RenderDonateModal();
+							if (_state.Show_PopOut_SpellModifier) Render_PopOut_SpellEditor_Window();
 						}
 					}
 				}
 				finally
 				{
 					PopCurrentTheme();
+				}
+			}
+		}
+
+		private static void Render_PopOut_SpellEditor_Window()
+		{
+			if (!_state.Show_PopOut_SpellModifier) return;
+
+			using (var window = ImGUIWindow.Aquire())
+			{
+				if (window.Begin(_state.WinName_PopOutSpellModifier, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
+				{
+					if (imgui_Button("Close"))
+					{
+						_state.Show_PopOut_SpellModifier = false;
+					}
+					imgui_SameLine();
+					Render_MainWindow_SpellEditor(true);
 				}
 			}
 		}
@@ -263,6 +282,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				imgui_InputText_Clear(searchId); //necessary to clear out the C++ buffer for the search
 				mainWindowState.Buffer_KeySearch = string.Empty;
+			}
+			imgui_SameLine();
+			if (imgui_Checkbox("Show Gems", mainWindowState.ShowGemOverlay))
+			{
+				mainWindowState.ShowGemOverlay = imgui_Checkbox_Get("Show Gems");
 			}
 			//imgui_SameLine();
 
@@ -461,20 +485,17 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void Render_MainWindow_ConfigEditor_RightPane(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
-			float paneAvailY = imgui_GetContentRegionAvailY();
-			float reservedSpellEditorSpace = (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) ? 380f : 0f;
-			float contentHeight = Math.Max(160f, paneAvailY - reservedSpellEditorSpace);
 			bool showSpellEditor = state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0;
-
 
 			using (var child = ImGUIChild.Aquire())
 			{
 				imgui_SetNextWindowSizeWithCond(1200, 1000, (int)ImGuiCond.FirstUseEver);
 				if (child.BeginChild("E3Config_EditorPane_Content", 1200, 800, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
-					Render_MainWindow_ConfigEditor_RightPaneContent(pd, showSpellEditor);
+					float topPaneHeight = (showSpellEditor && !_state.Show_PopOut_SpellModifier) ? 400f : imgui_GetContentRegionAvailY();
+					Render_MainWindow_ConfigEditor_RightPaneContent(pd, topPaneHeight);
 
-					if (showSpellEditor)
+					if (showSpellEditor && !_state.Show_PopOut_SpellModifier)
 					{
 
 						using (var child2 = ImGUIChild.Aquire())
@@ -492,76 +513,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 				}
 			}
-
-
 		}
 
-		private static void Render_MainWindow_ConfigEditor_RightPaneContent(IniData pd, bool spellEditorShown)
+		private static void Render_MainWindow_ConfigEditor_RightPaneContent(IniData pd, float height)
 		{
 			var state = _state.GetState<State_MainWindow>();
-			float availX = imgui_GetContentRegionAvailX();
-			float availY = imgui_GetContentRegionAvailY();
-			//float spacing = 6f;
-			//float minValuesWidth = 320f;
-			//float minToolsWidth = 240f;
-			//float valuesWidth;
-			//float toolsWidth;
-			//float totalMinWidth = minValuesWidth + minToolsWidth + spacing;
-
-			//if (spellEditorShown) availY = availY *.50f;
-
-			//// Initialize stored width on first run or use stored width
-			//if (state.RightPaneValuesWidth < 0)
-			//{
-			//	// First time initialization - calculate default width
-			//	if (availX <= totalMinWidth)
-			//	{
-			//		valuesWidth = Math.Max(200f, availX * 0.55f);
-			//		toolsWidth = Math.Max(140f, availX - valuesWidth - spacing);
-			//		if (toolsWidth < 120f)
-			//		{
-			//			toolsWidth = 120f;
-			//			valuesWidth = Math.Max(180f, availX - toolsWidth - spacing);
-			//		}
-			//	}
-			//	else
-			//	{
-			//		float desiredToolsWidth = Math.Max(minToolsWidth, availX * 0.34f);
-			//		float maxToolsWidth = Math.Max(minToolsWidth, availX - minValuesWidth - spacing);
-			//		if (desiredToolsWidth > maxToolsWidth)
-			//		{
-			//			desiredToolsWidth = maxToolsWidth;
-			//		}
-			//		toolsWidth = desiredToolsWidth;
-			//		valuesWidth = Math.Max(minValuesWidth, availX - toolsWidth - spacing);
-			//	}
-
-			//	valuesWidth = Math.Max(160f, valuesWidth);
-			//	if (valuesWidth + toolsWidth + spacing > availX)
-			//	{
-			//		valuesWidth = Math.Max(160f, availX - toolsWidth - spacing);
-			//	}
-
-			//	state.RightPaneValuesWidth = valuesWidth;
-			//}
-			//else
-			//{
-			//	// Use stored width, but clamp to reasonable bounds
-			//	valuesWidth = state.RightPaneValuesWidth;
-			//	valuesWidth = Math.Max(160f, Math.Min(valuesWidth, availX - minToolsWidth - spacing));
-			//}
-
-			//// Tools pane takes remaining space
-			//toolsWidth = Math.Max(120f, availX - valuesWidth - spacing);
-
-			//using(var parent = ImGUIChild.Aquire())
+			
 			{
-				//if(parent.BeginChild("E3Config_Values_UpperContainer",valuesWidth,400f, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+				
 				{
-					imgui_SetNextWindowSizeWithCond(600, 400, (int)ImGuiCond.FirstUseEver);
+					imgui_SetNextWindowSizeWithCond(600, height, (int)ImGuiCond.FirstUseEver);
 					using (var child = ImGUIChild.Aquire())
 					{
-						if (child.BeginChild("E3Config_ValuesPane", 600, 400, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+						if (child.BeginChild("E3Config_ValuesPane", 600, height, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 						{
 							Render_MainWindow_ConfigEditor_Values(pd);
 						}
@@ -576,10 +540,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 
 					imgui_SameLine();
-					imgui_SetNextWindowSizeWithCond(600, 400, (int)ImGuiCond.FirstUseEver);
+					imgui_SetNextWindowSizeWithCond(600, height, (int)ImGuiCond.FirstUseEver);
 					using (var child = ImGUIChild.Aquire())
 					{
-						if (child.BeginChild("E3Config_ToolsPane", 600, 400, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+						if (child.BeginChild("E3Config_ToolsPane", 600, height, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
 						{
 							Render_MainWindow_ConfigEditor_Tools(pd);
 						}
@@ -1023,7 +987,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 		#endregion
 		// Integrated editor panel - renders after the main table and spans full width
-		private static void Render_MainWindow_SpellEditor()
+		private static void Render_MainWindow_SpellEditor(bool isPopout = false)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -1035,6 +999,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 				mainWindowState.Show_ShowIntegratedEditor = false;
 				return;
 			}
+			if (!isPopout)
+			{
+				if (imgui_Button("Pop Out"))
+				{
+					_state.Show_PopOut_SpellModifier = true;
+				}
+				imgui_SameLine();
+			}
 			imgui_Separator();
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Spell Modifier Editor");
 			imgui_Separator();
@@ -1044,6 +1016,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void Render_MainWindow_CatalogGemData()
 		{
 			var gemState = _state.GetState<State_CatalogGems>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
+
+			if (!mainWindowState.ShowGemOverlay) return;
 
 			lock (data._dataLock)
 			{
@@ -2978,6 +2953,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void Render_CatalogAddWindow_MiddlePanel(float middleW, float listH, SortedDictionary<string, SortedDictionary<string, List<E3Spell>>> currentCatalog)
 		{
 			var state = _state.GetState<State_CatalogWindow>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
 
 			// -------- MIDDLE: Subcategory dropdown + Entries --------
 			using (var child = ImGUIChild.Aquire())
