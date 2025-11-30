@@ -439,9 +439,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 
 			imgui_SameLine();
-			using (var child = ImGUIChild.Aquire())
+			//using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_EditorPane", 1200, 800, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+				//if (child.BeginChild("E3Config_EditorPane", 1200, 800, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY | ImGuiChildFlags.ResizeX), 0))
 				{
 					Render_MainWindow_ConfigEditor_RightPane(pd);
 				}
