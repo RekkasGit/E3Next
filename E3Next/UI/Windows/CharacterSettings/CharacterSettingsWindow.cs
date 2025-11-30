@@ -49,9 +49,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static string _cfgIfAppendStatus = string.Empty;
 		// Ifs import (sample) modal state
 		private static List<KeyValuePair<string, string>> _cfgIfSampleLines = new List<KeyValuePair<string, string>>();
+		private static List<KeyValuePair<string, string>> _cfgIfLocalLines = new List<KeyValuePair<string, string>>();
+		private static List<KeyValuePair<string, string>> _cfgIfGlobalLines = new List<KeyValuePair<string, string>>();
+		private static int _cfgIfPickerActiveTab = 0; // 0=Local,1=Global
+		// Temp lookups for tagging IF origin in append modal
+		private static HashSet<string> _tempLocalIfsLookup = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		private static HashSet<string> _tempGlobalIfsLookup = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 		private static string _cfgIfSampleStatus = string.Empty;
-		private enum IfSampleUsageMode { ImportToConfig, ApplyToAddForm }
-		private static IfSampleUsageMode _cfgIfSampleMode = IfSampleUsageMode.ImportToConfig;
 
 		// Config UI toggle: "/e3imgui".
 		private static bool _imguiContextReady = false;
@@ -207,7 +211,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				if (window.Begin(_state.WinName_PopOutSpellModifier, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
-					if (imgui_Button("Close"))
+					// Pop In button returns the editor to integrated view
+					if (imgui_Button("Pop In"))
 					{
 						_state.Show_PopOut_SpellModifier = false;
 					}
@@ -540,10 +545,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 
 					imgui_SameLine();
-					imgui_SetNextWindowSizeWithCond(600, height, (int)ImGuiCond.FirstUseEver);
+					// Tools pane should consume remaining horizontal space rather than fixed width
+					float toolsWidth = imgui_GetContentRegionAvailX();
+					if (toolsWidth < 150f) toolsWidth = 150f; // enforce a minimal usable width
+					imgui_SetNextWindowSizeWithCond(toolsWidth, height, (int)ImGuiCond.FirstUseEver);
 					using (var child = ImGUIChild.Aquire())
 					{
-						if (child.BeginChild("E3Config_ToolsPane", 600, height, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+						if (child.BeginChild("E3Config_ToolsPane", toolsWidth, height, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
 						{
 							Render_MainWindow_ConfigEditor_Tools(pd);
 						}
@@ -902,7 +910,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_SameLine();
 						if (imgui_Button("Pick Sample..."))
 						{
-							_cfgIfSampleMode = IfSampleUsageMode.ApplyToAddForm;
 							try
 							{
 								LoadSampleIfsForModal();
@@ -998,14 +1005,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				mainWindowState.Show_ShowIntegratedEditor = false;
 				return;
-			}
-			if (!isPopout)
-			{
-				if (imgui_Button("Pop Out"))
-				{
-					_state.Show_PopOut_SpellModifier = true;
-				}
-				imgui_SameLine();
 			}
 			imgui_Separator();
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Spell Modifier Editor");
@@ -1794,6 +1793,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 
 						imgui_PopStyleColor(4);
+						imgui_SameLine();
+						string popLabel = _state.Show_PopOut_SpellModifier ? "Pop In" : "Pop Out";
+						if (imgui_Button(popLabel))
+						{
+							// Toggle pop-out state; when popping back in, integrated editor visibility remains governed by Show_ShowIntegratedEditor
+							_state.Show_PopOut_SpellModifier = !_state.Show_PopOut_SpellModifier;
+						}
 						string editorHint = mainWindowState.Show_ShowIntegratedEditor ? "Editor panel is open below." : "Click to show the advanced editor.";
 						imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, editorHint);
 						imgui_Separator();
@@ -1827,7 +1833,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				if (imgui_Button("Sample If's"))
 				{
-					_cfgIfSampleMode = IfSampleUsageMode.ImportToConfig;
 					try { LoadSampleIfsForModal(); _state.Show_IfSampleModal = true; }
 					catch (Exception ex) { _cfgIfSampleStatus = "Load failed: " + (ex.Message ?? "error"); _state.Show_IfSampleModal = true; }
 				}
@@ -2416,11 +2421,33 @@ namespace E3Core.UI.Windows.CharacterSettings
 								spellEditorState.ResetGenericPicker();
 								spellEditorState.GenericPickerFieldName = "IfsKeys";
 
-								foreach (var key in ifsSection.Keys) //need to populate the list to show to the user
+								// Local IF keys
+								foreach (var key in ifsSection.Keys)
 								{
 									spellEditorState.GenericPickerList.Add(key.KeyName);
 								}
-								_log.Write($"Added values to collection{String.Join(",", spellEditorState.GenericPickerList)}");
+
+								// Global IF keys (merge, avoid duplicates)
+								try
+								{
+									var globalIfs = new E3Core.Settings.FeatureSettings.GlobalIfs();
+									if (globalIfs.Ifs != null)
+									{
+										foreach (var gkv in globalIfs.Ifs)
+										{
+											if (!spellEditorState.GenericPickerList.Contains(gkv.Key))
+											{
+												spellEditorState.GenericPickerList.Add(gkv.Key);
+											}
+										}
+									}
+								}
+								catch { }
+
+								// Sort for nicer presentation
+								spellEditorState.GenericPickerList.Sort(StringComparer.OrdinalIgnoreCase);
+
+								_log.Write($"Merged Local/Global IF keys. Total:{spellEditorState.GenericPickerList.Count}");
 								_log.Write($"Setting show generic picker to true");
 
 								spellEditorState.ShowGenericPicker = true;
@@ -3297,6 +3324,38 @@ namespace E3Core.UI.Windows.CharacterSettings
 				if (window.Begin(_state.WinName_IfAppendModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
 					if (!string.IsNullOrEmpty(_cfgIfAppendStatus)) imgui_Text(_cfgIfAppendStatus);
+					// Always rebuild merged list so new Global IFs appear immediately
+					try
+					{
+						var pd = data.GetActiveCharacterIniData();
+						HashSet<string> localSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+						HashSet<string> globalSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+						if (pd != null)
+						{
+							var sec = pd.Sections.GetSectionData("Ifs");
+							if (sec?.Keys != null)
+							{
+								foreach (var k in sec.Keys) localSet.Add(k.KeyName);
+							}
+						}
+						try
+						{
+							var globalIfs = new E3Core.Settings.FeatureSettings.GlobalIfs();
+							if (globalIfs.Ifs != null)
+							{
+								foreach (var kv in globalIfs.Ifs) globalSet.Add(kv.Key);
+							}
+						}
+						catch { }
+						var merged = new HashSet<string>(localSet, StringComparer.OrdinalIgnoreCase);
+						foreach (var g in globalSet) merged.Add(g);
+						_cfgIfAppendCandidates = merged.OrderBy(x => x).ToList();
+						_log.Write($"IfAppendModal merged IFs Local:{localSet.Count} Global:{globalSet.Count} Total:{merged.Count}");
+						// Keep temporary lookup for tagging
+						_tempLocalIfsLookup = localSet;
+						_tempGlobalIfsLookup = globalSet;
+					}
+					catch { }
 					float h = 300f; float w = 520f;
 					using (var child = ImGUIChild.Aquire())
 					{
@@ -3307,7 +3366,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 							int i = 0;
 							foreach (var key in list)
 							{
-								string label = $"{key}##ifkey_{i}";
+								// Tag origin: [G] if only global, [L] if only local, both if shared
+								bool isLocal = _tempLocalIfsLookup.Contains(key);
+								bool isGlobal = _tempGlobalIfsLookup.Contains(key);
+								string originTag = isLocal && isGlobal ? "" : (isGlobal ? "[G] " : "[L] ");
+								string label = $"{originTag}{key}##ifkey_{i}";
 								if (imgui_Selectable(label, false))
 								{
 									try
@@ -3647,6 +3710,67 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 		}
 
+		// Load IFs from the Global Ifs settings file
+		private static void LoadGlobalIfsForModal()
+		{
+			_cfgIfSampleLines.Clear();
+			_cfgIfSampleStatus = string.Empty;
+			try
+			{
+				var globalIfs = new E3Core.Settings.FeatureSettings.GlobalIfs();
+				if (globalIfs.Ifs == null || globalIfs.Ifs.Count == 0)
+				{
+					_cfgIfSampleStatus = "Global Ifs file contains no entries.";
+					return;
+				}
+				foreach (var kv in globalIfs.Ifs)
+				{
+					_cfgIfSampleLines.Add(new KeyValuePair<string, string>(kv.Key, kv.Value));
+				}
+				_cfgIfSampleStatus = $"Loaded Global Ifs ({globalIfs.Ifs.Count}).";
+			}
+			catch (Exception ex)
+			{
+				_cfgIfSampleStatus = "Error loading Global Ifs: " + (ex.Message ?? "error");
+			}
+		}
+
+		private static void LoadLocalIfsForPicker()
+		{
+			_cfgIfLocalLines.Clear();
+			try
+			{
+				var pd = data.GetActiveCharacterIniData();
+				if (pd == null) return;
+				var sec = pd.Sections.GetSectionData("Ifs");
+				if (sec?.Keys != null)
+				{
+					foreach (var k in sec.Keys)
+					{
+						_cfgIfLocalLines.Add(new KeyValuePair<string, string>(k.KeyName, k.Value));
+					}
+				}
+			}
+			catch { }
+		}
+
+		private static void LoadGlobalIfsForPicker()
+		{
+			_cfgIfGlobalLines.Clear();
+			try
+			{
+				var globalIfs = new E3Core.Settings.FeatureSettings.GlobalIfs();
+				if (globalIfs.Ifs != null)
+				{
+					foreach (var kv in globalIfs.Ifs)
+					{
+						_cfgIfGlobalLines.Add(new KeyValuePair<string, string>(kv.Key, kv.Value));
+					}
+				}
+			}
+			catch { }
+		}
+
 
 
 		private static void RenderIfsSampleModal()
@@ -3655,62 +3779,54 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				if (window.Begin(_state.WinName_IfSampleModal, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 				{
-					bool applyToAddForm = _cfgIfSampleMode == IfSampleUsageMode.ApplyToAddForm;
-					if (applyToAddForm)
-					{
-						imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Select a sample to populate the Add New IFs form.");
-					}
-					if (!string.IsNullOrEmpty(_cfgIfSampleStatus)) imgui_Text(_cfgIfSampleStatus);
-					float h = 300f; float w = 640f;
-					using (var child = ImGUIChild.Aquire())
-					{
-						if (child.BeginChild("IfsSampleList", w, h, 1, 0))
-						{
-							for (int i = 0; i < _cfgIfSampleLines.Count; i++)
-							{
-								var kv = _cfgIfSampleLines[i];
-								string display = string.IsNullOrEmpty(kv.Value) ? kv.Key : (kv.Key + " = " + kv.Value);
-								if (imgui_Selectable($"{display}##IF_{i}", false))
-								{
-									if (applyToAddForm)
-									{
-										var mainWindowState = _state.GetState<State_MainWindow>();
-										mainWindowState.Show_AddKey = true;
-										mainWindowState.SelectedAddInLine = "Ifs";
-										mainWindowState.SelectedSection = "Ifs";
-										mainWindowState.SelectedKey = string.Empty;
-										mainWindowState.Buffer_NewKey = kv.Key;
-										mainWindowState.Buffer_NewValue = kv.Value;
-										_state.Show_IfSampleModal = false;
-										_cfgIfSampleMode = IfSampleUsageMode.ImportToConfig;
-										break;
-									}
-									else
-									{
-										data.AddIfToActiveIni(kv.Key, kv.Value);
-									}
-								}
-							}
-						}
-					}
+					// Ensure data loaded
+					if (_cfgIfLocalLines.Count == 0) LoadLocalIfsForPicker();
+					if (_cfgIfGlobalLines.Count == 0) LoadGlobalIfsForPicker();
+
+					// Source selection buttons
+					if (imgui_Button("Show Local")) { _cfgIfPickerActiveTab = 0; }
 					imgui_SameLine();
-					if (!applyToAddForm)
-					{
-						if (imgui_Button("Import All"))
-						{
-							int cnt = 0;
-							for (int i = 0; i < _cfgIfSampleLines.Count; i++) { var kv = _cfgIfSampleLines[i]; if (data.AddIfToActiveIni(kv.Key, kv.Value)) cnt++; }
-							_cfgIfSampleStatus = cnt > 0 ? ($"Imported {cnt} If(s)") : "No new If's to import.";
-						}
-						imgui_SameLine();
-					}
-					if (imgui_Button("Close")) { _state.Show_IfSampleModal = false; _cfgIfSampleMode = IfSampleUsageMode.ImportToConfig; }
-				}
-				else
-				{
-					_cfgIfSampleMode = IfSampleUsageMode.ImportToConfig;
+					if (imgui_Button("Show Global")) { _cfgIfPickerActiveTab = 1; }
+
+					// Active source label
+					string activeSrc = _cfgIfPickerActiveTab == 0 ? $"Local IFs ({_cfgIfLocalLines.Count})" : $"Global IFs ({_cfgIfGlobalLines.Count})";
+					imgui_TextColored(0.9f,0.85f,0.5f,1f, activeSrc);
+
+					// Render current source list
+					var current = _cfgIfPickerActiveTab == 0 ? _cfgIfLocalLines : _cfgIfGlobalLines;
+					Render_IfsPickerList(current);
+
+					imgui_Separator();
+					if (imgui_Button("Close")) { _state.Show_IfSampleModal = false; }
 				}
 			}
+		}
+
+		private static void Render_IfsPickerList(List<KeyValuePair<string,string>> source)
+		{
+			float h = 300f; float w = 640f;
+			using (var child = ImGUIChild.Aquire())
+			{
+				if (child.BeginChild("IfsPickerList", w, h, 1, 0))
+				{
+					for (int i = 0; i < source.Count; i++)
+					{
+						var kv = source[i];
+						string display = string.IsNullOrEmpty(kv.Value) ? kv.Key : (kv.Key + " = " + kv.Value);
+						if (imgui_Selectable($"{display}##IFPICK_{i}", false))
+						{
+							data.AddIfToActiveIni(kv.Key, kv.Value);
+						}
+					}
+				}
+			}
+			if (imgui_Button("Import All"))
+			{
+				int cnt = 0;
+				for (int i = 0; i < source.Count; i++) { var kv = source[i]; if (data.AddIfToActiveIni(kv.Key, kv.Value)) cnt++; }
+				_cfgIfSampleStatus = cnt > 0 ? ($"Imported {cnt} If(s)") : "No new If's to import.";
+			}
+			if (!string.IsNullOrEmpty(_cfgIfSampleStatus)) imgui_Text(_cfgIfSampleStatus);
 		}
 
 		private static void Render_RichText(List<string> rawText)
