@@ -579,7 +579,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_SetNextWindowSizeWithCond(600, 400, (int)ImGuiCond.FirstUseEver);
 					using (var child = ImGUIChild.Aquire())
 					{
-						if (child.BeginChild("E3Config_ToolsPane", 600, 400, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+						if (child.BeginChild("E3Config_ToolsPane", 600, 400, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY | ImGuiChildFlags.ResizeX), 0))
 						{
 							Render_MainWindow_ConfigEditor_Tools(pd);
 						}
@@ -1052,7 +1052,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			}
 			using (var child = ImGUIChild.Aquire())
 			{
-				if (child.BeginChild("E3Config_GemDataArea", 1500,110, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY), 0))
+				if (child.BeginChild("E3Config_GemDataArea", 1500,110, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY | ImGuiChildFlags.ResizeX), 0))
 				{
 					try
 					{
