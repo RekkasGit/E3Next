@@ -407,7 +407,7 @@ namespace E3Core.Server
 								{
 									internalComand = true;
 									//no need to send this to mq if its our own command, just drop it into the queues to be processed. 
-									List<String> args = EventProcessor.ParseParms(command, ' ', '"').ToList();
+									List<String> args = EventProcessor.ParseParmsThreadSafe(command, ' ', '"').ToList();
 									args.RemoveAt(0);
 									EventProcessor.CommandMatch commandMatch = new EventProcessor.CommandMatch() { eventName = "TempE3NCommand", eventString = command, args = args, hasAllFlag = false };
 
@@ -421,7 +421,7 @@ namespace E3Core.Server
 							if (!internalComand)
 							{
 
-								List<String> args = EventProcessor.ParseParms(command, ' ', '"').ToList();
+								List<String> args = EventProcessor.ParseParmsThreadSafe(command, ' ', '"').ToList();
 								List<string> initialCommand = args.ToList();
 								args.RemoveAt(0);
 								EventProcessor.CommandMatch commandMatch = new EventProcessor.CommandMatch() { eventName = "TempMQCommand", eventString = command, args = args, hasAllFlag = false };
