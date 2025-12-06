@@ -781,6 +781,13 @@ namespace E3Core.Processors
                     MQ.Cmd($"/g E3 Single Coth: Casting \"Call of the Hero\" on: {s.CleanName}");
                     if (MQ.Query<bool>("${Me.Invis}")) MQ.Cmd("/makemevisible");
                     Casting.Cast(s.ID, summonSpell);
+
+                    if (E3.CurrentClass == Class.Bard)
+                    {
+                        MQ.Write("Delaying for 12 sec for coth to complete");
+                        MQ.Delay(12000);
+					}
+                    
                 }
                 else
                 {
@@ -809,7 +816,12 @@ namespace E3Core.Processors
                         MQ.Cmd($"/g E3 Group Coth: Casting \"Call of the Hero\" on: {s.CleanName}");
                         if (MQ.Query<bool>("${Me.Invis}")) MQ.Cmd("/makemevisible");
                         Casting.Cast(memberid, summonSpell);
-                        e3util.YieldToEQ();//not really needed as there are tons of delays in casting
+						if (E3.CurrentClass == Class.Bard)
+						{
+							MQ.Write("Delaying for 12 sec for coth to complete");
+							MQ.Delay(12000);
+						}
+			//			e3util.YieldToEQ();//not really needed as there are tons of delays in casting
                     }
                     else
                     {
