@@ -170,6 +170,7 @@
     <Compile Include="Processors\Cures.cs" />
     <Compile Include="E3.cs" />
     <Compile Include="Processors\Heals.cs" />
+    <Compile Include="Processors\Hunt.cs" />
     <Compile Include="Processors\Loot.cs" />
     <Compile Include="Processors\NowCast.cs" />
     <Compile Include="Processors\Pets.cs" />
@@ -194,6 +195,7 @@
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindow.cs" />
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowHelpers.cs" />
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowStates.cs" />
+    <Compile Include="UI\Windows\Hunt\HuntWindow.cs" />
     <Compile Include="Utility\e3util.cs" />
   </ItemGroup>
   <ItemGroup>
