@@ -1142,6 +1142,8 @@ namespace E3Core.Processors
 						if (isABot)
 						{
 
+							
+
 							bool shouldContinue = false;
 							if (spell.CheckForCollection.Count > 0)
 							{
@@ -1167,9 +1169,17 @@ namespace E3Core.Processors
 							}
 							if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
 							//Is the buff still good? if so, skip
-							if (BuffTimerIsGood(spell, s, usePets))
+
+							//check to see if they already have the buff
+
+							bool hasBuff = findBuffList(spell.CastTarget).Contains(spell.SpellID);
+						
+							if(hasBuff)
 							{
-								return BuffBots_ReturnType.Continue;
+								if (BuffTimerIsGood(spell, s, usePets))
+								{
+									return BuffBots_ReturnType.Continue;
+								}
 							}
 
 							Casting.TrueTarget(s.ID);

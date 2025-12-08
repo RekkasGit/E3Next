@@ -983,6 +983,7 @@ namespace E3Core.Processors
 								if (corpseItem.IndexOf(item, StringComparison.OrdinalIgnoreCase) > -1)
 								{
 									importantItem = true;
+									nodropImportantItem = nodrop;
 									break;
 								}
 							}
