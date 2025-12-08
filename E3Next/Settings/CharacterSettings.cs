@@ -429,6 +429,8 @@ namespace E3Core.Settings
 		public List<Spell> Rez_RezSpells = new List<Spell>();
 		[INI_Section("Rez", "AutoRez")]
 		public bool Rez_AutoRez = false;
+		[INI_Section("Rez", "AutoAcceptRez")]
+		public bool Rez_AutoAcceptRez = false;
 
 		//report
 		[INI_Section("Report", "ReportEntry")]
@@ -943,7 +945,8 @@ namespace E3Core.Settings
             LoadKeyData("Pets", "Pet Summon Combat (On/Off)", ParsedData, ref Pet_SummonCombat);
           
             LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
-            LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_AutoRezSpells);
+			LoadKeyData("Rez", "AutoAcceptRez", ParsedData, ref Rez_AutoAcceptRez);
+			LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_AutoRezSpells);
             LoadKeyData("Rez", "Rez Spells", ParsedData, Rez_RezSpells);
 
             LoadKeyData("Cures", "Cure", ParsedData, Cures);
@@ -1155,6 +1158,7 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("Rez");
 			section = newFile.Sections.GetSectionData("Rez");
 			section.Keys.AddKey("AutoRez", "Off");
+			section.Keys.AddKey("AutoAcceptRez", "On");
 			section.Keys.AddKey("Auto Rez Spells", "Token of Resurrection");
 			section.Keys.AddKey("Rez Spells", "Token of Resurrection");
 

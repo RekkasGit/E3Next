@@ -716,6 +716,8 @@ namespace E3Core.Processors
 								//this is cached, so its ok in this context
 								foreach (var name in E3.Bots.BotsConnected())
 								{
+									if (!Basics.GroupMemberNames.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
+
 									if (_spawns.TryByName(name, out var s))
 									{
 										string classShortName = s.ClassShortName;

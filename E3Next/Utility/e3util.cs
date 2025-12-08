@@ -1729,8 +1729,6 @@ namespace E3Core.Utility
 					{
 						var spell = new Data.Spell(spellName);
 
-
-
 						if (spell.CastType == CastingType.AA)
 						{
 							for (Int32 x = 0; x < 12; x++)
@@ -1798,7 +1796,7 @@ namespace E3Core.Utility
 			{
 
 				string spellName = MQ.Query<String>($"${{Me.CombatAbility[{i}].Name}}");
-				MQ.Write($"ListAllDiscs {i}:{spellName}");
+				//MQ.Write($"ListAllDiscs {i}:{spellName}");
 				if (spellName != "NULL")
 				{
 					numberSkipped = 0;

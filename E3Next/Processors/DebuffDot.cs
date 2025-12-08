@@ -406,7 +406,7 @@ namespace E3Core.Processors
         }
         public static void CastLongTermSpell(Int32 mobid, List<Data.Spell> spells, Dictionary<Int32, SpellTimer> timers)
         {
-
+             
             foreach (var spell in spells)
             {
                 //do we already have a timer on this spell?
