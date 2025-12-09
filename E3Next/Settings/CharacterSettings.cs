@@ -1770,9 +1770,9 @@ namespace E3Core.Settings
 						key = tattribute.Key;
 
 
-						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(key);
-						if ((oType == typeof(Int32) || oType==typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(key);
-						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(key);
+						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(section + ":" + key);
+						if ((oType == typeof(Int32) || oType==typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(section + ":" + key);
+						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(section+":"+key);
 
 						string dictKey = $"${{E3N.Settings.{section}.{key}}}";
 						SettingsReflectionLookup.Add(dictKey, field);
@@ -1780,9 +1780,9 @@ namespace E3Core.Settings
 					}
 					if (attribute is INI_Section2Attribute)
 					{
-						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(key);
-						if ((oType == typeof(Int32) || oType == typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(key);
-						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(key);
+						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(section + ":" + key);
+						if ((oType == typeof(Int32) || oType == typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(section + ":" + key);
+						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(section + ":" + key);
 
 						var tattribute = ((INI_Section2Attribute)attribute);
 						section = tattribute.Header;

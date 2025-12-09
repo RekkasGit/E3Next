@@ -1220,15 +1220,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 				Render_MainWindow_ConfigEditor_SelectedKeyValues_Registered(parts, selectedSection, enumOpts);
 			}
 			// Boolean fast toggle support → dropdown selector with better styling
-			else if (data.IsBooleanConfigKey(mainWindowState.SelectedKey))
+			else if (data.IsBooleanConfigKey(mainWindowState.SelectedSection, mainWindowState.SelectedKey))
 			{
 				Render_MainWindow_ConfigEditor_SelectedKeyValues_Boolean(parts, selectedSection);
 			}
-			else if (data.IsIntergerConfigKey(mainWindowState.SelectedKey))
+			else if (data.IsIntergerConfigKey(mainWindowState.SelectedSection, mainWindowState.SelectedKey))
 			{
 				Render_MainWindow_ConfigEditor_SelectedKeyValues_Integers(parts, selectedSection);
 			}
-			else if (data.IsStringConfigKey(mainWindowState.SelectedKey))
+			else if (data.IsStringConfigKey(mainWindowState.SelectedSection,mainWindowState.SelectedKey))
 			{
 				Render_MainWindow_ConfigEditor_SelectedKeyValues_String(parts, selectedSection);
 			}
@@ -1272,6 +1272,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			float availWidth = imgui_GetContentRegionAvailX();
 			float inputWidth = availWidth > 0f ? Math.Min(availWidth, 800f) : 800f;
+			imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "String Editor");
+
 			imgui_SetNextItemWidth(inputWidth);
 			if (imgui_InputText($"##edit_string_{mainWindowState.SelectedKey}", parts[0]))
 			{

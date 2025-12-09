@@ -75,7 +75,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public static readonly HashSet<string> _customKeySections = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Burn", "CommandSets", "Ifs", "Events", "E3BotsPublishData (key/value)", "EventLoopTiming", "EventRegMatches" };
 		public static readonly Dictionary<string, List<string>> _stringCollectionSections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) 
 		{ { "Startup Commands",new List<string>() }, {"CommandSets", new List<string>() }, {"Zoning Commands", new List<string>() },
-		{ "Manastone",new List<string>(){ "ExceptionMQQuery","ExceptionZone"} },{ "Heals",new List<string>(){ "Tank","Important Bot","Pet Owner"} },{"E3ChatChannelsToJoin",new List<string>() },{"Cursor Delete",new List<string>() }
+		{ "Manastone",new List<string>(){ "ExceptionMQQuery","ExceptionZone"} },{ "Heals",new List<string>(){ "Tank","Important Bot","Pet Owner"} },{"E3ChatChannelsToJoin",new List<string>() },{"Cursor Delete",new List<string>() },{"Blocked Buffs",new List<string>() }
 		};
 
 		public static readonly Dictionary<string, List<string>> _singleEntryKeys = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) 
@@ -644,27 +644,27 @@ namespace E3Core.UI.Windows.CharacterSettings
 			options = null;
 			return false;
 		}
-		public static bool IsStringConfigKey(string key)
+		public static bool IsStringConfigKey(string section, string key)
 		{
-			if (E3.CharacterSettings.SettingsReflectionStringTypes.Contains(key))
+			if (E3.CharacterSettings.SettingsReflectionStringTypes.Contains($"{section}:{key}"))
 			{
 				return true;
 			}
 			return false;
 		}
 
-		public static bool IsIntergerConfigKey(string key)
+		public static bool IsIntergerConfigKey(string section, string key)
 		{
-			if (E3.CharacterSettings.SettingsReflectionIntTypes.Contains(key))
+			if (E3.CharacterSettings.SettingsReflectionIntTypes.Contains($"{section}:{key}"))
 			{
 
 				return true;
 			}
 			return false;
 		}
-		public static bool IsBooleanConfigKey(string key)
+		public static bool IsBooleanConfigKey(string section, string key)
 		{
-			if (E3.CharacterSettings.SettingsReflectionBoolTypes.Contains(key))
+			if (E3.CharacterSettings.SettingsReflectionBoolTypes.Contains($"{section}:{key}"))
 			{
 
 				return true;
