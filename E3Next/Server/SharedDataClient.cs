@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms.VisualStyles;
 using System.Xml.Linq;
 using System.Diagnostics;
+using E3Core.Utility;
 
 namespace E3Core.Server
 {
@@ -406,16 +407,36 @@ namespace E3Core.Server
 								{
 									internalComand = true;
 									//no need to send this to mq if its our own command, just drop it into the queues to be processed. 
-									EventProcessor.ProcessMQCommand(command);
+									List<String> args = EventProcessor.ParseParmsThreadSafe(command, ' ', '"');
+									args.RemoveAt(0);
+									EventProcessor.CommandMatch commandMatch = new EventProcessor.CommandMatch() { eventName = "TempE3NCommand", eventString = command, args = args, hasAllFlag = false };
+
+									if (!e3util.FilterMe(commandMatch))
+									{
+										EventProcessor.ProcessMQCommand(command);
+									}
 									break;
 								}
-
-
 							}
 							if (!internalComand)
 							{
-								//need to be delayed for some commands (such as /notify), so just delay them all. 
-								MQ.Cmd(command, true);
+
+								List<String> args = EventProcessor.ParseParmsThreadSafe(command, ' ', '"');
+								List<string> initialCommand = args.ToList();
+								args.RemoveAt(0);
+								EventProcessor.CommandMatch commandMatch = new EventProcessor.CommandMatch() { eventName = "TempMQCommand", eventString = command, args = args, hasAllFlag = false };
+
+
+								if(!e3util.FilterMe(commandMatch))
+								{
+									foreach(var filter in commandMatch.filters)
+									{
+										initialCommand.Remove(filter);
+									}
+									string newCommand = String.Join(" ", initialCommand);
+									MQ.Cmd(newCommand, true);
+								}
+								
 
 							}
 						}

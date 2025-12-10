@@ -991,13 +991,13 @@ namespace E3Core.Data
             }
 
         }
-        //override public String ToString()
-        //{
+        override public String ToString()
+        {
 
-        //    string returnString = $"spell:{SpellName} spellid:{SpellID} castid: {CastID} mana:{Mana} spelltype:{SpellType} targettype:{TargetType} Duration:{Duration} RecastTime:{RecastTime} RecoveryTime:{RecoveryTime} MyCastTime:{MyCastTime} MyRange:{MyRange} MustEquip:{ItemMustEquip} ";
+            string returnString = $"spell:{SpellName} spellid:{SpellID} castid: {CastID} mana:{Mana} spelltype:{SpellType} targettype:{TargetType} Duration:{Duration} RecastTime:{RecastTime} RecoveryTime:{RecoveryTime} MyCastTime:{MyCastTime} MyRange:{MyRange} MustEquip:{ItemMustEquip} ";
 
-        //    return returnString;
-        //}
+            return returnString;
+        }
         public string RawEntry = String.Empty;
         public String Subcategory = String.Empty;
         public String Category = String.Empty;
@@ -1512,23 +1512,23 @@ namespace E3Core.Data
 			{"IsDoT", "(NotInUse) Treat the entry as a damage-over-time effect for pacing and reporting."},
 			{"IsDebuff", "(NotInUse) Treat the entry as a debuff for prioritisation, timers, and UI grouping."}
 		};
-		public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append(this.GetType().Name);
-            sb.AppendLine();
-            sb.AppendLine("==============");
-            foreach (FieldInfo property in this.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public |
-                                                                    BindingFlags.Instance | BindingFlags.Static))
-            {
-                var value = property.GetValue(this);
-                sb.Append(property.Name);
-                sb.Append(": ");
-                sb.Append(value);
-                sb.Append(System.Environment.NewLine);
+		//public override string ToString()
+  //      {
+  //          StringBuilder sb = new StringBuilder();
+  //          sb.Append(this.GetType().Name);
+  //          sb.AppendLine();
+  //          sb.AppendLine("==============");
+  //          foreach (FieldInfo property in this.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public |
+  //                                                                  BindingFlags.Instance | BindingFlags.Static))
+  //          {
+  //              var value = property.GetValue(this);
+  //              sb.Append(property.Name);
+  //              sb.Append(": ");
+  //              sb.Append(value);
+  //              sb.Append(System.Environment.NewLine);
                
-            }
-            return sb.ToString();
-        }
+  //          }
+  //          return sb.ToString();
+  //      }
     }
 }

@@ -1367,9 +1367,17 @@ namespace E3Core.Processors
         public static bool InCombat(bool skipBotCheck = false)
         {
             bool inCombat = Assist.IsAssisting || MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
-            if (!skipBotCheck)
+           
+            if (!inCombat && !skipBotCheck && GroupMemberNames.Count>0)
             {
-                if (E3.Bots.BotsInCombat().Count > 0) inCombat = true;
+                foreach(var memberInCombat in E3.Bots.BotsInCombat())
+                {
+                    if (GroupMemberNames.Contains(memberInCombat,StringComparer.OrdinalIgnoreCase))
+                    {
+                        inCombat = true;
+                        break;
+                    }
+                }
             }
             return inCombat;
         }
