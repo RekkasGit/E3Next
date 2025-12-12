@@ -221,12 +221,21 @@ namespace E3Core.Processors
 				{
 					var buffList = E3.Bots.BuffList(s.CleanName);
 
+					if (!String.IsNullOrWhiteSpace(spell.Ifs))
+					{
+						if (!Casting.Ifs(spell))
+						{
+							continue;
+						}
+					}
+
 					if (s.Distance < spell.MyRange)
 					{
 						foreach (var pair in spell.CheckForCollection)
 						{
 							if (buffList.Contains(pair.Value))
 							{
+
 								if (Casting.InRange(s.ID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 								{
 									Casting.Cast(s.ID, spell);
