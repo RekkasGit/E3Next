@@ -541,6 +541,11 @@ namespace E3Core.Processors
 					bool inCombat = Basics.InCombat();
 					bool isManualControl = e3util.IsManualControl();
 
+					if (Assist.IsAssisting)
+					{
+						BuffBots(E3.CharacterSettings.AssistBuffs);
+					}
+
 					if (inCombat || Nukes.PBAEEnabled)
 					{
 						BuffBots(E3.CharacterSettings.CombatBuffs);
