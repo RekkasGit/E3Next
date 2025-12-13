@@ -1378,11 +1378,15 @@ namespace MonoCore
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static string mq_GetSpellDataEffect(string query, int line);
 
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static double mq_Memory_GetPageFileSize();
 
-        
-        #endregion
 
-        [DllImport("user32.dll")]
+
+
+		#endregion
+
+		[DllImport("user32.dll")]
         public static extern bool UnregisterClass(string lpClassName, IntPtr hInstance);
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
