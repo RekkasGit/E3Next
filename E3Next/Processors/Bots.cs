@@ -1,4 +1,4 @@
-﻿using E3Core.Data;
+using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Utility;
@@ -26,12 +26,13 @@ namespace E3Core.Processors
     public interface IBots
     {
        
-     //   Boolean InZone(string Name);
+        Boolean InZone(string Name);
         Int32 PctHealth(string name);
 		Boolean InCombat(string name);
 		List<string> BotsInCombat();
 		Int32 PctMana(string name);
 		List<string> BotsConnected(bool readOnly = false);
+        List<string> GetCharactersInSameZone();
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
@@ -559,6 +560,40 @@ namespace E3Core.Processors
 			return _botsInCombatResultCache;
 		}
 
+		Int64 _charactersInSameZoneTimeStamp = 0;
+		Int64 _charactersInSameZoneTimeInterval = 2000;
+		[ExposedData("Bots", "CharactersInSameZone")]
+		List<string> _charactersInSameZoneResultCache = new List<string>();
+		public List<string> GetCharactersInSameZone()
+		{
+			if(!e3util.ShouldCheck(ref _charactersInSameZoneTimeStamp,_charactersInSameZoneTimeInterval))
+			{
+				return _charactersInSameZoneResultCache;
+			}
+			
+			var sameZoneCharacters = new List<string>();
+			var connectedBots = BotsConnected();
+			
+			// Add current character
+			sameZoneCharacters.Add(E3.CurrentName);
+			
+			// Check each bot's zone
+			foreach (var botName in connectedBots)
+			{
+				if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+					continue; // Skip self
+					
+				if (InZone(botName))
+				{
+					sameZoneCharacters.Add(botName);
+				}
+			}
+			
+			sameZoneCharacters.Sort(StringComparer.OrdinalIgnoreCase);
+			_charactersInSameZoneResultCache = sameZoneCharacters;
+			return _charactersInSameZoneResultCache;
+		}
+
 
 		public void Broadcast(string message, bool noparse = false)
         {
@@ -1014,6 +1049,48 @@ namespace E3Core.Processors
 
 			return sharedInfo.Data;
 		}
+		Dictionary<string, SharedNumericDataInt32> _zoneIdCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public Boolean InZone(string name)
+		{
+			//register the user to get their zone data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				return false; //dunno just say not in zone
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string keyToUse = "${Me.ZoneID}";
+			if (!userTopics.ContainsKey(keyToUse))
+			{
+				//don't have the data yet kick out and assume not in zone
+				return false;
+			}
+			var entry = userTopics[keyToUse];
+			if (!_zoneIdCollection.ContainsKey(name))
+			{
+				_zoneIdCollection.Add(name, new SharedNumericDataInt32 { Data = 0 });
+			}
+			var sharedInfo = _zoneIdCollection[name];
+			lock (entry)
+			{
+				if (entry.LastUpdate > sharedInfo.LastUpdate)
+				{
+					if (Int32.TryParse(entry.Data, out var result))
+					{
+						sharedInfo.Data = result;
+						sharedInfo.LastUpdate = entry.LastUpdate;
+					}
+				}
+			}
+			//is the data too old?
+			if(Core.StopWatch.ElapsedMilliseconds > sharedInfo.LastUpdate+5000)
+			{
+				//haven't updated in 5 seconds, return false
+				return false;
+			}
+
+			return sharedInfo.Data == Zoning.CurrentZone.Id;
+		}
         Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
 		public int PctHealth(string name)
 		{
@@ -1323,6 +1400,30 @@ namespace E3Core.Processors
 			}
 		}
 
+		public List<string> GetCharactersInSameZone()
+		{
+			var sameZoneCharacters = new List<string>();
+			var connectedBots = BotsConnected();
+			
+			// Add current character
+			sameZoneCharacters.Add(E3.CurrentName);
+			
+			// Check each bot's zone
+			foreach (var botName in connectedBots)
+			{
+				if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+					continue; // Skip self
+					
+				if (InZone(botName))
+				{
+					sameZoneCharacters.Add(botName);
+				}
+			}
+			
+			sameZoneCharacters.Sort(StringComparer.OrdinalIgnoreCase);
+			return sameZoneCharacters;
+		}
+
 		public bool HasShortBuff(string name, Int32 buffid)
 		{
 			return BuffList(name).Contains(buffid);
@@ -1552,6 +1653,30 @@ namespace E3Core.Processors
                 }
             }
             return _connectedBots;
+        }
+
+        public List<string> GetCharactersInSameZone()
+        {
+            var sameZoneCharacters = new List<string>();
+            var connectedBots = BotsConnected();
+            
+            // Add current character
+            sameZoneCharacters.Add(E3.CurrentName);
+            
+            // Check each bot's zone
+            foreach (var botName in connectedBots)
+            {
+                if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                    continue; // Skip self
+                    
+                if (InZone(botName))
+                {
+                    sameZoneCharacters.Add(botName);
+                }
+            }
+            
+            sameZoneCharacters.Sort(StringComparer.OrdinalIgnoreCase);
+            return sameZoneCharacters;
         }
 
         public void Broadcast(string message, bool noparse = false)

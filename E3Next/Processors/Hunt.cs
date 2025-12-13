@@ -1209,7 +1209,7 @@ namespace E3Core.Processors
                             try { xTargetCount = MQ.Query<int>("${Me.XTarget}"); } catch { xTargetCount = 0; }
                             
                             // If we have xtarget mobs, allow continuing combat but block new scanning
-                            if (xTargetCount > 0 && (TargetID > 0 || Basics.InCombat()))
+                            if (xTargetCount > 0 && (TargetID > 0 || IsLocallyInCombat()))
                             {
                                 string waitingMembersList = string.Join(", ", membersStillWaitingFor);
                                 string reasonText = membersStillWaitingFor.Count == 1 
@@ -1364,7 +1364,7 @@ namespace E3Core.Processors
             if (TargetID <= 0 && currentXTargets > 0)
             {
                 // First, check if we're actually in combat
-                bool currentlyInCombat = Basics.InCombat();
+                bool currentlyInCombat = IsLocallyInCombat();
                 _log.Write($"Hunt: XTarget adoption check - InCombat: {currentlyInCombat}, XTargets: {currentXTargets}");
                 
                 if (!currentlyInCombat)
@@ -1406,7 +1406,7 @@ namespace E3Core.Processors
             }
 
             // If in combat with no current hunt target, stay in combat
-            if (TargetID <= 0 && Basics.InCombat())
+            if (TargetID <= 0 && IsLocallyInCombat())
             {
                 HuntStateMachine.TransitionTo(HuntState.InCombat, "In combat without hunt target");
                 return;
@@ -1501,7 +1501,8 @@ namespace E3Core.Processors
 
                 // Determine if we should be pulling, navigating, or in combat
                 double dist = MQ.Query<double>($"${{Spawn[id {TargetID}].Distance3D}}");
-                int meleeRange = MQ.Query<int>($"${{Spawn[id {TargetID}].MaxRangeTo}}");
+                double meleeRangeRaw = MQ.Query<double>($"${{Spawn[id {TargetID}].MaxRangeTo}}");
+                int meleeRange = meleeRangeRaw > 0 ? (int)Math.Round(meleeRangeRaw) : -1;
                 if (meleeRange <= 0) meleeRange = 25;
 
                 if (dist > 0 && dist <= meleeRange)
@@ -2137,6 +2138,12 @@ namespace E3Core.Processors
             }
         }
 
+        private static bool IsLocallyInCombat()
+        {
+            // Ignore network-wide combat flags so Hunt reflects only this character's state.
+            return Basics.InCombat(skipBotCheck: true);
+        }
+
         private static string CheckForUnexpectedAggro()
         {
             try
@@ -2149,7 +2156,7 @@ namespace E3Core.Processors
                 if (currentXTargets == 0) return string.Empty;
                 
                 // Get current combat state
-                bool inCombat = Basics.InCombat();
+                bool inCombat = IsLocallyInCombat();
                 double playerHealthPct = MQ.Query<double>("${Me.PctHPs}");
                 
                 // If we're not in combat but have XTargets, investigate more carefully
@@ -2199,7 +2206,6 @@ namespace E3Core.Processors
                 // Check for multiple unexpected XTargets with better threat assessment
                 int max = e3util.XtargetMax;
                 var unexpectedMobs = new List<string>();
-                bool hasIntendedTarget = false;
                 
                 for (int i = 1; i <= max && i <= currentXTargets; i++)
                 {
@@ -2209,11 +2215,7 @@ namespace E3Core.Processors
                         if (xTargetID <= 0) continue;
                         
                         // Check if this IS our intended target
-                        if (xTargetID == TargetID) 
-                        {
-                            hasIntendedTarget = true;
-                            continue;
-                        }
+                        if (xTargetID == TargetID) continue;
                         
                         // Use enhanced validation instead of basic checks
                         if (!IsValidCombatTarget(xTargetID)) continue;
@@ -3000,7 +3002,7 @@ namespace E3Core.Processors
             bool targetAggressive = MQ.Query<bool>($"${{Spawn[id {TargetID}].Aggressive}}");
             
             // Only transition to combat if we have a valid, aggressive target in range
-            return targetValid && inCombatRange && (targetAggressive || Basics.InCombat());
+            return targetValid && inCombatRange && (targetAggressive || IsLocallyInCombat());
         }
 
         // Check if target is in combat range
@@ -3010,7 +3012,8 @@ namespace E3Core.Processors
             try
             {
                 double dist = MQ.Query<double>($"${{Spawn[id {spawnId}].Distance3D}}");
-                int meleeRange = MQ.Query<int>($"${{Spawn[id {spawnId}].MaxRangeTo}}");
+                double meleeRangeRaw = MQ.Query<double>($"${{Spawn[id {spawnId}].MaxRangeTo}}");
+                int meleeRange = meleeRangeRaw > 0 ? (int)Math.Round(meleeRangeRaw) : -1;
                 if (meleeRange <= 0) meleeRange = 25;
                 return dist > 0 && dist <= meleeRange;
             }
@@ -3422,7 +3425,8 @@ namespace E3Core.Processors
             // Ensure we're in melee range before engaging; if not, the PullingTarget handler will keep approaching
             try
             {
-                int meleeRange = MQ.Query<int>($"${{Spawn[id {TargetID}].MaxRangeTo}}" );
+                double meleeRangeRaw = MQ.Query<double>($"${{Spawn[id {TargetID}].MaxRangeTo}}" );
+                int meleeRange = meleeRangeRaw > 0 ? (int)Math.Round(meleeRangeRaw) : -1;
                 if (meleeRange <= 0) meleeRange = 25;
                 double dist = MQ.Query<double>($"${{Spawn[id {TargetID}].Distance3D}}" );
                 if (dist > meleeRange + 2)

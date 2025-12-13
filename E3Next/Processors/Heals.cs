@@ -1,4 +1,4 @@
-﻿using E3Core.Data;
+using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Utility;
 using IniParser;
@@ -162,6 +162,51 @@ namespace E3Core.Processors
 
 		private static bool _useXTargetCommand = false;
 		public static HashSet<String> _XTargetSetupUsers = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
+
+		private static bool TryGetStreamHealthValue(string targetName, bool isMyBot, out Int32 pctHealth)
+		{
+			pctHealth = 0;
+			if (!E3.UseStreamHealthNumbers) return false;
+			if (string.IsNullOrWhiteSpace(targetName)) return false;
+
+			if (string.Equals(targetName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+			{
+				pctHealth = E3.PctHPs;
+				return true;
+			}
+
+			if (isMyBot)
+			{
+				pctHealth = E3.Bots.PctHealth(targetName);
+				return true;
+			}
+
+			return false;
+		}
+
+		private static bool TryGetHealTargetPctHealth(Spawn spawn, string groupMemberName, bool healPets, out Int32 pctHealth)
+		{
+			pctHealth = 0;
+			string cleanName = spawn != null ? (string.IsNullOrWhiteSpace(spawn.CleanName) ? spawn.Name : spawn.CleanName) : groupMemberName;
+			bool isMyBot = !string.IsNullOrWhiteSpace(cleanName) && E3.Bots.IsMyBot(cleanName);
+			if (!healPets && TryGetStreamHealthValue(cleanName, isMyBot, out pctHealth))
+			{
+				return true;
+			}
+
+			if (string.IsNullOrWhiteSpace(groupMemberName)) return false;
+
+			Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{groupMemberName}].Index}}");
+			if (groupMemberIndex <= 0)
+			{
+				return false;
+			}
+
+			pctHealth = healPets
+				? MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.Pet.CurrentHPs}}")
+				: MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
+			return true;
+		}
 
 		[ClassInvoke(Class.All)]
 		public static void Check_XTargetPlayers()
@@ -631,15 +676,12 @@ namespace E3Core.Processors
 
 				if (IgnoreHealTargets.Contains(name)) continue;
 
-				if (E3.Bots.IsMyBot(name))
+				bool isMyBot = E3.Bots.IsMyBot(name);
+				if (!TryGetStreamHealthValue(name, isMyBot, out pctHealth))
 				{
-					//lets look up their health
-					pctHealth = E3.Bots.PctHealth(name);
-				}
-				else
-				{
-					//have to do a normal health check
-					pctHealth = MQ.Query<Int32>($"${{Group.Member[{i}].Spawn.CurrentHPs}}");
+					pctHealth = isMyBot
+						? E3.Bots.PctHealth(name)
+						: MQ.Query<Int32>($"${{Group.Member[{i}].Spawn.CurrentHPs}}");
 				}
 				foreach (Spell spell in E3.CharacterSettings.Heal_EmergencyGroupHeals)
 				{
@@ -727,27 +769,18 @@ namespace E3Core.Processors
 							//check group data
 							if (_useEQGroupDataForHeals || healPets)
 							{
-								Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{name}].Index}}");
-
-								if (groupMemberIndex > 0)
+								if (!TryGetHealTargetPctHealth(s, s.Name, healPets, out var pctHealth))
 								{
-									Int32 pctHealth = 0;
-									if (healPets)
-									{
-										pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.Pet.CurrentHPs}}");
-									}
-									else
-									{
-										pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
-									}
+									continue;
+								}
 
-									if (pctHealth < 1)
-									{
-										//dead, no sense in casting. check the next person
-										continue;
-									}
-									foreach (var spell in spells)
-									{
+								if (pctHealth < 1)
+								{
+									//dead, no sense in casting. check the next person
+									continue;
+								}
+								foreach (var spell in spells)
+								{
 										if (!spell.Enabled) continue;
 										//check Ifs on the spell
 										if (!String.IsNullOrWhiteSpace(spell.Ifs))
@@ -834,7 +867,6 @@ namespace E3Core.Processors
 												}
 											}
 										}
-									}
 								}
 							}
 							//if a pet and we are here, kick out.
@@ -925,70 +957,62 @@ namespace E3Core.Processors
 			//using (_log.Trace())
 			{
 
-				foreach (var name in Basics.GroupMembers)
-				{
-					
-					Int32 targetID = 0;
-					Spawn s;
-					if (_spawns.TryByID(name, out s))
-					{
-						if (IgnoreHealTargets.Contains(s.CleanName)) continue;
+        foreach (var name in Basics.GroupMembers)
+        {
+            
+            Int32 targetID = 0;
+            Spawn s;
+            if (_spawns.TryByID(name, out s))
+            {
+                if (IgnoreHealTargets.Contains(s.CleanName)) continue;
 
-						targetID = healPets ? s.PetID : s.ID;
+                targetID = healPets ? s.PetID : s.ID;
 
-						if (s.ID != targetID)
-						{
-							if (!_spawns.TryByID(targetID, out s))
-							{
-								//can't find pet, skip
-								continue;
-							}
-						}
-						double targetDistance = s.Distance;
-						string targetType = s.TypeDesc;
+                if (s.ID != targetID)
+                {
+                    if (!_spawns.TryByID(targetID, out s))
+                    {
+                        //can't find pet, skip
+                        continue;
+                    }
+                }
+                double targetDistance = s.Distance;
+                string targetType = s.TypeDesc;
 
-						//first lets check the distance.
-						bool inRange = false;
-						foreach (var spell in spells)
-						{
-							if (!spell.Enabled) continue;
-							if (Casting.InRange(targetID, spell))
-							{
-								inRange = true;
-								break;
-							}
-						}
-						if (!inRange)
-						{   //no spells in range next target
-							continue;
-						}
-						//in range
-						if (targetType == "PC" || targetType == "Pet")
-						{
-							//check group data
-							if (_useEQGroupDataForHeals || healPets)
-							{
-								Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{s.Name}].Index}}");
+                //first lets check the distance.
+                bool inRange = false;
+                foreach (var spell in spells)
+                {
+                    if (!spell.Enabled) continue;
+                    if (Casting.InRange(targetID, spell))
+                    {
+                        inRange = true;
+                        break;
+                    }
+                }
+                if (!inRange)
+                {   //no spells in range next target
+                    continue;
+                }
+                //in range
+                if (targetType == "PC" || targetType == "Pet")
+                {
+                    //check group data
+                    if (_useEQGroupDataForHeals || healPets)
+                    {
+                        if (!TryGetHealTargetPctHealth(s, s.Name, healPets, out var pctHealth))
+                        {
+                            continue;
+                        }
 
-								if (groupMemberIndex > 0)
+                        if (pctHealth < 1)
+                        {
+                            //dead, no sense in casting. check the next person
+                            continue;
+                        }
+                        string source = E3.UseStreamHealthNumbers ? "EZ Stream" : "Group TLO";
+                        foreach (var spell in spells)
 								{
-									Int32 pctHealth = 0;
-									if (healPets)
-									{
-										pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.Pet.CurrentHPs}}");
-									}
-									else
-									{
-										pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
-									}
-
-									if (pctHealth < 1)
-									{
-										//dead, no sense in casting. check the next person
-										continue;
-									}
-									foreach (var spell in spells)
-									{
 										if (!spell.Enabled) continue;
 										//check Ifs on the spell
 										if (!String.IsNullOrWhiteSpace(spell.Ifs))
@@ -1020,6 +1044,7 @@ namespace E3Core.Processors
 												if (Casting.CheckMana(spell) && Casting.CheckReady(spell, JustCheck, JustCheck))
 												{
 													if (JustCheck) return true;
+													E3.Bots.Broadcast($"\atHeal Cast \aw:: \ag{name} :: \ar{pctHealth}% :: \ay{source}");
 													if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
 													{
 														currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
@@ -1039,7 +1064,6 @@ namespace E3Core.Processors
 				}
 				return false;
 			}
-		}
 		private static void HealOverTime(Int32 currentMana, Int32 pctMana, List<string> targets, List<Data.Spell> spells, bool healPets = false)
 		{
 			//using (_log.Trace())

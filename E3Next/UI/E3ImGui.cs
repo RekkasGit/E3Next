@@ -225,6 +225,24 @@ namespace MonoCore
 			ImGuiTableFlags_SortTristate = 1 << 27,  // Allow no sorting, disable default sorting. TableGetSortSpecs() may return specs where (SpecsCount == 0).
 		}
 
+		public enum ImDrawFlags
+		{
+			ImDrawFlags_None = 0,
+			ImDrawFlags_Closed = 1 << 0,
+			ImDrawFlags_RoundCornersTopLeft = 1 << 4,
+			ImDrawFlags_RoundCornersTopRight = 1 << 5,
+			ImDrawFlags_RoundCornersBottomLeft = 1 << 6,
+			ImDrawFlags_RoundCornersBottomRight = 1 << 7,
+			ImDrawFlags_RoundCornersNone = 1 << 8,
+			ImDrawFlags_RoundCornersTop = ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersTopRight,
+			ImDrawFlags_RoundCornersBottom = ImDrawFlags_RoundCornersBottomLeft | ImDrawFlags_RoundCornersBottomRight,
+			ImDrawFlags_RoundCornersLeft = ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersBottomLeft,
+			ImDrawFlags_RoundCornersRight = ImDrawFlags_RoundCornersTopRight | ImDrawFlags_RoundCornersBottomRight,
+			ImDrawFlags_RoundCornersAll = ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersTopRight | ImDrawFlags_RoundCornersBottomLeft | ImDrawFlags_RoundCornersBottomRight,
+			ImDrawFlags_RoundCornersDefault_ = ImDrawFlags_RoundCornersAll,
+			ImDrawFlags_RoundCornersMask_ = ImDrawFlags_RoundCornersAll | ImDrawFlags_RoundCornersNone,
+		}
+
 		public enum ImGuiTableColumnFlags
 		{
 			ImGuiTableColumnFlags_None = 0,
@@ -370,6 +388,8 @@ namespace MonoCore
 		public extern static void imgui_TableHeadersRow();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_TableNextRow();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_TableNextRowEx(int rowFlags, float minRowHeight);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_TableNextColumn();
@@ -439,7 +459,13 @@ namespace MonoCore
 		public extern static void imgui_DrawSpellIconBySpellID(int spellId, float size);
 		// Drawing functions for custom backgrounds
 		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetCursorPosX();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetCursorPosX(float x);
+		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetCursorPosY();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetCursorPosY(float y);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetCursorScreenPosX();
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -449,7 +475,7 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetFrameHeight();
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_GetWindowDrawList_AddRectFilled(float x1, float y1, float x2, float y2, uint color);
+		public extern static void imgui_GetWindowDrawList_AddRectFilled(float x1, float y1, float x2, float y2, uint color, float rounding, int drawFlags);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_GetWindowDrawList_AddText(float x, float y, uint color, string text);
 		// Item rect + color helpers

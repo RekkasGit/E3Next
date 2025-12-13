@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -52,7 +52,7 @@ namespace E3Core.Data
 		{
 			foreach (var pair in ClassLongToShort)
 			{
-				_classShortToLong.Add(pair.Value, pair.Key);
+				ClassShortToLong.Add(pair.Value, pair.Key);
 			}
 
 		}
@@ -95,7 +95,25 @@ namespace E3Core.Data
 																										{"Berserker","BER"}};
 
 
-		public static Dictionary<string, string> _classShortToLong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+		public static Dictionary<string, string> ClassShortToLong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+		{
+			{"Warrior","WAR"},
+			{"Cleric","CLR"},
+			{"Paladin","PAL"},
+			{"Ranger","RNG"},
+			{"Shadowknight","SHD" },
+			{"Druid","DRU"},
+			{"Monk","MNK"},
+			{"Bard","BRD"},
+			{"Rogue","ROG"},
+			{"Shaman","SHM"},
+			{"Necromancer","NEC"},
+			{"Wizard","WIZ"},
+			{"Magician","MAG"},
+			{"Enchanter","ENC" },
+			{"Beastlord","BST"},
+			{"Berserker","BER"}
+		};
 
 	}
 }
