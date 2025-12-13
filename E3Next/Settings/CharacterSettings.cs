@@ -429,6 +429,8 @@ namespace E3Core.Settings
 		public List<Spell> Rez_RezSpells = new List<Spell>();
 		[INI_Section("Rez", "AutoRez")]
 		public bool Rez_AutoRez = false;
+		[INI_Section("Rez", "AutoAcceptRez")]
+		public bool Rez_AutoAcceptRez = false;
 
 		//report
 		[INI_Section("Report", "ReportEntry")]
@@ -943,7 +945,8 @@ namespace E3Core.Settings
             LoadKeyData("Pets", "Pet Summon Combat (On/Off)", ParsedData, ref Pet_SummonCombat);
           
             LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
-            LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_AutoRezSpells);
+			LoadKeyData("Rez", "AutoAcceptRez", ParsedData, ref Rez_AutoAcceptRez);
+			LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_AutoRezSpells);
             LoadKeyData("Rez", "Rez Spells", ParsedData, Rez_RezSpells);
 
             LoadKeyData("Cures", "Cure", ParsedData, Cures);
@@ -1155,6 +1158,7 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("Rez");
 			section = newFile.Sections.GetSectionData("Rez");
 			section.Keys.AddKey("AutoRez", "Off");
+			section.Keys.AddKey("AutoAcceptRez", "On");
 			section.Keys.AddKey("Auto Rez Spells", "Token of Resurrection");
 			section.Keys.AddKey("Rez Spells", "Token of Resurrection");
 
@@ -1766,9 +1770,9 @@ namespace E3Core.Settings
 						key = tattribute.Key;
 
 
-						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(key);
-						if ((oType == typeof(Int32) || oType==typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(key);
-						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(key);
+						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(section + ":" + key);
+						if ((oType == typeof(Int32) || oType==typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(section + ":" + key);
+						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(section+":"+key);
 
 						string dictKey = $"${{E3N.Settings.{section}.{key}}}";
 						SettingsReflectionLookup.Add(dictKey, field);
@@ -1776,9 +1780,9 @@ namespace E3Core.Settings
 					}
 					if (attribute is INI_Section2Attribute)
 					{
-						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(key);
-						if ((oType == typeof(Int32) || oType == typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(key);
-						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(key);
+						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(section + ":" + key);
+						if ((oType == typeof(Int32) || oType == typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(section + ":" + key);
+						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(section + ":" + key);
 
 						var tattribute = ((INI_Section2Attribute)attribute);
 						section = tattribute.Header;

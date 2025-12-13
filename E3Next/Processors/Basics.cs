@@ -151,7 +151,33 @@ namespace E3Core.Processors
 				}
 			},"list all commands available");
 
-			
+			EventProcessor.RegisterCommand("/e3memstats", (x) =>
+			{
+
+				Process currentProcess = Process.GetCurrentProcess();
+
+				// Refresh the process info to ensure the data is up to date
+				currentProcess.Refresh();
+
+				double eqprocessMemoryMB = 0;
+
+				if (Core._MQ2MonoVersion > 0.35M)
+				{
+					eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
+				}
+
+				// Get the private memory size (commit size) in bytes
+				long privateMemoryBytes = GC.GetTotalMemory(false);
+
+				// Convert to Kilobytes (KB) for easier reading
+				double privateMemoryKb = privateMemoryBytes / 1024f/1024;
+
+				E3.Bots.Broadcast($"Process Name: {currentProcess.ProcessName}");
+				E3.Bots.Broadcast($"Process ID: {currentProcess.Id}");
+				E3.Bots.Broadcast($"C# memory usage: {privateMemoryKb:N} MB");
+				E3.Bots.Broadcast($"EQ commit size:{eqprocessMemoryMB:N} MB");
+	
+			}, "show memory stats");
 
 			EventProcessor.RegisterCommand("/e3printAA", (x) =>
 			{
@@ -1367,9 +1393,17 @@ namespace E3Core.Processors
         public static bool InCombat(bool skipBotCheck = false)
         {
             bool inCombat = Assist.IsAssisting || MQ.Query<bool>("${Me.Combat}") || MQ.Query<bool>("${Me.CombatState.Equal[Combat]}");
-            if (!skipBotCheck)
+           
+            if (!inCombat && !skipBotCheck && GroupMemberNames.Count>0)
             {
-                if (E3.Bots.BotsInCombat().Count > 0) inCombat = true;
+                foreach(var memberInCombat in E3.Bots.BotsInCombat())
+                {
+                    if (GroupMemberNames.Contains(memberInCombat,StringComparer.OrdinalIgnoreCase))
+                    {
+                        inCombat = true;
+                        break;
+                    }
+                }
             }
             return inCombat;
         }

@@ -66,6 +66,8 @@ namespace E3Core.Processors
             if (e3util.IsEQLive()) return;
             if (Basics.InCombat(skipBotCheck:true)) return;
 
+            if (!E3.CharacterSettings.Rez_AutoAcceptRez) return;
+
             if (e3util.IsRezDiaglogBoxOpen())
             {
                 MQ.Delay(1000);

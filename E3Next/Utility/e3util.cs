@@ -1806,8 +1806,6 @@ namespace E3Core.Utility
 					{
 						var spell = new Data.Spell(spellName);
 
-
-
 						if (spell.CastType == CastingType.AA)
 						{
 							for (Int32 x = 0; x < 12; x++)
@@ -1870,11 +1868,15 @@ namespace E3Core.Utility
 		public static List<Data.Spell> ListAllDiscData()
 		{
 			List<Data.Spell> returnValue = new List<Data.Spell>();
+			Int32 numberSkipped = 0;
 			for (Int32 i = 1; i < 10000; i++)
 			{
+
 				string spellName = MQ.Query<String>($"${{Me.CombatAbility[{i}].Name}}");
+				//MQ.Write($"ListAllDiscs {i}:{spellName}");
 				if (spellName != "NULL")
 				{
+					numberSkipped = 0;
 					var spell = new Data.Spell(spellName);
 					if (spell.CastType == CastingType.Disc)
 					{
@@ -1888,7 +1890,16 @@ namespace E3Core.Utility
 				}
 				else
 				{
-					break;//no more discs
+					numberSkipped++;
+					if(numberSkipped>20)
+					{
+						//no more discs
+						break;
+					}
+					else
+					{
+						continue;
+					}
 				}
 			}
 			return returnValue;

@@ -501,7 +501,76 @@ namespace MonoCore
             }
             return returnValue;
         }
-        public static List<String> ParseParms(String line, Char delimiter, Char textQualifier)
+		public static List<String> ParseParmsThreadSafe(String line, Char delimiter, Char textQualifier)
+		{
+
+            List<string> tokenresult = new List<string>();
+			StringBuilder tokenBuilder = new StringBuilder();
+
+			if (String.IsNullOrWhiteSpace(line))
+			{
+				return tokenresult;
+			}
+			else
+			{
+				Char prevChar = '\0';
+				Char nextChar = '\0';
+				Char currentChar = '\0';
+
+				Boolean inString = false;
+				tokenBuilder.Clear();
+				string result = string.Empty;
+				for (int i = 0; i < line.Length; i++)
+				{
+					currentChar = line[i];
+
+					if (i > 0)
+						prevChar = line[i - 1];
+					else
+						prevChar = '\0';
+
+					if (i + 1 < line.Length)
+						nextChar = line[i + 1];
+					else
+						nextChar = '\0';
+
+					if (currentChar == textQualifier && (prevChar == '\0' || prevChar == delimiter) && !inString)
+					{
+						inString = true;
+						continue;
+					}
+
+					if (currentChar == textQualifier && (nextChar == '\0' || nextChar == delimiter) && inString)
+					{
+						inString = false;
+						continue;
+					}
+
+					if (currentChar == delimiter && !inString)
+					{
+						result = tokenBuilder.ToString();
+						if (!String.IsNullOrWhiteSpace(result))
+						{
+							tokenresult.Add(result);
+						}
+
+						tokenBuilder = tokenBuilder.Remove(0, tokenBuilder.Length);
+						continue;
+					}
+					result = tokenBuilder.ToString();
+					tokenBuilder = tokenBuilder.Append(currentChar);
+
+				}
+				result = tokenBuilder.ToString();
+				if (!String.IsNullOrWhiteSpace(result))
+				{
+					tokenresult.Add(result);
+				}
+				//yield return _tokenBuilder.ToString();
+				return tokenresult;
+			}
+		}
+		public static List<String> ParseParms(String line, Char delimiter, Char textQualifier)
         {
 
             _tokenResult.Clear();
@@ -1309,11 +1378,15 @@ namespace MonoCore
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static string mq_GetSpellDataEffect(string query, int line);
 
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static double mq_Memory_GetPageFileSize();
 
-        
-        #endregion
 
-        [DllImport("user32.dll")]
+
+
+		#endregion
+
+		[DllImport("user32.dll")]
         public static extern bool UnregisterClass(string lpClassName, IntPtr hInstance);
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
