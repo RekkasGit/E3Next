@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -134,6 +134,7 @@
     <Compile Include="Processors\Commands.cs" />
     <Compile Include="Processors\DebuffDot.cs" />
     <Compile Include="Processors\Dispel.cs" />
+    <Compile Include="Processors\EzServerAaTracker.cs" />
     <Compile Include="Processors\GiveMe.cs" />
     <Compile Include="Processors\Inventory.cs" />
     <Compile Include="Processors\Movement.cs" />
@@ -170,6 +171,7 @@
     <Compile Include="Processors\Cures.cs" />
     <Compile Include="E3.cs" />
     <Compile Include="Processors\Heals.cs" />
+    <Compile Include="Processors\Hunt.cs" />
     <Compile Include="Processors\Loot.cs" />
     <Compile Include="Processors\NowCast.cs" />
     <Compile Include="Processors\Pets.cs" />
@@ -194,6 +196,8 @@
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindow.cs" />
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowHelpers.cs" />
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowStates.cs" />
+    <Compile Include="UI\Windows\Hunt\HuntWindow.cs" />
+    <Compile Include="UI\E3HudWindow.cs" />
     <Compile Include="Utility\e3util.cs" />
   </ItemGroup>
   <ItemGroup>

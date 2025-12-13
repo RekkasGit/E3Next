@@ -1,4 +1,4 @@
-﻿using E3Core.Data;
+using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Utility;
 using MonoCore;
@@ -33,6 +33,10 @@ namespace E3Core.Processors
 				MQ.Write("Loading Project Lazarus specific code!");
 
 				Init_Lazarus();
+			}
+			else if (E3.EverQuestServerName.Equals("EZ (Linux) x4 Exp", StringComparison.OrdinalIgnoreCase))
+			{
+				MQ.Write("Loading EZ Server specific code!");
 			}
 			else
 			{

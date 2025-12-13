@@ -1890,7 +1890,7 @@ namespace E3Core.Settings
             {"Misc::Auto-Forage (On/Off)", "When enabled you will start foraging. You can leverage [Cursor Delete] section in this Ini to manage the junk loot."},
             {"Misc::Dismount On Interrupt (On/Off)", "If you are on a mount and your priority requires you to inturrupt a spell for a higher priority spell (ex: Nuking -> Heal)."},
             {"Misc::Delay in MS After CastWindow Drops For Spell Completion", "Will delay the defined MS before beginning a new action. Useful when server lag creates an issue where you're finished castingt but the server hasn't caught up."},
-            {"Misc::If FD stay down (true/false)", "When enabled, if you are Feigned when an /assist command is issued, E3 will stand you up."},
+            {"Misc::If FD stay down (true/false)", "When enabled, if you are Feigned when an /assist command is issued, E3 will ignore the /assist and leave you feigned."},
             {"Misc::Debuffs/Dots are visible", "If you have Leadership AA 'Inspect Buffs', set this to On. If not, E3 will internally track timers to determine when to recast DoTs and Debuffs."},
             {"Assist Settings::Assist Type (Melee/Ranged/Off)",
                 "Defines how your character will behave in combat.\n\n"

@@ -92,6 +92,80 @@ namespace E3Core.Utility
 			}
 			return _raidTanks;
 		}
+		private static List<String> _deadRaidMembers = new List<string>();
+		/// <summary>
+		/// Returns a list of raid members detected as dead or in corpse form. Includes members outside the zone when they report status over the bot network.
+		/// </summary>
+		public static List<String> GetDeadRaidMembers()
+		{
+			_deadRaidMembers.Clear();
+			Int32 raidSize = MQ.Query<Int32>("${Raid.Members}");
+			for (Int32 i = 0; i < raidSize; i++)
+			{
+				string memberName = MQ.Query<String>($"${{Raid.Member[{i}].Name}}");
+				if (string.IsNullOrEmpty(memberName) || memberName == "NULL") continue;
+				if (string.Equals(memberName, E3.CurrentName, StringComparison.OrdinalIgnoreCase)) continue;
+
+				bool isDead = false;
+				try
+				{
+					string pattern1 = $"{memberName}'s corpse";
+					string pattern2 = $"{memberName}`s corpse";
+					var corpse = _spawns.Get().FirstOrDefault(sp =>
+						sp.TypeDesc == "Corpse" && (
+							string.Equals(sp.CleanName, pattern1, StringComparison.OrdinalIgnoreCase) ||
+							string.Equals(sp.Name, pattern1, StringComparison.OrdinalIgnoreCase) ||
+							string.Equals(sp.CleanName, pattern2, StringComparison.OrdinalIgnoreCase) ||
+							string.Equals(sp.Name, pattern2, StringComparison.OrdinalIgnoreCase) ||
+							(sp.CleanName?.StartsWith(pattern1, StringComparison.OrdinalIgnoreCase) ?? false) ||
+							(sp.Name?.StartsWith(pattern1, StringComparison.OrdinalIgnoreCase) ?? false) ||
+							(sp.CleanName?.StartsWith(pattern2, StringComparison.OrdinalIgnoreCase) ?? false) ||
+							(sp.Name?.StartsWith(pattern2, StringComparison.OrdinalIgnoreCase) ?? false)
+						));
+					if (corpse != null && corpse.ID > 0)
+					{
+						isDead = true;
+					}
+				}
+				catch { }
+
+				if (isDead && !_deadRaidMembers.Contains(memberName))
+				{
+					_deadRaidMembers.Add(memberName);
+				}
+			}
+
+			var connectedBots = E3.Bots.BotsConnected();
+			foreach (var botName in connectedBots)
+			{
+				if (_deadRaidMembers.Contains(botName, StringComparer.OrdinalIgnoreCase)) continue;
+				if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase)) continue;
+
+				bool inRaid = false;
+				for (Int32 i = 0; i < raidSize; i++)
+				{
+					string memberName = MQ.Query<String>($"${{Raid.Member[{i}].Name}}");
+					if (string.Equals(memberName, botName, StringComparison.OrdinalIgnoreCase))
+					{
+						inRaid = true;
+						break;
+					}
+				}
+				if (!inRaid) continue;
+
+				try
+				{
+					string peerDead = E3.Bots.Query(botName, "${Me.Dead}");
+					if (string.Equals(peerDead, "TRUE", StringComparison.OrdinalIgnoreCase) && !_deadRaidMembers.Contains(botName))
+					{
+						_deadRaidMembers.Add(botName);
+					}
+				}
+				catch { }
+			}
+
+			return _deadRaidMembers;
+		}
 		public static Dictionary<String, Int32> _xtargetPlayers = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 		public static Dictionary<String, Int32> GetXTargetPlayers()
 		{
@@ -1101,6 +1175,7 @@ namespace E3Core.Utility
 					Spawn s;
 					if (_spawns.TryByID(mobId, out s))
 					{
+						if (s.TypeDesc == "Corpse") continue;
 						if (s.Aggressive)
 						{
 							currentAggro = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctAggro}}");
@@ -1133,6 +1208,7 @@ namespace E3Core.Utility
 					Spawn s;
 					if (_spawns.TryByID(mobId, out s))
 					{
+						if (s.TypeDesc == "Corpse") continue;
 						if (s.Aggressive)
 						{
 							tempLowestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
@@ -1164,6 +1240,7 @@ namespace E3Core.Utility
 					Spawn s;
 					if (_spawns.TryByID(mobId, out s))
 					{
+						if (s.TypeDesc == "Corpse") continue;
 						if (s.Aggressive)
 						{
 							tempHighestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");

@@ -322,6 +322,7 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
 			PubServer.AddTopicMessage("${Me.ZoneID}", MQ.Query<string>("${Zone.ID}"));
 			PubServer.AddTopicMessage("${Me.Instance}", MQ.Query<string>("${Me.Instance}"));
+			PubServer.AddTopicMessage("${Me.Class.ShortName}", MQ.Query<string>("${Me.Class.ShortName}"));
 
 		}
 		public static void StateUpdates_Stats()
@@ -340,7 +341,12 @@ namespace E3Core.Processors
 		}
 		public static void StateUpdates_AAInformation()
 		{
-			PubServer.AddTopicMessage("${Me.AAPoints}", MQ.Query<string>("${Me.AAPoints}"));
+			string aaPoints = MQ.Query<string>("${Me.AAPoints}");
+			if (IsEzServer && TryGetEzServerAaPoints(out var ezAaPoints))
+			{
+				aaPoints = ezAaPoints.ToString(CultureInfo.InvariantCulture);
+			}
+			PubServer.AddTopicMessage("${Me.AAPoints}", aaPoints);
 			PubServer.AddTopicMessage("${Me.AAPointsAssigned}", MQ.Query<string>("${Me.AAPointsAssigned}"));
 			PubServer.AddTopicMessage("${Me.AAPointsSpent}", MQ.Query<string>("${Me.AAPointsSpent}"));
 			PubServer.AddTopicMessage("${Me.AAPointsTotal}", MQ.Query<string>("${Me.AAPointsTotal}"));
@@ -487,6 +493,9 @@ namespace E3Core.Processors
 
                 CurrentName = MQ.Query<string>("${Me.CleanName}");
                 ServerName = e3util.FormatServerName(MQ.Query<string>("${MacroQuest.Server}"));
+                string rawServerName = MQ.Query<string>("${EverQuest.Server}") ?? string.Empty;
+                EverQuestServerName = rawServerName;
+                UseStreamHealthNumbers = rawServerName.Equals("EZ (Linux) x4 Exp", StringComparison.OrdinalIgnoreCase);
                 //deal with the Shadow Knight class issue.
                 string classValue =e3util.ClassNameFix(MQ.Query<string>("${Me.Class}"));
                 Enum.TryParse(classValue, out CurrentClass);
@@ -553,6 +562,27 @@ namespace E3Core.Processors
             }
         }
 
+		public static void UpdateEzServerAaPoints(int aaPoints)
+		{
+			if (!IsEzServer) return;
+			_ezServerCapturedAaPoints = Math.Max(0, aaPoints);
+		}
+
+		public static bool TryGetEzServerAaPoints(out int aaPoints)
+		{
+			aaPoints = _ezServerCapturedAaPoints;
+			return aaPoints >= 0;
+		}
+
+		public static int ResolveAaPoints(int fallbackValue)
+		{
+			if (IsEzServer && TryGetEzServerAaPoints(out var aaPoints))
+			{
+				return aaPoints;
+			}
+			return fallbackValue;
+		}
+
         public static bool ActionTaken = false;
         public static bool Following = false;
         public static long StartTimeStamp;
@@ -570,6 +600,9 @@ namespace E3Core.Processors
         public static string CurrentName;
         public static Data.Class CurrentClass;
         public static string ServerName;
+        public static string EverQuestServerName = string.Empty;
+        public static bool UseStreamHealthNumbers = false;
+        public static bool IsEzServer => EverQuestServerName.Equals("EZ (Linux) x4 Exp", StringComparison.OrdinalIgnoreCase);
         public static string CurrentPetName = String.Empty;
 		public static string CurrentMercName = String.Empty;
         public static bool CurrentInCombat = false;
@@ -586,6 +619,7 @@ namespace E3Core.Processors
         public static bool IsInvis;
 		public static bool IsMoving;
 		public static bool IsFD;
+		private static int _ezServerCapturedAaPoints = -1;
 
 		private static Int64 _nextReloadSettingsCheck = 0;
         private static Int64 _nextReloadSettingsInterval = 2000;
