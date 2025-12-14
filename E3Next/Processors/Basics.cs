@@ -199,41 +199,33 @@ namespace E3Core.Processors
 				}
 			},"list all commands available");
 
-			EventProcessor.RegisterCommand("/e3memstats", (x) =>
-			{
-				ShareMemoryStats(announceToBots: true);
-				E3.Bots.BroadcastCommand("/e3memstats_share");
-			}, "show memory stats");
+			//EventProcessor.RegisterCommand("/e3memstats", (x) =>
+			//{
 
-			EventProcessor.RegisterCommand("/e3memstats_share", (x) =>
-			{
-				ShareMemoryStats();
-			}, "share memory stats data (internal)");
+			//	Process currentProcess = Process.GetCurrentProcess();
 
-			EventProcessor.RegisterCommand("/e3memstats_data", (x) =>
-			{
-				// Receive stats data from other bots (no re-broadcasting)
-				if (x.args.Count >= 3)
-				{
-					string characterName = x.args[0];
-					if (double.TryParse(x.args[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double cSharpMemory) && 
-						double.TryParse(x.args[2], NumberStyles.Float, CultureInfo.InvariantCulture, out double eqMemory))
-					{
-						// Only add if it's not our own data (avoid duplicates)
-						if (!string.Equals(characterName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
-						{
-							var receivedStats = new MemoryStats(characterName, cSharpMemory, eqMemory);
-							MemoryStatsWindow.AddMemoryStats(receivedStats);
-						}
-					}
-				}
+			//	// Refresh the process info to ensure the data is up to date
+			//	currentProcess.Refresh();
 
-			}, "receive memory stats data (internal)");
+			//	double eqprocessMemoryMB = 0;
 
-			EventProcessor.RegisterCommand("/e3memstatswindow", (x) =>
-			{
-				MemoryStatsWindow.ToggleWindow();
-			}, "toggle memory stats window");
+			//	if (Core._MQ2MonoVersion > 0.35M)
+			//	{
+			//		eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
+			//	}
+
+			//	// Get the private memory size (commit size) in bytes
+			//	long privateMemoryBytes = GC.GetTotalMemory(false);
+
+			//	// Convert to Kilobytes (KB) for easier reading
+			//	double privateMemoryKb = privateMemoryBytes / 1024f/1024;
+
+			//	E3.Bots.Broadcast($"Process Name: {currentProcess.ProcessName}");
+			//	E3.Bots.Broadcast($"Process ID: {currentProcess.Id}");
+			//	E3.Bots.Broadcast($"C# memory usage: {privateMemoryKb:N} MB");
+			//	E3.Bots.Broadcast($"EQ commit size:{eqprocessMemoryMB:N} MB");
+	
+			//}, "show memory stats");
 
 			EventProcessor.RegisterCommand("/e3printAA", (x) =>
 			{

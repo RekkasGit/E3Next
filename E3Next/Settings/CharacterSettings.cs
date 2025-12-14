@@ -227,6 +227,8 @@ namespace E3Core.Settings
 		public List<Spell> GroupBuffs = new List<Spell>();
 		[INI_Section("Buffs", "Combat Buff")]
 		public List<Spell> CombatBuffs = new List<Spell>();
+		[INI_Section("Buffs", "Assist Buff")]
+		public List<Spell> AssistBuffs = new List<Spell>();
 
 		[INI_Section("Buffs", "Pet Buff")]
 		public List<Spell> PetBuffs = new List<Spell>();
@@ -886,6 +888,8 @@ namespace E3Core.Settings
 			foreach (var buff in BotBuffs) buff.IsBuff = true;
 			LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
 			foreach (var buff in CombatBuffs) buff.IsBuff = true;
+			LoadKeyData("Buffs", "Assist Buff", ParsedData, AssistBuffs);
+			foreach (var buff in AssistBuffs) buff.IsBuff = true;
 			LoadKeyData("Buffs", "Group Buff", ParsedData, GroupBuffs);
 			foreach (var buff in GroupBuffs) buff.IsBuff = true;
 			LoadKeyData("Buffs", "Pet Buff", ParsedData, PetBuffs);
@@ -1093,6 +1097,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Self Buff", "");
 			section.Keys.AddKey("Bot Buff", "");
 			section.Keys.AddKey("Combat Buff", "");
+			section.Keys.AddKey("Assist Buff", "");
 			section.Keys.AddKey("Group Buff", "");
 			section.Keys.AddKey("Pet Buff", "");
 			section.Keys.AddKey("Combat Pet Buff", "");
@@ -1945,7 +1950,13 @@ namespace E3Core.Settings
                 + "[color=teal]Artifact of the Leopard\n"
                 + "Spirit of the Puma/Gem|5/TargetName\n"
                 + "Thief's Eyes[/color]"},
-            {"Buffs::Group Buff",
+			 {"Buffs::Assist Buff",
+				"Buffs or Casts that are only used [color=purple]during assist[/color].\n"
+				+ "Can use Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Artifact of the Leopard\n"
+				+ "Spirit of the Puma/Gem|5/TargetName\n"
+				+ "Thief's Eyes[/color]"},
+			{"Buffs::Group Buff",
                 "Used for [color=purple]triggered buffing requests[/color] from other players.\n"
                 + "This has nothing to do with automating buffs for your 6-person group.\n"
                 + "Will buff anyone who asks with the phrase [color=teal]\"Buff Me\"[/color] or [color=teal]\"Buff my Pet\"[/color].\n"

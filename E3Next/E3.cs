@@ -297,10 +297,29 @@ namespace E3Core.Processors
 		private static Int64 _nextBuffUpdateCheckTime = 0;
 		private static Int64 _nextSlowUpdateCheckTime = 0;
 		private static Int64 _nextMiscUpdateCheckTime = 0;
+		private static Int64 _nextMemoryUpdateCheckTime = 0;
+		private static Int64 _nextMemoryUpdateCheckRate = 2000;
 		private static Int64 _MiscUpdateCheckRate = 100;
+
 	
 		//qick hack to prevent calling state update... while in state updates. 
 		public static bool InStateUpdate = false;
+
+		public static void StateUpdates_Memory()
+		{
+			double eqprocessMemoryMB = 0;
+			if (Core._MQ2MonoVersion > 0.35M)
+			{
+				eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
+			}
+			// Get the private memory size (commit size) in bytes
+			long privateMemoryBytes = GC.GetTotalMemory(false);
+			// Convert to Kilobytes (KB) for easier reading
+			double privateMemoryMb = privateMemoryBytes / 1024f / 1024;
+
+			PubServer.AddTopicMessage("${Me.Memory_CSharp}", $"{privateMemoryMb:N}");
+			PubServer.AddTopicMessage("${Me.Memory_EQPageFile}", $"{eqprocessMemoryMB:N}");
+		}
 
 		public static void StateUpdates_Counters()
 		{
@@ -388,7 +407,10 @@ namespace E3Core.Processors
 					StateUpdates_BuffInformation();
 					StateUpdates_Counters();
 				}
-				
+				if (e3util.ShouldCheck(ref _nextMemoryUpdateCheckTime, _nextMemoryUpdateCheckRate))
+				{
+					StateUpdates_Memory();
+				}
 				//not horribly important stuff, can just be sent out whever, currently once per second
 				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
 				{

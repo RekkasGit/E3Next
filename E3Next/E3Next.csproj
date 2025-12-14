@@ -199,8 +199,8 @@
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowHelpers.cs" />
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowStates.cs" />
     <Compile Include="UI\Windows\Hunt\HuntWindow.cs" />
-    <Compile Include="UI\Windows\MemoryStatsWindow.cs" />
     <Compile Include="UI\E3HudWindow.cs" />
+    <Compile Include="UI\Windows\MemStats\MemoryStatsWindow.cs" />
     <Compile Include="Utility\e3util.cs" />
   </ItemGroup>
   <ItemGroup>
