@@ -151,33 +151,33 @@ namespace E3Core.Processors
 				}
 			},"list all commands available");
 
-			EventProcessor.RegisterCommand("/e3memstats", (x) =>
-			{
+			//EventProcessor.RegisterCommand("/e3memstats", (x) =>
+			//{
 
-				Process currentProcess = Process.GetCurrentProcess();
+			//	Process currentProcess = Process.GetCurrentProcess();
 
-				// Refresh the process info to ensure the data is up to date
-				currentProcess.Refresh();
+			//	// Refresh the process info to ensure the data is up to date
+			//	currentProcess.Refresh();
 
-				double eqprocessMemoryMB = 0;
+			//	double eqprocessMemoryMB = 0;
 
-				if (Core._MQ2MonoVersion > 0.35M)
-				{
-					eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
-				}
+			//	if (Core._MQ2MonoVersion > 0.35M)
+			//	{
+			//		eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
+			//	}
 
-				// Get the private memory size (commit size) in bytes
-				long privateMemoryBytes = GC.GetTotalMemory(false);
+			//	// Get the private memory size (commit size) in bytes
+			//	long privateMemoryBytes = GC.GetTotalMemory(false);
 
-				// Convert to Kilobytes (KB) for easier reading
-				double privateMemoryKb = privateMemoryBytes / 1024f/1024;
+			//	// Convert to Kilobytes (KB) for easier reading
+			//	double privateMemoryKb = privateMemoryBytes / 1024f/1024;
 
-				E3.Bots.Broadcast($"Process Name: {currentProcess.ProcessName}");
-				E3.Bots.Broadcast($"Process ID: {currentProcess.Id}");
-				E3.Bots.Broadcast($"C# memory usage: {privateMemoryKb:N} MB");
-				E3.Bots.Broadcast($"EQ commit size:{eqprocessMemoryMB:N} MB");
+			//	E3.Bots.Broadcast($"Process Name: {currentProcess.ProcessName}");
+			//	E3.Bots.Broadcast($"Process ID: {currentProcess.Id}");
+			//	E3.Bots.Broadcast($"C# memory usage: {privateMemoryKb:N} MB");
+			//	E3.Bots.Broadcast($"EQ commit size:{eqprocessMemoryMB:N} MB");
 	
-			}, "show memory stats");
+			//}, "show memory stats");
 
 			EventProcessor.RegisterCommand("/e3printAA", (x) =>
 			{
