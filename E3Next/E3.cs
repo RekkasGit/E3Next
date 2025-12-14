@@ -492,10 +492,10 @@ namespace E3Core.Processors
                 
 
                 CurrentName = MQ.Query<string>("${Me.CleanName}");
-                ServerName = e3util.FormatServerName(MQ.Query<string>("${MacroQuest.Server}"));
-                string rawServerName = MQ.Query<string>("${EverQuest.Server}") ?? string.Empty;
-                EverQuestServerName = rawServerName;
-                UseStreamHealthNumbers = rawServerName.Equals("EZ (Linux) x4 Exp", StringComparison.OrdinalIgnoreCase);
+				ServerName = e3util.FormatServerName(MQ.Query<string>("${MacroQuest.Server}"));
+				string rawServerName = MQ.Query<string>("${EverQuest.Server}") ?? string.Empty;
+				EverQuestServerName = rawServerName;
+				UseStreamHealthNumbers = ServerSpecificGates.IsServer(ServerId.EzServer);
                 //deal with the Shadow Knight class issue.
                 string classValue =e3util.ClassNameFix(MQ.Query<string>("${Me.Class}"));
                 Enum.TryParse(classValue, out CurrentClass);
@@ -601,8 +601,8 @@ namespace E3Core.Processors
         public static Data.Class CurrentClass;
         public static string ServerName;
         public static string EverQuestServerName = string.Empty;
-        public static bool UseStreamHealthNumbers = false;
-        public static bool IsEzServer => EverQuestServerName.Equals("EZ (Linux) x4 Exp", StringComparison.OrdinalIgnoreCase);
+		public static bool UseStreamHealthNumbers = false;
+		public static bool IsEzServer => ServerSpecificGates.IsServer(ServerId.EzServer);
         public static string CurrentPetName = String.Empty;
 		public static string CurrentMercName = String.Empty;
         public static bool CurrentInCombat = false;

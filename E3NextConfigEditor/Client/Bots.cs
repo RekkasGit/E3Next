@@ -96,9 +96,19 @@ namespace E3NextConfigEditor.Client
 			return false;
 		}
 
+		public bool InZone(string name)
+		{
+			return false;
+		}
+
 		public bool IsMyBot(string name)
 		{
 			return false;
+		}
+
+		public List<string> GetCharactersInSameZone()
+		{
+			return new List<string>();
 		}
 
 		public int PctHealth(string name)

@@ -23,18 +23,18 @@ namespace E3Core.Processors
 		public static void SeverSpecific_Init()
 		{
 			MQ.Write("Checking for server specific code..");
-			if (E3.ServerName == "EQ_Might")
+			if (ServerSpecificGates.IsServer(ServerId.EqMight))
 			{
 				MQ.Write("Loading EQ_Might specific code!");
 				Init_EQMight();
 			}
-			else if(E3.ServerName=="Lazarus")
+			else if(ServerSpecificGates.IsServer(ServerId.Lazarus))
 			{
 				MQ.Write("Loading Project Lazarus specific code!");
 
 				Init_Lazarus();
 			}
-			else if (E3.EverQuestServerName.Equals("EZ (Linux) x4 Exp", StringComparison.OrdinalIgnoreCase))
+			else if (ServerSpecificGates.IsServer(ServerId.EzServer))
 			{
 				MQ.Write("Loading EZ Server specific code!");
 			}

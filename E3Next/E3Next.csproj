@@ -107,6 +107,7 @@
     <Compile Include="Classes\Druid.cs" />
     <Compile Include="Classes\Enchanter.cs" />
     <Compile Include="Classes\Magician.cs" />
+    <Compile Include="Classes\MemoryStats.cs" />
     <Compile Include="Classes\Monk.cs" />
     <Compile Include="Classes\Necromancer.cs" />
     <Compile Include="Classes\Paladin.cs" />
@@ -141,6 +142,7 @@
     <Compile Include="Processors\Nukes.cs" />
     <Compile Include="Processors\PrivateCode.cs" />
     <Compile Include="Processors\SeverSpecific.cs" />
+    <Compile Include="Processors\ServerSpecificGates.cs" />
     <Compile Include="Processors\VetAAs.cs" />
     <Compile Include="Processors\Zoning.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -197,6 +199,7 @@
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowHelpers.cs" />
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowStates.cs" />
     <Compile Include="UI\Windows\Hunt\HuntWindow.cs" />
+    <Compile Include="UI\Windows\MemoryStatsWindow.cs" />
     <Compile Include="UI\E3HudWindow.cs" />
     <Compile Include="Utility\e3util.cs" />
   </ItemGroup>

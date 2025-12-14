@@ -47,7 +47,7 @@ namespace E3Core.UI.Windows.Hunt
             E3ImGUI.RegisterWindow(DebugWindowName, RenderDebugWindow);
         }
 
-        public static void ToggleWindow()
+      public static void ToggleWindow()
         {
             try
             {
@@ -55,6 +55,8 @@ namespace E3Core.UI.Windows.Hunt
                 {
                     _windowInitialized = true;
                     imgui_Begin_OpenFlagSet(WindowName, true);
+                    // Ensure debug window is closed when first opening the main window
+                    imgui_Begin_OpenFlagSet(DebugWindowName, false);
                     SyncBuffersFromState();
                 }
                 else

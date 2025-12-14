@@ -21,6 +21,7 @@ namespace E3Next.UI
         private const string ShortBuffWindowName = "E3 HUD - Short Buffs";
         private const string AaWindowName = "E3 HUD - AAs";
         private static bool _showAaWindow = false;
+        private static bool _initialAaRefreshRequested;
 
         private const int PlayerStatsRefreshMs = 150;
         private const int TargetInfoRefreshMs = 120;
@@ -108,6 +109,8 @@ namespace E3Next.UI
                     E3.MQ.Write($"E3 Zone Characters: Error - {ex.Message}");
                 }
             }, "Show characters in same zone");
+
+            RequestInitialAaRefreshIfNeeded();
         }
 
         public static void ToggleWindow()
@@ -119,6 +122,7 @@ namespace E3Next.UI
                     _windowInitialized = true;
                     MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(WindowName, true);
                     MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(ShortBuffWindowName, true);
+                    RequestInitialAaRefreshIfNeeded();
                 }
                 else
                 {
@@ -134,6 +138,7 @@ namespace E3Next.UI
                     else
                     {
                         MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(AaWindowName, _showAaWindow);
+                        RequestInitialAaRefreshIfNeeded();
                     }
                 }
                 _imguiContextReady = true;
@@ -177,6 +182,22 @@ namespace E3Next.UI
         }
 
         private static bool IsEzServer => E3.IsEzServer;
+
+        private static void RequestInitialAaRefreshIfNeeded()
+        {
+            if (_initialAaRefreshRequested) return;
+            if (!IsEzServer) return;
+
+            try
+            {
+                E3.MQ.Cmd("/say #AA");
+                _initialAaRefreshRequested = true;
+            }
+            catch (Exception ex)
+            {
+                E3.MQ.Write($"E3 HUD: Failed to request AA data - {ex.Message}");
+            }
+        }
 
         private static long GetTimeMs()
         {
