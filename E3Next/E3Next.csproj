@@ -116,6 +116,7 @@
     <Compile Include="Classes\Shaman.cs" />
     <Compile Include="Classes\Warrior.cs" />
     <Compile Include="Classes\Wizard.cs" />
+    <Compile Include="Classes\MemoryStats.cs" />
     <Compile Include="Core.cs" />
     <Compile Include="Data\CharacterBuffs.cs" />
     <Compile Include="Data\Class.cs" />
@@ -194,6 +195,7 @@
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindow.cs" />
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowHelpers.cs" />
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowStates.cs" />
+    <Compile Include="UI\Windows\MemoryStatsWindow.cs" />
     <Compile Include="Utility\e3util.cs" />
   </ItemGroup>
   <ItemGroup>

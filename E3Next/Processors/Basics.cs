@@ -3,6 +3,7 @@ using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
+using E3Core.UI.Windows;
 using E3Core.Utility;
 using IniParser.Model;
 using MonoCore;
@@ -10,6 +11,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -74,6 +76,44 @@ namespace E3Core.Processors
         {
             RegisterEvents();
         }
+
+		private static MemoryStats CreateLocalMemoryStats()
+		{
+			Process currentProcess = Process.GetCurrentProcess();
+			currentProcess.Refresh();
+
+			double eqprocessMemoryMB = 0;
+			if (Core._MQ2MonoVersion > 0.35M)
+			{
+				eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
+			}
+
+			long privateMemoryBytes = GC.GetTotalMemory(false);
+			double privateMemoryMb = privateMemoryBytes / 1024f / 1024f;
+
+			return new MemoryStats(E3.CurrentName, privateMemoryMb, eqprocessMemoryMB);
+		}
+
+		private static void ShareMemoryStats(bool announceToBots = false)
+		{
+			var stats = CreateLocalMemoryStats();
+			if (stats == null) return;
+
+			MemoryStatsWindow.AddMemoryStats(stats);
+			if (announceToBots)
+			{
+				E3.Bots.Broadcast($"{stats.CharacterName} - C# memory: {stats.CSharpMemoryMB:N} MB, EQ commit: {stats.EQCommitSizeMB:N} MB");
+			}
+			BroadcastMemoryStats(stats);
+		}
+
+		private static void BroadcastMemoryStats(MemoryStats stats)
+		{
+			if (stats == null) return;
+			string csharp = stats.CSharpMemoryMB.ToString("F2", CultureInfo.InvariantCulture);
+			string eq = stats.EQCommitSizeMB.ToString("F2", CultureInfo.InvariantCulture);
+			E3.Bots.BroadcastCommand($"/e3memstats_data {stats.CharacterName} {csharp} {eq}");
+		}
 
         /// <summary>
         /// Registers the events.
@@ -153,31 +193,37 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterCommand("/e3memstats", (x) =>
 			{
+				ShareMemoryStats(announceToBots: true);
+				E3.Bots.BroadcastCommand("/e3memstats_share");
+			}, "show memory stats");
 
-				Process currentProcess = Process.GetCurrentProcess();
+			EventProcessor.RegisterCommand("/e3memstats_share", (x) =>
+			{
+				ShareMemoryStats();
+			}, "share memory stats data (internal)");
 
-				// Refresh the process info to ensure the data is up to date
-				currentProcess.Refresh();
-
-				double eqprocessMemoryMB = 0;
-
-				if (Core._MQ2MonoVersion > 0.35M)
+			EventProcessor.RegisterCommand("/e3memstats_data", (x) =>
+			{
+				if (x.args.Count >= 3)
 				{
-					eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
+					string characterName = x.args[0];
+					if (double.TryParse(x.args[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double cSharpMemory) &&
+						double.TryParse(x.args[2], NumberStyles.Float, CultureInfo.InvariantCulture, out double eqMemory))
+					{
+						if (!string.Equals(characterName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+						{
+							var receivedStats = new MemoryStats(characterName, cSharpMemory, eqMemory);
+							MemoryStatsWindow.AddMemoryStats(receivedStats);
+						}
+					}
 				}
 
-				// Get the private memory size (commit size) in bytes
-				long privateMemoryBytes = GC.GetTotalMemory(false);
+			}, "receive memory stats data (internal)");
 
-				// Convert to Kilobytes (KB) for easier reading
-				double privateMemoryKb = privateMemoryBytes / 1024f/1024;
-
-				E3.Bots.Broadcast($"Process Name: {currentProcess.ProcessName}");
-				E3.Bots.Broadcast($"Process ID: {currentProcess.Id}");
-				E3.Bots.Broadcast($"C# memory usage: {privateMemoryKb:N} MB");
-				E3.Bots.Broadcast($"EQ commit size:{eqprocessMemoryMB:N} MB");
-	
-			}, "show memory stats");
+			EventProcessor.RegisterCommand("/e3memstatswindow", (x) =>
+			{
+				MemoryStatsWindow.ToggleWindow();
+			}, "toggle memory stats window");
 
 			EventProcessor.RegisterCommand("/e3printAA", (x) =>
 			{
