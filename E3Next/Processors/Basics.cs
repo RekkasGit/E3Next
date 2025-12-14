@@ -60,6 +60,13 @@ namespace E3Core.Processors
 		private static DateTime? _cursorOccupiedSince;
         private static TimeSpan _cursorOccupiedTime;
         private static TimeSpan _cursorOccupiedThreshold = new TimeSpan(0, 0, 0, 30);
+		private static readonly string[] _manaStoneItemNames = new[]
+		{
+			"Manastone",
+			"Apocryphal Manastone",
+			"Rose Colored Manastone",
+			"Mana Necklace XII"
+		};
 
 		[ExposedData("Basics", "XTargetFixEnabled")]
 		private static bool _enableXTargetFix = false;
@@ -1622,11 +1629,27 @@ namespace E3Core.Processors
 						Casting.Cast(0, s);
                         return true;
 					}
-				}
 			}
+		}
             return false;
 		}
-        /// <summary>
+
+		public static bool TryGetManaStoneItem(out string manastoneName)
+		{
+			foreach (var itemName in _manaStoneItemNames)
+			{
+				string query = "${Bool[${FindItem[=" + itemName + "]}]}";
+				if (MQ.Query<bool>(query))
+				{
+					manastoneName = itemName;
+					return true;
+				}
+			}
+
+			manastoneName = string.Empty;
+			return false;
+		}
+		/// <summary>
         /// Checks the mana resources, and does actions to regenerate mana during combat.
         /// </summary>
         [ClassInvoke(Data.Class.ManaUsers)]
@@ -1729,28 +1752,16 @@ namespace E3Core.Processors
                 pctHps = MQ.Query<int>("${Me.PctHPs}");
                 if (pctHps < minHP) return;
 
-                bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
-                
-                string manastoneName = "Manastone";
-                if(!hasManaStone)
-                {
-                    hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Apocryphal Manastone]}]}");
-                    if(hasManaStone) manastoneName = "Apocryphal Manastone";
-                    if(!hasManaStone)
-                    {
-                        hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Rose Colored Manastone]}]}");
-                        if (hasManaStone) manastoneName = "Rose Colored Manastone";
-                    }
-                }
-                bool amIStanding = MQ.Query<bool>("${Me.Standing}");
+				bool hasManaStone = TryGetManaStoneItem(out var manastoneName);
+				bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 
-                if (hasManaStone && amIStanding)
-                {
-                    string manastoneCommand = $"/useitem \"{manastoneName}\"";
-                    e3util.YieldToEQ();
-                    if (MQ.Query<bool>("${Me.Invis}")) return;
+				if (hasManaStone && amIStanding)
+				{
+					string manastoneCommand = $"/useitem \"{manastoneName}\"";
+					e3util.YieldToEQ();
+					if (MQ.Query<bool>("${Me.Invis}")) return;
 
-                    MQ.Write("\agUsing Manastone...");
+					MQ.Write($"\agUsing {manastoneName}...");
                     pctHps = MQ.Query<int>("${Me.PctHPs}");
                     pctMana = MQ.Query<int>("${Me.PctMana}");
                     int currentLoop = 0;

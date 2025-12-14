@@ -2009,7 +2009,7 @@ namespace E3Core.Processors
 					 */
 					Int32 pctAggro = MQ.Query<Int32>("${Me.PctAggro}");
 					if (pctAggro > 99) return;
-					bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
+					if (!Basics.TryGetManaStoneItem(out var manastoneName)) return;
 					bool hasSongBuffv1 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence I]}]}");
 					bool hasSongBuffv2 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence II]}]}");
 					bool hasSongBuffv3 = MQ.Query<bool>("${Bool[${Me.Song[Mana Convergence III]}]}");
@@ -2022,7 +2022,6 @@ namespace E3Core.Processors
 						Songv4Duration = MQ.Query<Int32>("${Me.Song[Mana Convergence IV].Duration}");
 
 					}
-					if (!hasManaStone) return;
 					if (!(hasSongBuffv1 || hasSongBuffv2 || hasSongBuffv3 || hasSongBuffv4)) return;
 
 
@@ -2051,11 +2050,10 @@ namespace E3Core.Processors
 					if (pctHps < minHP) return;
 
 
-					string manastoneName = "Manastone";
 					Int32 totalClicksToTry = 5;
 					Int32 delayBetweenClicks = 20;
 					Int32 maxLoop = 25;
-					if (hasManaStone && (hasSongBuffv1 || hasSongBuffv2 || hasSongBuffv3 || hasSongBuffv4))
+					if (hasSongBuffv1 || hasSongBuffv2 || hasSongBuffv3 || hasSongBuffv4)
 					{
 						string manastoneCommand = $"/useitem \"{manastoneName}\"";
 
@@ -2064,7 +2062,7 @@ namespace E3Core.Processors
 							if (Songv4Duration > songv4MaxDuration) return;
 						}
 
-						MQ.Write("\agUsing Manastone for Laz Enc Epic...");
+						MQ.Write($"\agUsing {manastoneName} for Laz Enc Epic...");
 						pctHps = MQ.Query<int>("${Me.PctHPs}");
 						pctMana = MQ.Query<int>("${Me.PctMana}");
 						int currentLoop = 0;
