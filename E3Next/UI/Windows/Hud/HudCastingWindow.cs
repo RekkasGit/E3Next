@@ -16,7 +16,7 @@ namespace E3Core.UI.Windows.Hud
 		private static bool _windowInitialized = false;
 		private static bool _imguiContextReady = false;
 		private static Int64 _lastUpdate = 0;
-		private static Int64 _lastUpdateInterval = 1000;
+		private static Int64 _lastUpdateInterval = 250;
 		private static List<TableRow> _tableRows = new List<TableRow>();
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
@@ -74,6 +74,7 @@ namespace E3Core.UI.Windows.Hud
 			{
 				string casting = E3.Bots.Query(user, "${Me.Casting}");
 				string targetidString = E3.Bots.Query(user, "${Me.CurrentTargetID}");
+				string aaTotal = E3.Bots.Query(user, "${Me.AAPoints}");
 				Int32 targetid;
 				Int32.TryParse(targetidString, out targetid);
 				string targetName = "none";
@@ -83,6 +84,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				var row = new TableRow(user, targetName,casting);
 				if(row.Name==E3.CurrentName) row.IsSelf = true;
+				row.AATotal = aaTotal;
 				_tableRows.Add(row);
 			}
 		}
@@ -131,9 +133,7 @@ namespace E3Core.UI.Windows.Hud
 			if (entries.Count >6) rowsPerColumn = 6;
 
 			int columnCount = Math.Max(1, (int)Math.Ceiling(entries.Count / (double)rowsPerColumn));
-			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_BordersInnerV
-				| ImGuiTableFlags.ImGuiTableFlags_BordersOuter
-				| ImGuiTableFlags.ImGuiTableFlags_Resizable);
+			int tableFlags = (int)( ImGuiTableFlags.ImGuiTableFlags_Resizable);
 
 			using (var table = ImGUITable.Aquire())
 			{
@@ -187,9 +187,21 @@ namespace E3Core.UI.Windows.Hud
 			}
 
 			if (entry.IsSelf)
+			{
 				imgui_TextColored(0.169f, 1f, 0f, 1f, entry.Name);
+			}
 			else
+			{
 				imgui_TextColored(0.85f, 0.75f, 1.0f, 1.0f, entry.Name);
+			}
+
+			imgui_SameLine();
+			imgui_Text("(");
+			imgui_SameLine(0.0f, 0.0f);
+			imgui_TextColored(0.169f, 1f, 0f, 1f, entry.AATotal);
+			imgui_SameLine(0.0f, 0.0f);
+			imgui_Text(")");
+
 
 			string targetDisplay = string.IsNullOrWhiteSpace(entry.TargetName)
 				? "None"
@@ -199,20 +211,16 @@ namespace E3Core.UI.Windows.Hud
 			imgui_SameLine();
 			imgui_TextColored(0.536f, 1f, 0.333f, 1f, targetDisplay);
 
+			if (string.IsNullOrWhiteSpace(entry.SpellName) || entry.SpellName == "NULL")
+			{
+				imgui_Text(String.Empty);
+				return;
+			}
 			imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, "Spell:");
 			imgui_SameLine();
 			string stateText;
-			float sr = 0.6f, sg = 0.6f, sb = 0.6f;
-			if (string.IsNullOrWhiteSpace(entry.SpellName) || entry.SpellName=="NULL")
-			{
-				stateText = "Idle";
-				sr = 0.65f; sg = 0.85f; sb = 0.95f;
-			}
-			else
-			{
-				stateText = $"{entry.SpellName}";
-				sr = 0.95f; sg = 0.9f; sb = 0.55f;
-			}
+			float sr = 0.95f, sg = 0.9f, sb = 0.55f;
+			stateText = $"{entry.SpellName}";
 			imgui_TextColored(sr, sg, sb, 1.0f, stateText);
 		}
 
@@ -223,6 +231,7 @@ namespace E3Core.UI.Windows.Hud
 			public string TargetName { get; set; }
 			public string SpellName { get; set; }
 			public bool IsSelf { get; set; }
+			public string AATotal { get; set; }
 			public TableRow()
 			{
 				
