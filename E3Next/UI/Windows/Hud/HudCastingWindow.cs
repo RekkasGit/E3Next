@@ -111,9 +111,6 @@ namespace E3Core.UI.Windows.Hud
 							imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "No connected bots detected.");
 							return;
 						}
-
-						//imgui_TextColored(0.8f, 0.85f, 1.0f, 1.0f, $"Connected: {entries.Count}");
-						//imgui_Separator();
 						RenderBotCastingGrid(entries);
 					}
 				}
