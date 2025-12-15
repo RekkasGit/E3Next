@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using E3Core.Data;
 using E3Core.Processors;
+using E3Core.Server;
 using MonoCore;
 using static MonoCore.EventProcessor;
 using static MonoCore.E3ImGUI;
@@ -20,7 +23,26 @@ namespace E3Next.UI
         private const int PlayerShortBuffSlots = 20;
         private const string ShortBuffWindowName = "E3 HUD - Short Buffs";
         private const string AaWindowName = "E3 HUD - AAs";
+        private const string BotCastingWindowName = "E3 HUD - Connected Bots";
+        private const string PlayerStatsWindowName = "E3 HUD - Player Stats";
+        private const string TargetInfoWindowName = "E3 HUD - Target";
+        private const string BuffListWindowName = "E3 HUD - Buffs";
         private static bool _showAaWindow = false;
+        private static bool _showBotCastingWindow = false;
+        private static bool _showCastingColumn = true;
+        private static bool _showTargetColumn = true;
+        private static bool _showEnduranceColumn = true;
+        private static bool _showCombatStateColumn = true;
+        private static bool _showPlayerStatsSection = true;
+        private static bool _showTargetSection = true;
+        private static bool _showBuffSection = true;
+        private static bool _playerStatsPoppedOut;
+        private static bool _targetInfoPoppedOut;
+        private static bool _buffSectionPoppedOut;
+        private static bool _playerStatsWindowDismissedBySystem;
+        private static bool _targetWindowDismissedBySystem;
+        private static bool _buffWindowDismissedBySystem;
+        private static bool _hudVisibilityInitialized;
         private static bool _initialAaRefreshRequested;
 
         private const int PlayerStatsRefreshMs = 150;
@@ -30,6 +52,9 @@ namespace E3Next.UI
         private const int PlayerBuffRefreshMs = 800;
         private const int ShortBuffRefreshMs = 800;
         private const int BotDistanceRefreshMs = 200;
+        private const int MemoryStatusRefreshMs = 1000;
+        private const int BotEnduranceRefreshMs = 400;
+        private const int CombatStateRefreshMs = 500;
 
         private static readonly PlayerStatsSnapshot _playerStatsSnapshot = new PlayerStatsSnapshot();
         private static long _nextPlayerStatsRefreshMs;
@@ -49,15 +74,27 @@ namespace E3Next.UI
 
         private static readonly Dictionary<string, DistanceCache> _botDistanceCache = new Dictionary<string, DistanceCache>(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, ClassCache> _classCache = new Dictionary<string, ClassCache>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, MemoryStatusCache> _memoryStatusCache = new Dictionary<string, MemoryStatusCache>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, PercentCache> _endurancePercentCache = new Dictionary<string, PercentCache>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, CombatStateCache> _combatStateCache = new Dictionary<string, CombatStateCache>(StringComparer.OrdinalIgnoreCase);
+        private const int BotCastingRefreshMs = 300;
+        private const int BotCastingFreshnessMs = 2500;
+        private static readonly List<BotCastingEntry> _botCastingSnapshot = new List<BotCastingEntry>();
+        private static long _nextBotCastingRefreshMs;
 
         [SubSystemInit]
         public static void Init()
         {
             if (Core._MQ2MonoVersion < 0.35m) return;
+            EnsureHudVisibilitySettingsLoaded();
             // Register ImGui window using E3ImGUI system
             MonoCore.E3ImGUI.RegisterWindow(WindowName, RenderMainWindow);
             MonoCore.E3ImGUI.RegisterWindow(ShortBuffWindowName, RenderShortBuffWindow);
             MonoCore.E3ImGUI.RegisterWindow(AaWindowName, RenderAaWindow);
+            MonoCore.E3ImGUI.RegisterWindow(BotCastingWindowName, RenderBotCastingWindow);
+            MonoCore.E3ImGUI.RegisterWindow(PlayerStatsWindowName, RenderPlayerStatsWindow);
+            MonoCore.E3ImGUI.RegisterWindow(TargetInfoWindowName, RenderTargetInfoWindow);
+            MonoCore.E3ImGUI.RegisterWindow(BuffListWindowName, RenderBuffListWindow);
 
             // Default both windows to visible
             _windowInitialized = true;
@@ -65,6 +102,8 @@ namespace E3Next.UI
             MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(WindowName, true);
             MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(ShortBuffWindowName, true);
             MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(AaWindowName, false);
+            MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(BotCastingWindowName, false);
+            SyncPopoutWindows();
 
             // Register command to toggle window
             RegisterCommand("/e3hud", (x) =>
@@ -122,6 +161,8 @@ namespace E3Next.UI
                     _windowInitialized = true;
                     MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(WindowName, true);
                     MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(ShortBuffWindowName, true);
+                    MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(BotCastingWindowName, _showBotCastingWindow);
+                    SyncPopoutWindows();
                     RequestInitialAaRefreshIfNeeded();
                 }
                 else
@@ -133,11 +174,21 @@ namespace E3Next.UI
                     if (!newState)
                     {
                         _showAaWindow = false;
+                        _showBotCastingWindow = false;
                         MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(AaWindowName, false);
+                        MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(BotCastingWindowName, false);
+                        MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(PlayerStatsWindowName, false);
+                        MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(TargetInfoWindowName, false);
+                        MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(BuffListWindowName, false);
+                        _playerStatsWindowDismissedBySystem = true;
+                        _targetWindowDismissedBySystem = true;
+                        _buffWindowDismissedBySystem = true;
                     }
                     else
                     {
                         MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(AaWindowName, _showAaWindow);
+                        MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(BotCastingWindowName, _showBotCastingWindow);
+                        SyncPopoutWindows();
                         RequestInitialAaRefreshIfNeeded();
                     }
                 }
@@ -154,6 +205,7 @@ namespace E3Next.UI
         {
             if (!_imguiContextReady) return;
             if (!MonoCore.E3ImGUI.imgui_Begin_OpenFlagGet(WindowName)) return;
+            EnsureHudVisibilitySettingsLoaded();
 
             MonoCore.E3ImGUI.imgui_SetNextWindowSizeWithCond(600, 400, (int)MonoCore.E3ImGUI.ImGuiCond.FirstUseEver);
             MonoCore.E3ImGUI.PushCurrentTheme();
@@ -166,13 +218,96 @@ namespace E3Next.UI
                         return;
                     }
 
-                    RenderPlayerStats();
-                    MonoCore.E3ImGUI.imgui_Separator();
-                    RenderTargetInfo();
-                    MonoCore.E3ImGUI.imgui_Separator();
+                    if (MonoCore.E3ImGUI.imgui_BeginPopupContextWindow("E3HudMainContext", 1))
+                    {
+                        string botMenuText = _showBotCastingWindow ? "Hide Connected Bot Casts" : "Show Connected Bot Casts";
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(botMenuText))
+                        {
+                            _showBotCastingWindow = !_showBotCastingWindow;
+                            MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(BotCastingWindowName, _showBotCastingWindow);
+                        }
+
+                        MonoCore.E3ImGUI.imgui_Separator();
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(_showCastingColumn ? "Hide Casting Column" : "Show Casting Column"))
+                        {
+                            _showCastingColumn = !_showCastingColumn;
+                            PersistHudVisibilitySettings();
+                        }
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(_showTargetColumn ? "Hide Target Column" : "Show Target Column"))
+                        {
+                            _showTargetColumn = !_showTargetColumn;
+                            PersistHudVisibilitySettings();
+                        }
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(_showEnduranceColumn ? "Hide Endurance Column" : "Show Endurance Column"))
+                        {
+                            _showEnduranceColumn = !_showEnduranceColumn;
+                            PersistHudVisibilitySettings();
+                        }
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(_showCombatStateColumn ? "Hide Combat State Column" : "Show Combat State Column"))
+                        {
+                            _showCombatStateColumn = !_showCombatStateColumn;
+                            PersistHudVisibilitySettings();
+                        }
+
+                        MonoCore.E3ImGUI.imgui_Separator();
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(_showPlayerStatsSection ? "Hide Player Stats" : "Show Player Stats"))
+                        {
+                            _showPlayerStatsSection = !_showPlayerStatsSection;
+                            PersistHudVisibilitySettings();
+                        }
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(_showTargetSection ? "Hide Target" : "Show Target"))
+                        {
+                            _showTargetSection = !_showTargetSection;
+                            PersistHudVisibilitySettings();
+                        }
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(_showBuffSection ? "Hide Buffs" : "Show Buffs"))
+                        {
+                            _showBuffSection = !_showBuffSection;
+                            PersistHudVisibilitySettings();
+                        }
+
+                        MonoCore.E3ImGUI.imgui_Separator();
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(_playerStatsPoppedOut ? "Dock Player Stats" : "Pop Out Player Stats"))
+                        {
+                            SetPlayerStatsPopout(!_playerStatsPoppedOut);
+                        }
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(_targetInfoPoppedOut ? "Dock Target Info" : "Pop Out Target Info"))
+                        {
+                            SetTargetInfoPopout(!_targetInfoPoppedOut);
+                        }
+                        if (MonoCore.E3ImGUI.imgui_MenuItem(_buffSectionPoppedOut ? "Dock Buffs" : "Pop Out Buffs"))
+                        {
+                            SetBuffSectionPopout(!_buffSectionPoppedOut);
+                        }
+                        MonoCore.E3ImGUI.imgui_EndPopup();
+                    }
+
+                    bool needSeparator = false;
+                    if (_showPlayerStatsSection && !_playerStatsPoppedOut)
+                    {
+                        RenderPlayerStats();
+                        needSeparator = true;
+                    }
+
+                    if (_showTargetSection && !_targetInfoPoppedOut)
+                    {
+                        if (needSeparator)
+                            MonoCore.E3ImGUI.imgui_Separator();
+                        RenderTargetInfo();
+                        needSeparator = true;
+                    }
+
+                    if (needSeparator)
+                        MonoCore.E3ImGUI.imgui_Separator();
                     RenderBotTable();
-                    MonoCore.E3ImGUI.imgui_Separator();
-                    RenderPlayerBuffs();
+                    needSeparator = true;
+
+                    if (_showBuffSection && !_buffSectionPoppedOut)
+                    {
+                        if (needSeparator)
+                            MonoCore.E3ImGUI.imgui_Separator();
+                        RenderPlayerBuffs();
+                    }
                 }
             }
             finally
@@ -223,6 +358,9 @@ namespace E3Next.UI
                     string gameTime = QueryNoDelay<string>("${GameTime}") ?? string.Empty;
                     double hpPercent = QueryNoDelay<double>("${Me.PctHPs}");
                     double manaPercent = QueryNoDelay<double>("${Me.PctMana}");
+                    double endurancePercent = QueryNoDelay<double>("${Me.PctEndurance}");
+                    string combatStateRaw = QueryNoDelay<string>("${Me.CombatState}") ?? string.Empty;
+                    string combatState = NormalizeCombatState(combatStateRaw);
                     bool hideExp = IsEzServer && level >= 70;
                     int expPercent = hideExp ? 0 : (int)Math.Round(QueryNoDelay<double>("${Me.PctExp}"));
                     int aaPoints = hideExp ? GetSelfAaPoints() : 0;
@@ -233,9 +371,11 @@ namespace E3Next.UI
                     snapshot.GameTime = gameTime;
                     snapshot.HpPercent = hpPercent;
                     snapshot.ManaPercent = manaPercent;
+                    snapshot.EndurancePercent = endurancePercent;
                     snapshot.ExpPercent = expPercent;
                     snapshot.AaPoints = aaPoints;
                     snapshot.HideExp = hideExp;
+                    snapshot.CombatState = combatState;
                     snapshot.ErrorMessage = null;
                 }
                 catch (Exception ex)
@@ -514,17 +654,35 @@ namespace E3Next.UI
                     | MonoCore.E3ImGUI.ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp
                     | MonoCore.E3ImGUI.ImGuiTableFlags.ImGuiTableFlags_Resizable);
 
+                int columnCount = 5;
+                if (_showEnduranceColumn) columnCount++;
+                if (_showCastingColumn) columnCount++;
+                if (_showTargetColumn) columnCount++;
+                if (_showCombatStateColumn) columnCount++;
+
                 using (var table = MonoCore.E3ImGUI.ImGUITable.Aquire())
                 {
-                    if (table.BeginTable("E3HudBotTable", 4, tableFlags, 0, 0))
+                    if (table.BeginTable("E3HudBotTable", columnCount, tableFlags, 0, 0))
                     {
                         MonoCore.E3ImGUI.imgui_TableSetupColumn("Name", (int)MonoCore.E3ImGUI.ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0);
                         MonoCore.E3ImGUI.imgui_TableSetupColumn("HP", (int)MonoCore.E3ImGUI.ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 80f);
                         MonoCore.E3ImGUI.imgui_TableSetupColumn("Mana", (int)MonoCore.E3ImGUI.ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 80f);
+                        if (_showEnduranceColumn)
+                            MonoCore.E3ImGUI.imgui_TableSetupColumn("End", (int)MonoCore.E3ImGUI.ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 80f);
+                        if (_showCastingColumn)
+                            MonoCore.E3ImGUI.imgui_TableSetupColumn("Casting", (int)MonoCore.E3ImGUI.ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150f);
+                        if (_showTargetColumn)
+                            MonoCore.E3ImGUI.imgui_TableSetupColumn("Target", (int)MonoCore.E3ImGUI.ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150f);
+                        if (_showCombatStateColumn)
+                            MonoCore.E3ImGUI.imgui_TableSetupColumn("State", (int)MonoCore.E3ImGUI.ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 90f);
+                        MonoCore.E3ImGUI.imgui_TableSetupColumn("Mem", (int)MonoCore.E3ImGUI.ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 65f);
                         MonoCore.E3ImGUI.imgui_TableSetupColumn("Dist", (int)MonoCore.E3ImGUI.ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 80f);
                         MonoCore.E3ImGUI.imgui_TableHeadersRow();
 
                         var playerStats = GetPlayerStatsSnapshot();
+                        bool needCastingLookup = _showCastingColumn || _showTargetColumn;
+                        var castingLookup = needCastingLookup ? BuildCastingLookup() : null;
+
                         foreach (var botName in displayBots)
                         {
                             if (string.IsNullOrEmpty(botName))
@@ -535,12 +693,20 @@ namespace E3Next.UI
                                 bool isSelf = string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase);
                                 int hp = isSelf ? (int)Math.Round(playerStats.HpPercent) : Math.Max(0, Math.Min(100, E3.Bots.PctHealth(botName)));
                                 int mana = isSelf ? (int)Math.Round(playerStats.ManaPercent) : Math.Max(0, Math.Min(100, E3.Bots.PctMana(botName)));
+                                int endurance = _showEnduranceColumn ? GetEndurancePercent(botName, isSelf, playerStats) : 0;
                                 double distance = isSelf ? 0.0 : GetBotDistance(botName);
+                                string combatStateText = _showCombatStateColumn ? GetCombatStateText(botName, isSelf, playerStats) : string.Empty;
+                                BotCastingEntry castingEntry = null;
+                                if (needCastingLookup && castingLookup != null)
+                                {
+                                    castingLookup.TryGetValue(botName, out castingEntry);
+                                }
 
                                 MonoCore.E3ImGUI.imgui_TableNextRow();
+                                int columnIndex = 0;
 
                                 // Name column
-                                MonoCore.E3ImGUI.imgui_TableSetColumnIndex(0);
+                                MonoCore.E3ImGUI.imgui_TableSetColumnIndex(columnIndex++);
                                 bool isInSameZone = sameZoneCharacters.Contains(botName);
                                 
                                 if (isSelf)
@@ -558,17 +724,15 @@ namespace E3Next.UI
                                 }
 
                                 // HP column
-                                MonoCore.E3ImGUI.imgui_TableSetColumnIndex(1);
+                                MonoCore.E3ImGUI.imgui_TableSetColumnIndex(columnIndex++);
                                 if (hp >= 90) MonoCore.E3ImGUI.imgui_TextColored(0.0f, 1.0f, 0.0f, 1.0f, $"{hp,3}%");
                                 else if (hp >= 60) MonoCore.E3ImGUI.imgui_TextColored(1.0f, 1.0f, 0.0f, 1.0f, $"{hp,3}%");
                                 else if (hp >= 30) MonoCore.E3ImGUI.imgui_TextColored(1.0f, 0.6f, 0.0f, 1.0f, $"{hp,3}%");
                                 else MonoCore.E3ImGUI.imgui_TextColored(1.0f, 0.0f, 0.0f, 1.0f, $"{hp,3}%");
 
                                 // Mana column
-                                MonoCore.E3ImGUI.imgui_TableSetColumnIndex(2);
-                                
+                                MonoCore.E3ImGUI.imgui_TableSetColumnIndex(columnIndex++);
                                 bool isManaUser = GetClassInfo(botName, isSelf);
-                                
                                 if (!isManaUser)
                                 {
                                     MonoCore.E3ImGUI.imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, " -- ");
@@ -581,11 +745,40 @@ namespace E3Next.UI
                                     else MonoCore.E3ImGUI.imgui_TextColored(1.0f, 0.0f, 0.0f, 1.0f, $"{mana,3}%");
                                 }
 
+                                if (_showEnduranceColumn)
+                                {
+                                    MonoCore.E3ImGUI.imgui_TableSetColumnIndex(columnIndex++);
+                                    RenderEnduranceCell(endurance);
+                                }
+
+                                if (_showCastingColumn)
+                                {
+                                    MonoCore.E3ImGUI.imgui_TableSetColumnIndex(columnIndex++);
+                                    RenderCastingCell(castingEntry);
+                                }
+
+                                if (_showTargetColumn)
+                                {
+                                    MonoCore.E3ImGUI.imgui_TableSetColumnIndex(columnIndex++);
+                                    RenderTargetCell(castingEntry);
+                                }
+
+                                if (_showCombatStateColumn)
+                                {
+                                    MonoCore.E3ImGUI.imgui_TableSetColumnIndex(columnIndex++);
+                                    RenderCombatStateCell(combatStateText);
+                                }
+
+                                // Memory column
+                                MonoCore.E3ImGUI.imgui_TableSetColumnIndex(columnIndex++);
+                                var memoryStatus = GetMemoryStatus(botName, isSelf);
+                                RenderMemoryStatusCell(memoryStatus);
+
                                 // Distance column
-                                MonoCore.E3ImGUI.imgui_TableSetColumnIndex(3);
+                                MonoCore.E3ImGUI.imgui_TableSetColumnIndex(columnIndex++);
                                 if (isSelf)
                                 {
-                                    MonoCore.E3ImGUI.imgui_Text("0");
+                                    MonoCore.E3ImGUI.imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, " N/A ");
                                 }
                                 else if (distance < double.MaxValue)
                                 {
@@ -639,6 +832,136 @@ namespace E3Next.UI
             };
 
             return distance;
+        }
+
+        private static void EnsureHudVisibilitySettingsLoaded()
+        {
+            if (_hudVisibilityInitialized)
+                return;
+
+            var settings = E3.CharacterSettings;
+            if (settings == null)
+                return;
+
+            _showCastingColumn = settings.HUD_ShowCastingColumn;
+            _showTargetColumn = settings.HUD_ShowTargetColumn;
+            _showEnduranceColumn = settings.HUD_ShowEnduranceColumn;
+            _showCombatStateColumn = settings.HUD_ShowCombatStateColumn;
+            _showPlayerStatsSection = settings.HUD_ShowPlayerStatsSection;
+            _showTargetSection = settings.HUD_ShowTargetSection;
+            _showBuffSection = settings.HUD_ShowBuffSection;
+            _playerStatsPoppedOut = settings.HUD_PopOutPlayerStats;
+            _targetInfoPoppedOut = settings.HUD_PopOutTargetInfo;
+            _buffSectionPoppedOut = settings.HUD_PopOutBuffSection;
+            _playerStatsWindowDismissedBySystem = false;
+            _targetWindowDismissedBySystem = false;
+            _buffWindowDismissedBySystem = false;
+            _hudVisibilityInitialized = true;
+        }
+
+        private static void PersistHudVisibilitySettings()
+        {
+            var settings = E3.CharacterSettings;
+            if (settings == null)
+                return;
+
+            settings.HUD_ShowCastingColumn = _showCastingColumn;
+            settings.HUD_ShowTargetColumn = _showTargetColumn;
+            settings.HUD_ShowEnduranceColumn = _showEnduranceColumn;
+            settings.HUD_ShowCombatStateColumn = _showCombatStateColumn;
+            settings.HUD_ShowPlayerStatsSection = _showPlayerStatsSection;
+            settings.HUD_ShowTargetSection = _showTargetSection;
+            settings.HUD_ShowBuffSection = _showBuffSection;
+            settings.HUD_PopOutPlayerStats = _playerStatsPoppedOut;
+            settings.HUD_PopOutTargetInfo = _targetInfoPoppedOut;
+            settings.HUD_PopOutBuffSection = _buffSectionPoppedOut;
+
+            try
+            {
+                settings.SaveData();
+            }
+            catch (Exception ex)
+            {
+                E3.MQ.Write($"E3 HUD: Failed to save HUD settings - {ex.Message}");
+            }
+        }
+
+        private static void SyncPopoutWindows()
+        {
+            MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(PlayerStatsWindowName, _playerStatsPoppedOut && _showPlayerStatsSection);
+            MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(TargetInfoWindowName, _targetInfoPoppedOut && _showTargetSection);
+            MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(BuffListWindowName, _buffSectionPoppedOut && _showBuffSection);
+        }
+
+        private static void SetPlayerStatsPopout(bool enabled)
+        {
+            if (_playerStatsPoppedOut == enabled) return;
+            _playerStatsPoppedOut = enabled;
+            _playerStatsWindowDismissedBySystem = false;
+            MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(PlayerStatsWindowName, enabled && _showPlayerStatsSection);
+            PersistHudVisibilitySettings();
+        }
+
+        private static void SetTargetInfoPopout(bool enabled)
+        {
+            if (_targetInfoPoppedOut == enabled) return;
+            _targetInfoPoppedOut = enabled;
+            _targetWindowDismissedBySystem = false;
+            MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(TargetInfoWindowName, enabled && _showTargetSection);
+            PersistHudVisibilitySettings();
+        }
+
+        private static void SetBuffSectionPopout(bool enabled)
+        {
+            if (_buffSectionPoppedOut == enabled) return;
+            _buffSectionPoppedOut = enabled;
+            _buffWindowDismissedBySystem = false;
+            MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(BuffListWindowName, enabled && _showBuffSection);
+            PersistHudVisibilitySettings();
+        }
+
+        private static int GetEndurancePercent(string characterName, bool isSelf, PlayerStatsSnapshot playerStats)
+        {
+            if (isSelf)
+            {
+                if (playerStats != null)
+                {
+                    return ClampPercent(playerStats.EndurancePercent);
+                }
+                return 0;
+            }
+
+            if (string.IsNullOrEmpty(characterName))
+                return 0;
+
+            if (E3.Bots == null)
+                return 0;
+
+            long now = GetTimeMs();
+            if (_endurancePercentCache.TryGetValue(characterName, out var cached) && now < cached.NextRefreshMs)
+            {
+                return cached.Percent;
+            }
+
+            int endurance = 0;
+            try
+            {
+                string result = E3.Bots.Query(characterName, "${Me.PctEndurance}");
+                endurance = ParsePercentValue(result);
+            }
+            catch
+            {
+                endurance = 0;
+            }
+
+            endurance = Math.Max(0, Math.Min(100, endurance));
+            _endurancePercentCache[characterName] = new PercentCache
+            {
+                Percent = endurance,
+                NextRefreshMs = now + BotEnduranceRefreshMs
+            };
+
+            return endurance;
         }
 
         private static bool GetClassInfo(string characterName, bool isSelf = false)
@@ -695,6 +1018,403 @@ namespace E3Next.UI
                 return string.Empty;
             }
             return trimmed;
+        }
+
+        private static string NormalizeCombatState(string state)
+        {
+            if (string.IsNullOrWhiteSpace(state)) return string.Empty;
+            string trimmed = state.Trim();
+            if (trimmed.Equals("NULL", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("UNKNOWN", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(trimmed.ToLowerInvariant());
+            }
+            catch
+            {
+                return trimmed;
+            }
+        }
+
+        private static string GetCombatStateText(string characterName, bool isSelf, PlayerStatsSnapshot playerStats)
+        {
+            if (isSelf)
+            {
+                return playerStats == null ? string.Empty : NormalizeCombatState(playerStats.CombatState);
+            }
+
+            if (string.IsNullOrEmpty(characterName))
+                return string.Empty;
+
+            if (E3.Bots == null)
+                return string.Empty;
+
+            long now = GetTimeMs();
+            if (_combatStateCache.TryGetValue(characterName, out var cached) && now < cached.NextRefreshMs)
+            {
+                return cached.State;
+            }
+
+            string state = string.Empty;
+            try
+            {
+                string raw = E3.Bots.Query(characterName, "${Me.CombatState}");
+                state = NormalizeCombatState(raw);
+                if (string.IsNullOrEmpty(state))
+                {
+                    bool inCombat = E3.Bots.InCombat(characterName);
+                    state = inCombat ? "Combat" : "Rest";
+                }
+            }
+            catch
+            {
+                try
+                {
+                    bool inCombat = E3.Bots.InCombat(characterName);
+                    state = inCombat ? "Combat" : string.Empty;
+                }
+                catch
+                {
+                    state = string.Empty;
+                }
+            }
+
+            _combatStateCache[characterName] = new CombatStateCache
+            {
+                State = state,
+                NextRefreshMs = now + CombatStateRefreshMs
+            };
+
+            return state;
+        }
+
+        private static int ParsePercentValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return 0;
+
+            string trimmed = value.Trim();
+            if (int.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intResult))
+            {
+                return intResult;
+            }
+
+            if (int.TryParse(trimmed, NumberStyles.Integer, CultureInfo.CurrentCulture, out intResult))
+            {
+                return intResult;
+            }
+
+            if (double.TryParse(trimmed, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var doubleResult))
+            {
+                return (int)Math.Round(doubleResult);
+            }
+
+            if (double.TryParse(trimmed, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.CurrentCulture, out doubleResult))
+            {
+                return (int)Math.Round(doubleResult);
+            }
+
+            return 0;
+        }
+
+        private static int ClampPercent(double value)
+        {
+            return (int)Math.Max(0, Math.Min(100, Math.Round(value)));
+        }
+
+        private static void RenderPlayerStatsWindow()
+        {
+            RenderPopoutWindow(PlayerStatsWindowName, ref _playerStatsWindowDismissedBySystem,
+                _playerStatsPoppedOut && _showPlayerStatsSection, RenderPlayerStats, () => SetPlayerStatsPopout(false));
+        }
+
+        private static void RenderTargetInfoWindow()
+        {
+            RenderPopoutWindow(TargetInfoWindowName, ref _targetWindowDismissedBySystem,
+                _targetInfoPoppedOut && _showTargetSection, RenderTargetInfo, () => SetTargetInfoPopout(false));
+        }
+
+        private static void RenderBuffListWindow()
+        {
+            RenderPopoutWindow(BuffListWindowName, ref _buffWindowDismissedBySystem,
+                _buffSectionPoppedOut && _showBuffSection, RenderPlayerBuffs, () => SetBuffSectionPopout(false));
+        }
+
+        private static void RenderPopoutWindow(string windowName, ref bool dismissedBySystem, bool shouldDisplay, Action renderAction, Action onClosedByUser)
+        {
+            if (!_imguiContextReady)
+                return;
+
+            bool open = MonoCore.E3ImGUI.imgui_Begin_OpenFlagGet(windowName);
+            if (!shouldDisplay)
+            {
+                if (open)
+                    MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(windowName, false);
+                dismissedBySystem = true;
+                return;
+            }
+
+            if (!open)
+            {
+                if (dismissedBySystem)
+                {
+                    MonoCore.E3ImGUI.imgui_Begin_OpenFlagSet(windowName, true);
+                    dismissedBySystem = false;
+                }
+                else
+                {
+                    onClosedByUser?.Invoke();
+                    return;
+                }
+            }
+
+            MonoCore.E3ImGUI.PushCurrentTheme();
+            try
+            {
+                using (var window = MonoCore.E3ImGUI.ImGUIWindow.Aquire())
+                {
+                    int flags = (int)MonoCore.E3ImGUI.ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse;
+                    if (!window.Begin(windowName, flags))
+                        return;
+                    renderAction?.Invoke();
+                }
+            }
+            finally
+            {
+                MonoCore.E3ImGUI.PopCurrentTheme();
+            }
+        }
+
+        private static MemoryStatusSummary GetMemoryStatus(string characterName, bool isSelf)
+        {
+            var summary = new MemoryStatusSummary
+            {
+                HasData = false,
+                EqCommitMb = 0,
+                CSharpMb = 0,
+                Health = MemoryHealthState.Unknown
+            };
+
+            if (string.IsNullOrEmpty(characterName))
+            {
+                return summary;
+            }
+
+            long now = GetTimeMs();
+            if (_memoryStatusCache.TryGetValue(characterName, out var cached) && now < cached.NextRefreshMs)
+            {
+                return cached.Summary;
+            }
+
+            double csharp = 0;
+            double eqCommit = 0;
+
+            try
+            {
+                if (E3.Bots != null)
+                {
+                    E3.Bots.GetMemoryUsage(characterName, out csharp, out eqCommit);
+                }
+
+                if ((csharp <= 0 && eqCommit <= 0) && isSelf)
+                {
+                    (csharp, eqCommit) = CaptureLocalMemoryUsage();
+                }
+            }
+            catch
+            {
+                // Leave defaults if we failed to query
+                if (isSelf)
+                {
+                    (csharp, eqCommit) = CaptureLocalMemoryUsage();
+                }
+            }
+
+            bool hasData = eqCommit > 0 || csharp > 0;
+
+            summary.HasData = hasData;
+            summary.EqCommitMb = eqCommit;
+            summary.CSharpMb = csharp;
+            summary.Health = hasData ? EvaluateMemoryHealth(eqCommit) : MemoryHealthState.Unknown;
+
+            _memoryStatusCache[characterName] = new MemoryStatusCache
+            {
+                Summary = summary,
+                NextRefreshMs = now + MemoryStatusRefreshMs
+            };
+
+            return summary;
+        }
+
+        private static MemoryHealthState EvaluateMemoryHealth(double eqCommitMb)
+        {
+            if (eqCommitMb <= 0)
+                return MemoryHealthState.Unknown;
+
+            double eqCommitGb = eqCommitMb / 1024d;
+            if (eqCommitGb < 1.2d)
+                return MemoryHealthState.Good;
+            if (eqCommitGb < 1.4d)
+                return MemoryHealthState.Caution;
+            return MemoryHealthState.Danger;
+        }
+
+        private static void RenderMemoryStatusCell(MemoryStatusSummary status)
+        {
+            string text;
+            float r;
+            float g;
+            float b;
+
+            switch (status.Health)
+            {
+                case MemoryHealthState.Good:
+                    text = "OK";
+                    r = 0.3f;
+                    g = 0.95f;
+                    b = 0.3f;
+                    break;
+                case MemoryHealthState.Caution:
+                    text = "CHK";
+                    r = 1.0f;
+                    g = 0.65f;
+                    b = 0.2f;
+                    break;
+                case MemoryHealthState.Danger:
+                    text = "WARN";
+                    r = 1.0f;
+                    g = 0.3f;
+                    b = 0.3f;
+                    break;
+                default:
+                    text = "--";
+                    r = 0.65f;
+                    g = 0.65f;
+                    b = 0.65f;
+                    break;
+            }
+
+            MonoCore.E3ImGUI.imgui_TextColored(r, g, b, 1.0f, text);
+
+            if (!status.HasData)
+                return;
+
+            if (MonoCore.E3ImGUI.imgui_IsItemHovered())
+            {
+                MonoCore.E3ImGUI.imgui_BeginTooltip();
+                MonoCore.E3ImGUI.imgui_Text($"Status: {text}");
+                MonoCore.E3ImGUI.imgui_Text($"EQ Commit: {status.EqCommitMb:N1} MB");
+                if (status.CSharpMb > 0)
+                {
+                    MonoCore.E3ImGUI.imgui_Text($"C# Memory: {status.CSharpMb:N1} MB");
+                }
+                MonoCore.E3ImGUI.imgui_EndTooltip();
+            }
+        }
+
+        private static void RenderEnduranceCell(int endurance)
+        {
+            int clamped = Math.Max(0, Math.Min(100, endurance));
+            string display = $"{clamped,3}%";
+            if (clamped >= 80)
+                MonoCore.E3ImGUI.imgui_TextColored(0.85f, 0.85f, 0.2f, 1.0f, display);
+            else if (clamped >= 50)
+                MonoCore.E3ImGUI.imgui_TextColored(0.95f, 0.7f, 0.2f, 1.0f, display);
+            else if (clamped >= 25)
+                MonoCore.E3ImGUI.imgui_TextColored(0.95f, 0.45f, 0.2f, 1.0f, display);
+            else
+                MonoCore.E3ImGUI.imgui_TextColored(1.0f, 0.2f, 0.2f, 1.0f, display);
+        }
+
+        private static void RenderCastingCell(BotCastingEntry entry)
+        {
+            if (entry == null)
+            {
+                MonoCore.E3ImGUI.imgui_TextColored(0.6f, 0.6f, 0.6f, 1.0f, "--");
+                return;
+            }
+
+            if (!entry.HasRecentData)
+            {
+                MonoCore.E3ImGUI.imgui_TextColored(0.55f, 0.55f, 0.55f, 1.0f, "No Data");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(entry.SpellName))
+            {
+                MonoCore.E3ImGUI.imgui_TextColored(0.65f, 0.85f, 0.95f, 1.0f, "Idle");
+                return;
+            }
+
+            MonoCore.E3ImGUI.imgui_TextColored(0.95f, 0.9f, 0.55f, 1.0f, entry.SpellName);
+        }
+
+        private static void RenderTargetCell(BotCastingEntry entry)
+        {
+            if (entry == null || string.IsNullOrWhiteSpace(entry.TargetName))
+            {
+                MonoCore.E3ImGUI.imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "None");
+                return;
+            }
+
+            MonoCore.E3ImGUI.imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, entry.TargetName);
+        }
+
+        private static void RenderCombatStateCell(string combatState)
+        {
+            if (string.IsNullOrWhiteSpace(combatState))
+            {
+                MonoCore.E3ImGUI.imgui_TextColored(0.65f, 0.65f, 0.65f, 1.0f, "--");
+                return;
+            }
+
+            string lower = combatState.ToLowerInvariant();
+            float r = 0.9f, g = 0.9f, b = 0.3f;
+            if (lower.Contains("combat"))
+            {
+                r = 1.0f; g = 0.35f; b = 0.35f;
+            }
+            else if (lower.Contains("rest"))
+            {
+                r = 0.45f; g = 0.95f; b = 0.45f;
+            }
+            else if (lower.Contains("idle") || lower.Contains("stand"))
+            {
+                r = 0.65f; g = 0.85f; b = 0.95f;
+            }
+
+            MonoCore.E3ImGUI.imgui_TextColored(r, g, b, 1.0f, combatState);
+        }
+
+        private static (double managedMb, double eqCommitMb) CaptureLocalMemoryUsage()
+        {
+            double managedMb = 0;
+            double eqCommitMb = 0;
+
+            try
+            {
+                long bytes = GC.GetTotalMemory(false);
+                managedMb = bytes / 1024d / 1024d;
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                if (Core._MQ2MonoVersion > 0.35m)
+                {
+                    eqCommitMb = Math.Max(0d, Core.mq_Memory_GetPageFileSize());
+                }
+            }
+            catch
+            {
+            }
+
+            return (managedMb, eqCommitMb);
         }
 
         private static void RenderAaWindow()
@@ -944,6 +1664,132 @@ namespace E3Next.UI
             }
         }
 
+        private static void RenderBotCastingWindow()
+        {
+            if (!_imguiContextReady) return;
+            if (!MonoCore.E3ImGUI.imgui_Begin_OpenFlagGet(BotCastingWindowName)) return;
+
+            MonoCore.E3ImGUI.PushCurrentTheme();
+            try
+            {
+                using (var window = MonoCore.E3ImGUI.ImGUIWindow.Aquire())
+                {
+                    MonoCore.E3ImGUI.imgui_SetNextWindowSizeWithCond(360f, 320f, (int)MonoCore.E3ImGUI.ImGuiCond.FirstUseEver);
+                    int flags = (int)(MonoCore.E3ImGUI.ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse
+                        | MonoCore.E3ImGUI.ImGuiWindowFlags.ImGuiWindowFlags_NoBackground);
+                    if (!window.Begin(BotCastingWindowName, flags))
+                    {
+                        return;
+                    }
+
+                    var entries = GetBotCastingEntries();
+                    if (entries.Count == 0)
+                    {
+                        MonoCore.E3ImGUI.imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "No connected bots detected.");
+                        return;
+                    }
+
+                    MonoCore.E3ImGUI.imgui_TextColored(0.8f, 0.85f, 1.0f, 1.0f, $"Connected: {entries.Count}");
+                    MonoCore.E3ImGUI.imgui_Separator();
+                    RenderBotCastingGrid(entries);
+                }
+            }
+            finally
+            {
+                MonoCore.E3ImGUI.PopCurrentTheme();
+            }
+        }
+
+        private static void RenderBotCastingGrid(IReadOnlyList<BotCastingEntry> entries)
+        {
+            const int rowsPerColumn = 6;
+            int columnCount = Math.Max(1, (int)Math.Ceiling(entries.Count / (double)rowsPerColumn));
+            int tableFlags = (int)(MonoCore.E3ImGUI.ImGuiTableFlags.ImGuiTableFlags_BordersInnerV
+                | MonoCore.E3ImGUI.ImGuiTableFlags.ImGuiTableFlags_BordersOuter
+                | MonoCore.E3ImGUI.ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit);
+
+            using (var table = MonoCore.E3ImGUI.ImGUITable.Aquire())
+            {
+                if (!table.BeginTable("E3HudBotCasting", columnCount, tableFlags, 0, 0))
+                {
+                    return;
+                }
+
+                for (int col = 0; col < columnCount; col++)
+                {
+                    MonoCore.E3ImGUI.imgui_TableSetupColumn($"CastingCol{col}", (int)MonoCore.E3ImGUI.ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 170f);
+                }
+
+                for (int row = 0; row < rowsPerColumn; row++)
+                {
+                    bool rowHasData = false;
+                    for (int col = 0; col < columnCount; col++)
+                    {
+                        int index = (col * rowsPerColumn) + row;
+                        if (index < entries.Count)
+                        {
+                            rowHasData = true;
+                            break;
+                        }
+                    }
+
+                    if (!rowHasData)
+                        break;
+
+                    MonoCore.E3ImGUI.imgui_TableNextRow();
+                    for (int col = 0; col < columnCount; col++)
+                    {
+                        MonoCore.E3ImGUI.imgui_TableSetColumnIndex(col);
+                        int index = (col * rowsPerColumn) + row;
+                        if (index >= entries.Count)
+                        {
+                            MonoCore.E3ImGUI.imgui_Text(" ");
+                            continue;
+                        }
+
+                        RenderBotCastingCell(entries[index]);
+                    }
+                }
+            }
+        }
+
+		private static void RenderBotCastingCell(BotCastingEntry entry)
+		{
+			if (entry == null)
+			{
+				MonoCore.E3ImGUI.imgui_Text(" ");
+				return;
+			}
+
+			if (entry.IsSelf)
+				MonoCore.E3ImGUI.imgui_TextColored(0.75f, 1.0f, 0.75f, 1.0f, entry.Name);
+			else
+				MonoCore.E3ImGUI.imgui_TextColored(0.85f, 0.75f, 1.0f, 1.0f, entry.Name);
+
+			string targetDisplay = string.IsNullOrWhiteSpace(entry.TargetName)
+				? "Target: None"
+				: $"Target: {entry.TargetName}";
+			MonoCore.E3ImGUI.imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, targetDisplay);
+
+			string stateText;
+			float sr = 0.6f, sg = 0.6f, sb = 0.6f;
+			if (!entry.HasRecentData)
+			{
+				stateText = "Spell: No data";
+			}
+			else if (string.IsNullOrWhiteSpace(entry.SpellName))
+			{
+				stateText = "Spell: Idle";
+				sr = 0.65f; sg = 0.85f; sb = 0.95f;
+			}
+			else
+			{
+				stateText = $"Spell: {entry.SpellName}";
+				sr = 0.95f; sg = 0.9f; sb = 0.55f;
+			}
+			MonoCore.E3ImGUI.imgui_TextColored(sr, sg, sb, 1.0f, stateText);
+		}
+
         private static (float r, float g, float b) GetConColor(string con)
         {
             switch ((con ?? string.Empty).Trim().ToLowerInvariant())
@@ -989,9 +1835,11 @@ namespace E3Next.UI
             public string GameTime { get; set; } = string.Empty;
             public double HpPercent { get; set; }
             public double ManaPercent { get; set; }
+            public double EndurancePercent { get; set; }
             public int ExpPercent { get; set; }
             public int AaPoints { get; set; }
             public bool HideExp { get; set; }
+            public string CombatState { get; set; } = string.Empty;
             public string ErrorMessage { get; set; } = string.Empty;
         }
 
@@ -1017,6 +1865,40 @@ namespace E3Next.UI
         {
             public bool IsManaUser { get; set; }
             public long NextRefreshMs { get; set; }
+        }
+
+        private class PercentCache
+        {
+            public int Percent { get; set; }
+            public long NextRefreshMs { get; set; }
+        }
+
+        private class CombatStateCache
+        {
+            public string State { get; set; } = string.Empty;
+            public long NextRefreshMs { get; set; }
+        }
+
+        private enum MemoryHealthState
+        {
+            Unknown = 0,
+            Good,
+            Caution,
+            Danger
+        }
+
+        private struct MemoryStatusSummary
+        {
+            public bool HasData;
+            public double EqCommitMb;
+            public double CSharpMb;
+            public MemoryHealthState Health;
+        }
+
+        private class MemoryStatusCache
+        {
+            public MemoryStatusSummary Summary;
+            public long NextRefreshMs;
         }
 
         private class AaRow
@@ -1197,6 +2079,206 @@ namespace E3Next.UI
             MonoCore.E3ImGUI.imgui_EndTooltip();
         }
 
+        private static Dictionary<string, BotCastingEntry> BuildCastingLookup()
+        {
+            var lookup = new Dictionary<string, BotCastingEntry>(StringComparer.OrdinalIgnoreCase);
+            var entries = GetBotCastingEntries();
+            if (entries == null)
+            {
+                return lookup;
+            }
+
+            foreach (var entry in entries)
+            {
+                if (entry == null || string.IsNullOrWhiteSpace(entry.Name))
+                    continue;
+
+                lookup[entry.Name] = entry;
+            }
+
+            return lookup;
+        }
+
+        private static IReadOnlyList<BotCastingEntry> GetBotCastingEntries()
+        {
+            long now = Core.StopWatch.ElapsedMilliseconds;
+            if (now < _nextBotCastingRefreshMs)
+            {
+                return _botCastingSnapshot;
+            }
+
+            _nextBotCastingRefreshMs = now + BotCastingRefreshMs;
+            _botCastingSnapshot.Clear();
+
+            var names = new List<string>();
+            if (E3.Bots != null)
+            {
+                var bots = E3.Bots.BotsConnected(readOnly: true);
+                if (bots != null)
+                {
+                    names.AddRange(bots);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(E3.CurrentName))
+            {
+                names.Add(E3.CurrentName);
+            }
+
+            var orderedNames = names
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            orderedNames.Sort(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var name in orderedNames)
+            {
+                bool isSelf = string.Equals(name, E3.CurrentName, StringComparison.OrdinalIgnoreCase);
+                bool hasData;
+                string spell = GetBotCastingSpell(name, now, isSelf, out hasData);
+                string targetName = GetBotTargetName(name, now, isSelf);
+                _botCastingSnapshot.Add(new BotCastingEntry
+                {
+                    Name = name,
+                    SpellName = spell,
+                    TargetName = targetName,
+                    IsSelf = isSelf,
+                    HasRecentData = hasData
+                });
+            }
+
+            return _botCastingSnapshot;
+        }
+
+        private static string GetBotCastingSpell(string name, long now, bool isSelf, out bool hasRecentData)
+        {
+            hasRecentData = false;
+            if (string.IsNullOrWhiteSpace(name))
+                return string.Empty;
+
+            if (isSelf)
+            {
+                hasRecentData = true;
+                try
+                {
+                    int spellId = QueryNoDelay<int>("${Me.Casting.ID}");
+                    if (spellId > 0)
+                    {
+                        return QueryNoDelay<string>("${Me.Casting.Name}") ?? string.Empty;
+                    }
+                }
+                catch
+                {
+                    // ignore MQ query errors for self
+                }
+                return string.Empty;
+            }
+
+            var client = NetMQServer.SharedDataClient;
+            if (client == null)
+            {
+                return string.Empty;
+            }
+
+            if (!client.TopicUpdates.TryGetValue(name, out var topics) || topics == null)
+            {
+                return string.Empty;
+            }
+
+            if (topics.TryGetValue("${Me.Casting}", out var entry) && entry != null)
+            {
+                if (now - entry.LastUpdate <= BotCastingFreshnessMs)
+                {
+                    hasRecentData = true;
+                    return entry.Data ?? string.Empty;
+                }
+            }
+
+            if (topics.TryGetValue("${Casting}", out var castEntry) && castEntry != null)
+            {
+                if (now - castEntry.LastUpdate <= BotCastingFreshnessMs)
+                {
+                    hasRecentData = true;
+                    return ExtractSpellName(castEntry.Data);
+                }
+            }
+
+            return string.Empty;
+        }
+
+		private static string ExtractSpellName(string payload)
+		{
+			if (string.IsNullOrWhiteSpace(payload))
+				return string.Empty;
+
+			int index = payload.IndexOf(" on ", StringComparison.OrdinalIgnoreCase);
+			if (index > 0)
+			{
+				return payload.Substring(0, index).Trim();
+			}
+			return payload.Trim();
+		}
+
+		private static string GetBotTargetName(string name, long now, bool isSelf)
+		{
+			if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+
+			if (isSelf)
+			{
+				try
+				{
+					return QueryNoDelay<string>("${Target.CleanName}") ?? string.Empty;
+				}
+				catch
+				{
+					return string.Empty;
+				}
+			}
+
+			var client = NetMQServer.SharedDataClient;
+			if (client == null)
+			{
+				return string.Empty;
+			}
+
+			if (!client.TopicUpdates.TryGetValue(name, out var topics) || topics == null)
+			{
+				return string.Empty;
+			}
+
+			if (!topics.TryGetValue("${Me.CurrentTargetID}", out var entry) || entry == null)
+			{
+				return string.Empty;
+			}
+
+			if (now - entry.LastUpdate > BotCastingFreshnessMs)
+			{
+				return string.Empty;
+			}
+
+			if (!int.TryParse(entry.Data, out var targetId) || targetId <= 0)
+			{
+				return string.Empty;
+			}
+
+			return ResolveSpawnName(targetId);
+		}
+
+		private static string ResolveSpawnName(int spawnId)
+		{
+			if (spawnId <= 0) return string.Empty;
+			try
+			{
+				string name = QueryNoDelay<string>($"${{Spawn[id {spawnId}].CleanName}}");
+				return name ?? string.Empty;
+			}
+			catch
+			{
+				return string.Empty;
+			}
+		}
+
         private static void RequestRemoveBuff(string buffName)
         {
             if (string.IsNullOrWhiteSpace(buffName)) return;
@@ -1224,5 +2306,14 @@ namespace E3Next.UI
             }
             return $"{span.Minutes:D2}:{span.Seconds:D2}";
         }
+
+		private class BotCastingEntry
+		{
+			public string Name { get; set; } = string.Empty;
+			public string SpellName { get; set; } = string.Empty;
+			public string TargetName { get; set; } = string.Empty;
+			public bool HasRecentData { get; set; }
+			public bool IsSelf { get; set; }
+		}
     }
 }

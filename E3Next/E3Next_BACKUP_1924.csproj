@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{CA025B4A-D09D-48AD-BF6C-7C303C8B5CB9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>E3Core</RootNamespace>
+    <AssemblyName>E3</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
+    <NoWarn>CS0618,CS1570,CS1591</NoWarn>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>CS0618</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AsyncIO, Version=0.1.69.0, Culture=neutral, PublicKeyToken=44a94435bd6f33f8, processorArchitecture=MSIL">
+      <HintPath>..\packages\AsyncIO.0.1.69\lib\net40\AsyncIO.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Protobuf, Version=3.26.1.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Protobuf.3.26.1\lib\net45\Google.Protobuf.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="NaCl, Version=0.1.13.0, Culture=neutral, PublicKeyToken=827c20e50a9775fa, processorArchitecture=MSIL">
+      <HintPath>..\packages\NaCl.Net.0.1.13\lib\net472\NaCl.dll</HintPath>
+    </Reference>
+    <Reference Include="NetMQ, Version=4.0.1.13, Culture=neutral, PublicKeyToken=a6decef4ddc58b3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetMQ.4.0.1.13\lib\net47\NetMQ.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.SQLite, Version=1.0.119.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
+      <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\lib\net46\System.Data.SQLite.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Text.Encodings.Web, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encodings.Web.8.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Classes\Bard.cs" />
+    <Compile Include="Classes\Beastlord.cs" />
+    <Compile Include="Classes\Berserker.cs" />
+    <Compile Include="Classes\Cleric.cs" />
+    <Compile Include="Classes\Druid.cs" />
+    <Compile Include="Classes\Enchanter.cs" />
+    <Compile Include="Classes\Magician.cs" />
+    <Compile Include="Classes\MemoryStats.cs" />
+    <Compile Include="Classes\Monk.cs" />
+    <Compile Include="Classes\Necromancer.cs" />
+    <Compile Include="Classes\Paladin.cs" />
+    <Compile Include="Classes\Ranger.cs" />
+    <Compile Include="Classes\Rogue.cs" />
+    <Compile Include="Classes\ShadowKnight.cs" />
+    <Compile Include="Classes\Shaman.cs" />
+    <Compile Include="Classes\Warrior.cs" />
+    <Compile Include="Classes\Wizard.cs" />
+    <Compile Include="Core.cs" />
+    <Compile Include="Data\CharacterBuffs.cs" />
+    <Compile Include="Data\Class.cs" />
+    <Compile Include="Data\MelodyIfs.cs" />
+    <Compile Include="Data\ProtoBuff\SpellData.cs" />
+    <Compile Include="Data\ResistCounter.cs" />
+    <Compile Include="Data\Skills.cs" />
+    <Compile Include="Data\SpellRequest.cs" />
+    <Compile Include="Data\SpellTimer.cs" />
+    <Compile Include="Data\Zone.cs" />
+    <Compile Include="Processors\BaseProcessor.cs" />
+    <Compile Include="Processors\Bots.cs" />
+    <Compile Include="Processors\Burns.cs" />
+    <Compile Include="Processors\Charm.cs" />
+    <Compile Include="Processors\ClearXTargets.cs" />
+    <Compile Include="Processors\Commands.cs" />
+    <Compile Include="Processors\DebuffDot.cs" />
+    <Compile Include="Processors\Dispel.cs" />
+    <Compile Include="Processors\EzServerAaTracker.cs" />
+    <Compile Include="Processors\GiveMe.cs" />
+    <Compile Include="Processors\Inventory.cs" />
+    <Compile Include="Processors\Movement.cs" />
+    <Compile Include="Processors\Nukes.cs" />
+    <Compile Include="Processors\PrivateCode.cs" />
+    <Compile Include="Processors\SeverSpecific.cs" />
+    <Compile Include="Processors\ServerSpecificGates.cs" />
+    <Compile Include="Processors\VetAAs.cs" />
+    <Compile Include="Processors\Zoning.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Server\NetMQServer.cs" />
+    <Compile Include="Server\PubClient.cs" />
+    <Compile Include="Server\PubServer.cs" />
+    <Compile Include="Server\RouterServer.cs" />
+    <Compile Include="Server\SharedDataClient.cs" />
+    <Compile Include="Settings\AdvancedSettings.cs" />
+    <Compile Include="Settings\BaseSettings.cs" />
+    <Compile Include="Settings\CharacterSettings.cs" />
+    <Compile Include="Data\Spell.cs" />
+    <Compile Include="Data\SpellProperties.cs" />
+    <Compile Include="Processors\Alerts.cs" />
+    <Compile Include="Processors\Assist.cs" />
+    <Compile Include="Processors\Background.cs" />
+    <Compile Include="Processors\Basics.cs" />
+    <Compile Include="Processors\BegForBuffs.cs" />
+    <Compile Include="Processors\BuffCheck.cs" />
+    <Compile Include="Processors\Buy.cs" />
+    <Compile Include="Processors\Casting.cs" />
+    <Compile Include="Processors\Combine.cs" />
+    <Compile Include="Processors\CorpseSummoning.cs" />
+    <Compile Include="Processors\Cures.cs" />
+    <Compile Include="E3.cs" />
+    <Compile Include="Processors\Heals.cs" />
+    <Compile Include="Processors\Hunt.cs" />
+    <Compile Include="Processors\Loot.cs" />
+    <Compile Include="Processors\NowCast.cs" />
+    <Compile Include="Processors\Pets.cs" />
+    <Compile Include="Processors\QueueCast.cs" />
+    <Compile Include="Processors\Sell.cs" />
+    <Compile Include="Processors\Setup.cs" />
+    <Compile Include="Processors\Tanking.cs" />
+    <Compile Include="Processors\Rez.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UI\E3ImGui.cs" />
+    <Compile Include="Settings\FeatureSettings\DoorDataFile.cs" />
+    <Compile Include="Settings\FeatureSettings\GlobalCursorDelete.cs" />
+    <Compile Include="Settings\FeatureSettings\GlobalIfs.cs" />
+    <Compile Include="Settings\FeatureSettings\InventoryDataFile.cs" />
+    <Compile Include="Settings\FeatureSettings\LazarusSymbolDataFile.cs" />
+    <Compile Include="Settings\FeatureSettings\LootDataFile.cs" />
+    <Compile Include="Settings\FeatureSettings\SavedGroupDataFile.cs" />
+    <Compile Include="Settings\FeatureSettings\SpellAliasDataFile.cs" />
+    <Compile Include="Settings\FeatureSettings\LootStackable.cs" />
+    <Compile Include="Settings\FeatureSettings\TributeDataFile.cs" />
+    <Compile Include="Settings\GeneralSettings.cs" />
+    <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindow.cs" />
+    <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowHelpers.cs" />
+    <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowStates.cs" />
+<<<<<<< HEAD
+    <Compile Include="UI\Windows\Hunt\HuntWindow.cs" />
+    <Compile Include="UI\Windows\MemoryStatsWindow.cs" />
+    <Compile Include="UI\E3HudWindow.cs" />
+=======
+    <Compile Include="UI\Windows\MemStats\MemoryStatsWindow.cs" />
+>>>>>>> upstream/master
+    <Compile Include="Utility\e3util.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IniFileParser\INIFileParser.csproj">
+      <Project>{5e46dcf4-c473-4171-9f9b-f3910b5ec407}</Project>
+      <Name>INIFileParser</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Data\ProtoBuff\SpellData.proto" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Data\Interfaces\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\BuildDate.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>powershell.exe $(ProjectDir)CopyToEQFolder.ps1</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>echo %25date%25 %25time%25 &gt; "$(ProjectDir)\Resources\BuildDate.txt"</PreBuildEvent>
+  </PropertyGroup>
+  <Import Project="..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets" Condition="Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets'))" />
+    <Error Condition="!Exists('..\packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets'))" />
+  </Target>
+  <Import Project="..\packages\System.ValueTuple.4.5.0\build\net471\System.ValueTuple.targets" Condition="Exists('..\packages\System.ValueTuple.4.5.0\build\net471\System.ValueTuple.targets')" />
+</Project>

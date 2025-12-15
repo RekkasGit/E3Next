@@ -85,44 +85,6 @@ namespace E3Core.Processors
             RegisterEvents();
         }
 
-        private static MemoryStats CreateLocalMemoryStats()
-        {
-            Process currentProcess = Process.GetCurrentProcess();
-            currentProcess.Refresh();
-
-            double eqprocessMemoryMB = 0;
-            if (Core._MQ2MonoVersion > 0.35M)
-            {
-                eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
-            }
-
-            long privateMemoryBytes = GC.GetTotalMemory(false);
-            double privateMemoryMb = privateMemoryBytes / 1024f / 1024f;
-
-            return new MemoryStats(E3.CurrentName, privateMemoryMb, eqprocessMemoryMB);
-        }
-
-        private static void ShareMemoryStats(bool announceToBots = false)
-        {
-            var stats = CreateLocalMemoryStats();
-            if (stats == null) return;
-
-            MemoryStatsWindow.AddMemoryStats(stats);
-            if (announceToBots)
-            {
-                E3.Bots.Broadcast($"{stats.CharacterName} - C# memory: {stats.CSharpMemoryMB:N} MB, EQ commit: {stats.EQCommitSizeMB:N} MB");
-            }
-            BroadcastMemoryStats(stats);
-        }
-
-        private static void BroadcastMemoryStats(MemoryStats stats)
-        {
-            if (stats == null) return;
-            string csharp = stats.CSharpMemoryMB.ToString("F2", CultureInfo.InvariantCulture);
-            string eq = stats.EQCommitSizeMB.ToString("F2", CultureInfo.InvariantCulture);
-            E3.Bots.BroadcastCommand($"/e3memstats_data {stats.CharacterName} {csharp} {eq}");
-        }
-
         /// <summary>
         /// Registers the events.
         /// </summary>

@@ -121,6 +121,27 @@ namespace E3Core.Settings
 	[INI_Section("UI Theme", "Rounding")]
 	public float UITheme_Rounding = 8.0f;
 
+	[INI_Section("HUD", "Show Casting Column (On/Off)")]
+	public bool HUD_ShowCastingColumn = true;
+	[INI_Section("HUD", "Show Target Column (On/Off)")]
+	public bool HUD_ShowTargetColumn = true;
+	[INI_Section("HUD", "Show Endurance Column (On/Off)")]
+	public bool HUD_ShowEnduranceColumn = true;
+	[INI_Section("HUD", "Show Combat State Column (On/Off)")]
+	public bool HUD_ShowCombatStateColumn = true;
+	[INI_Section("HUD", "Show Player Stats (On/Off)")]
+	public bool HUD_ShowPlayerStatsSection = true;
+	[INI_Section("HUD", "Show Target Info (On/Off)")]
+	public bool HUD_ShowTargetSection = true;
+	[INI_Section("HUD", "Show Buffs (On/Off)")]
+	public bool HUD_ShowBuffSection = true;
+	[INI_Section("HUD", "Pop Out Player Stats (On/Off)")]
+	public bool HUD_PopOutPlayerStats;
+	[INI_Section("HUD", "Pop Out Target Info (On/Off)")]
+	public bool HUD_PopOutTargetInfo;
+	[INI_Section("HUD", "Pop Out Buffs (On/Off)")]
+	public bool HUD_PopOutBuffSection;
+
 		[INI_Section("AutoMed", "Override Old Settings and use This(On/Off)")]
 		public bool AutoMed_OverrideOldSettings;
 		[INI_Section("AutoMed", "End MedBreak in Combat(On/Off)")]
@@ -677,6 +698,16 @@ namespace E3Core.Settings
 		
 		LoadKeyData("UI Theme", "E3 Config", ParsedData, ref UITheme_E3Config);
 		LoadFloatKeyData("UI Theme", "Rounding", ParsedData, ref UITheme_Rounding);
+		LoadKeyData("HUD", "Show Casting Column (On/Off)", ParsedData, ref HUD_ShowCastingColumn);
+		LoadKeyData("HUD", "Show Target Column (On/Off)", ParsedData, ref HUD_ShowTargetColumn);
+		LoadKeyData("HUD", "Show Endurance Column (On/Off)", ParsedData, ref HUD_ShowEnduranceColumn);
+		LoadKeyData("HUD", "Show Combat State Column (On/Off)", ParsedData, ref HUD_ShowCombatStateColumn);
+		LoadKeyData("HUD", "Show Player Stats (On/Off)", ParsedData, ref HUD_ShowPlayerStatsSection);
+		LoadKeyData("HUD", "Show Target Info (On/Off)", ParsedData, ref HUD_ShowTargetSection);
+		LoadKeyData("HUD", "Show Buffs (On/Off)", ParsedData, ref HUD_ShowBuffSection);
+		LoadKeyData("HUD", "Pop Out Player Stats (On/Off)", ParsedData, ref HUD_PopOutPlayerStats);
+		LoadKeyData("HUD", "Pop Out Target Info (On/Off)", ParsedData, ref HUD_PopOutTargetInfo);
+		LoadKeyData("HUD", "Pop Out Buffs (On/Off)", ParsedData, ref HUD_PopOutBuffSection);
 
 			LoadKeyData("Alerts", "Rampage Messages(On/Off)", ParsedData, ref Alerts_RampageMessages);
 			LoadKeyData("Alerts", "Damage Messages(On/Off)", ParsedData, ref Alerts_DamageMessages);
@@ -1058,6 +1089,19 @@ namespace E3Core.Settings
 		section = newFile.Sections.GetSectionData("UI Theme");
 		section.Keys.AddKey("E3 Config", "DarkTeal");
 		section.Keys.AddKey("Rounding", "8.0");
+
+		newFile.Sections.AddSection("HUD");
+		section = newFile.Sections.GetSectionData("HUD");
+		section.Keys.AddKey("Show Casting Column (On/Off)", "On");
+		section.Keys.AddKey("Show Target Column (On/Off)", "On");
+		section.Keys.AddKey("Show Endurance Column (On/Off)", "On");
+		section.Keys.AddKey("Show Combat State Column (On/Off)", "On");
+		section.Keys.AddKey("Show Player Stats (On/Off)", "On");
+		section.Keys.AddKey("Show Target Info (On/Off)", "On");
+		section.Keys.AddKey("Show Buffs (On/Off)", "On");
+		section.Keys.AddKey("Pop Out Player Stats (On/Off)", "Off");
+		section.Keys.AddKey("Pop Out Target Info (On/Off)", "Off");
+		section.Keys.AddKey("Pop Out Buffs (On/Off)", "Off");
 		
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");
