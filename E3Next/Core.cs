@@ -2181,7 +2181,7 @@ namespace MonoCore
         IEnumerable<Spawn> Get();
         void RefreshList();
         void EmptyLists();
-        bool TryByID(Int32 id, out Spawn s);
+        bool TryByID(Int32 id, out Spawn s, bool refresh = true);
         bool TryByName(string name, out Spawn s);
         Int32 GetIDByName(string name);
         bool Contains(string name);
@@ -2202,9 +2202,9 @@ namespace MonoCore
         public static Int64 _lastRefesh = 0;
         public static Int64 RefreshTimePeriodInMS = 1000;
 
-        public bool TryByID(Int32 id, out Spawn s)
+        public bool TryByID(Int32 id, out Spawn s, bool refresh = true)
         {
-            RefreshListIfNeeded();
+            if(refresh) RefreshListIfNeeded();
             return SpawnsByID.TryGetValue(id, out s);
         }
         public bool TryByName(string name, out Spawn s)
