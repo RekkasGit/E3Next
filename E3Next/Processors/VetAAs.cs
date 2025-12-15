@@ -1,6 +1,8 @@
 ﻿using E3Core.Data;
+using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
+using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
 using IniParser;
 using MonoCore;
@@ -75,16 +77,18 @@ namespace E3Core.Processors
                 Casting.Interrupt();
                 MQ.Delay(500);
                 MQ.Cmd("/alt act 511");
-                MQ.Delay(500);
+				PubServer.AddTopicMessage("${Me.Casting}", "Marr's Calling");
+				MQ.Delay(500);
                 if (E3.CurrentClass == Class.Bard)
                 {
                     MQ.Delay(17000);
-
-                }
+					PubServer.AddTopicMessage("${Me.Casting}", String.Empty);
+				}
                 else
                 {
                     MQ.Delay(20000, Casting.IsNotCasting);
-                }
+					PubServer.AddTopicMessage("${Me.Casting}", String.Empty);
+				}
             });
 			EventProcessor.RegisterCommand("/origin", (x) =>
 			{
@@ -95,15 +99,17 @@ namespace E3Core.Processors
 				Casting.Interrupt();
 				MQ.Delay(500);
 				MQ.Cmd("/alt act 331");
+				PubServer.AddTopicMessage("${Me.Casting}", "Origin");
 				MQ.Delay(500);
 				if (E3.CurrentClass == Class.Bard)
 				{
 					MQ.Delay(17000);
-
+					PubServer.AddTopicMessage("${Me.Casting}", String.Empty);
 				}
 				else
 				{
 					MQ.Delay(20000, Casting.IsNotCasting);
+					PubServer.AddTopicMessage("${Me.Casting}", String.Empty);
 				}
 			});
 			EventProcessor.RegisterCommand("/jester", (x) =>
