@@ -30,6 +30,7 @@ namespace E3Core.UI.Windows.MemStats
 			(1.6, double.MaxValue, 1.0f, 0.05f, 0.05f, "1.6+ GB = Crash very likely")
 		};
 
+
 		[SubSystemInit]
 		public static void Init()
 		{
@@ -76,8 +77,20 @@ namespace E3Core.UI.Windows.MemStats
 			{
 				Double csharpMemory = 0;
 				Double eqPageMemory = 0;
+
+				string startTime = E3.Bots.Query(user, "${Me.Memory_CSharpStartTime}");
+
 				E3.Bots.GetMemoryUsage(user, out csharpMemory, out eqPageMemory);
 				var memoryStat = new MemoryStats(user, csharpMemory, eqPageMemory);
+
+				if (DateTime.TryParse(startTime, out var result))
+				{
+					memoryStat.TimeRunning = (System.DateTime.Now - result).TotalHours.ToString("N2");
+
+				}
+
+
+
 				_memoryStats.Add(memoryStat);
 			}
 		}
@@ -105,7 +118,7 @@ namespace E3Core.UI.Windows.MemStats
 						int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
 											  ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
 											  ImGuiTableFlags.ImGuiTableFlags_BordersInner |
-											  ImGuiTableFlags.ImGuiTableFlags_ScrollY);
+											  ImGuiTableFlags.ImGuiTableFlags_ScrollY| ImGuiTableFlags.ImGuiTableFlags_Resizable);
 
 						const float summaryLegendHeight = 190f; // Enough room for summary metrics plus multi-line legend
 						float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY() - summaryLegendHeight);
@@ -115,7 +128,7 @@ namespace E3Core.UI.Windows.MemStats
 							imgui_TableSetupColumn("Character", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 150);
 							imgui_TableSetupColumn("C# Memory (MB)", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120);
 							imgui_TableSetupColumn("EQ Commit (MB)", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120);
-							imgui_TableSetupColumn("Last Updated", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 150);
+							imgui_TableSetupColumn("Hours Running", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 150);
 							imgui_TableHeadersRow();
 
 							List<MemoryStats> currentStats = _memoryStats;
@@ -134,7 +147,9 @@ namespace E3Core.UI.Windows.MemStats
 								DrawEqCommitValue(stats.EQCommitSizeMB);
 
 								imgui_TableNextColumn();
-								imgui_Text(stats.Timestamp.ToString("HH:mm:ss"));
+								imgui_Text(stats.TimeRunning);
+
+								
 							}
 						}
 					}
@@ -198,14 +213,13 @@ namespace E3Core.UI.Windows.MemStats
 		}
 		public class MemoryStats
 		{
-			public string CharacterName { get; set; }
+			public string CharacterName { get; set; } = string.Empty;
 			public double CSharpMemoryMB { get; set; }
 			public double EQCommitSizeMB { get; set; }
-			public DateTime Timestamp { get; set; }
+			public string TimeRunning { get; set; } = string.Empty;
 
 			public MemoryStats()
 			{
-				Timestamp = DateTime.Now;
 			}
 
 			public MemoryStats(string characterName, double cSharpMemoryMB, double eqCommitSizeMB)
@@ -213,7 +227,6 @@ namespace E3Core.UI.Windows.MemStats
 				CharacterName = characterName;
 				CSharpMemoryMB = cSharpMemoryMB;
 				EQCommitSizeMB = eqCommitSizeMB;
-				Timestamp = DateTime.Now;
 			}
 		}
 	}

@@ -312,6 +312,8 @@ namespace E3Core.Processors
 			{
 				eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
 			}
+			Process currentProcess = System.Diagnostics.Process.GetCurrentProcess();
+			DateTime startTime = currentProcess.StartTime;
 			// Get the private memory size (commit size) in bytes
 			long privateMemoryBytes = GC.GetTotalMemory(false);
 			// Convert to Kilobytes (KB) for easier reading
@@ -319,6 +321,8 @@ namespace E3Core.Processors
 
 			PubServer.AddTopicMessage("${Me.Memory_CSharp}", $"{privateMemoryMb:N}");
 			PubServer.AddTopicMessage("${Me.Memory_EQPageFile}", $"{eqprocessMemoryMB:N}");
+			PubServer.AddTopicMessage("${Me.Memory_CSharpStartTime}", $"{startTime.ToString()}");
+
 		}
 
 		public static void StateUpdates_Counters()

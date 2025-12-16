@@ -213,7 +213,7 @@ namespace E3Core.UI.Windows.Hud
 				imgui_Text(String.Empty);
 				return;
 			}
-			imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, "Spell:");
+			imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, "    Spell:");
 			imgui_SameLine();
 			string stateText;
 			float sr = 0.95f, sg = 0.9f, sb = 0.55f;
