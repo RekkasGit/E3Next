@@ -54,6 +54,11 @@ namespace E3Core.Processors
 			//kickout after updates if paused
 			if (IsPaused()) return;
 			//stunned, no sense in processing
+
+			EventProcessor.ProcessEventsInQueues("/nowcast");
+			EventProcessor.ProcessEventsInQueues("/backoff");
+			EventProcessor.ProcessEventsInQueues("/assistme");
+
 			if (MQ.Query<bool>("${Me.Stunned}")) return;
 			if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //we are dead
 			if (MQ.Query<bool>("${Me.Feigning}") && E3.CharacterSettings.IfFDStayDown) return;
@@ -93,10 +98,7 @@ namespace E3Core.Processors
 			{
 				Heals.Check_LifeSupport();
 			}
-			//nowcast before all.
-			EventProcessor.ProcessEventsInQueues("/nowcast");
-			EventProcessor.ProcessEventsInQueues("/backoff");
-			EventProcessor.ProcessEventsInQueues("/assistme");
+			
 
 			if (!_amIDead)
 			{
