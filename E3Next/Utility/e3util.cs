@@ -15,6 +15,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Policy;
 using System.Text;
 using static MonoCore.EventProcessor;
 
@@ -1209,15 +1210,21 @@ namespace E3Core.Utility
 					if (_spawns.TryByID(mobId, out s))
 					{
 						if (s.TypeDesc == "Corpse") continue;
-						if (s.Aggressive)
+						if (s.TypeDesc != "NPC") continue;
+						if (!s.Targetable) continue;
+						if (!s.Aggressive) continue;
+						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
+						if (s.CleanName.EndsWith("s pet")) continue;
+						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+						if (s.Distance3D > 60) continue;
+						
+						tempLowestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
+						if (tempLowestHP >0 && tempLowestHP < currentLowestHP)
 						{
-							tempLowestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
-							if (tempLowestHP >0 && tempLowestHP < currentLowestHP)
-							{
-								currentLowestHP = tempLowestHP;
-								lowstHPMob = mobId;
-							}
+							currentLowestHP = tempLowestHP;
+							lowstHPMob = mobId;
 						}
+						
 					}
 				}
 			}
@@ -1241,17 +1248,23 @@ namespace E3Core.Utility
 					if (_spawns.TryByID(mobId, out s))
 					{
 						if (s.TypeDesc == "Corpse") continue;
-						if (s.Aggressive)
+						
+						if (s.TypeDesc != "NPC") continue;
+						if (!s.Targetable) continue;
+						if (!s.Aggressive) continue;
+						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
+						if (s.CleanName.EndsWith("s pet")) continue;
+						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+						if (s.Distance3D > 60) continue;
+						
+						tempHighestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
+						if (tempHighestHP > 0 && tempHighestHP > currentHighestHP)
 						{
-							tempHighestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
-							if (tempHighestHP > 0 && tempHighestHP > currentHighestHP)
-							{
-								currentHighestHP = tempHighestHP;
-								highestHPMob = mobId;
-								if (currentHighestHP == 100) break;
-								
-							}
+							currentHighestHP = tempHighestHP;
+							highestHPMob = mobId;
+							if (currentHighestHP == 100) break;
 						}
+						
 					}
 				}
 			}

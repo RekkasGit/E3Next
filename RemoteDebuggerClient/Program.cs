@@ -73,9 +73,9 @@ namespace MQServerClient
             _requestSocket.Options.ReceiveHighWatermark = 10000;
             _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
         }
-        public bool TryByID(Int32 id, out Spawn s)
+        public bool TryByID(Int32 id, out Spawn s, bool refresh = true)
         {
-            RefreshListIfNeeded();
+            if(refresh) RefreshListIfNeeded();
             return _spawnsByID.TryGetValue(id, out s);
         }
         public bool TryByName(string name, out Spawn s)

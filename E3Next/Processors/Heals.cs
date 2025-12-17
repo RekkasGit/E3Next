@@ -272,7 +272,7 @@ namespace E3Core.Processors
 			}
 
 
-			bool inCombat = E3.CurrentInCombat;
+			bool inCombat =Basics.InGameCombat();
 
 			//reset ignored targets once in combat
 			if (inCombat && IgnoreHealTargets.Count>0)

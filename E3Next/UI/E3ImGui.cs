@@ -510,6 +510,15 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_SetNextWindowFocus();
 
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_TableNextRowEx(int row_flags, float min_row_height);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetCursorPosX();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetCursorPosY(float y);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetCursorPosX(float x);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 	public extern static void imgui_SetNextWindowSizeWithCond(float width, float height, int cond);

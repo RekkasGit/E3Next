@@ -1,4 +1,4 @@
-using MonoCore;
+﻿using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +29,7 @@ namespace E3Core.UI.Windows.MemStats
             (1.4, 1.6, 1.0f, 0.35f, 0.2f, "1.4-1.5 GB = Soon to crash (large zones)"),
 			(1.6, double.MaxValue, 1.0f, 0.05f, 0.05f, "1.6+ GB = Crash very likely")
 		};
+
 
 		[SubSystemInit]
 		public static void Init()
@@ -76,8 +77,20 @@ namespace E3Core.UI.Windows.MemStats
 			{
 				Double csharpMemory = 0;
 				Double eqPageMemory = 0;
+
+				string startTime = E3.Bots.Query(user, "${Me.Memory_CSharpStartTime}");
+
 				E3.Bots.GetMemoryUsage(user, out csharpMemory, out eqPageMemory);
 				var memoryStat = new MemoryStats(user, csharpMemory, eqPageMemory);
+
+				if (DateTime.TryParse(startTime, out var result))
+				{
+					memoryStat.TimeRunning = (System.DateTime.Now - result).TotalHours.ToString("N2");
+
+				}
+
+
+
 				_memoryStats.Add(memoryStat);
 			}
 		}
@@ -100,26 +113,26 @@ namespace E3Core.UI.Windows.MemStats
 					imgui_Separator();
 
 					// Memory Stats Table
-using (var table = ImGUITable.Aquire())
-						{
-							int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
-												  ImGuiTableFlags.ImGuiTableFlags_Resizable |
-												  ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
-												  ImGuiTableFlags.ImGuiTableFlags_BordersInner |
-												  ImGuiTableFlags.ImGuiTableFlags_ScrollY);
+					using (var table = ImGUITable.Aquire())
+					{
+						int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
+											  ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
+											  ImGuiTableFlags.ImGuiTableFlags_BordersInner |
+											  ImGuiTableFlags.ImGuiTableFlags_ScrollY| ImGuiTableFlags.ImGuiTableFlags_Resizable);
 
-						const float summaryLegendHeight = 25f; // Enough room for summary metrics plus multi-line legend
+						const float summaryLegendHeight = 190f; // Enough room for summary metrics plus multi-line legend
 						float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY() - summaryLegendHeight);
 
-						if (table.BeginTable("MemoryStatsTable", 3, tableFlags, 0f, tableHeight))
+						if (table.BeginTable("MemoryStatsTable", 4, tableFlags, 0f, tableHeight))
 						{
 							imgui_TableSetupColumn("Character", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 150);
 							imgui_TableSetupColumn("C# Memory (MB)", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120);
 							imgui_TableSetupColumn("EQ Commit (MB)", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120);
+							imgui_TableSetupColumn("Hours Running", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 150);
 							imgui_TableHeadersRow();
 
 							List<MemoryStats> currentStats = _memoryStats;
-
+						
 							foreach (var stats in currentStats)
 							{
 								imgui_TableNextRow();
@@ -132,6 +145,11 @@ using (var table = ImGUITable.Aquire())
 
 								imgui_TableNextColumn();
 								DrawEqCommitValue(stats.EQCommitSizeMB);
+
+								imgui_TableNextColumn();
+								imgui_Text(stats.TimeRunning);
+
+								
 							}
 						}
 					}
@@ -155,8 +173,8 @@ using (var table = ImGUITable.Aquire())
 						imgui_Text("No memory statistics available. Use /e3memstats to collect data.");
 					}
 
-					// imgui_Separator();
-					// RenderSeverityLegend();
+					imgui_Separator();
+					RenderSeverityLegend();
 				}
 			}
 			finally
@@ -195,9 +213,10 @@ using (var table = ImGUITable.Aquire())
 		}
 		public class MemoryStats
 		{
-			public string CharacterName { get; set; }
+			public string CharacterName { get; set; } = string.Empty;
 			public double CSharpMemoryMB { get; set; }
 			public double EQCommitSizeMB { get; set; }
+			public string TimeRunning { get; set; } = string.Empty;
 
 			public MemoryStats()
 			{

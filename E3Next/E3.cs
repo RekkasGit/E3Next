@@ -54,6 +54,11 @@ namespace E3Core.Processors
 			//kickout after updates if paused
 			if (IsPaused()) return;
 			//stunned, no sense in processing
+
+			EventProcessor.ProcessEventsInQueues("/nowcast");
+			EventProcessor.ProcessEventsInQueues("/backoff");
+			EventProcessor.ProcessEventsInQueues("/assistme");
+
 			if (MQ.Query<bool>("${Me.Stunned}")) return;
 			if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //we are dead
 			if (MQ.Query<bool>("${Me.Feigning}") && E3.CharacterSettings.IfFDStayDown) return;
@@ -93,10 +98,7 @@ namespace E3Core.Processors
 			{
 				Heals.Check_LifeSupport();
 			}
-			//nowcast before all.
-			EventProcessor.ProcessEventsInQueues("/nowcast");
-			EventProcessor.ProcessEventsInQueues("/backoff");
-			EventProcessor.ProcessEventsInQueues("/assistme");
+			
 
 			if (!_amIDead)
 			{
@@ -312,6 +314,8 @@ namespace E3Core.Processors
 			{
 				eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
 			}
+			Process currentProcess = System.Diagnostics.Process.GetCurrentProcess();
+			DateTime startTime = currentProcess.StartTime;
 			// Get the private memory size (commit size) in bytes
 			long privateMemoryBytes = GC.GetTotalMemory(false);
 			// Convert to Kilobytes (KB) for easier reading
@@ -319,6 +323,8 @@ namespace E3Core.Processors
 
 			PubServer.AddTopicMessage("${Me.Memory_CSharp}", $"{privateMemoryMb:N}");
 			PubServer.AddTopicMessage("${Me.Memory_EQPageFile}", $"{eqprocessMemoryMB:N}");
+			PubServer.AddTopicMessage("${Me.Memory_CSharpStartTime}", $"{startTime.ToString()}");
+
 		}
 
 		public static void StateUpdates_Counters()
