@@ -33,7 +33,6 @@ namespace E3Core.Processors
 		List<string> BotsInCombat();
 		Int32 PctMana(string name);
 		List<string> BotsConnected(bool readOnly = false);
-        List<string> GetCharactersInSameZone();
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
@@ -68,6 +67,7 @@ namespace E3Core.Processors
 		[ExposedData("Bots", "NetworkingPathsTolookAt")]
 		List<string> _pathsTolookAt = new List<string>();
 		Task _autoRegisrationTask;
+
         public SharedDataBots()
         {
             string settingsFilePath = BaseSettings.GetSettingsFilePath("");
@@ -591,41 +591,6 @@ namespace E3Core.Processors
 			_botsInCombatResultCache = tempList;
 			return _botsInCombatResultCache;
 		}
-
-		Int64 _charactersInSameZoneTimeStamp = 0;
-		Int64 _charactersInSameZoneTimeInterval = 2000;
-		[ExposedData("Bots", "CharactersInSameZone")]
-		List<string> _charactersInSameZoneResultCache = new List<string>();
-		public List<string> GetCharactersInSameZone()
-		{
-			if(!e3util.ShouldCheck(ref _charactersInSameZoneTimeStamp,_charactersInSameZoneTimeInterval))
-			{
-				return _charactersInSameZoneResultCache;
-			}
-			
-			var sameZoneCharacters = new List<string>();
-			var connectedBots = BotsConnected();
-			
-			// Add current character
-			sameZoneCharacters.Add(E3.CurrentName);
-			
-			// Check each bot's zone
-			foreach (var botName in connectedBots)
-			{
-				if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
-					continue; // Skip self
-					
-				if (InZone(botName))
-				{
-					sameZoneCharacters.Add(botName);
-				}
-			}
-			
-			sameZoneCharacters.Sort(StringComparer.OrdinalIgnoreCase);
-			_charactersInSameZoneResultCache = sameZoneCharacters;
-			return _charactersInSameZoneResultCache;
-		}
-
 
 		public void Broadcast(string message, bool noparse = false)
         {
@@ -1432,30 +1397,6 @@ namespace E3Core.Processors
 			}
 		}
 
-		public List<string> GetCharactersInSameZone()
-		{
-			var sameZoneCharacters = new List<string>();
-			var connectedBots = BotsConnected();
-			
-			// Add current character
-			sameZoneCharacters.Add(E3.CurrentName);
-			
-			// Check each bot's zone
-			foreach (var botName in connectedBots)
-			{
-				if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
-					continue; // Skip self
-					
-				if (InZone(botName))
-				{
-					sameZoneCharacters.Add(botName);
-				}
-			}
-			
-			sameZoneCharacters.Sort(StringComparer.OrdinalIgnoreCase);
-			return sameZoneCharacters;
-		}
-
 		public bool HasShortBuff(string name, Int32 buffid)
 		{
 			return BuffList(name).Contains(buffid);
@@ -1685,30 +1626,6 @@ namespace E3Core.Processors
                 }
             }
             return _connectedBots;
-        }
-
-        public List<string> GetCharactersInSameZone()
-        {
-            var sameZoneCharacters = new List<string>();
-            var connectedBots = BotsConnected();
-            
-            // Add current character
-            sameZoneCharacters.Add(E3.CurrentName);
-            
-            // Check each bot's zone
-            foreach (var botName in connectedBots)
-            {
-                if (string.Equals(botName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
-                    continue; // Skip self
-                    
-                if (InZone(botName))
-                {
-                    sameZoneCharacters.Add(botName);
-                }
-            }
-            
-            sameZoneCharacters.Sort(StringComparer.OrdinalIgnoreCase);
-            return sameZoneCharacters;
         }
 
         public void Broadcast(string message, bool noparse = false)

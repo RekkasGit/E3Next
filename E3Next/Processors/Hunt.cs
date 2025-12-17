@@ -7,6 +7,7 @@ using System.IO;
 using IniParser;
 using IniParser.Model;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -164,6 +165,7 @@ namespace E3Core.Processors
         private static readonly Logging _log = E3.Log;
         private static readonly IMQ MQ = E3.MQ;
         private static readonly ISpawns _spawns = E3.Spawns;
+        private static readonly ConcurrentQueue<Action> _pendingUiActions = new ConcurrentQueue<Action>();
 
         [ExposedData("Hunt", "Enabled")]
         public static bool Enabled = false;
@@ -476,6 +478,17 @@ namespace E3Core.Processors
             if (id <= 0) return;
             if (durationSeconds <= 0) durationSeconds = TempIgnoreDurationSec;
             _tempIgnoreUntil[id] = Core.StopWatch.ElapsedMilliseconds + durationSeconds * 1000L;
+        }
+
+        public static void RequestIgnoreCurrentTarget(bool addToPermanentList = true, bool addTemporaryIgnore = true)
+        {
+            EnqueueUiAction(() => IgnoreCurrentTarget(addToPermanentList, addTemporaryIgnore));
+        }
+
+        private static void EnqueueUiAction(Action action)
+        {
+            if (action == null) return;
+            _pendingUiActions.Enqueue(action);
         }
 
         public static bool IgnoreCurrentTarget(bool addToPermanentList = true, bool addTemporaryIgnore = true)
@@ -1014,9 +1027,26 @@ namespace E3Core.Processors
         private static bool _lastWaitingForLoot = false;
         private static int _lastTargetID = 0;
 
+        private static void ProcessUiActionQueue()
+        {
+            while (_pendingUiActions.TryDequeue(out var action))
+            {
+                try
+                {
+                    action?.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    _log.Write($"Hunt: UI action error - {ex.Message}");
+                    DebugLog($"UI action error: {ex.Message}");
+                }
+            }
+        }
+
         [ClassInvoke(Data.Class.All)]
         public static void Tick()
         {
+            ProcessUiActionQueue();
             // Keep cached zone current on the processing loop (not the UI thread)
             UpdateCurrentZoneCached();
 

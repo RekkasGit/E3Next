@@ -39,6 +39,11 @@ namespace E3Core.Server
 		public ConcurrentQueue<OnCommandData> CommandQueue = new ConcurrentQueue<OnCommandData>();
 		public ConcurrentQueue<OnCommandData> IMGUICommands = new ConcurrentQueue<OnCommandData>();
 
+		// Cleanup settings for TopicUpdates dictionary
+		private const int TopicCleanupIntervalMs = 300000; // 5 minutes
+		private const int StaleDataTimeoutMs = 600000; // 10 minutes - consider data stale if no updates
+		private Int64 _nextTopicCleanupMs = 0;
+
 		private static IMQ MQ = E3.MQ;
 		public class ConnectionInfo
 		{
@@ -522,6 +527,85 @@ namespace E3Core.Server
 				}
 			}
 		}
+
+		/// <summary>
+		/// Cleans up stale data from TopicUpdates dictionary.
+		/// Removes characters that haven't sent updates recently and are no longer connected.
+		/// </summary>
+		public void CleanupStaleTopicData()
+		{
+			try
+			{
+				Int64 now = Core.StopWatch.ElapsedMilliseconds;
+				Int64 staleThreshold = now - StaleDataTimeoutMs;
+				var keysToRemove = new List<string>();
+
+				// Find characters with stale data
+				foreach (var characterEntry in TopicUpdates)
+				{
+					string characterName = characterEntry.Key;
+					var topics = characterEntry.Value;
+
+					// Check if this character is still connected
+					bool isConnected = UsersConnectedTo.ContainsKey(characterName);
+
+					if (!isConnected)
+					{
+						// Character is not connected, check if data is stale
+						bool hasRecentData = false;
+
+						foreach (var topicEntry in topics.Values)
+						{
+							if (topicEntry.LastUpdate > staleThreshold)
+							{
+								hasRecentData = true;
+								break;
+							}
+						}
+
+						// If no recent data, mark for removal
+						if (!hasRecentData)
+						{
+							keysToRemove.Add(characterName);
+						}
+					}
+				}
+
+				// Remove stale character entries
+				int removedCount = 0;
+				foreach (var key in keysToRemove)
+				{
+					if (TopicUpdates.TryRemove(key, out var removed))
+					{
+						removedCount++;
+						MQ.WriteDelayed($"SharedDataClient: Removed stale data for character '{key}' (topics: {removed.Count})");
+					}
+				}
+
+				if (removedCount > 0)
+				{
+					MQ.WriteDelayed($"SharedDataClient: Cleanup completed. Removed {removedCount} stale character(s). Active characters: {TopicUpdates.Count}");
+				}
+			}
+			catch (Exception ex)
+			{
+				MQ.WriteDelayed($"SharedDataClient: Error during cleanup - {ex.Message}");
+			}
+		}
+
+		/// <summary>
+		/// Checks if cleanup should run and executes it if needed
+		/// </summary>
+		private void CheckAndRunTopicCleanup()
+		{
+			Int64 now = Core.StopWatch.ElapsedMilliseconds;
+			if (now >= _nextTopicCleanupMs)
+			{
+				_nextTopicCleanupMs = now + TopicCleanupIntervalMs;
+				CleanupStaleTopicData();
+			}
+		}
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Process_CheckNewConnections(SubscriberSocket subSocket)
 		{
@@ -638,6 +722,7 @@ namespace E3Core.Server
 				{
 					Process_CheckNewConnections(subSocket);
 					Process_CheckConnectionsIfStillValid(subSocket, ref lastConnectionCheck);
+					CheckAndRunTopicCleanup();
 
 					string messageTopicReceived;
 					if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))

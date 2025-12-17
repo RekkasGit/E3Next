@@ -177,7 +177,7 @@ namespace E3Core.UI.Windows.Hunt
                 imgui_SameLine();
                 if (imgui_ButtonEx("Ignore", 70, 26))
                 {
-                    HuntProcessor.IgnoreCurrentTarget();
+                    HuntProcessor.RequestIgnoreCurrentTarget();
                 }
 
                 imgui_SameLine();
@@ -261,7 +261,7 @@ namespace E3Core.UI.Windows.Hunt
             imgui_SameLine();
             if (imgui_Button("Ignore Current"))
             {
-                HuntProcessor.IgnoreCurrentTarget();
+                HuntProcessor.RequestIgnoreCurrentTarget();
             }
             imgui_SameLine();
             if (imgui_Button("Clear Temp Ignores"))
