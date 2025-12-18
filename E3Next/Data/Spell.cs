@@ -655,7 +655,7 @@ namespace E3Core.Data
                     DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration.TotalSeconds}}");
                     RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.RecastTime}}");
                     RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
-                    MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.CastTime}}");
+                    MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].CastTime}}");
 					MyRange = MQ.Query<Double>($"${{Me.Inventory[{invSlot}].Spell.MyRange}}");
 					Description = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.Description}}");
                     ResistType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.ResistType}}");
