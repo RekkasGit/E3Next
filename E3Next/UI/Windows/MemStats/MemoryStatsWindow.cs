@@ -41,6 +41,14 @@ namespace E3Core.UI.Windows.MemStats
 			{
 				MemoryStatsWindow.ToggleWindow();
 			}, "toggle memory stats window");
+
+			EventProcessor.RegisterCommand("/e3debug_memory_collect", (x) =>
+			{
+				GC.GetTotalMemory(true);
+				E3.Bots.Broadcast("Collecting C# Memory");
+			}, "toggle memory stats window");
+
+
 		}
 		public static void ToggleWindow()
 		{
