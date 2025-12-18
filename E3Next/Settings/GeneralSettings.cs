@@ -57,6 +57,7 @@ namespace E3Core.Settings
         public Boolean Loot_OnlyStackableEnabled = false;
 		public bool Loot_OnlyStackableHonorLootFileSkips = false;
 		public Int32 Loot_TimeToWaitAfterAssist = 2000;
+		public bool Loot_LootkeepNewItems = true;
         
 
         public Boolean Assists_AutoAssistEnabled=false;
@@ -187,6 +188,7 @@ namespace E3Core.Settings
 
             LoadKeyData("Loot", "Loot in Combat", parsedData, ref Loot_LootInCombat);
             LoadKeyData("Loot", "Milliseconds To Wait To Loot", parsedData, ref Loot_TimeToWaitAfterAssist);
+			LoadKeyData("Loot", "Auto Lootkeep New Items (Lootskip if False)", parsedData, ref Loot_LootkeepNewItems);
             LoadKeyData("Loot", "NumOfFreeSlotsOpen(1+)", parsedData, ref Loot_NumberOfFreeSlotsOpen);
             LoadKeyData("Loot", "Loot Only Stackable: Enable (On/Off)", parsedData, ref Loot_OnlyStackableEnabled);
             LoadKeyData("Loot", "Loot Only Stackable: With Value Greater Than Or Equal in Copper", parsedData, ref Loot_OnlyStackableValueGreaterThanInCopper);

@@ -818,11 +818,19 @@ namespace E3Core.Processors
                         importantItem = false;
                         foundInFile = true;
                     }
-                    if (!foundInFile && !nodrop)
+                    bool LootkeepNewItems = E3.GeneralSettings.Loot_LootkeepNewItems;
+                    if (!foundInFile && !nodrop && LootkeepNewItems)
                     {
                         importantItem = true;
                         LootDataFile.Keep.Add(corpseItem);
                         E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
+                        LootDataFile.SaveData();
+                    }
+                    if (!foundInFile && !nodrop && !LootkeepNewItems)
+                    {
+                        importantItem = false;
+                        LootDataFile.Skip.Add(corpseItem);
+                        E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" SKIP");
                         LootDataFile.SaveData();
                     }
 
@@ -1080,13 +1088,21 @@ namespace E3Core.Processors
 							importantItem = false;
 							foundInFile = true;
 						}
-						if (!foundInFile && !nodrop)
-						{
-							importantItem = true;
-							LootDataFile.Keep.Add(corpseItem);
-							E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
-							LootDataFile.SaveData();
-						}
+                    bool LootkeepNewItems = E3.GeneralSettings.Loot_LootkeepNewItems;
+                    if (!foundInFile && !nodrop && LootkeepNewItems)
+                    {
+                        importantItem = true;
+                        LootDataFile.Keep.Add(corpseItem);
+                        E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" KEEP");
+                        LootDataFile.SaveData();
+                    }
+                    if (!foundInFile && !nodrop && !LootkeepNewItems)
+                    {
+                        importantItem = false;
+                        LootDataFile.Skip.Add(corpseItem);
+                        E3.Bots.BroadcastCommandToGroup($"/E3LootAdd \"{corpseItem}\" SKIP");
+                        LootDataFile.SaveData();
+                    }
 
 					}
 
