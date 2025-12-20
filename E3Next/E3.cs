@@ -576,7 +576,7 @@ namespace E3Core.Processors
         private static void CheckGC()
         {
 			if (Basics.InCombat()) return;
-			if (!e3util.ShouldCheck(ref _lastGCCollect, 6000)) return;
+			if (!e3util.ShouldCheck(ref _lastGCCollect, 300000)) return;
 			GC.Collect();
         }
 
