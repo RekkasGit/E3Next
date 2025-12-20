@@ -680,21 +680,8 @@ namespace E3Core.Server
 
 							subSocket.Receive(ref msg_payload);
 
-
-							//byteComparerForDataCache.ByteArrayLength= msg_payload.Size;
-							
-
-							//if (!dataCache.ContainsKey(msg_payload.Data))
-							//{
-							//	string dataString = System.Text.Encoding.Default.GetString(msg_payload.Data, 0, msg_payload.Size);
-							//	byte[] dataKey = new byte[msg_payload.Size];
-							//	Buffer.BlockCopy(msg_payload.Data, 0, dataKey, 0, msg_payload.Size);
-							//	dataCache.TryAdd(dataKey, dataString);
-							//}
 							string messageReceived;
-							//get reused string! no allocation needed, most of the time!
 							messageReceived = System.Text.Encoding.Default.GetString(msg_payload.Data, 0, msg_payload.Size);
-
 
 							string originalMessage = messageReceived;
 							string payloaduser;
