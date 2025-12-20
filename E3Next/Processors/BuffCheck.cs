@@ -6,14 +6,8 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.ServiceModel.Configuration;
-using System.Xml.Linq;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
 
 namespace E3Core.Processors
 {

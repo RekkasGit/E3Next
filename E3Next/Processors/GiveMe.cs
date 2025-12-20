@@ -210,7 +210,6 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/E3DestroyNoRent", (x) =>
             {
-                //giveme Alara "Something" qty Rekken
                 if (x.args.Count > 0)
                 {
 					Int32 maxTries = 0;

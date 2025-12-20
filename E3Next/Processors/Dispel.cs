@@ -76,6 +76,7 @@ namespace E3Core.Processors
 						{
 							//get rid of dead mobs
 							_mobsToDispel.Remove(target);
+							continue;
 						}
 						//most dispels are 200 ranage, ignore if its too far away, also check line of sight to th emob.
 						if (s.Distance3D<200 && MQ.Query<bool>($"${{Spawn[id {s.ID}].LineOfSight}}") && Casting.TrueTarget(s.ID))

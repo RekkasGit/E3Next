@@ -131,7 +131,7 @@ namespace E3Core.Server
 			AsyncIO.ForceDotNet.Force();
             using (var pubSocket = new PublisherSocket())
             {
-                pubSocket.Options.SendHighWatermark = 50000;
+                pubSocket.Options.SendHighWatermark = 1000;
                 
                 pubSocket.Bind("tcp://0.0.0.0:" + PubPort.ToString());
                 

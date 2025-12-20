@@ -167,22 +167,27 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3botreport", (x) =>
 			{
 
-				int spellShield = MQ.Query<Int32>("${Me.SpellShieldBonus}");
-				int spellDamage = MQ.Query<Int32>("${Me.SpellDamageBonus}");
-				int hitPoints = MQ.Query<Int32>("${Me.CurrentHPs}");
-				int manaPoints = MQ.Query<Int32>("${Me.CurrentMana}");
 
-				Int32 plat = MQ.Query<Int32>("${Me.Platinum}") + MQ.Query<Int32>("${PlatinumBank}");
+				if(!e3util.FilterMe(x))
+				{
+					int spellShield = MQ.Query<Int32>("${Me.SpellShieldBonus}");
+					int spellDamage = MQ.Query<Int32>("${Me.SpellDamageBonus}");
+					int hitPoints = MQ.Query<Int32>("${Me.CurrentHPs}");
+					int manaPoints = MQ.Query<Int32>("${Me.CurrentMana}");
 
-				Int32 AAPts = MQ.Query<Int32>("${Me.AAPoints}");
-				Int32 AAAsigned = MQ.Query<Int32>("${Me.AAPointsAssigned}");
-				Int32 AASpent = MQ.Query<Int32>("${Me.AAPointsSpent}");
-				string AATotal = MQ.Query<string>("${Me.AAPointsTotal}");
-	
-				Broadcast($"HP:\ag{hitPoints}\aw MP:\ag{manaPoints} \awSpellShield:\ag{spellShield} \awSpell DMG:\ag{spellDamage} \awAA:\ag{AAPts.ToString("N0")} \awAA Total:\ag{AASpent.ToString("N0")}  \awPlat:\ag {plat.ToString("N0")}");
+					Int32 plat = MQ.Query<Int32>("${Me.Platinum}") + MQ.Query<Int32>("${PlatinumBank}");
+
+					Int32 AAPts = MQ.Query<Int32>("${Me.AAPoints}");
+					Int32 AAAsigned = MQ.Query<Int32>("${Me.AAPointsAssigned}");
+					Int32 AASpent = MQ.Query<Int32>("${Me.AAPointsSpent}");
+					string AATotal = MQ.Query<string>("${Me.AAPointsTotal}");
+
+					Broadcast($"HP:\ag{hitPoints}\aw MP:\ag{manaPoints} \awSpellShield:\ag{spellShield} \awSpell DMG:\ag{spellDamage} \awAA:\ag{AAPts.ToString("N0")} \awAA Total:\ag{AASpent.ToString("N0")}  \awPlat:\ag {plat.ToString("N0")}");
+				}
+
 				if (x.args.Count == 0)
 				{
-					BroadcastCommand("/e3botreport me");
+					BroadcastCommand("/e3botreport me",false,x);
 				}
 			});
 

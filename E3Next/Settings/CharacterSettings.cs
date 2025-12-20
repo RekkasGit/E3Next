@@ -494,11 +494,13 @@ namespace E3Core.Settings
   //      public List<string> LootCommander_Looters = new List<string>();
 
 		[INI_Section("CPU", "ProcessLoopDelayInMS")]
-		public Int32 CPU_ProcessLoopDelay = 50;
+		public Int32 CPU_ProcessLoopDelay = 100;
 		[INI_Section("CPU", "PublishStateDataInMS")]
-		public Int32 CPU_PublishStateDataInMS = 50;
+		public Int32 CPU_PublishStateDataInMS = 100;
 		[INI_Section("CPU", "PublishBuffDataInMS")]
 		public Int32 CPU_PublishBuffDataInMS = 1000;
+		[INI_Section("CPU", "PublishMiscDataInMS")]
+		public Int32 CPU_PublishMiscDataInMS = 300;
 		[INI_Section("CPU", "PublishSlowDataInMS")]
 		public Int32 CPU_PublishSlowDataInMS = 1000;
 		[INI_Section("CPU", "Camp Pause at 30 seconds")]
@@ -651,10 +653,10 @@ namespace E3Core.Settings
             ParsedData = CreateSettings(filename);
 
 
-            LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
-			LoadKeyData("CPU", "PublishStateDataInMS", ParsedData, ref CPU_PublishStateDataInMS);
-			LoadKeyData("CPU", "PublishBuffDataInMS", ParsedData, ref CPU_PublishBuffDataInMS);
-			LoadKeyData("CPU", "PublishSlowDataInMS", ParsedData, ref CPU_PublishSlowDataInMS);
+			//LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
+			//LoadKeyData("CPU", "PublishStateDataInMS", ParsedData, ref CPU_PublishStateDataInMS);
+			//LoadKeyData("CPU", "PublishBuffDataInMS", ParsedData, ref CPU_PublishBuffDataInMS);
+			//LoadKeyData("CPU", "PublishSlowDataInMS", ParsedData, ref CPU_PublishSlowDataInMS);
 
 			LoadKeyData("CPU", "Camp Pause at 30 seconds", ParsedData, ref CPU_Camping_PauseAt30Seconds);
 			LoadKeyData("CPU", "Camp Pause at 20 seconds", ParsedData, ref CPU_Camping_PauseAt20Seconds);
@@ -1373,8 +1375,8 @@ namespace E3Core.Settings
 
 			newFile.Sections.AddSection("CPU");
 			section = newFile.Sections.GetSectionData("CPU");
-			section.Keys.AddKey("ProcessLoopDelayInMS", "50");
-			section.Keys.AddKey("PublishStateDataInMS", "50");
+			section.Keys.AddKey("ProcessLoopDelayInMS", "100");
+			section.Keys.AddKey("PublishStateDataInMS", "100");
 			section.Keys.AddKey("PublishBuffDataInMS", "1000");
 			section.Keys.AddKey("PublishSlowDataInMS", "1000");
 

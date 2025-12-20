@@ -196,7 +196,11 @@
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowStates.cs" />
     <Compile Include="UI\Windows\Hud\HudCastingWindow.cs" />
     <Compile Include="UI\Windows\MemStats\MemoryStatsWindow.cs" />
+    <Compile Include="UI\Windows\NetworkingStats\NetStatWindow.cs" />
+    <Compile Include="Utility\ArrayBufferPool.cs" />
+    <Compile Include="Utility\ByteArrayComparer.cs" />
     <Compile Include="Utility\e3util.cs" />
+    <Compile Include="Utility\LRU.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IniFileParser\INIFileParser.csproj">

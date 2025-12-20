@@ -44,8 +44,30 @@ namespace E3Core.UI.Windows.MemStats
 
 			EventProcessor.RegisterCommand("/e3debug_memory_collect", (x) =>
 			{
-				GC.GetTotalMemory(true);
-				E3.Bots.Broadcast("Collecting C# Memory");
+
+				if(x.args.Count>0)
+				{
+					int generation = 0;
+					Int32.TryParse(x.args[0], out generation);
+
+					if (generation < 0)
+					{
+						generation = 0;
+					}
+					else if (generation > 2)
+					{
+						generation = 2;
+					}
+					E3.Bots.Broadcast($"Collecting C# Memory ({generation})");
+					GC.Collect(generation, GCCollectionMode.Forced, false);
+				}
+				else
+				{
+					GC.GetTotalMemory(true);
+					E3.Bots.Broadcast("Collecting C# Memory (All)");
+				}
+
+				
 			}, "toggle memory stats window");
 
 

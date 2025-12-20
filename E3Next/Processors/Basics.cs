@@ -672,6 +672,13 @@ namespace E3Core.Processors
 								E3.Bots.Broadcast($"Setting {command} to value:{value}");
 
 							}
+							else if (String.Equals(command, "PublishMiscDataInMS", StringComparison.OrdinalIgnoreCase))
+							{
+								if (!Int32.TryParse(x.args[1], out value)) value = 200;
+								E3.CharacterSettings.CPU_PublishMiscDataInMS = value;
+								E3.Bots.Broadcast($"Setting {command} to value:{value}");
+
+							}
 
 						}
                         else
