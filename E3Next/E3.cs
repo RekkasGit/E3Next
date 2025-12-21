@@ -324,7 +324,7 @@ namespace E3Core.Processors
 
 			PubServer.AddTopicMessage("${Me.Memory_CSharp}", $"{privateMemoryMb:N}");
 			PubServer.AddTopicMessage("${Me.Memory_EQPageFile}", $"{eqprocessMemoryMB:N}");
-			PubServer.AddTopicMessage("${Me.Memory_CSharpStartTime}", $"{startTime.ToString()}");
+			PubServer.AddTopicMessage("${Me.Memory_EQStartTime}", $"{startTime.ToString()}");
 
 		}
 

@@ -108,7 +108,7 @@ namespace E3Core.UI.Windows.MemStats
 				Double csharpMemory = 0;
 				Double eqPageMemory = 0;
 
-				string startTime = E3.Bots.Query(user, "${Me.Memory_CSharpStartTime}");
+				string startTime = E3.Bots.Query(user, "${Me.Memory_EQStartTime}");
 
 				E3.Bots.GetMemoryUsage(user, out csharpMemory, out eqPageMemory);
 				var memoryStat = new MemoryStats(user, csharpMemory, eqPageMemory);
