@@ -227,8 +227,12 @@ namespace E3Core.Processors
                             }
                             MQ.Delay(500);
 
-                            MQ.Cmd("/attack on");
-                            if(HasAllFlag)
+							if (!String.Equals(E3.CharacterSettings.Assist_Type, "Off", StringComparison.OrdinalIgnoreCase))
+							{
+								MQ.Cmd("/attack on");
+							}
+
+							if (HasAllFlag)
                             {
                                 if (Filters.Count > 0)
                                 {
