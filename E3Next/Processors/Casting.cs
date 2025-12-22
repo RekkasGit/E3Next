@@ -2577,6 +2577,12 @@ namespace E3Core.Processors
 						string replacevalue = replaceString;
 						//Rekken
 						string targetname = match.Groups[1].Value;
+
+						if (String.Equals("LOCAL_NAME",targetname,StringComparison.OrdinalIgnoreCase))
+						{
+							targetname = E3.CurrentName;
+						}
+
 						//CurrentHps
 						string query = match.Groups[2].Value;
 
