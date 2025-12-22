@@ -322,8 +322,8 @@ namespace E3Core.Processors
 			// Convert to Kilobytes (KB) for easier reading
 			double privateMemoryMb = privateMemoryBytes / 1024f / 1024;
 
-			PubServer.AddTopicMessage("${Me.Memory_CSharp}", $"{privateMemoryMb:N}");
-			PubServer.AddTopicMessage("${Me.Memory_EQPageFile}", $"{eqprocessMemoryMB:N}");
+			PubServer.AddTopicMessage("${Me.Memory_CSharp}", $"{privateMemoryMb}");
+			PubServer.AddTopicMessage("${Me.Memory_EQPageFile}", $"{eqprocessMemoryMB}");
 			PubServer.AddTopicMessage("${Me.Memory_EQStartTime}", $"{startTime.ToString()}");
 
 		}
