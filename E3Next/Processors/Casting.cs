@@ -1783,7 +1783,7 @@ namespace E3Core.Processors
 				//if a timestamp was set			
 				if(spell.LastCastTimeStamp>0)
 				{
-					if ((Core.StopWatch.ElapsedMilliseconds - spell.LastCastTimeStamp) < spell.RecastDelay)
+					if ((Core.StopWatch.ElapsedMilliseconds - spell.LastCastTimeStamp) < (spell.RecastDelay*1000))
 					{
 						return false;
 					}
