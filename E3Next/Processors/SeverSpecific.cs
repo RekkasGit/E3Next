@@ -76,6 +76,43 @@ namespace E3Core.Processors
 
 
 			#region eq_might_temple
+
+			#region eq_might_gate
+			EventProcessor.RegisterCommand("/e3gate", (x) =>
+			{
+				if (x.args.Count == 0)
+				{
+					E3.Bots.BroadcastCommandToGroup("/e3gate me", x);
+					MQ.Delay(400);
+					MQ.Cmd("/alt act 1217");
+				}
+
+				if (x.args.Count == 1)
+				{
+					string target = x.args[0];
+					if (target.Equals("me"))
+					{
+						Casting.Interrupt();
+						MQ.Delay(500);
+						MQ.Cmd("/alt act 1217");
+						MQ.Delay(500);
+						if (E3.CurrentClass == Class.Bard)
+						{
+							MQ.Delay(5000);
+						}
+						else
+						{
+							MQ.Delay(10000, Casting.IsNotCasting);
+						}
+					}
+					else
+					{
+						E3.Bots.BroadcastCommandToPerson(target, "/e3gate me");
+					}
+				}
+			});
+			#endregion
+
 			EventProcessor.RegisterCommand("/temple", (x) =>
 			{
 				if (x.args.Count == 0)
