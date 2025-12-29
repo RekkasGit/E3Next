@@ -7,6 +7,7 @@ using E3Core.Classes;
 using E3Core.Processors;
 using E3Core.Utility;
 using E3Core.Server;
+using System.Text;
 
 namespace E3Core.UI.Windows.MemStats
 {
@@ -78,6 +79,23 @@ namespace E3Core.UI.Windows.MemStats
 				$", FREX:{EventProcessor._filterRegexes.Count}, EL:{EventProcessor.EventList.Count}, CLQ:{EventProcessor.CommandListQueue.Count}");
 				E3.Bots.Broadcast($"PubSub: T:{PubServer._topicMessages.Count}, IM:{PubServer.IncomingChatMessages.Count}, CTS:{PubServer.CommandsToSend.Count}, MQCM:{PubServer.MQChatMessages.Count}");
 				E3.Bots.Broadcast($"Router: TLORequest:{RouterServer._tloRequests.Count}, TLOReponse:{RouterServer._tloResposne.Count}");
+				E3.Bots.Broadcast($"BegForBuffs: Queued Buffs:{BegForBuffs._queuedBuffs.Count}");
+				//NetMQServer.SharedDataClient.TopicUpdates
+				E3.Bots.Broadcast($"Shared Data: UTopics:{NetMQServer.SharedDataClient.TopicUpdates.Count}");
+
+				StringBuilder sb = new StringBuilder();
+
+				bool firstAppend = true;
+				foreach(var pair in NetMQServer.SharedDataClient.TopicUpdates)
+				{
+
+					if (!firstAppend) sb.Append(",");
+					if(firstAppend) firstAppend=false;
+					sb.Append($"{pair.Key}:{pair.Value.Count}");
+					
+				}
+				E3.Bots.Broadcast($"Shared Data user topic Count: UTopics:{NetMQServer.SharedDataClient.TopicUpdates.Count}, Users: {sb.ToString()}");
+
 
 
 			}, "Output collection sizes");
