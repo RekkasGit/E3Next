@@ -166,6 +166,10 @@ namespace E3Core.Classes
                         E3.Bots.Broadcast("Turning off Bard Auto Mez");
                         Casting.Interrupt();
                         _autoMezEnabled = false;
+						foreach(var value in _autoMezTimers.Values)
+						{
+							value.Dispose();
+						}
                         _autoMezTimers.Clear();
                         
 
@@ -173,7 +177,10 @@ namespace E3Core.Classes
 					else if (x.args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
 					{
 						E3.Bots.Broadcast("Turning on Bard Auto Mez");
-
+						foreach (var value in _autoMezTimers.Values)
+						{
+							value.Dispose();
+						}
 						_autoMezEnabled = true;
 						_autoMezTimers.Clear();
 					}
@@ -185,6 +192,10 @@ namespace E3Core.Classes
 						E3.Bots.Broadcast("Turning off Bard Auto Mez");
 						Casting.Interrupt();
 						_autoMezEnabled = false;
+						foreach (var value in _autoMezTimers.Values)
+						{
+							value.Dispose();
+						}
 						_autoMezTimers.Clear();
 					}
 					else
@@ -192,6 +203,10 @@ namespace E3Core.Classes
 						E3.Bots.Broadcast("Turning on Bard Auto Mez");
 
 						_autoMezEnabled = true;
+						foreach (var value in _autoMezTimers.Values)
+						{
+							value.Dispose();
+						}
 						_autoMezTimers.Clear();
 
 					}
@@ -279,8 +294,9 @@ namespace E3Core.Classes
                 }
                 if (_mobsToAutoMez.Count == 0)
                 {
-                    //_autoMezEnabled = false;
-                    //E3.Bots.Broadcast("No more mobs to mez, turning off auto mez.");
+					//_autoMezEnabled = false;
+					//E3.Bots.Broadcast("No more mobs to mez, turning off auto mez.");
+					foreach (var value in _autoMezTimers.Values) value.Dispose();
 					_autoMezTimers.Clear();
 					return;
                 }
@@ -289,7 +305,8 @@ namespace E3Core.Classes
 				{
 					//E3.Bots.Broadcast("No more mobs to mez, turning off auto mez.");
 					//_autoMezEnabled = false;
-                    _autoMezTimers.Clear();
+					foreach (var value in _autoMezTimers.Values) value.Dispose();
+					_autoMezTimers.Clear();
 					return;
 				}
 
