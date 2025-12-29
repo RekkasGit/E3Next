@@ -6,6 +6,7 @@ using static MonoCore.E3ImGUI;
 using E3Core.Classes;
 using E3Core.Processors;
 using E3Core.Utility;
+using E3Core.Server;
 
 namespace E3Core.UI.Windows.MemStats
 {
@@ -69,7 +70,17 @@ namespace E3Core.UI.Windows.MemStats
 
 				
 			}, "toggle memory stats window");
+			EventProcessor.RegisterCommand("/e3debug_memory_counts", (x) =>
+			{
 
+					//events
+				E3.Bots.Broadcast($"Events: MQ:{EventProcessor._mqEventProcessingQueue.Count}, MQC:{EventProcessor._mqCommandProcessingQueue.Count}, E:{EventProcessor._eventProcessingQueue.Count}" +
+				$", FREX:{EventProcessor._filterRegexes.Count}, EL:{EventProcessor.EventList.Count}, CLQ:{EventProcessor.CommandListQueue.Count}");
+				E3.Bots.Broadcast($"PubSub: T:{PubServer._topicMessages.Count}, IM:{PubServer.IncomingChatMessages.Count}, CTS:{PubServer.CommandsToSend.Count}, MQCM:{PubServer.MQChatMessages.Count}");
+				E3.Bots.Broadcast($"Router: TLORequest:{RouterServer._tloRequests.Count}, TLOReponse:{RouterServer._tloResposne.Count}");
+
+
+			}, "Output collection sizes");
 
 		}
 		public static void ToggleWindow()
@@ -235,11 +246,14 @@ namespace E3Core.UI.Windows.MemStats
 
 		private static void RenderSeverityLegend()
 		{
-			imgui_Text("EQ Commit severity legend:");
-			foreach (var band in _eqCommitSeverityBands)
+			if(imgui_CollapsingHeader("EQ Commit severity legend:",0))
 			{
-				imgui_TextColored(band.R, band.G, band.B, 1.0f, $"  {band.Label}");
+				foreach (var band in _eqCommitSeverityBands)
+				{
+					imgui_TextColored(band.R, band.G, band.B, 1.0f, $"  {band.Label}");
+				}
 			}
+		
 		}
 		public class MemoryStats
 		{

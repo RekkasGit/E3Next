@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using static MonoCore.E3ImGUI;
@@ -123,15 +124,9 @@ namespace E3Core.UI.Windows.Hud
 
 		private static void RenderBotCastingGrid(IReadOnlyList<TableRow> entries)
 		{
-			int rowsPerColumn =2;
-
-			if (entries.Count == 6) rowsPerColumn = 2;
-			if (entries.Count == 3) rowsPerColumn = 1;
-			if (entries.Count >6) rowsPerColumn = 6;
-
-			int columnCount = Math.Max(1, (int)Math.Ceiling(entries.Count / (double)rowsPerColumn));
+			int columnCount = 3;
+			if (entries.Count > 6) columnCount = 4;
 			int tableFlags = (int)( ImGuiTableFlags.ImGuiTableFlags_Resizable);
-
 			using (var table = ImGUITable.Aquire())
 			{
 				if (table.BeginTable("E3HudBotCasting", columnCount, tableFlags, 0, 0))
@@ -140,35 +135,17 @@ namespace E3Core.UI.Windows.Hud
 					{
 						imgui_TableSetupColumn($"CastingCol{col}", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_None, 170f);
 					}
-
-					for (int row = 0; row < rowsPerColumn; row++)
+					Int32 currentColumn = 0;
+					imgui_TableNextRow();
+					for (Int32 i  = 0; i < entries.Count; i++)
 					{
-						bool rowHasData = false;
-						for (int col = 0; col < columnCount; col++)
+						imgui_TableSetColumnIndex(currentColumn);
+						RenderBotCastingCell(entries[i]);
+						currentColumn++;
+						if (currentColumn >= columnCount)
 						{
-							int index = (col * rowsPerColumn) + row;
-							if (index < entries.Count)
-							{
-								rowHasData = true;
-								break;
-							}
-						}
-
-						if (!rowHasData)
-							break;
-
-						imgui_TableNextRow();
-						for (int col = 0; col < columnCount; col++)
-						{
-							imgui_TableSetColumnIndex(col);
-							int index = (col * rowsPerColumn) + row;
-							if (index >= entries.Count)
-							{
-								imgui_Text(" ");
-								continue;
-							}
-
-							RenderBotCastingCell(entries[index]);
+							imgui_TableNextRow();
+							currentColumn = 0;
 						}
 					}
 				}

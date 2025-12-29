@@ -24,7 +24,7 @@ namespace E3Core.Server
     public class PubServer
     {
         private static IMQ MQ = E3.MQ;
-        class topicMessagePair:IDisposable
+        public class topicMessagePair:IDisposable
         {
             public string topic;
             public string message;
@@ -60,7 +60,7 @@ namespace E3Core.Server
         public static ConcurrentQueue<string> IncomingChatMessages = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> MQChatMessages = new ConcurrentQueue<string>();
         public static ConcurrentQueue<string> CommandsToSend = new ConcurrentQueue<string>();
-        private static ConcurrentQueue<topicMessagePair> _topicMessages = new ConcurrentQueue<topicMessagePair>();
+        public static ConcurrentQueue<topicMessagePair> _topicMessages = new ConcurrentQueue<topicMessagePair>();
 
         public static Int32 PubPort = 0;
 

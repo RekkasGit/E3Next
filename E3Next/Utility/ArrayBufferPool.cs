@@ -15,17 +15,18 @@ namespace E3Core.Utility
 
 		public void Return(byte[] buffer)
 		{
-			if (buffer.Length <= _maxSizeFromPool)
+			//if (buffer.Length <= _maxSizeFromPool)
 			{
+			
 				_pool.Return(buffer);
 			}
 		}
 		public byte[] Take(int size)
 		{
-			if(size>_maxSizeFromPool)
-			{
-				return new byte[size];
-			}
+			//if(size>_maxSizeFromPool)
+			//{
+			//	return new byte[size];
+			//}
 
 			return _pool.Rent(size);
 
