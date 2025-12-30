@@ -73,6 +73,11 @@ namespace E3Core.UI.Windows.Hud
 			users.Sort();
 			foreach (var user in users)
 			{
+				bool inGroupOrRaid = false;
+				if (Basics.GroupMemberNames.Contains(user)) inGroupOrRaid = true;
+				if (!inGroupOrRaid && Basics.RaidMemberNames.Contains(user)) inGroupOrRaid = true;
+				if (!inGroupOrRaid) continue;
+
 				string casting = E3.Bots.Query(user, "${Me.Casting}");
 				string targetidString = E3.Bots.Query(user, "${Me.CurrentTargetID}");
 				string aaTotal = E3.Bots.Query(user, "${Me.AAPoints}");

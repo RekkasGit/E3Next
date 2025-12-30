@@ -30,8 +30,12 @@ namespace E3Core.Processors
 		[ExposedData("Basics", "GroupMembers")]
 		public static List<int> GroupMembers = new List<int>();
         public static List<string> GroupMemberNames = new List<string>();
+        public static List<int> RaidMembers = new List<int>();
+        public static List<string> RaidMemberNames = new List<string>();
         private static long _nextGroupCheck = 0;
         private static long _nextGroupCheckInterval = 3000;
+		private static long _nextRaidCheck = 0;
+		private static long _nextRaidCheckInterval = 3000;
 		private static long _nextAutoHaterFixCheck = 0;
 		private static long _nextAutoHaterFixCheckInterval = 1000;
 		[ExposedData("Basics","AllowManual")]
@@ -1233,7 +1237,30 @@ namespace E3Core.Processors
 
 
         }
-
+		/// Refreshes the raid member cache.
+		/// </summary>
+		public static void RefreshRaidMembers()
+		{
+			if (!e3util.ShouldCheck(ref _nextRaidCheck, _nextRaidCheckInterval)) return;
+			int raidCount = MQ.Query<int>("${Raid.Members}");
+			RaidMembers.Clear();
+			RaidMemberNames.Clear();
+			if (raidCount>0)
+            {
+				raidCount++;
+				//refresh raid members.
+				for (int i = 1; i < raidCount; i++)
+				{
+					int id = MQ.Query<int>($"${{Raid.Member[{i}].ID}}");
+					if (id > 0)
+					{
+						string name = MQ.Query<string>($"${{Raid.Member[{i}].Name}}");
+						RaidMembers.Add(id);
+						RaidMemberNames.Add(name);
+					}
+				}
+			}
+		}
 		/// <summary>
 		/// Am I dead?
 		/// </summary>
