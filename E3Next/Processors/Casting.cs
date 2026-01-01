@@ -44,7 +44,7 @@ namespace E3Core.Processors
 				Interrupt();
 				return CastReturn.CAST_INTERRUPTED;
 			}
-
+			bool stickPaused = false;
 			bool navActive = false;
 			bool navPaused = false;
 			bool e3PausedNav = false;
@@ -314,7 +314,7 @@ namespace E3Core.Processors
 
 
 				CastReturn returnValue = CastReturn.CAST_RESIST;
-
+			
 				//using (_log.Trace())
 				{
 
@@ -435,6 +435,7 @@ namespace E3Core.Processors
 							if (Basics.InCombat() && targetID != Assist.AssistTargetID && MQ.Query<bool>("${Stick.Active}"))
 							{
 								MQ.Cmd("/stick pause");
+								stickPaused = true;
 							}
 							if (!TrueTarget(targetID))
 							{
@@ -595,6 +596,7 @@ namespace E3Core.Processors
 								if (MQ.Query<bool>("${AdvPath.Following}") && E3.Following) MQ.Cmd("/squelch /afollow off");
 								if (MQ.Query<bool>("${MoveTo.Moving}") && E3.Following) MQ.Cmd("/moveto off");
 								MQ.Cmd("/stick pause");
+								stickPaused = true;
 								navActive = MQ.Query<bool>("${Navigation.Active}");
 								navPaused = MQ.Query<bool>("${Navigation.Paused}");
 								e3PausedNav = false;
@@ -964,7 +966,11 @@ namespace E3Core.Processors
 				PubServer.AddTopicMessage("${Casting}", String.Empty);
 				PubServer.AddTopicMessage("${Me.Casting}", String.Empty);
 				//unpause any stick command that may be paused
-				MQ.Cmd("/stick unpause");
+				if(stickPaused)
+				{
+					MQ.Cmd("/stick unpause");
+
+				}
 				//resume navigation.
 				if (e3PausedNav)
 				{
