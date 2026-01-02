@@ -10,6 +10,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -229,6 +230,19 @@ namespace E3Core.Processors
 			},"Print out your character ini file");
 			//_enableXTargetFix
 
+
+			EventProcessor.RegisterCommand("/e3clickitem-untilgone", (x) =>
+			{
+	            if(x.args.Count > 0)
+                {
+                    _ClickedDefinedItemUntilGone = x.args[0];
+                }
+                else
+                {
+                    _ClickedDefinedItemUntilGone = string.Empty;
+
+				}
+			}, "Click an item until no more exist");
 
 			EventProcessor.RegisterCommand("/e3bugs_xtargetfix", (x) =>
 			{
@@ -1611,6 +1625,34 @@ namespace E3Core.Processors
 			}
             return false;
 		}
+
+        static string _ClickedDefinedItemUntilGone = String.Empty;
+        [ClassInvoke(Data.Class.All)]
+        public static void ClickDevinedItemUntilGone()
+        {
+           if (Casting.IsCasting()) return;
+           if(!String.IsNullOrWhiteSpace(_ClickedDefinedItemUntilGone))
+           {
+               
+                if (MQ.Query<bool>($"${{FindItem[{_ClickedDefinedItemUntilGone}]}}"))
+                {
+				
+                    if(MQ.Query<bool>($"${{Me.ItemReady[{_ClickedDefinedItemUntilGone}]}}"))
+                    {
+						MQ.Cmd($"/useitem {_ClickedDefinedItemUntilGone}");
+						MQ.Delay(500);
+                        e3util.ClearCursor();
+
+					}
+				}
+				else
+                {
+                    E3.Bots.Broadcast($"No more {_ClickedDefinedItemUntilGone} to click");
+                    _ClickedDefinedItemUntilGone = String.Empty;
+                }
+           }
+        }
+
         /// <summary>
         /// Checks the mana resources, and does actions to regenerate mana during combat.
         /// </summary>
