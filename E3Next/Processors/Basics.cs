@@ -231,7 +231,7 @@ namespace E3Core.Processors
 			//_enableXTargetFix
 
 
-			EventProcessor.RegisterCommand("/e3clickitem-untilgone", (x) =>
+			EventProcessor.RegisterCommand("/e3consume", (x) =>
 			{
 	            if(x.args.Count > 0)
                 {
@@ -1628,7 +1628,7 @@ namespace E3Core.Processors
 
         static string _ClickedDefinedItemUntilGone = String.Empty;
         [ClassInvoke(Data.Class.All)]
-        public static void ClickDevinedItemUntilGone()
+        public static void ClickDefinedUntilGone()
         {
            if (Casting.IsCasting()) return;
            if(!String.IsNullOrWhiteSpace(_ClickedDefinedItemUntilGone))
