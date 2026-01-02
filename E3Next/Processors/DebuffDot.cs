@@ -110,7 +110,7 @@ namespace E3Core.Processors
 					if (!s.Aggressive) continue;
 					if (s.CleanName.EndsWith("s pet")) continue;
 					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-					if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
+					if (s.Distance > 200) break;//mob is too far away, and since it is ordered, kick out.
 											   //its valid to attack!
                     if(_mobsToIgnoreOffAsist.Contains(s.ID)) continue;
 
@@ -158,6 +158,7 @@ namespace E3Core.Processors
                             _tempOffAssistSpellList.Add(spell);
                     		foreach (Int32 mobid in _mobsToOffAsist.ToList())
                             {
+                                if (!Casting.InRange(mobid, spell)) continue;
                                 CastLongTermSpell(mobid, _tempOffAssistSpellList, _debuffdotTimers);
                                 if (E3.ActionTaken) return;
                             }

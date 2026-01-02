@@ -570,10 +570,14 @@ namespace E3Core.Processors
 					//allow eq time to send the message to us
 					e3util.YieldToEQ();
                     if (e3util.IsShuttingDown() || E3.IsPaused()) return;
+                  
+                    
                     EventProcessor.ProcessEventsInQueues("/lootoff");
-					if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-					if (EventProcessor.CommandListQueueHasCommand("/assistme"))
+					
+                    if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
+                    if (EventProcessor.CommandListQueue.Count > 0)
                     {
+                        E3.Bots.Broadcast("Exiting looting to process command.");
                         return;
                     }
                     if(Basics.InCombat())
