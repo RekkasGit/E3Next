@@ -235,11 +235,11 @@ namespace E3Core.Processors
 			{
 	            if(x.args.Count > 0)
                 {
-                    _ClickedDefinedItemUntilGone = x.args[0];
+                    _itemToConsume = x.args[0];
                 }
                 else
                 {
-                    _ClickedDefinedItemUntilGone = string.Empty;
+                    _itemToConsume = string.Empty;
 
 				}
 			}, "Click an item until no more exist");
@@ -1626,20 +1626,20 @@ namespace E3Core.Processors
             return false;
 		}
 
-        static string _ClickedDefinedItemUntilGone = String.Empty;
+        static string _itemToConsume = String.Empty;
         [ClassInvoke(Data.Class.All)]
-        public static void ClickDefinedUntilGone()
+        public static void ConsumeItem()
         {
            if (Casting.IsCasting()) return;
-           if(!String.IsNullOrWhiteSpace(_ClickedDefinedItemUntilGone))
+           if(!String.IsNullOrWhiteSpace(_itemToConsume))
            {
                
-                if (MQ.Query<bool>($"${{FindItem[{_ClickedDefinedItemUntilGone}]}}"))
+                if (MQ.Query<bool>($"${{FindItem[{_itemToConsume}]}}"))
                 {
 				
-                    if(MQ.Query<bool>($"${{Me.ItemReady[{_ClickedDefinedItemUntilGone}]}}"))
+                    if(MQ.Query<bool>($"${{Me.ItemReady[{_itemToConsume}]}}"))
                     {
-						MQ.Cmd($"/useitem {_ClickedDefinedItemUntilGone}");
+						MQ.Cmd($"/useitem {_itemToConsume}");
 						MQ.Delay(500);
                         e3util.ClearCursor();
 
@@ -1647,8 +1647,8 @@ namespace E3Core.Processors
 				}
 				else
                 {
-                    E3.Bots.Broadcast($"No more {_ClickedDefinedItemUntilGone} to click");
-                    _ClickedDefinedItemUntilGone = String.Empty;
+                    E3.Bots.Broadcast($"No more {_itemToConsume} to click");
+                    _itemToConsume = String.Empty;
                 }
            }
         }
