@@ -1685,13 +1685,22 @@ namespace E3Core.Processors
 			if (!E3.CharacterSettings.Buffs_CastAuras) return;
 			if (e3util.IsActionBlockingWindowOpen()) return;
 
-
+			
 			if (E3.CharacterSettings.Buffs_Auras.Count > 0)
 			{
-				_selectAura = E3.CharacterSettings.Buffs_Auras[0];
+				_selectAura = null;
+				//lets run ifs to determine which aura we should select
+				foreach (var aura in E3.CharacterSettings.Buffs_Auras)
+				{
+					if (!Casting.Ifs(aura))
+					{
+						continue;
+					}
+					_selectAura = aura;
+					break;
+				}
 			}
-
-			if (_selectAura == null)
+			if (_selectAura == null && E3.CharacterSettings.Buffs_Auras.Count==0)
 			{
 				if (!_initAuras)
 				{
@@ -1712,10 +1721,12 @@ namespace E3Core.Processors
 			if (_selectAura != null)
 			{
 				string currentAura = MQ.Query<string>("${Me.Aura[1]}");
-				if (currentAura != "NULL")
+				if (currentAura==_selectAura.SpellName)
 				{
-							return;
+					return;
 				}
+
+				MQ.Cmd($"/removeaura {currentAura}");
 
 				//need to put on new aura
 				Int32 meID = E3.CurrentId;
@@ -1746,11 +1757,7 @@ namespace E3Core.Processors
 						Casting.Cast(meID, _selectAura);
 					}
 				}
-
-
 			}
-
-
 		}
 		//order is important, last one wins in stacking
 		private static List<string> _auraList = new List<string>() {
