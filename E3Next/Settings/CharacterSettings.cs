@@ -377,6 +377,8 @@ namespace E3Core.Settings
 		public Int32 ManaStone_InCombatMaxMana = 75;
 		[INI_Section("Manastone", "Min HP")]
 		public Int32 ManaStone_MinHP = 60;
+		[INI_Section("Manastone", "ItemName")]
+		public List<Spell> ManaStone_ItemName = new List<Spell>();
 		[INI_Section("Manastone", "Min HP Out of Combat")]
 		public Int32 ManaStone_MinHPOutOfCombat = 40;
 		[INI_Section("Manastone", "Out of Combat MinMana")]
@@ -687,6 +689,8 @@ namespace E3Core.Settings
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
             LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
+
+			LoadKeyData("ManaStone", "ItemName", ParsedData, ManaStone_ItemName);
 
             LoadKeyData("Manastone", "NumberOfClicksPerLoop", ParsedData, ref ManaStone_NumberOfClicksPerLoop);
             LoadKeyData("Manastone", "NumberOfLoops", ParsedData, ref ManaStone_NumberOfLoops);
@@ -1389,6 +1393,7 @@ namespace E3Core.Settings
 
 			section.Keys.AddKey("Override General Settings (On/Off)", "Off");
 			section.Keys.AddKey("Manastone Enabled (On/Off)", "On");
+			section.Keys.AddKey("ItemName", "Manastone/CastType|Item");
 			section.Keys.AddKey("NumberOfClicksPerLoop", "40");
 			section.Keys.AddKey("NumberOfLoops", "25");
 			section.Keys.AddKey("DelayBetweenLoops (in milliseconds)", "50");

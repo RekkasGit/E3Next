@@ -988,7 +988,7 @@ namespace E3Core.Processors
 			}
 		}
 
-		private static void BeforeEventCheck(Spell spell)
+		public static void BeforeEventCheck(Spell spell)
 		{
 			_log.Write("Checking BeforeEvent...");
 			if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
@@ -1027,7 +1027,7 @@ namespace E3Core.Processors
 			}
 
 		}
-		private static void AfterEventCheck(Spell spell)
+		public static void AfterEventCheck(Spell spell)
 		{
 
 			//after event, after all things are done

@@ -1669,11 +1669,15 @@ namespace E3Core.Processors
                 
             }
 
-            using (_log.Trace())
+
+            //using (_log.Trace())
             {
 				if (E3.IsInvis) return;
 				if (Basics.AmIDead()) return;
 				if (e3util.IsEQLive()) return;
+
+
+                if (E3.CharacterSettings.ManaStone_ItemName.Count == 0) return;
 
 				//do we have aggro?
 				if (MQ.Query<Int32>("${Me.PctAggro}") == 100) return;
@@ -1756,69 +1760,71 @@ namespace E3Core.Processors
                 pctHps = MQ.Query<int>("${Me.PctHPs}");
                 if (pctHps < minHP) return;
 
-                bool hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Manastone]}]}");
-                
-                string manastoneName = "Manastone";
-                if(!hasManaStone)
-                {
-                    hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Apocryphal Manastone]}]}");
-                    if(hasManaStone) manastoneName = "Apocryphal Manastone";
-                    if(!hasManaStone)
-                    {
-                        hasManaStone = MQ.Query<bool>("${Bool[${FindItem[=Rose Colored Manastone]}]}");
-                        if (hasManaStone) manastoneName = "Rose Colored Manastone";
-                    }
-                }
+                Spell manaStoneSpell = E3.CharacterSettings.ManaStone_ItemName[0];
+				string manastoneName = manaStoneSpell.CastName;
+
+				bool hasManaStone = MQ.Query<bool>($"${{Bool[${{FindItem[={manastoneName}]}}]}}");
                 bool amIStanding = MQ.Query<bool>("${Me.Standing}");
 
+
+                
                 if (hasManaStone && amIStanding)
-                {
-                    string manastoneCommand = $"/useitem \"{manastoneName}\"";
-                    e3util.YieldToEQ();
-                    if (MQ.Query<bool>("${Me.Invis}")) return;
-
-                    MQ.Write("\agUsing Manastone...");
-                    pctHps = MQ.Query<int>("${Me.PctHPs}");
-                    pctMana = MQ.Query<int>("${Me.PctMana}");
-                    int currentLoop = 0;
-                    while (pctHps > minHP && pctMana < maxMana)
+				{
+					Casting.BeforeEventCheck(manaStoneSpell);
+                    try
                     {
-                        currentLoop++;
-                        int currentMana = MQ.Query<int>("${Me.CurrentMana}");
-
-                        for (int i = 0; i < totalClicksToTry; i++)
-                        {
-                            MQ.Cmd(manastoneCommand);
-                        }
-                        //allow mq to have the commands sent to the server
-                        MQ.Delay(delayBetweenClicks);
-						NetMQServer.SharedDataClient.ProcessCommands();
-						PubClient.ProcessRequests();
-                        
-                        if(EventProcessor.CommandListQueueHasCommand("/followme"))
-						{
-                            return;
-						}
-						if (EventProcessor.CommandListQueueHasCommand("/chaseme"))
-						{
-							return;
-						}
+						string manastoneCommand = $"/useitem \"{manastoneName}\"";
+						e3util.YieldToEQ();
 						if (MQ.Query<bool>("${Me.Invis}")) return;
-                        if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass && Basics.InCombat())
-                        {
-                            if (Heals.SomeoneNeedsHealing(null,currentMana, pctMana))
-                            {
-                                return;
-                            }
-                        }
-                        if (currentLoop > maxLoop)
-                        {
-                            return;
-                        }
 
-                        pctHps = MQ.Query<int>("${Me.PctHPs}");
-                        pctMana = MQ.Query<int>("${Me.PctMana}");
+						MQ.Write("\agUsing Manastone...");
+						pctHps = MQ.Query<int>("${Me.PctHPs}");
+						pctMana = MQ.Query<int>("${Me.PctMana}");
+						int currentLoop = 0;
+						while (pctHps > minHP && pctMana < maxMana)
+						{
+							currentLoop++;
+							int currentMana = MQ.Query<int>("${Me.CurrentMana}");
+
+							for (int i = 0; i < totalClicksToTry; i++)
+							{
+								MQ.Cmd(manastoneCommand);
+							}
+							//allow mq to have the commands sent to the server
+							MQ.Delay(delayBetweenClicks);
+							NetMQServer.SharedDataClient.ProcessCommands();
+							PubClient.ProcessRequests();
+
+							if (EventProcessor.CommandListQueueHasCommand("/followme"))
+							{
+								return;
+							}
+							if (EventProcessor.CommandListQueueHasCommand("/chaseme"))
+							{
+								return;
+							}
+							if (MQ.Query<bool>("${Me.Invis}")) return;
+							if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass && Basics.InCombat())
+							{
+								if (Heals.SomeoneNeedsHealing(null, currentMana, pctMana))
+								{
+									return;
+								}
+							}
+							if (currentLoop > maxLoop)
+							{
+								return;
+							}
+
+							pctHps = MQ.Query<int>("${Me.PctHPs}");
+							pctMana = MQ.Query<int>("${Me.PctMana}");
+						}
+					}
+                    finally
+                    {
+                        Casting.AfterEventCheck(manaStoneSpell);
                     }
+                   
                 }
             }
         }
