@@ -1777,7 +1777,7 @@ namespace E3Core.Processors
 						e3util.YieldToEQ();
 						if (MQ.Query<bool>("${Me.Invis}")) return;
 
-						MQ.Write("\agUsing Manastone...");
+						MQ.Write($"\agUsing Manastone code with item [{manastoneName}]...");
 						pctHps = MQ.Query<int>("${Me.PctHPs}");
 						pctMana = MQ.Query<int>("${Me.PctMana}");
 						int currentLoop = 0;
