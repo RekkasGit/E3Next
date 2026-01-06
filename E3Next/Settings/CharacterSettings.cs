@@ -909,8 +909,12 @@ namespace E3Core.Settings
 			LoadKeyData("Buffs", "Stack Buff Request", ParsedData, StackBuffRequest);
 			foreach (var buff in StackBuffRequest) buff.IsBuff = true;
 			LoadKeyData("Buffs", "Aura", ParsedData, Buffs_Auras);
-			foreach (var buff in Buffs_Auras) buff.IsBuff = true;
+			foreach (var buff in Buffs_Auras)
+			{
+				buff.IsBuff = true;
+				buff.SpellName = buff.SpellName.Replace("'s", "s");
 
+			}
 
 			LoadKeyData("Startup Commands", "Command", ParsedData, StartupCommands);
 			LoadKeyData("Zoning Commands", "Command", ParsedData, ZoningCommands);

@@ -1432,7 +1432,7 @@ namespace E3Core.Processors
 			return true;
 			
 		}
-
+		
 		private static bool BuffTimerIsGood_CheckBotData(Data.Spell spell, Spawn s, bool usePets)
 		{
 			string keyToUse = "${Me.BuffInfo}";
