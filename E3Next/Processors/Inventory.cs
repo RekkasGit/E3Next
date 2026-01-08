@@ -82,7 +82,9 @@ namespace E3Core.Processors
                     Int32 stackCount = MQ.Query<Int32>($"${{InvSlot[{i}].Item.Stack}}");
                     totalItems += stackCount;
                     report.Add($"\ag[Worn] ${{Me.Inventory[{i}].ItemLink[CLICKABLE]}}\aw ({stackCount})");
-                }
+
+                   
+				}
                 Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{i}].Augs}}");
                 if (augCount > 0)
                 {
@@ -101,14 +103,22 @@ namespace E3Core.Processors
             }
             for (Int32 i = 1; i <= 10; i++)
             {
-                bool SlotExists = MQ.Query<bool>($"${{Me.Inventory[pack{i}]}}");
-                if (SlotExists)
+               string bagName = MQ.Query<string>($"${{Me.Inventory[pack{i}]}}");
+				
+                if (bagName!="NULL")
                 {
                     Int32 ContainerSlots = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Container}}");
 
                     if (ContainerSlots > 0)
                     {
-                        for (Int32 e = 1; e <= ContainerSlots; e++)
+
+                        if(bagName.IndexOf(itemName, StringComparison.OrdinalIgnoreCase)>-1)
+                        {
+							report.Add($"\ag[BagSlot-{i}] ${{Me.Inventory[{22+i}].ItemLink[CLICKABLE]}}\aw ");
+
+						}
+
+						for (Int32 e = 1; e <= ContainerSlots; e++)
                         {
                             //${Me.Inventory[${itemSlot}].Item[${j}].Name.Equal[${itemName}]}
                             String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
@@ -141,7 +151,7 @@ namespace E3Core.Processors
 						String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}]}}");
 						if (bagItem.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
 						{
-							report.Add($"\ag[Pack] ${{Me.Inventory[pack{i}].ItemLink[CLICKABLE]}} - \awbag({i})");
+							report.Add($"\ag[BagSlot-{i}] ${{Me.Inventory[pack{i}].ItemLink[CLICKABLE]}} - \awbag({i})");
 						}
 						Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[pack{i}].Augs}}");
 						if (augCount > 0)
@@ -153,7 +163,7 @@ namespace E3Core.Processors
 								if (augname.IndexOf(itemName, 0, StringComparison.OrdinalIgnoreCase) > -1)
 								{
 									totalItems += 1;
-									report.Add($"\ag[Pack] ${{Me.Inventory[pack{i}].ItemLink[CLICKABLE]}} - ${{Me.Inventory[pack{i}].AugSlot[{a}].Item.ItemLink[CLICKABLE]}} \aw(aug-slot[{a}]) \awbag({i})");
+									report.Add($"\ag[BagSlot-{i}] ${{Me.Inventory[pack{i}].ItemLink[CLICKABLE]}} - ${{Me.Inventory[pack{i}].AugSlot[{a}].Item.ItemLink[CLICKABLE]}} \aw(aug-slot[{a}]) \awbag({i})");
 								}
 							}
 						}
