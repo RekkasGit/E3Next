@@ -140,6 +140,14 @@ namespace E3Core.Processors
 							{
 								foreach (var spell in E3.CharacterSettings.Dispels)
 								{
+									if (!String.IsNullOrWhiteSpace(spell.Ifs))
+									{
+										if (!Casting.Ifs(spell))
+										{
+											continue;
+										}
+									}
+
 									//now have it as a target, need to check its beneficial buffs
 									if (Casting.InRange(targetId,spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 									{
