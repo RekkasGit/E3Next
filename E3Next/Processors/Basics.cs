@@ -135,6 +135,12 @@ namespace E3Core.Processors
 					}
 				}
 			});
+            EventProcessor.RegisterCommand("/e3toggle_amidead", (x) =>
+            {
+
+                e3util.ToggleBooleanSetting(ref _disableAmIDead, "Disable Am I dead", x.args);
+
+            },"disables am i dead functionality");
 
 			EventProcessor.RegisterCommand("/e3listcommands", (x) =>
 			{
@@ -1281,8 +1287,14 @@ namespace E3Core.Processors
 		/// <returns>Returns a bool indicating whether or not you're dead.</returns>
 		private static bool _amIDeadCachedValue = false;
 		private static Int64 _amIDeadLastCheck = 0;
+        private static bool _disableAmIDead = false;
+
+
+
         public static bool AmIDead()
         {
+            if(_disableAmIDead) return false;
+
 			if(_amIDeadLastCheck >0)
 			{
 				if((_amIDeadLastCheck + 500) > Core.StopWatch.ElapsedMilliseconds)
