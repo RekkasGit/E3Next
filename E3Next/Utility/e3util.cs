@@ -503,6 +503,7 @@ namespace E3Core.Utility
 
 		private static bool FilterReturnCheck(List<string> inputs, ref bool returnValue, bool inputSetValue)
 		{
+			
 			if (inputs.Contains(E3.CurrentName, StringComparer.OrdinalIgnoreCase))
 			{
 				return inputSetValue;
