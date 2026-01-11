@@ -114,7 +114,11 @@ namespace E3Core.Processors
 				ClearBuffTimers();
 
 			});
+			EventProcessor.RegisterCommand("/e3debug_buffTimers", (x) =>
+			{
+				e3util.PrintTimerStatus(_buffTimers, "Buff timers");
 
+			});
 
 			EventProcessor.RegisterCommand("/blockbuff", (x) =>
 			{
@@ -984,8 +988,10 @@ namespace E3Core.Processors
 						//Is the buff still good? if so, skip
 
 						if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
-						
-						if (BuffTimerIsGood(spell, s, usePets))
+						bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
+
+
+						if (BuffTimerIsGood(spell, s, usePets, hasBuff))
 						{
 							return BuffBots_ReturnType.Continue;
 						}
@@ -1074,8 +1080,10 @@ namespace E3Core.Processors
 							if (shouldContinue) { return BuffBots_ReturnType.Continue; }
 						}
 						if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
+
+						bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.SpellName}]}}]}}");
 						//Is the buff still good? if so, skip
-						if (BuffTimerIsGood(spell, s, usePets))
+						if (BuffTimerIsGood(spell, s, usePets, hasBuff))
 						{
 							return BuffBots_ReturnType.Continue;
 						}
@@ -1182,14 +1190,12 @@ namespace E3Core.Processors
 
 							bool hasBuff = findBuffList(spell.CastTarget).Contains(spell.SpellID);
 						
-							if(hasBuff)
+							
+							if (BuffTimerIsGood(spell, s, usePets,hasBuff))
 							{
-								if (BuffTimerIsGood(spell, s, usePets))
-								{
-									return BuffBots_ReturnType.Continue;
-								}
+								return BuffBots_ReturnType.Continue;
 							}
-
+					
 							Casting.TrueTarget(s.ID);
 							MQ.Delay(2000, "${Target.BuffsPopulated}");
 							bool willStack = true;
@@ -1244,7 +1250,9 @@ namespace E3Core.Processors
 						{
 							if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
 							//Is the buff still good? if so, skip
-							if (BuffTimerIsGood(spell, s, usePets))
+
+
+							if (BuffTimerIsGood(spell, s, usePets,true))
 							{
 								return BuffBots_ReturnType.Continue;
 							}
@@ -1500,7 +1508,7 @@ namespace E3Core.Processors
 			//doesn't have the buff, or its expired
 			return false;
 		}
-		public static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets)
+		public static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets, bool hasBuff)
 		{
 			SpellTimer st;
 			if (_buffTimers.TryGetValue(s.ID, out st))
@@ -1539,7 +1547,7 @@ namespace E3Core.Processors
 						}
 						else
 						{   //if a bot, check to see if the buff still exists
-							bool isABot = E3.Bots.BotsConnected().Contains(s.CleanName, StringComparer.OrdinalIgnoreCase);
+							bool isABot = E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase);
 							if (isABot)
 							{
 								//register the user to get their buff data if its not already there

@@ -499,7 +499,7 @@ namespace E3Core.Processors
 
                     if(askedForSpell.BuffRecastDelay>0)
                     {
-						if (BuffCheck.BuffTimerIsGood(s, spawn, false))
+						if (BuffCheck.BuffTimerIsGood(s, spawn, false,true))
 						{
 							_queuedBuffs.Dequeue();
 							return;
