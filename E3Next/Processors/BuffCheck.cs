@@ -988,10 +988,9 @@ namespace E3Core.Processors
 						//Is the buff still good? if so, skip
 
 						if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
-						bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Buff[{spell.SpellName}]}}]}}");
+					
 
-
-						if (BuffTimerIsGood(spell, s, usePets, hasBuff))
+						if (BuffTimerIsGood(spell, s, usePets))
 						{
 							return BuffBots_ReturnType.Continue;
 						}
@@ -1080,10 +1079,8 @@ namespace E3Core.Processors
 							if (shouldContinue) { return BuffBots_ReturnType.Continue; }
 						}
 						if (Casting.BuffNotReady(spell)) return BuffBots_ReturnType.Continue;
-
-						bool hasBuff = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{spell.SpellName}]}}]}}");
-						//Is the buff still good? if so, skip
-						if (BuffTimerIsGood(spell, s, usePets, hasBuff))
+			//Is the buff still good? if so, skip
+						if (BuffTimerIsGood(spell, s, usePets))
 						{
 							return BuffBots_ReturnType.Continue;
 						}
@@ -1188,10 +1185,8 @@ namespace E3Core.Processors
 
 							//check to see if they already have the buff
 
-							bool hasBuff = findBuffList(spell.CastTarget).Contains(spell.SpellID);
-						
 							
-							if (BuffTimerIsGood(spell, s, usePets,hasBuff))
+							if (BuffTimerIsGood(spell, s, usePets))
 							{
 								return BuffBots_ReturnType.Continue;
 							}
@@ -1252,7 +1247,7 @@ namespace E3Core.Processors
 							//Is the buff still good? if so, skip
 
 
-							if (BuffTimerIsGood(spell, s, usePets,true))
+							if (BuffTimerIsGood(spell, s, usePets))
 							{
 								return BuffBots_ReturnType.Continue;
 							}
@@ -1508,7 +1503,7 @@ namespace E3Core.Processors
 			//doesn't have the buff, or its expired
 			return false;
 		}
-		public static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets, bool hasBuff)
+		public static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets)
 		{
 			SpellTimer st;
 			if (_buffTimers.TryGetValue(s.ID, out st))
