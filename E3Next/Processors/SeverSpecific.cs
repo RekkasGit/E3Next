@@ -235,53 +235,72 @@ namespace E3Core.Processors
 							var currentZ = MQ.Query<double>("${Me.Z}");
 							//give them the mask
 							string thingToAask = "mask of mardu";
-							string MessagetoAask = string.Concat("/useitem ", thingToAask);
-							MQ.Cmd($"{MessagetoAask}");
-							MQ.Delay(500);
-							e3util.GiveItemOnCursorToTarget(false, false);
-							MQ.Delay(1000);
+							
+							if(MQ.Query<bool>($"${{FindItem[{thingToAask}]}}"))
+							{
+								string MessagetoAask = string.Concat("/useitem ", thingToAask);
+								MQ.Cmd($"{MessagetoAask}");
+								MQ.Delay(500);
+								e3util.GiveItemOnCursorToTarget(false, false);
+								MQ.Delay(1000);
+
+							}
 
 							if (E3.CurrentClass != Class.Enchanter)
 							{
 								//Give them weapons
 								string thingToAask2 = "Legendary Toxic Edge Earring";
 								string MessagetoAask2 = string.Concat("/useitem ", thingToAask2);
-								MQ.Cmd($"{MessagetoAask2}");
-								MQ.Delay(500);
-								e3util.GiveItemOnCursorToTarget(false, false);
-								MQ.Delay(1000);
+								if (MQ.Query<bool>($"${{FindItem[{thingToAask2}]}}"))
+								{
+									MQ.Cmd($"{MessagetoAask2}");
+									MQ.Delay(500);
+									e3util.GiveItemOnCursorToTarget(false, false);
+									MQ.Delay(1000);
 
-								//Give them a second weapon
-								MQ.Cmd($"{MessagetoAask2}");
-								MQ.Delay(500);
-								e3util.GiveItemOnCursorToTarget(false, false);
-								MQ.Delay(1000);
+									//Give them a second weapon
+									MQ.Cmd($"{MessagetoAask2}");
+									MQ.Delay(500);
+									e3util.GiveItemOnCursorToTarget(false, false);
+									MQ.Delay(1000);
+								}
+								
 							}
 							if (E3.CurrentClass == Class.Enchanter)
 							{
 								//Give them weapons
 								string thingToAask2 = "Artifact of Toxic Edge";
 								string MessagetoAask2 = string.Concat("/useitem ", thingToAask2);
-								MQ.Cmd($"{MessagetoAask2}");
-								MQ.Delay(500);
-								e3util.GiveItemOnCursorToTarget(false, false);
-								MQ.Delay(1000);
 
-								//Give them a second weapon
-								MQ.Cmd($"{MessagetoAask2}");
-								MQ.Delay(500);
-								e3util.GiveItemOnCursorToTarget(false, false);
-								MQ.Delay(1000);
+								if (MQ.Query<bool>($"${{FindItem[{thingToAask2}]}}"))
+								{
+									MQ.Cmd($"{MessagetoAask2}");
+									MQ.Delay(500);
+									e3util.GiveItemOnCursorToTarget(false, false);
+									MQ.Delay(1000);
+
+									//Give them a second weapon
+									MQ.Cmd($"{MessagetoAask2}");
+									MQ.Delay(500);
+									e3util.GiveItemOnCursorToTarget(false, false);
+									MQ.Delay(1000);
+								}
+							
 							}
 
 
 							//give them the belt
 							string thingToAask3 = "Legendary Goblin Mask of Stability";
 							string MessagetoAask3 = string.Concat("/useitem ", thingToAask3);
-							MQ.Cmd($"{MessagetoAask3}");
-							MQ.Delay(500);
-							e3util.GiveItemOnCursorToTarget(false, false);
-							MQ.Delay(1000);
+
+							if (MQ.Query<bool>($"${{FindItem[{thingToAask3}]}}"))
+							{
+								MQ.Cmd($"{MessagetoAask3}");
+								MQ.Delay(500);
+								e3util.GiveItemOnCursorToTarget(false, false);
+								MQ.Delay(1000);
+							}
+								
 							MQ.Cmd($"/t {_petrequester} Pet equipped! You're good to go!");
 
 							//At the end, move back to starting loc
