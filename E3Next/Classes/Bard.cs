@@ -473,8 +473,7 @@ namespace E3Core.Classes
             Data.Spell songToPlay = null;
 			//a counter to determine if we have looped through all the songs before finding a good one
 			Int32 trycounter = 0;
-    		pickASong:
-
+    	
             //this is to deal with nowcasts early termination of the last song, replay last song that got interrupted
             if(_nextBardCast==0 && _currentSongPlaying!=null)
             {
@@ -503,14 +502,14 @@ namespace E3Core.Classes
                     if (haveBuff) 
                     {
 						_songs.Enqueue(songToPlay);// place song back
-						goto pickASong;
+						return;
 					}
       		    }
 			}
             if(!Casting.Ifs(songToPlay))
 			{
 				_songs.Enqueue(songToPlay);// place song back
-				goto pickASong;
+				return;
 			}
             //found a valid song, place it back into the queue so we don't lose it. 
 			_songs.Enqueue(songToPlay);

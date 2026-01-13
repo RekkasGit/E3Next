@@ -2059,7 +2059,7 @@ namespace E3Core.Processors
 					int pctMana = MQ.Query<int>("${Me.PctMana}");
 					var pctHps = MQ.Query<int>("${Me.PctHPs}");
 					int currentHps = MQ.Query<int>("${Me.CurrentHPs}");
-					int minHP = 70;
+					int minHP = E3.CharacterSettings.ManaStone_MinHP;
 
 					if (E3.CharacterSettings.ManaStone_ExceptionZones.Contains(Zoning.CurrentZone.ShortName)) return;
 
@@ -2081,9 +2081,9 @@ namespace E3Core.Processors
 
 
 					string manastoneName = "Manastone";
-					Int32 totalClicksToTry = 5;
-					Int32 delayBetweenClicks = 20;
-					Int32 maxLoop = 25;
+					Int32 totalClicksToTry = E3.CharacterSettings.ManaStone_NumberOfClicksPerLoop;
+					Int32 delayBetweenClicks = E3.CharacterSettings.ManaStone_DelayBetweenLoops;
+					Int32 maxLoop = E3.CharacterSettings.ManaStone_NumberOfLoops;
 					if (hasManaStone && (hasSongBuffv1 || hasSongBuffv2 || hasSongBuffv3 || hasSongBuffv4))
 					{
 						string manastoneCommand = $"/useitem \"{manastoneName}\"";

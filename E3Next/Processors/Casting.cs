@@ -223,9 +223,13 @@ namespace E3Core.Processors
 				}
 				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastingType.Spell)
 				{
+					while (IsCasting())
+					{
+						MQ.Delay(50);
+					}
 					Sing(targetID, spell);
-					Int32 delay = (int)MQ.Query<int>("${Me.CastTimeLeft}") + Classes.Bard.BardLatency();
-					MQ.Delay(delay);
+					//Int32 delay = (int)MQ.Query<int>("${Me.CastTimeLeft}") + Classes.Bard.BardLatency();
+					//MQ.Delay(delay);
 					return CastReturn.CAST_SUCCESS;
 				}
 				else
@@ -1255,6 +1259,11 @@ namespace E3Core.Processors
 					_log.Write($"Doing AfterEvent:{spell.AfterEvent}");
 					MQ.Cmd($"/docommand {spell.AfterEvent}");
 				}
+
+
+				MQ.Delay(300);
+				MQ.Delay((int)spell.MyCastTime);
+
 			}
 			else if (spell.CastType == CastingType.AA)
 			{
