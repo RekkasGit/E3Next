@@ -7,6 +7,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 
 
 namespace E3Core.Processors
@@ -512,6 +513,7 @@ namespace E3Core.Processors
 		public static void Check_Buffs()
 		{
 			if (E3.IsInvis) return;
+			if (E3.IsInvul) return;
 			if (Heals.IgnoreHealTargets.Count > 0) return;
 			//e3util.PrintTimerStatus(_buffTimers, ref _printoutTimer, "Buff timers");
 			//instant buffs have their own shouldcheck, need it snappy so check quickly.
@@ -610,6 +612,7 @@ namespace E3Core.Processors
 		public static void BuffInstant(List<Data.Spell> buffs)
 		{
 			if (E3.IsInvis) return;
+			if (E3.IsInvul) return;
 			if (e3util.IsActionBlockingWindowOpen()) return;
 			if (!e3util.ShouldCheck(ref _nextInstantBuffRefresh, _nextInstantRefreshTimeInterval)) return;
 			//self only, instacast buffs only
@@ -874,6 +877,8 @@ namespace E3Core.Processors
 		{
 			if (!spell.Enabled) return BuffBots_ReturnType.Continue;
 
+
+
 			if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName}", Logging.LogLevels.Error);
 			//using (_log.Trace($"Buffs-Spell-{spell.CastName}"))
 			{
@@ -904,8 +909,12 @@ namespace E3Core.Processors
 						}
 					}
 				}
-
-
+				if (E3.Bots.IsMyBot(target) && !usePets)
+				{
+					bool invulnerable = false;
+					Boolean.TryParse(E3.Bots.Query(target, "${Me.Invulnerable}"), out invulnerable);
+					if (invulnerable) return BuffBots_ReturnType.Continue;
+				}
 
 				if (Heals.IgnoreHealTargets.Count>1) return BuffBots_ReturnType.Continue;
 

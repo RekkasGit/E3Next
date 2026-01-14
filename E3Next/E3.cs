@@ -61,9 +61,9 @@ namespace E3Core.Processors
 			EventProcessor.ProcessEventsInQueues("/assistme");
 
 			if (MQ.Query<bool>("${Me.Stunned}")) return;
+			if (MQ.Query<bool>("${Me.Invulnerable}")) return; //can't do anything anyway
 			if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //we are dead
 			if (MQ.Query<bool>("${Me.Feigning}") && E3.CharacterSettings.IfFDStayDown) return;
-
 
 			//global action taken key, used by adv settings
 			//if true, adv settings will stop processing for this loop.
@@ -343,6 +343,8 @@ namespace E3Core.Processors
 			string combatString = Basics.InCombat(skipBotCheck: true).ToString();
 			PubServer.AddTopicMessage("${InCombat}", combatString);
 			PubServer.AddTopicMessage("${Me.InCombat}", combatString);
+			bool invulnerable = MQ.Query<bool>("${Me.Invulnerable}");
+			PubServer.AddTopicMessage("${Me.Invulnerable}", invulnerable.ToString());
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 			//PubServer.AddTopicMessage("${EQ.CurrentHoveredWindowName}", MQ.GetHoverWindowName());
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
@@ -392,6 +394,7 @@ namespace E3Core.Processors
 				InStateUpdate = true;
 				PctHPs = MQ.Query<int>("${Me.PctHPs}");
 				IsInvis = MQ.Query<bool>("${Me.Invis}");
+				IsInvul = MQ.Query<bool>("${Me.Invulnerable}");
 				CurrentId = MQ.Query<int>("${Me.ID}");
 				CurrentInCombat = Basics.InCombat();
 
@@ -612,6 +615,7 @@ namespace E3Core.Processors
 		public static int PctHPs;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
+		public static bool IsInvul;
 		public static bool IsMoving;
 		public static bool IsFD;
 
