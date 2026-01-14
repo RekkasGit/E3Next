@@ -484,11 +484,7 @@ namespace MonoCore
             {
                 string inputValue = value;
                 var sb = new StringBuilder();
-				if (inputValue.EndsWith("|Me",StringComparison.OrdinalIgnoreCase)) inputValue = inputValue.Replace("|Me", $"|{E3.CurrentName}", StringComparison.OrdinalIgnoreCase);
-				if (inputValue.StartsWith("|Me ", StringComparison.OrdinalIgnoreCase)) inputValue = inputValue.Replace("|Me ", $"|{E3.CurrentName} ", StringComparison.OrdinalIgnoreCase);
-				if (inputValue.EndsWith(" Me", StringComparison.OrdinalIgnoreCase)) inputValue = inputValue.Replace(" Me", $" {E3.CurrentName}", StringComparison.OrdinalIgnoreCase);
-				if (inputValue.IndexOf(" Me ",0, StringComparison.OrdinalIgnoreCase)>-1) inputValue = inputValue.Replace(" Me ", $" {E3.CurrentName} ", StringComparison.OrdinalIgnoreCase);
-
+				
 				if (value.StartsWith("/only|", StringComparison.OrdinalIgnoreCase))
                 {
 					returnValue.Add(inputValue);
@@ -934,7 +930,16 @@ namespace MonoCore
                 {   //filter out any into filters.
                     if (value != null)
                     {
-                        filters = GetCommandFilters(value);
+                        //replace ME with full name
+                        for(Int32 i=0; i< value.Count; i++)
+                        {
+							if (value[i].EndsWith("|Me", StringComparison.OrdinalIgnoreCase)) value[i] = value[i].Replace("|Me", $"|{E3.CurrentName}", StringComparison.OrdinalIgnoreCase);
+							if (value[i].StartsWith("|Me ", StringComparison.OrdinalIgnoreCase)) value[i] = value[i].Replace("|Me ", $"|{E3.CurrentName} ", StringComparison.OrdinalIgnoreCase);
+							if (value[i].EndsWith(" Me", StringComparison.OrdinalIgnoreCase)) value[i] = value[i].Replace(" Me", $" {E3.CurrentName}", StringComparison.OrdinalIgnoreCase);
+							if (value[i].IndexOf(" Me ", 0, StringComparison.OrdinalIgnoreCase) > -1) value[i] = value[i].Replace(" Me ", $" {E3.CurrentName} ", StringComparison.OrdinalIgnoreCase);
+						}
+
+						filters = GetCommandFilters(value);
                         if (filters.Count > 0)
                         {
                             _args = value.Where(x => !filters.Any(y => y == x)).ToList();
@@ -1338,7 +1343,7 @@ namespace MonoCore
             {
                 return;
             }
-            mq_Echo("command recieved:" + commandLine);
+            mq_Echo("command received:" + commandLine);
 
             EventProcessor.ProcessMQCommand(commandLine);
         }
