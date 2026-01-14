@@ -57,7 +57,6 @@ namespace E3Core.Processors
 					ClearXTargets.Filters.Clear();
 					if (x.filters.Count > 0)
 					{
-						ClearXTargets.Filters.Clear();
 						ClearXTargets.Filters.AddRange(x.filters);
 					}
 					ClearXTargets.HasAllFlag = x.hasAllFlag;
@@ -80,9 +79,9 @@ namespace E3Core.Processors
 					ClearXTargets.MobToAttack = 0;
 					Assist.AssistOff();
 					E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
+					ClearXTargets.Filters.Clear();
 					if (x.filters.Count > 0)
 					{
-						ClearXTargets.Filters.Clear();
 						ClearXTargets.Filters.AddRange(x.filters);
 					}
 					ClearXTargets.HasAllFlag = x.hasAllFlag;
