@@ -943,7 +943,7 @@ namespace MonoCore
                         if (filters.Count > 0)
                         {
                             _args = value.Where(x => !filters.Any(y => y == x)).ToList();
-
+                            
                         }
                         else
                         {
@@ -1343,9 +1343,11 @@ namespace MonoCore
             {
                 return;
             }
-            mq_Echo("command received:" + commandLine);
-
-            EventProcessor.ProcessMQCommand(commandLine);
+            if(E3.CharacterSettings.Misc_EchoCommandReceived)
+            {
+				mq_Echo("command received:" + commandLine);
+			}
+			EventProcessor.ProcessMQCommand(commandLine);
         }
         public static void OnIncomingChat(string line)
         {

@@ -16,29 +16,29 @@ using System.Text.RegularExpressions;
 namespace E3Core.Settings
 {
 
-    public class INI_SectionAttribute : Attribute
-    {
-        private string _header;
-        private string _key;
+	public class INI_SectionAttribute : Attribute
+	{
+		private string _header;
+		private string _key;
 
-        public string Header
-        {
-            get { return _header; }
-            set { _header = value; }
-        }
-        public string Key
-        {
-            get { return _key; }
-            set { _key = value; }
-        }
+		public string Header
+		{
+			get { return _header; }
+			set { _header = value; }
+		}
+		public string Key
+		{
+			get { return _key; }
+			set { _key = value; }
+		}
 
-        public INI_SectionAttribute(string header, string key)
-        {
-            _header = header;
-            _key = key;
-        }
+		public INI_SectionAttribute(string header, string key)
+		{
+			_header = header;
+			_key = key;
+		}
 
-    }
+	}
 	public class INI_Section2Attribute : Attribute
 	{
 		private string _header;
@@ -71,7 +71,7 @@ namespace E3Core.Settings
 	/// <seealso cref="IBaseSettings" />
 	/// 
 	public class CharacterSettings : BaseSettings, IBaseSettings
-    {
+	{
 		//the reflection lookup so that we can expose all settings data for custom looksup
 		//under the ${E3N.Settings.HEADER.KEY}
 		public Dictionary<string, FieldInfo> SettingsReflectionLookup = new Dictionary<string, FieldInfo>(StringComparer.OrdinalIgnoreCase);
@@ -81,16 +81,16 @@ namespace E3Core.Settings
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 		public IniData ParsedData;
-        private readonly string CharacterName;
-        private readonly string ServerName;
-        private readonly Class CharacterClass;
+		private readonly string CharacterName;
+		private readonly string ServerName;
+		private readonly Class CharacterClass;
 
 		[INI_Section("Misc", "AutoFood")]
 		public bool Misc_AutoFoodEnabled;
 		[INI_Section("Misc", "Dismount On Interrupt (On/Off)")]
 		public bool Misc_DismountOnInterrupt = true;
-        [INI_Section("Misc", "Food")]
-        public string Misc_AutoFood = String.Empty;
+		[INI_Section("Misc", "Food")]
+		public string Misc_AutoFood = String.Empty;
 		[INI_Section("Misc", "Drink")]
 		public string Misc_AutoDrink = String.Empty;
 		[INI_Section("Misc", "End MedBreak in Combat(On/Off)")]
@@ -100,9 +100,12 @@ namespace E3Core.Settings
 		[INI_Section("Misc", "Auto-Loot (On/Off)")]
 		public bool Misc_AutoLootEnabled;
 		[INI_Section("Misc", "Debuffs/Dots are visible")]
-		public bool Misc_VisibleDebuffsDots=true;
+		public bool Misc_VisibleDebuffsDots = true;
 		[INI_Section("Misc", "Enhanced rotation speed")]
 		public bool Misc_EnchancedRotationSpeed = false;
+
+		[INI_Section("Misc", "Echo Command Received")]
+		public bool Misc_EchoCommandReceived = true;
 
 
 		[INI_Section("Misc", "Anchor (Char to Anchor to)")]
@@ -113,13 +116,13 @@ namespace E3Core.Settings
 		public Int32 Misc_DelayAfterCastWindowDropsForSpellCompletion = 0;
 
 
-	[INI_Section("Misc", "Auto-Forage (On/Off)")]
-	public bool Misc_AutoForage = false;
-	
-	[INI_Section("UI Theme", "E3 Config")]
-	public string UITheme_E3Config = "DarkTeal";
-	[INI_Section("UI Theme", "Rounding")]
-	public float UITheme_Rounding = 8.0f;
+		[INI_Section("Misc", "Auto-Forage (On/Off)")]
+		public bool Misc_AutoForage = false;
+
+		[INI_Section("UI Theme", "E3 Config")]
+		public string UITheme_E3Config = "DarkTeal";
+		[INI_Section("UI Theme", "Rounding")]
+		public float UITheme_Rounding = 8.0f;
 
 		[INI_Section("AutoMed", "Override Old Settings and use This(On/Off)")]
 		public bool AutoMed_OverrideOldSettings;
@@ -165,8 +168,8 @@ namespace E3Core.Settings
 		[INI_Section("E3ChatChannelsToJoin", "Channel")]
 		public List<string> E3ChatChannelsToJoinRaw = new List<string>();
 		public List<string> E3ChatChannelsToJoin = new List<string>();
-		
-        [INI_Section("Druid", "Auto-Cheetah (On/Off)")]
+
+		[INI_Section("Druid", "Auto-Cheetah (On/Off)")]
 		public bool Druid_AutoCheetah = true;
 		[INI_Section("Bard", "Auto-Sonata (On/Off)")]
 		public bool Bard_AutoSonata = true;
@@ -193,7 +196,7 @@ namespace E3Core.Settings
 
 		//not explosed for some reason?
 		public Int32 Assist_DelayStrafeDelay = 1500;
-       
+
 		[INI_Section("Assist Settings", "Pet back off on Enrage (On/Off)")]
 		public bool Assist_PetBackOffOnenrage = false;
 		[INI_Section("Assist Settings", "Back off on Enrage (On/Off)")]
@@ -201,17 +204,17 @@ namespace E3Core.Settings
 
 		[INI_Section("Melee Abilities", "Ability")]
 		public List<Spell> MeleeAbilities = new List<Spell>();
-        
-        [INI_Section("Nukes","Main")]
-        public List<Spell> Nukes = new List<Spell>();
-        
-        [INI_Section("Stuns", "Main")]
+
+		[INI_Section("Nukes", "Main")]
+		public List<Spell> Nukes = new List<Spell>();
+
+		[INI_Section("Stuns", "Main")]
 		public List<Spell> Stuns = new List<Spell>();
-	    
-        [INI_Section("Dispel","Main")]
+
+		[INI_Section("Dispel", "Main")]
 		public List<Spell> Dispels = new List<Spell>();
-		
-        [INI_Section("Dispel", "Ignore")]
+
+		[INI_Section("Dispel", "Ignore")]
 		public List<Spell> DispelIgnore = new List<Spell>();
 
 		[INI_Section("Rampage Actions", "Action")]
@@ -235,7 +238,7 @@ namespace E3Core.Settings
 		[INI_Section("Pets", "Pet Buff")]
 		public List<Spell> PetOwnerBuffs = new List<Spell>();
 
-        [INI_Section("Buffs", "Combat Pet Buff")]
+		[INI_Section("Buffs", "Combat Pet Buff")]
 		public List<Spell> CombatPetBuffs = new List<Spell>();
 		[INI_Section("Pets", "Combat Pet Buff")]
 		public List<Spell> CombatPetOwnerBuffs = new List<Spell>();
@@ -264,8 +267,8 @@ namespace E3Core.Settings
 
 		[INI_Section("Pets", "Pet Spell")]
 		public List<Spell> PetSpell = new List<Spell>();
-		
-        [INI_Section("Pets", "Pet Heal")]
+
+		[INI_Section("Pets", "Pet Heal")]
 		public List<Spell> PetHeals = new List<Spell>();
 
 		[INI_Section("Pets", "Pet Mend (Pct)")]
@@ -300,8 +303,8 @@ namespace E3Core.Settings
 		[INI_Section("PBAE", "PBAE")]
 		public List<Spell> PBAE = new List<Spell>();
 		//burns
-		[INI_Section("Burn","")]
-		[ExposedData("Burn","")]
+		[INI_Section("Burn", "")]
+		[ExposedData("Burn", "")]
 		public Dictionary<string, Burn> BurnCollection = new Dictionary<string, Burn>(StringComparer.OrdinalIgnoreCase);
 		[INI_Section("CommandSets", "")]
 		[ExposedData("CommandSets", "")]
@@ -331,7 +334,7 @@ namespace E3Core.Settings
 		public List<Spell> DiseaseCounterCure = new List<Spell>();
 		[INI_Section("Cures", "DiseaseCountersIgnore")]
 		public List<Spell> DiseaseCounterIgnore = new List<Spell>();
-		
+
 
 		//life support
 		[INI_Section("Life Support", "Life Support")]
@@ -386,7 +389,7 @@ namespace E3Core.Settings
 		[INI_Section("Manastone", "Out of Combat MaxMana")]
 		public Int32 ManaStone_OutOfCombatMaxMana = 95;
 		[INI_Section("Manastone", "ExceptionZone")]
-		public List<string> ManaStone_ExceptionZones = new List<string> {};
+		public List<string> ManaStone_ExceptionZones = new List<string> { };
 		[INI_Section("Manastone", "ExceptionMQQuery")]
 		public List<string> ManaStone_ExceptionMQQuery = new List<string>();
 		[INI_Section("Manastone", "UseForLazarusEncEpicBuff")]
@@ -404,7 +407,7 @@ namespace E3Core.Settings
 		public List<string> HealImportantBotTargets = new List<string>();
 		[INI_Section("Heals", "Important Heal")]
 		public List<Spell> HealImportantBots = new List<Spell>();
-		
+
 		[INI_Section("Heals", "Group Heal")]
 		public List<Spell> HealGroup = new List<Spell>();
 		[INI_Section("Heals", "Number Of Injured Members For Group Heal")]
@@ -442,12 +445,12 @@ namespace E3Core.Settings
 
 
 		//E3BotsPublishData
-		
+
 		[INI_Section("E3BotsPublishData (key/value)", "")]
 		public SortedDictionary<string, string> E3BotsPublishDataRaw = new SortedDictionary<string, string>();
 		//used internally, the editor uses the Raw version
 		//the normal collection is modified to have ${Data.KeyName} for its keys
-		public SortedDictionary<string,string> E3BotsPublishData = new SortedDictionary<string,string>();
+		public SortedDictionary<string, string> E3BotsPublishData = new SortedDictionary<string, string>();
 		[INI_Section("Ifs", "")]
 		public SortedDictionary<string, string> Ifs = new SortedDictionary<string, string>();
 		[INI_Section("Events", "")]
@@ -482,7 +485,7 @@ namespace E3Core.Settings
 		[INI_Section("Charm", "PeelSnarePerson")]
 		public string Charm_PeelSnarePerson = String.Empty;
 		[INI_Section("Charm", "PeelSnareSpell")]
-		public List<Spell> Charm_PeelSnareSpell  = new List<Spell>();
+		public List<Spell> Charm_PeelSnareSpell = new List<Spell>();
 		[INI_Section("Charm", "PeelDebuffPerson")]
 		public string Charm_PeelDebuffPerson = String.Empty;
 		[INI_Section("Charm", "PeelDebuffSpells")]
@@ -493,7 +496,7 @@ namespace E3Core.Settings
 		////Loot Commander
 
 		//public bool LootCommander_Enabled;
-  //      public List<string> LootCommander_Looters = new List<string>();
+		//      public List<string> LootCommander_Looters = new List<string>();
 
 		[INI_Section("CPU", "ProcessLoopDelayInMS")]
 		public Int32 CPU_ProcessLoopDelay = 100;
@@ -549,7 +552,7 @@ namespace E3Core.Settings
 		public int FocusedParagonManaPct = 70;
 
 
-        private bool _mergeUpdates = true;
+		private bool _mergeUpdates = true;
 
 		[INI_Section("Heals", "Auto Cast Necro Heal Orbs (On/Off)")]
 		public bool HealAutoNecroOrbs = false;
@@ -559,42 +562,42 @@ namespace E3Core.Settings
 		[INI_Section("Heals", "Who to Heal")]
 		private string _whoToHealString;
 		public string WhoToHealString
-        {
-            get { return _whoToHealString; }
-            set
-            {
-                _whoToHealString = value;
-                List<string> returnValue = value.Split('/').ToList();
-                foreach (var who in returnValue)
-                {
-                    if (!WhoToHeal.Contains(who))
-                    {
-                        WhoToHeal.Add(who);
+		{
+			get { return _whoToHealString; }
+			set
+			{
+				_whoToHealString = value;
+				List<string> returnValue = value.Split('/').ToList();
+				foreach (var who in returnValue)
+				{
+					if (!WhoToHeal.Contains(who))
+					{
+						WhoToHeal.Add(who);
 
-                    }
-                }
-            }
-        }
-        public HashSet<string> WhoToHoT = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
+					}
+				}
+			}
+		}
+		public HashSet<string> WhoToHoT = new HashSet<string>(10, StringComparer.OrdinalIgnoreCase);
 		[INI_Section("Heals", "Who to HoT")]
 		private string _whoToHoTString;
 		public string WhoToHoTString
-        {
-            get { return _whoToHoTString; }
-            set
-            {
-                _whoToHoTString = value;
-                List<string> returnValue = value.Split('/').ToList();
-                foreach (var who in returnValue)
-                {
-                    if (!WhoToHoT.Contains(who))
-                    {
-                        WhoToHoT.Add(who);
+		{
+			get { return _whoToHoTString; }
+			set
+			{
+				_whoToHoTString = value;
+				List<string> returnValue = value.Split('/').ToList();
+				foreach (var who in returnValue)
+				{
+					if (!WhoToHoT.Contains(who))
+					{
+						WhoToHoT.Add(who);
 
-                    }
-                }
-            }
-        }
+					}
+				}
+			}
+		}
 
 		//offassist
 		[INI_Section("Off Assist Spells", "Main")]
@@ -610,13 +613,13 @@ namespace E3Core.Settings
 		/// Initializes a new instance of the <see cref="CharacterSettings"/> class.
 		/// </summary>
 		public CharacterSettings(bool mergeUpdates = true)
-        {
-            _mergeUpdates = mergeUpdates;
-            CharacterName = E3.CurrentName;
-            ServerName = E3.ServerName;
-            CharacterClass = E3.CurrentClass;
+		{
+			_mergeUpdates = mergeUpdates;
+			CharacterName = E3.CurrentName;
+			ServerName = E3.ServerName;
+			CharacterClass = E3.CurrentClass;
 			MQ = E3.MQ;
-            LoadData();
+			LoadData();
 			//map everything to the dictionary for settings lookup. 
 			GetSettingsMappedToDictionary();
 			ConvertConfigKeyDescriptions();
@@ -642,17 +645,17 @@ namespace E3Core.Settings
 		/// Loads the data.
 		/// </summary>
 		private void LoadData(string fileNameToUse = "")
-        {
+		{
 
 			string filename = fileNameToUse;
 			//if not specified, load based off the character name,servername, etc.
-			if(String.IsNullOrWhiteSpace(filename)) filename= GetBoTFilePath(CharacterName, ServerName, CharacterClass.ToString());
+			if (String.IsNullOrWhiteSpace(filename)) filename = GetBoTFilePath(CharacterName, ServerName, CharacterClass.ToString());
 
 			//if this is a global file with multiple writers, don't merge data as multiple writers for a single file = bad mojo.
 			if (filename.StartsWith("_")) _mergeUpdates = false;
 
 			MQ.Write($"Loading settings file: [{filename}]");
-            ParsedData = CreateSettings(filename);
+			ParsedData = CreateSettings(filename);
 
 
 			//LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
@@ -665,22 +668,23 @@ namespace E3Core.Settings
 			LoadKeyData("CPU", "Camp Shutdown at 5 seconds", ParsedData, ref CPU_Camping_ShutdownAt5Seconds);
 
 			LoadKeyData("Misc", "AutoFood", ParsedData, ref Misc_AutoFoodEnabled);
-            LoadKeyData("Misc", "Food", ParsedData, ref Misc_AutoFood);
-            LoadKeyData("Misc", "Drink", ParsedData, ref Misc_AutoDrink);
-            LoadKeyData("Misc", "End MedBreak in Combat(On/Off)", ParsedData, ref Misc_EndMedBreakInCombat);
-            LoadKeyData("Misc", "AutoMedBreak (On/Off)", ParsedData, ref Misc_AutoMedBreak);
-            LoadKeyData("Misc", "Auto-Loot (On/Off)", ParsedData, ref Misc_AutoLootEnabled);
-            LoadKeyData("Misc", "Anchor (Char to Anchor to)", ParsedData, ref Misc_AnchorChar);
-            LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
-            LoadKeyData("Misc", "Auto-Forage (On/Off)", ParsedData, ref Misc_AutoForage);
-            LoadKeyData("Misc", "Dismount On Interrupt (On/Off)", ParsedData, ref Misc_DismountOnInterrupt);
-            LoadKeyData("Misc", "Delay in MS After CastWindow Drops For Spell Completion",ParsedData, ref Misc_DelayAfterCastWindowDropsForSpellCompletion);
+			LoadKeyData("Misc", "Food", ParsedData, ref Misc_AutoFood);
+			LoadKeyData("Misc", "Drink", ParsedData, ref Misc_AutoDrink);
+			LoadKeyData("Misc", "End MedBreak in Combat(On/Off)", ParsedData, ref Misc_EndMedBreakInCombat);
+			LoadKeyData("Misc", "AutoMedBreak (On/Off)", ParsedData, ref Misc_AutoMedBreak);
+			LoadKeyData("Misc", "Auto-Loot (On/Off)", ParsedData, ref Misc_AutoLootEnabled);
+			LoadKeyData("Misc", "Anchor (Char to Anchor to)", ParsedData, ref Misc_AnchorChar);
+			LoadKeyData("Misc", "Remove Torpor After Combat", ParsedData, ref Misc_RemoveTorporAfterCombat);
+			LoadKeyData("Misc", "Auto-Forage (On/Off)", ParsedData, ref Misc_AutoForage);
+			LoadKeyData("Misc", "Dismount On Interrupt (On/Off)", ParsedData, ref Misc_DismountOnInterrupt);
+			LoadKeyData("Misc", "Delay in MS After CastWindow Drops For Spell Completion", ParsedData, ref Misc_DelayAfterCastWindowDropsForSpellCompletion);
 			LoadKeyData("Misc", "If FD stay down (true/false)", ParsedData, ref IfFDStayDown);
-		LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
-		LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnchancedRotationSpeed);
-		
-		LoadKeyData("UI Theme", "E3 Config", ParsedData, ref UITheme_E3Config);
-		LoadFloatKeyData("UI Theme", "Rounding", ParsedData, ref UITheme_Rounding);
+			LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
+			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnchancedRotationSpeed);
+			LoadKeyData("Misc", "Echo Command Received", ParsedData, ref Misc_EchoCommandReceived);
+
+			LoadKeyData("UI Theme", "E3 Config", ParsedData, ref UITheme_E3Config);
+			LoadFloatKeyData("UI Theme", "Rounding", ParsedData, ref UITheme_Rounding);
 
 			LoadKeyData("Alerts", "Rampage Messages(On/Off)", ParsedData, ref Alerts_RampageMessages);
 			LoadKeyData("Alerts", "Damage Messages(On/Off)", ParsedData, ref Alerts_DamageMessages);
@@ -688,27 +692,27 @@ namespace E3Core.Settings
 
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
-            LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
+			LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
 
 			LoadKeyData("ManaStone", "ItemName", ParsedData, ManaStone_ItemName);
 
-            LoadKeyData("Manastone", "NumberOfClicksPerLoop", ParsedData, ref ManaStone_NumberOfClicksPerLoop);
-            LoadKeyData("Manastone", "NumberOfLoops", ParsedData, ref ManaStone_NumberOfLoops);
-            LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", ParsedData, ref ManaStone_DelayBetweenLoops);
-            LoadKeyData("Manastone", "In Combat MinMana", ParsedData, ref ManaStone_InCombatMinMana);
-            LoadKeyData("Manastone", "In Combat MaxMana", ParsedData, ref ManaStone_InCombatMaxMana);
-            LoadKeyData("Manastone", "Use In Combat", ParsedData, ref ManaStone_EnabledInCombat);
-            LoadKeyData("Manastone", "Min HP", ParsedData, ref ManaStone_MinHP);
+			LoadKeyData("Manastone", "NumberOfClicksPerLoop", ParsedData, ref ManaStone_NumberOfClicksPerLoop);
+			LoadKeyData("Manastone", "NumberOfLoops", ParsedData, ref ManaStone_NumberOfLoops);
+			LoadKeyData("Manastone", "DelayBetweenLoops (in milliseconds)", ParsedData, ref ManaStone_DelayBetweenLoops);
+			LoadKeyData("Manastone", "In Combat MinMana", ParsedData, ref ManaStone_InCombatMinMana);
+			LoadKeyData("Manastone", "In Combat MaxMana", ParsedData, ref ManaStone_InCombatMaxMana);
+			LoadKeyData("Manastone", "Use In Combat", ParsedData, ref ManaStone_EnabledInCombat);
+			LoadKeyData("Manastone", "Min HP", ParsedData, ref ManaStone_MinHP);
 			LoadKeyData("Manastone", "Min HP Out of Combat", ParsedData, ref ManaStone_MinHPOutOfCombat);
 			LoadKeyData("Manastone", "Out of Combat MinMana", ParsedData, ref ManaStone_OutOfCombatMinMana);
-            LoadKeyData("Manastone", "Out of Combat MaxMana", ParsedData, ref ManaStone_OutOfCombatMaxMana);
-            List<string> zoneList = new List<string>();
-            LoadKeyData("Manastone", "ExceptionZone", ParsedData, zoneList);
+			LoadKeyData("Manastone", "Out of Combat MaxMana", ParsedData, ref ManaStone_OutOfCombatMaxMana);
+			List<string> zoneList = new List<string>();
+			LoadKeyData("Manastone", "ExceptionZone", ParsedData, zoneList);
 
-            foreach(var zone in zoneList)
-            {
-                if(!ManaStone_ExceptionZones.Contains(zone))
-                {
+			foreach (var zone in zoneList)
+			{
+				if (!ManaStone_ExceptionZones.Contains(zone))
+				{
 					ManaStone_ExceptionZones.Add(zone);
 				}
 			}
@@ -717,7 +721,7 @@ namespace E3Core.Settings
 			LoadKeyData("Manastone", "UseForLazarusEncEpicBuff", ParsedData, ref ManaStone_UseForLazarusEncEpicBuff);
 
 			LoadKeyData("Rampage Actions", "Action", ParsedData, RampageSpells);
-		
+
 
 			LoadKeyData("Report", "ReportEntry", ParsedData, Report_Entries);
 
@@ -738,97 +742,97 @@ namespace E3Core.Settings
 			LoadKeyData("Bando Buff", "BandoNameWithoutDeBuff", ParsedData, ref BandoBuff_BandoNameWithoutDeBuff);
 
 			LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
-            LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
-            LoadKeyData("Assist Settings", "Taunt(On/Off)", ParsedData, ref Assist_TauntEnabled);
-            LoadKeyData("Assist Settings", "SmartTaunt(On/Off)", ParsedData, ref Assist_SmartTaunt);
-            LoadKeyData("Assist Settings", "Melee Distance", ParsedData, ref Assist_MeleeDistance);
-            LoadKeyData("Assist Settings", "Ranged Distance", ParsedData, ref Assist_RangeDistance);
-            LoadKeyData("Assist Settings", "Auto-Assist Engage Percent", ParsedData, ref Assist_AutoAssistPercent);
+			LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
+			LoadKeyData("Assist Settings", "Taunt(On/Off)", ParsedData, ref Assist_TauntEnabled);
+			LoadKeyData("Assist Settings", "SmartTaunt(On/Off)", ParsedData, ref Assist_SmartTaunt);
+			LoadKeyData("Assist Settings", "Melee Distance", ParsedData, ref Assist_MeleeDistance);
+			LoadKeyData("Assist Settings", "Ranged Distance", ParsedData, ref Assist_RangeDistance);
+			LoadKeyData("Assist Settings", "Auto-Assist Engage Percent", ParsedData, ref Assist_AutoAssistPercent);
 			LoadKeyData("Assist Settings", "Delayed Strafe Enabled (On/Off)", ParsedData, ref Assist_DelayStrafeEnabled);
 			LoadKeyData("Assist Settings", "CommandOnAssist", ParsedData, ref Assist_CommandOnAssist);
 
 			LoadKeyData("Assist Settings", "Pet back off on Enrage (On/Off)", ParsedData, ref Assist_PetBackOffOnenrage);
 			LoadKeyData("Assist Settings", "Back off on Enrage (On/Off)", ParsedData, ref Assist_BackOffOnEnrage);
-           
+
 
 			if (CharacterClass == Class.Rogue)
-            {
-                LoadKeyData("Rogue", "Auto-Hide (On/Off)", ParsedData, ref Rogue_AutoHide);
-                LoadKeyData("Rogue", "Auto-Evade (On/Off)", ParsedData, ref Rogue_AutoEvade);
-                LoadKeyData("Rogue", "Evade PctAggro", ParsedData, ref Rogue_EvadePct);
-                LoadKeyData("Rogue", "Sneak Attack Discipline", ParsedData, ref Rogue_SneakAttack);
-                LoadKeyData("Rogue", "PoisonPR", ParsedData, ref Rogue_PoisonPR);
-                LoadKeyData("Rogue", "PoisonCR", ParsedData, ref Rogue_PoisonCR);
-                LoadKeyData("Rogue", "PoisonFR", ParsedData, ref Rogue_PoisonFR);
-            }
+			{
+				LoadKeyData("Rogue", "Auto-Hide (On/Off)", ParsedData, ref Rogue_AutoHide);
+				LoadKeyData("Rogue", "Auto-Evade (On/Off)", ParsedData, ref Rogue_AutoEvade);
+				LoadKeyData("Rogue", "Evade PctAggro", ParsedData, ref Rogue_EvadePct);
+				LoadKeyData("Rogue", "Sneak Attack Discipline", ParsedData, ref Rogue_SneakAttack);
+				LoadKeyData("Rogue", "PoisonPR", ParsedData, ref Rogue_PoisonPR);
+				LoadKeyData("Rogue", "PoisonCR", ParsedData, ref Rogue_PoisonCR);
+				LoadKeyData("Rogue", "PoisonFR", ParsedData, ref Rogue_PoisonFR);
+			}
 
-            if (CharacterClass == Class.Bard)
-            {
-                LoadKeyData("Bard", "MelodyIf", ParsedData, Bard_MelodyIfs);
-                LoadKeyData("Bard", "AutoMezSong", ParsedData, Bard_AutoMezSong);
-				LoadKeyData("Bard", "AutoMezSongDuration in seconds", ParsedData,ref Bard_AutoMezSongDuration);
-                LoadKeyData("Bard", "Auto-Sonata (On/Off)", ParsedData, ref Bard_AutoSonata);
+			if (CharacterClass == Class.Bard)
+			{
+				LoadKeyData("Bard", "MelodyIf", ParsedData, Bard_MelodyIfs);
+				LoadKeyData("Bard", "AutoMezSong", ParsedData, Bard_AutoMezSong);
+				LoadKeyData("Bard", "AutoMezSongDuration in seconds", ParsedData, ref Bard_AutoMezSongDuration);
+				LoadKeyData("Bard", "Auto-Sonata (On/Off)", ParsedData, ref Bard_AutoSonata);
 				//load up all melody sets
 
-				Bard_MelodySets= LoadMeldoySetData(ParsedData);
-				
+				Bard_MelodySets = LoadMeldoySetData(ParsedData);
 
-            }
 
-            if ((CharacterClass & Class.Druid) == CharacterClass)
-            {
-                LoadKeyData("Druid", "Evac Spell", ParsedData, CasterEvacs);
-                LoadKeyData("Druid", "Auto-Cheetah (On/Off)", ParsedData, ref Druid_AutoCheetah);
-            }
+			}
 
-            if ((CharacterClass & Class.Wizard) == CharacterClass)
-            {
-                LoadKeyData("Wizard", "Evac Spell", ParsedData, CasterEvacs);
-            }
-            
-            if (CharacterClass == Class.Magician)
-            {
-                LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
-                LoadKeyData("Magician", "Keep Open Inventory Slot (On/Off)", ParsedData, ref KeepOpenInventorySlot);
-                LoadKeyData("Magician", "Ignore Pet Weapon Requests (On/Off)", ParsedData, ref IgnorePetWeaponRequests);
+			if ((CharacterClass & Class.Druid) == CharacterClass)
+			{
+				LoadKeyData("Druid", "Evac Spell", ParsedData, CasterEvacs);
+				LoadKeyData("Druid", "Auto-Cheetah (On/Off)", ParsedData, ref Druid_AutoCheetah);
+			}
+
+			if ((CharacterClass & Class.Wizard) == CharacterClass)
+			{
+				LoadKeyData("Wizard", "Evac Spell", ParsedData, CasterEvacs);
+			}
+
+			if (CharacterClass == Class.Magician)
+			{
+				LoadKeyData("Magician", "Auto-Pet Weapons (On/Off)", ParsedData, ref AutoPetWeapons);
+				LoadKeyData("Magician", "Keep Open Inventory Slot (On/Off)", ParsedData, ref KeepOpenInventorySlot);
+				LoadKeyData("Magician", "Ignore Pet Weapon Requests (On/Off)", ParsedData, ref IgnorePetWeaponRequests);
 				LoadKeyData("Magician", "Allow Pet Weapon Requests from Guild Bypass(On/Off)", ParsedData, ref Magican_AllowPetRequestWeaponsBypass);
-                LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
-            }
+				LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
+			}
 
-            if (CharacterClass == Class.Shaman)
-            {
-                LoadKeyData("Shaman", "Auto-Canni (On/Off)", ParsedData, ref AutoCanni);
-                LoadKeyData("Shaman", "Canni", ParsedData, CanniSpell);
-                LoadKeyData("Shaman", "Malos Totem Spell Gem", ParsedData, ref MalosTotemSpellGem);
-            }
+			if (CharacterClass == Class.Shaman)
+			{
+				LoadKeyData("Shaman", "Auto-Canni (On/Off)", ParsedData, ref AutoCanni);
+				LoadKeyData("Shaman", "Canni", ParsedData, CanniSpell);
+				LoadKeyData("Shaman", "Malos Totem Spell Gem", ParsedData, ref MalosTotemSpellGem);
+			}
 
-            if (CharacterClass == Class.Beastlord)
-            {
-                LoadKeyData("Auto Paragon", "Auto Paragon (On/Off)", ParsedData, ref AutoParagon);
-                LoadKeyData("Auto Paragon", "Paragon Spell", ParsedData, out ParagonSpell);
-                LoadKeyData("Auto Paragon", "Paragon Mana (Pct)", ParsedData, ref ParagonManaPct);
-                LoadKeyData("Auto Paragon", "Auto Focused Paragon (On/Off)", ParsedData, ref AutoFocusedParagon);
-                LoadKeyData("Auto Paragon", "Focused Paragon Spell", ParsedData, out FocusedParagonSpell);
-                LoadKeyData("Auto Paragon", "Focused Paragon Mana (Pct)", ParsedData, ref FocusedParagonManaPct);
-                LoadKeyData("Auto Paragon", "Character", ParsedData, FocusedParagonCharacters);
-            }
+			if (CharacterClass == Class.Beastlord)
+			{
+				LoadKeyData("Auto Paragon", "Auto Paragon (On/Off)", ParsedData, ref AutoParagon);
+				LoadKeyData("Auto Paragon", "Paragon Spell", ParsedData, out ParagonSpell);
+				LoadKeyData("Auto Paragon", "Paragon Mana (Pct)", ParsedData, ref ParagonManaPct);
+				LoadKeyData("Auto Paragon", "Auto Focused Paragon (On/Off)", ParsedData, ref AutoFocusedParagon);
+				LoadKeyData("Auto Paragon", "Focused Paragon Spell", ParsedData, out FocusedParagonSpell);
+				LoadKeyData("Auto Paragon", "Focused Paragon Mana (Pct)", ParsedData, ref FocusedParagonManaPct);
+				LoadKeyData("Auto Paragon", "Character", ParsedData, FocusedParagonCharacters);
+			}
 
-         
-            LoadKeyData("E3BotsPublishData (key/value)", ParsedData, E3BotsPublishDataRaw);
-            
-            //now we need to change the keys to be in a specific format
-            foreach(var pair in E3BotsPublishDataRaw)
-            {
-                string key = "${Data." + pair.Key + "}";
-                if(!E3BotsPublishData.ContainsKey(key)) 
-                {
+
+			LoadKeyData("E3BotsPublishData (key/value)", ParsedData, E3BotsPublishDataRaw);
+
+			//now we need to change the keys to be in a specific format
+			foreach (var pair in E3BotsPublishDataRaw)
+			{
+				string key = "${Data." + pair.Key + "}";
+				if (!E3BotsPublishData.ContainsKey(key))
+				{
 					E3BotsPublishData.Add("${Data." + pair.Key + "}", pair.Value);
 				}
 
-				
-            }
-            
-            LoadKeyData("Ifs", ParsedData, Ifs);
+
+			}
+
+			LoadKeyData("Ifs", ParsedData, Ifs);
 			LoadKeyData("Events", ParsedData, Events);
 			LoadKeyData("EventLoop", ParsedData, EventLoop);
 			LoadKeyData("EventLoopTiming", ParsedData, EventLoopTiming);
@@ -846,26 +850,27 @@ namespace E3Core.Settings
 					{
 						var eventToExecute = Events[key];
 						if (!String.IsNullOrWhiteSpace(eventToExecute))
-						{	
-							EventProcessor.RegisterDynamicEvent(key, regex, (x) => {
+						{
+							EventProcessor.RegisterDynamicEvent(key, regex, (x) =>
+							{
 
 								string tempEvent = eventToExecute;
-								if(x.match.Groups.Count>1)
+								if (x.match.Groups.Count > 1)
 								{
-									for(Int32 i =1;i<x.match.Groups.Count;i++)
+									for (Int32 i = 1; i < x.match.Groups.Count; i++)
 									{
 										var matchValue = x.match.Groups[i].Value;
-										tempEvent=tempEvent.Replace($"${i}", matchValue);
+										tempEvent = tempEvent.Replace($"${i}", matchValue);
 									}
 								}
-								tempEvent=Casting.Ifs_Results(tempEvent);
-								MQ.Cmd($"/docommand {tempEvent}",true);
+								tempEvent = Casting.Ifs_Results(tempEvent);
+								MQ.Cmd($"/docommand {tempEvent}", true);
 							});
 						}
 					}
 				}
 			}
-	
+
 			LoadKeyData("E3ChatChannelsToJoin", "Channel", ParsedData, E3ChatChannelsToJoinRaw);
 			foreach (var value in E3ChatChannelsToJoinRaw)
 			{
@@ -880,17 +885,17 @@ namespace E3Core.Settings
 			LoadKeyData("Buffs", "Instant Buff", ParsedData, InstantBuffs);
 
 			foreach (var buff in InstantBuffs) buff.IsBuff = true;
-			
+
 
 			LoadKeyData("Buffs", "Self Buff", ParsedData, SelfBuffs);
-            //set target on self buffs
-            foreach (var buff in SelfBuffs)
-            {
-                buff.CastTarget = CharacterName;
+			//set target on self buffs
+			foreach (var buff in SelfBuffs)
+			{
+				buff.CastTarget = CharacterName;
 				buff.IsBuff = true;
 			}
 
-            LoadKeyData("Buffs", "Bot Buff", ParsedData, BotBuffs);
+			LoadKeyData("Buffs", "Bot Buff", ParsedData, BotBuffs);
 			foreach (var buff in BotBuffs) buff.IsBuff = true;
 			LoadKeyData("Buffs", "Combat Buff", ParsedData, CombatBuffs);
 			foreach (var buff in CombatBuffs) buff.IsBuff = true;
@@ -924,23 +929,23 @@ namespace E3Core.Settings
 
 			LoadKeyData("Melee Abilities", "Ability", ParsedData, MeleeAbilities);
 
-            LoadKeyData("Cursor Delete", "Delete", ParsedData, Cursor_Delete);
+			LoadKeyData("Cursor Delete", "Delete", ParsedData, Cursor_Delete);
 
-            LoadKeyData("Nukes", "Main", ParsedData, Nukes);
-            LoadKeyData("Stuns", "Main", ParsedData, Stuns);
+			LoadKeyData("Nukes", "Main", ParsedData, Nukes);
+			LoadKeyData("Stuns", "Main", ParsedData, Stuns);
 
-            LoadKeyData("Dispel", "Main", ParsedData, Dispels);
-            LoadKeyData("Dispel", "Ignore", ParsedData, DispelIgnore);
+			LoadKeyData("Dispel", "Main", ParsedData, Dispels);
+			LoadKeyData("Dispel", "Ignore", ParsedData, DispelIgnore);
 
-            LoadKeyData("PBAE", "PBAE", ParsedData, PBAE);
+			LoadKeyData("PBAE", "PBAE", ParsedData, PBAE);
 
-            LoadKeyData("Life Support", "Life Support", ParsedData, LifeSupport);
+			LoadKeyData("Life Support", "Life Support", ParsedData, LifeSupport);
 
-            LoadKeyData("DoTs on Assist", "Main", ParsedData, Dots_Assist);
-            LoadKeyData("DoTs on Command", "Main", ParsedData, Dots_OnCommand);
+			LoadKeyData("DoTs on Assist", "Main", ParsedData, Dots_Assist);
+			LoadKeyData("DoTs on Command", "Main", ParsedData, Dots_OnCommand);
 
-            LoadKeyData("Debuffs", "Debuff on Assist", ParsedData, Debuffs_OnAssist);
-            LoadKeyData("Debuffs", "Debuff on Command", ParsedData, Debuffs_Command);
+			LoadKeyData("Debuffs", "Debuff on Assist", ParsedData, Debuffs_OnAssist);
+			LoadKeyData("Debuffs", "Debuff on Command", ParsedData, Debuffs_Command);
 
 			//LoadKeyData("LootCommander", "Enabled",ParsedData, ref LootCommander_Enabled);
 			//LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
@@ -948,24 +953,24 @@ namespace E3Core.Settings
 			LoadKeyData("Burn", ParsedData, BurnCollection);
 			LoadKeyData("CommandSets", ParsedData, CommandCollection);
 
-            LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
-            LoadKeyData("Pets", "Pet Buff", ParsedData, PetOwnerBuffs);
+			LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
+			LoadKeyData("Pets", "Pet Buff", ParsedData, PetOwnerBuffs);
 			LoadKeyData("Pets", "Combat Pet Buff", ParsedData, CombatPetOwnerBuffs);
-            LoadKeyData("Pets", "Blocked Pet Buff", ParsedData, BlockedPetBuffs);
-            LoadKeyData("Pets", "Pet Heal", ParsedData, PetHeals);
-            LoadKeyData("Pets", "Pet Mend (Pct)", ParsedData, ref Pet_MendPercent);
-            LoadKeyData("Pets", "Pet Taunt (On/Off)", ParsedData, ref Pet_TauntEnabled);
-            LoadKeyData("Pets", "Pet Auto-Shrink (On/Off)", ParsedData, ref Pet_AutoShrink);
-            LoadKeyData("Pets", "Pet Summon Combat (On/Off)", ParsedData, ref Pet_SummonCombat);
-          
-            LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
+			LoadKeyData("Pets", "Blocked Pet Buff", ParsedData, BlockedPetBuffs);
+			LoadKeyData("Pets", "Pet Heal", ParsedData, PetHeals);
+			LoadKeyData("Pets", "Pet Mend (Pct)", ParsedData, ref Pet_MendPercent);
+			LoadKeyData("Pets", "Pet Taunt (On/Off)", ParsedData, ref Pet_TauntEnabled);
+			LoadKeyData("Pets", "Pet Auto-Shrink (On/Off)", ParsedData, ref Pet_AutoShrink);
+			LoadKeyData("Pets", "Pet Summon Combat (On/Off)", ParsedData, ref Pet_SummonCombat);
+
+			LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
 			LoadKeyData("Rez", "AutoAcceptRez", ParsedData, ref Rez_AutoAcceptRez);
 			LoadKeyData("Rez", "Auto Rez Spells", ParsedData, Rez_AutoRezSpells);
-            LoadKeyData("Rez", "Rez Spells", ParsedData, Rez_RezSpells);
+			LoadKeyData("Rez", "Rez Spells", ParsedData, Rez_RezSpells);
 
-            LoadKeyData("Cures", "Cure", ParsedData, Cures);
-            LoadKeyData("Cures", "CureAll", ParsedData, CureAll);
-            LoadKeyData("Cures", "RadiantCure", ParsedData, RadiantCure);
+			LoadKeyData("Cures", "Cure", ParsedData, Cures);
+			LoadKeyData("Cures", "CureAll", ParsedData, CureAll);
+			LoadKeyData("Cures", "RadiantCure", ParsedData, RadiantCure);
 
 			//if we have the AA add it to the collection before we load the rest. 
 			var tRC = new Spell("Radiant Cure");
@@ -976,55 +981,55 @@ namespace E3Core.Settings
 			LoadKeyData("Cures", "CorruptedCounters", ParsedData, CorruptedCounterCure);
 			LoadKeyData("Cures", "CorruptedCountersIgnore", ParsedData, CorruptedCounterIgnore);
 			LoadKeyData("Cures", "PoisonCounters", ParsedData, PoisonCounterCure);
-            LoadKeyData("Cures", "PoisonCountersIgnore", ParsedData, PoisonCounterIgnore);
-            LoadKeyData("Cures", "DiseaseCounters", ParsedData, DiseaseCounterCure);
-            LoadKeyData("Cures", "DiseaseCountersIgnore", ParsedData, DiseaseCounterIgnore);
+			LoadKeyData("Cures", "PoisonCountersIgnore", ParsedData, PoisonCounterIgnore);
+			LoadKeyData("Cures", "DiseaseCounters", ParsedData, DiseaseCounterCure);
+			LoadKeyData("Cures", "DiseaseCountersIgnore", ParsedData, DiseaseCounterIgnore);
 
-            LoadKeyData("Blocked Buffs", "BuffName", ParsedData, BlockedBuffs);
+			LoadKeyData("Blocked Buffs", "BuffName", ParsedData, BlockedBuffs);
 
-            LoadKeyData("Heals", "Tank Heal", ParsedData, HealTanks);
-            LoadKeyData("Heals", "Important Heal", ParsedData, HealImportantBots);
-            LoadKeyData("Heals", "All Heal", ParsedData, HealAll);
-            LoadKeyData("Heals", "XTarget Heal", ParsedData, HealXTarget);
-            LoadKeyData("Heals", "Heal Over Time Spell", ParsedData, HealOverTime);
-            LoadKeyData("Heals", "Group Heal", ParsedData, HealGroup);
+			LoadKeyData("Heals", "Tank Heal", ParsedData, HealTanks);
+			LoadKeyData("Heals", "Important Heal", ParsedData, HealImportantBots);
+			LoadKeyData("Heals", "All Heal", ParsedData, HealAll);
+			LoadKeyData("Heals", "XTarget Heal", ParsedData, HealXTarget);
+			LoadKeyData("Heals", "Heal Over Time Spell", ParsedData, HealOverTime);
+			LoadKeyData("Heals", "Group Heal", ParsedData, HealGroup);
 			LoadKeyData("Heals", "Party Heal", ParsedData, HealParty);
 			//LoadKeyData("Heals", "Pet Heal", ParsedData, PetHeals);
 			LoadKeyData("Heals", "Pet Heal", ParsedData, HealPets);
-            LoadKeyData("Heals", "Number Of Injured Members For Group Heal", ParsedData, ref HealGroup_NumberOfInjuredMembers);
+			LoadKeyData("Heals", "Number Of Injured Members For Group Heal", ParsedData, ref HealGroup_NumberOfInjuredMembers);
 
-            LoadKeyData("Heals", "Emergency Group Heal", ParsedData, Heal_EmergencyGroupHeals);
-            LoadKeyData("Heals", "Emergency Heal", ParsedData, Heal_EmergencyHeals);
+			LoadKeyData("Heals", "Emergency Group Heal", ParsedData, Heal_EmergencyGroupHeals);
+			LoadKeyData("Heals", "Emergency Heal", ParsedData, Heal_EmergencyHeals);
 
-            LoadKeyData("Heals", "Tank", ParsedData, HealTankTargets);
-            for (Int32 i = 0; i < HealTankTargets.Count; i++)
-            {
-                HealTankTargets[i] = e3util.FirstCharToUpper(HealTankTargets[i]);
-            }
+			LoadKeyData("Heals", "Tank", ParsedData, HealTankTargets);
+			for (Int32 i = 0; i < HealTankTargets.Count; i++)
+			{
+				HealTankTargets[i] = e3util.FirstCharToUpper(HealTankTargets[i]);
+			}
 
-            LoadKeyData("Heals", "Important Bot", ParsedData, HealImportantBotTargets);
-            //upper case first letter on all important bots, netbots bug that doesn't like lower case.
-            for (Int32 i = 0; i < HealImportantBotTargets.Count; i++)
-            {
-                HealImportantBotTargets[i] = e3util.FirstCharToUpper(HealImportantBotTargets[i]);
-            }
+			LoadKeyData("Heals", "Important Bot", ParsedData, HealImportantBotTargets);
+			//upper case first letter on all important bots, netbots bug that doesn't like lower case.
+			for (Int32 i = 0; i < HealImportantBotTargets.Count; i++)
+			{
+				HealImportantBotTargets[i] = e3util.FirstCharToUpper(HealImportantBotTargets[i]);
+			}
 
-          
 
-            //parse out the Tanks/XTargets/etc into collections via the Set method on the
-            //property set method
-            WhoToHealString = LoadKeyData("Heals", "Who to Heal", ParsedData);
-            WhoToHoTString = LoadKeyData("Heals", "Who to HoT", ParsedData);
-            LoadKeyData("Heals", "Pet Owner", ParsedData, HealPetOwners);
 
-            LoadKeyData("Heals", "Auto Cast Necro Heal Orbs (On/Off)", ParsedData, ref HealAutoNecroOrbs);
-            LoadKeyData("Off Assist Spells", "Main", ParsedData, OffAssistSpells);
-            LoadKeyData("Gimme", "Gimme", ParsedData, Gimme);
+			//parse out the Tanks/XTargets/etc into collections via the Set method on the
+			//property set method
+			WhoToHealString = LoadKeyData("Heals", "Who to Heal", ParsedData);
+			WhoToHoTString = LoadKeyData("Heals", "Who to HoT", ParsedData);
+			LoadKeyData("Heals", "Pet Owner", ParsedData, HealPetOwners);
+
+			LoadKeyData("Heals", "Auto Cast Necro Heal Orbs (On/Off)", ParsedData, ref HealAutoNecroOrbs);
+			LoadKeyData("Off Assist Spells", "Main", ParsedData, OffAssistSpells);
+			LoadKeyData("Gimme", "Gimme", ParsedData, Gimme);
 			LoadKeyData("Gimme", "Gimme-NoCombat", ParsedData, Gimme_NoCombat);
 			LoadKeyData("Gimme", "Gimme-InCombat", ParsedData, ref Gimme_InCombat);
 
-            LoadKeyData("Charm", "CharmSpell",ParsedData, Charm_CharmSpells);
-         
+			LoadKeyData("Charm", "CharmSpell", ParsedData, Charm_CharmSpells);
+
 			LoadKeyData("Charm", "CharmOhShitSpells", ParsedData, Charm_CharmOhShitSpells);
 			LoadKeyData("Charm", "SelfDebuffSpells", ParsedData, Charm_SelfDebuffSpells);
 			LoadKeyData("Charm", "BadPetBuffs", ParsedData, Charm_BadPetBuffs);
@@ -1032,9 +1037,9 @@ namespace E3Core.Settings
 			LoadKeyData("Charm", "PeelTankAggroAbility", ParsedData, Charm_PeelTankAggroAbility);
 			LoadKeyData("Charm", "PeelHealer", ParsedData, ref Charm_PeelHealer);
 			LoadKeyData("Charm", "PeelHealerHeal", ParsedData, Charm_PeelHealerHeal);
-			LoadKeyData("Charm", "PeelPetOwner", ParsedData,ref Charm_PeelPetOwner);
+			LoadKeyData("Charm", "PeelPetOwner", ParsedData, ref Charm_PeelPetOwner);
 			LoadKeyData("Charm", "PeelSnarePerson", ParsedData, ref Charm_PeelSnarePerson);
-			LoadKeyData("Charm", "PeelSnareSpell", ParsedData,Charm_PeelSnareSpell);
+			LoadKeyData("Charm", "PeelSnareSpell", ParsedData, Charm_PeelSnareSpell);
 			LoadKeyData("Charm", "PeelDebuffPerson", ParsedData, ref Charm_PeelDebuffPerson);
 			LoadKeyData("Charm", "PeelDebuffSpells", ParsedData, Charm_PeelDebuffSpells);
 
@@ -1047,28 +1052,29 @@ namespace E3Core.Settings
 			IniData newFile = new IniData();
 
 
-		newFile.Sections.AddSection("Misc");
-		var section = newFile.Sections.GetSectionData("Misc");
-		section.Keys.AddKey("AutoFood", "Off");
-		section.Keys.AddKey("Food", "");
-		section.Keys.AddKey("Drink", "");
-		section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
-		section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
-		section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
-		section.Keys.AddKey("Anchor (Char to Anchor to)", "");
-		section.Keys.AddKey("Remove Torpor After Combat", "On");
-		section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
-		section.Keys.AddKey("Dismount On Interrupt (On/Off)", "On");
-		section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
-		section.Keys.AddKey("If FD stay down (true/false)", "False");
-		section.Keys.AddKey("Debuffs/Dots are visible", "True");
-		section.Keys.AddKey("Enhanced rotation speed", "Off");
-		
-		newFile.Sections.AddSection("UI Theme");
-		section = newFile.Sections.GetSectionData("UI Theme");
-		section.Keys.AddKey("E3 Config", "DarkTeal");
-		section.Keys.AddKey("Rounding", "8.0");
-		
+			newFile.Sections.AddSection("Misc");
+			var section = newFile.Sections.GetSectionData("Misc");
+			section.Keys.AddKey("AutoFood", "Off");
+			section.Keys.AddKey("Food", "");
+			section.Keys.AddKey("Drink", "");
+			section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
+			section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
+			section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
+			section.Keys.AddKey("Anchor (Char to Anchor to)", "");
+			section.Keys.AddKey("Remove Torpor After Combat", "On");
+			section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
+			section.Keys.AddKey("Dismount On Interrupt (On/Off)", "On");
+			section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
+			section.Keys.AddKey("If FD stay down (true/false)", "False");
+			section.Keys.AddKey("Debuffs/Dots are visible", "True");
+			section.Keys.AddKey("Enhanced rotation speed", "Off");
+			section.Keys.AddKey("Echo Command Received", "True");
+			
+			newFile.Sections.AddSection("UI Theme");
+			section = newFile.Sections.GetSectionData("UI Theme");
+			section.Keys.AddKey("E3 Config", "DarkTeal");
+			section.Keys.AddKey("Rounding", "8.0");
+
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");
 			section.Keys.AddKey("Override Old Settings and use This(On/Off)", "Off");
@@ -1152,15 +1158,15 @@ namespace E3Core.Settings
 				section = newFile.Sections.GetSectionData("DoTs on Command");
 				section.Keys.AddKey("Main", "");
 
-				
+
 			}
-			if ((CharacterClass & Class.ManaUsers) == CharacterClass && CharacterClass!= Class.Bard)
+			if ((CharacterClass & Class.ManaUsers) == CharacterClass && CharacterClass != Class.Bard)
 			{
 				newFile.Sections.AddSection("Off Assist Spells");
 				section = newFile.Sections.GetSectionData("Off Assist Spells");
 				section.Keys.AddKey("Main", "");
 			}
-			
+
 			newFile.Sections.AddSection("Dispel");
 			section = newFile.Sections.GetSectionData("Dispel");
 			section.Keys.AddKey("Main", "");
@@ -1184,7 +1190,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Full Burn", "");
 
 			newFile.Sections.AddSection("CommandSets");
-		
+
 
 			if (CharacterClass == Class.Rogue)
 			{
@@ -1221,7 +1227,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Pet Taunt (On/Off)", "On");
 				section.Keys.AddKey("Pet Auto-Shrink (On/Off)", "Off");
 				section.Keys.AddKey("Pet Summon Combat (On/Off)", "Off");
-				section.Keys.AddKey("Blocked Pet Buff","");
+				section.Keys.AddKey("Blocked Pet Buff", "");
 			}
 
 			if ((CharacterClass & Class.Druid) == CharacterClass)
@@ -1239,7 +1245,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Evac Spell", "");
 			}
 
-			if (((CharacterClass & Class.Priest) == CharacterClass)|| CharacterClass== Class.Paladin)
+			if (((CharacterClass & Class.Priest) == CharacterClass) || CharacterClass == Class.Paladin)
 			{
 				newFile.Sections.AddSection("Cures");
 				section = newFile.Sections.GetSectionData("Cures");
@@ -1301,7 +1307,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Emergency Group Heal", "");
 			}
 
-			
+
 
 			if (CharacterClass == Class.Magician)
 			{
@@ -1350,7 +1356,7 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("Rampage Actions");
 			section = newFile.Sections.GetSectionData("Rampage Actions");
 			section.Keys.AddKey("Action", "");
-		
+
 			newFile.Sections.AddSection("Blocked Buffs");
 			section = newFile.Sections.GetSectionData("Blocked Buffs");
 			section.Keys.AddKey("BuffName", "");
@@ -1372,7 +1378,7 @@ namespace E3Core.Settings
 
 
 			newFile.Sections.AddSection("Ifs");
-		
+
 			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
 			newFile.Sections.AddSection("EventLoopTiming");
@@ -1432,40 +1438,40 @@ namespace E3Core.Settings
 		/// </summary>
 		/// <returns></returns>
 		public IniData CreateSettings(string fileName)
-        {
-            //if we need to , its easier to just output the entire file. 
+		{
+			//if we need to , its easier to just output the entire file. 
 
-            FileIniDataParser parser = e3util.CreateIniParser();
+			FileIniDataParser parser = e3util.CreateIniParser();
 
 			IniData newFile = createNewINIData();
 
 			if (!String.IsNullOrEmpty(CurrentSet))
-            {
-                fileName = fileName.Replace(".ini", "_" + CurrentSet + ".ini");
-            }
+			{
+				fileName = fileName.Replace(".ini", "_" + CurrentSet + ".ini");
+			}
 
 
-            if (!File.Exists(fileName))
-            {
-                if (!Directory.Exists(_configFolder + _botFolder))
-                {
-                    Directory.CreateDirectory(_configFolder + _botFolder);
-                }
-                //file straight up doesn't exist, lets create it
-                parser.WriteFile(fileName, newFile);
-                _fileLastModified = System.IO.File.GetLastWriteTime(fileName);
-                _fileLastModifiedFileName = fileName;
-                _fileName = fileName;
-            }
-            else
-            {
+			if (!File.Exists(fileName))
+			{
+				if (!Directory.Exists(_configFolder + _botFolder))
+				{
+					Directory.CreateDirectory(_configFolder + _botFolder);
+				}
+				//file straight up doesn't exist, lets create it
+				parser.WriteFile(fileName, newFile);
+				_fileLastModified = System.IO.File.GetLastWriteTime(fileName);
+				_fileLastModifiedFileName = fileName;
+				_fileName = fileName;
+			}
+			else
+			{
 				//File already exists, may need to merge in new settings lets check
 				//Parse the ini file
 				//Create an instance of a ini file parser
 				FileIniDataParser fileIniData = e3util.CreateIniParser();
 				IniData tParsedData = fileIniData.ReadFile(fileName);
 				if (_mergeUpdates)
-                {
+				{
 					//overwrite newfile with what was already there
 					tParsedData.Merge(newFile);
 					//save it it out now
@@ -1475,19 +1481,19 @@ namespace E3Core.Settings
 				}
 				newFile = tParsedData;
 				_fileLastModified = System.IO.File.GetLastWriteTime(fileName);
-                _fileLastModifiedFileName = fileName;
-                _fileName = fileName;
-                
-            }
+				_fileLastModifiedFileName = fileName;
+				_fileName = fileName;
+
+			}
 
 
-            return newFile;
-        }
+			return newFile;
+		}
 
-        /// <summary>
-        /// Saves the data.
-        /// </summary>
-        public void SaveData()
+		/// <summary>
+		/// Saves the data.
+		/// </summary>
+		public void SaveData()
 		{
 			//time to pull out the reflection noone has time to manage all that settings crap
 			var charSettings = e3util.GetSettingsMappedToInI();
@@ -1511,9 +1517,9 @@ namespace E3Core.Settings
 				foreach (var pair2 in pair.Value)
 				{
 					//now we have the header and keyname of the ini entry
-					
+
 					string keyName = pair2.Key;
-					
+
 
 					transferedKeyComments.Clear();
 
@@ -1544,11 +1550,11 @@ namespace E3Core.Settings
 								}
 
 								var deleteKeyHeader = ParsedData.Sections[header];
-								if(deleteKeyHeader!=null)
+								if (deleteKeyHeader != null)
 								{
 									deletedKey = deleteKeyHeader.GetKeyData(keyName);
 								}
-								
+
 
 								if (deletedKey != null && deletedKey.Comments.Count > 0)
 								{
@@ -1572,11 +1578,11 @@ namespace E3Core.Settings
 									section_keyCollection.AddKey(keyName, "");
 									continue;
 								}
-								
+
 								foreach (var spell in spellList)
 								{
 									//self buff hack to remove the target if its a self buff
-									if(header =="Buffs" && keyName=="Self Buff")
+									if (header == "Buffs" && keyName == "Self Buff")
 									{
 										spell.CastTarget = String.Empty;
 									}
@@ -1635,7 +1641,7 @@ namespace E3Core.Settings
 								IDictionary<string, Burn> stringDict = (IDictionary<string, Burn>)reference;
 								foreach (var tpair in stringDict)
 								{
-									if(tpair.Value.ItemsToBurn.Count>0)
+									if (tpair.Value.ItemsToBurn.Count > 0)
 									{
 										foreach (var burn in tpair.Value.ItemsToBurn)
 										{
@@ -1647,7 +1653,7 @@ namespace E3Core.Settings
 										section_keyCollection.AddKey(tpair.Key, "");
 
 									}
-									
+
 								}
 							}
 							else if (reference is IDictionary<string, CommandSet>)
@@ -1717,15 +1723,15 @@ namespace E3Core.Settings
 								}
 							}
 						}
-						
-						
+
+
 					}
 				}
 			}
 			//now for the snowflake bards :)
-			if(E3.CurrentClass== Class.Bard)
+			if (E3.CurrentClass == Class.Bard)
 			{
-				
+
 				//dict of List<spell>
 				foreach (var pair in Bard_MelodySets)
 				{
@@ -1735,7 +1741,7 @@ namespace E3Core.Settings
 					var section = defaultFile.Sections[header];
 					var old_section = ParsedData.Sections.GetSectionData(header);
 					//KeyData oldKey = null;
-					if(old_section!=null)
+					if (old_section != null)
 					{
 						foreach (var keyData in old_section.Keys)
 						{
@@ -1751,16 +1757,16 @@ namespace E3Core.Settings
 						section.AddKey("Song", spell.ToConfigEntry());
 					}
 					var newKeySet = section.GetKeyData("Song");
-					if(newKeySet!=null)
+					if (newKeySet != null)
 					{
 						newKeySet.Comments.AddRange(transferedKeyComments);
 					}
 				}
 			}
 			FileIniDataParser fileIniData = e3util.CreateIniParser();
-            File.Delete(_fileName);
-            fileIniData.WriteFile(_fileName, defaultFile);
-        }
+			File.Delete(_fileName);
+			fileIniData.WriteFile(_fileName, defaultFile);
+		}
 		private void GetSettingsMappedToDictionary()
 		{
 			//now for some ... reflection again.
@@ -1769,8 +1775,8 @@ namespace E3Core.Settings
 			foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
 			{
 				var oType = field.FieldType;
-				
-				if (!(oType == typeof(string)|| oType == typeof(Int32) || oType == typeof(Int64) || oType == typeof(bool) || oType==typeof(List<string>) || oType == typeof(List<Int32>) || oType == typeof(List<Int64>) || oType == typeof(List<Spell>)) ) continue;
+
+				if (!(oType == typeof(string) || oType == typeof(Int32) || oType == typeof(Int64) || oType == typeof(bool) || oType == typeof(List<string>) || oType == typeof(List<Int32>) || oType == typeof(List<Int64>) || oType == typeof(List<Spell>))) continue;
 
 				var customAttributes = field.GetCustomAttributes();
 				string section = String.Empty;
@@ -1787,8 +1793,8 @@ namespace E3Core.Settings
 
 
 						if (oType == typeof(bool) && !SettingsReflectionBoolTypes.Contains(key)) SettingsReflectionBoolTypes.Add(section + ":" + key);
-						if ((oType == typeof(Int32) || oType==typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(section + ":" + key);
-						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(section+":"+key);
+						if ((oType == typeof(Int32) || oType == typeof(Int64)) && !SettingsReflectionIntTypes.Contains(key)) SettingsReflectionIntTypes.Add(section + ":" + key);
+						if (oType == typeof(string) && !SettingsReflectionStringTypes.Contains(key)) SettingsReflectionStringTypes.Add(section + ":" + key);
 
 						string dictKey = $"${{E3N.Settings.{section}.{key}}}";
 						SettingsReflectionLookup.Add(dictKey, field);
@@ -1827,140 +1833,140 @@ namespace E3Core.Settings
 			{"Gem", "Spell gem number (1-12) that should be used for this spell."},
 		};
 
-	private static void ConvertConfigKeyDescriptions()
-	{
-		// Only build the helper map once; it stays static for the life of the process
-		if (ConfigKeyDescriptionsForImGUI.Count > 0) return;
-
-		// Use RegexOptions.Singleline so . matches newlines too
-		string regexPattern = @"\[(color=.+?)\](.+?)\[\/color]";
-		foreach (var pair in ConfigKeyDescriptionsBySection)
+		private static void ConvertConfigKeyDescriptions()
 		{
-			var key = pair.Key;
-			var value = pair.Value;
+			// Only build the helper map once; it stays static for the life of the process
+			if (ConfigKeyDescriptionsForImGUI.Count > 0) return;
 
-			List<string> valueList = new List<string>();
-			
-			// Split by regex first (across entire string, including newlines)
-			var parts = Regex.Split(value, regexPattern, RegexOptions.Singleline);
-			
-			for (int i = 0; i < parts.Length; i++)
+			// Use RegexOptions.Singleline so . matches newlines too
+			string regexPattern = @"\[(color=.+?)\](.+?)\[\/color]";
+			foreach (var pair in ConfigKeyDescriptionsBySection)
 			{
-				if (i % 3 == 0)
-				{
-					// Regular text (not inside color tags)
-					if (!String.IsNullOrEmpty(parts[i]))
-					{
-						// Split by newlines and add each part
-						var lines = parts[i].Split('\n');
-						for (int j = 0; j < lines.Length; j++)
-						{
-							if (!String.IsNullOrEmpty(lines[j])) valueList.Add(lines[j]);
-							if (j < lines.Length - 1) valueList.Add("\n");
-						}
-					}
-				}
-				else if (i % 3 == 1)
-				{
-					// Color attribute (e.g., "color=teal") - handled in next iteration
-					// Skip - we add it with the colored text in the i % 3 == 2 case
-				}
-				else // i % 3 == 2
-				{
-					// Colored text content
-					if (!String.IsNullOrEmpty(parts[i]))
-					{
-						// Get the color attribute from the previous part (i-1)
-						string colorAttr = parts[i - 1];
-						
-						// Split by newlines and add each part with color
-						var lines = parts[i].Split('\n');
-						for (int j = 0; j < lines.Length; j++)
-						{
-							if (!String.IsNullOrEmpty(lines[j]))
-							{
-								valueList.Add(colorAttr);  // Add color attribute
-								valueList.Add(lines[j]);    // Add colored text
-							}
-							if (j < lines.Length - 1) valueList.Add("\n");
-						}
-					}
-				}
-			}
+				var key = pair.Key;
+				var value = pair.Value;
 
-			ConfigKeyDescriptionsForImGUI.Add(key, valueList);
+				List<string> valueList = new List<string>();
+
+				// Split by regex first (across entire string, including newlines)
+				var parts = Regex.Split(value, regexPattern, RegexOptions.Singleline);
+
+				for (int i = 0; i < parts.Length; i++)
+				{
+					if (i % 3 == 0)
+					{
+						// Regular text (not inside color tags)
+						if (!String.IsNullOrEmpty(parts[i]))
+						{
+							// Split by newlines and add each part
+							var lines = parts[i].Split('\n');
+							for (int j = 0; j < lines.Length; j++)
+							{
+								if (!String.IsNullOrEmpty(lines[j])) valueList.Add(lines[j]);
+								if (j < lines.Length - 1) valueList.Add("\n");
+							}
+						}
+					}
+					else if (i % 3 == 1)
+					{
+						// Color attribute (e.g., "color=teal") - handled in next iteration
+						// Skip - we add it with the colored text in the i % 3 == 2 case
+					}
+					else // i % 3 == 2
+					{
+						// Colored text content
+						if (!String.IsNullOrEmpty(parts[i]))
+						{
+							// Get the color attribute from the previous part (i-1)
+							string colorAttr = parts[i - 1];
+
+							// Split by newlines and add each part with color
+							var lines = parts[i].Split('\n');
+							for (int j = 0; j < lines.Length; j++)
+							{
+								if (!String.IsNullOrEmpty(lines[j]))
+								{
+									valueList.Add(colorAttr);  // Add color attribute
+									valueList.Add(lines[j]);    // Add colored text
+								}
+								if (j < lines.Length - 1) valueList.Add("\n");
+							}
+						}
+					}
+				}
+
+				ConfigKeyDescriptionsForImGUI.Add(key, valueList);
+			}
 		}
-	}
 
 		public static readonly Dictionary<string, List<string>> ConfigKeyDescriptionsForImGUI = new Dictionary<string, List<string>>();
 		public static readonly Dictionary<string, string> ConfigKeyDescriptionsBySection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
-            {"Misc::AutoFood", "Monitors hunger & thirst to ensure you don't consume stat food/drink."},
-            {"Misc::Food", "Define what you would like to eat. This can be used to keep stat food from getting consumed. Entries here look like: \n     [color=teal]Misty Thicket Picnic[/color] \n     [color=teal]Fuzzlecutter Formula 5000[/color] \nNote: Multiple Food and Drink can be defined"},
-            {"Misc::Drink", "Define what you would like to drink. This can be used to keep stat drink from getting consumed. Entries here look like: \n     [color=teal]Misty Thicket Picnic[/color] \n     [color=teal]Fuzzlecutter Formula 5000[/color] \nNote: Multiple Food and Drink can be defined"},
-            {"Misc::End MedBreak in Combat(On/Off)", "When enabled, you will cancel medding to assist in combat even if you are not at defined mana percentage."},
-            {"Misc::AutoMedBreak (On/Off)", "Will sit and med when below the defined Mana percentage in your general_settings.ini"},
-            {"Misc::Auto-Loot (On/Off)", "When enabled your character will use E3's autoloot once combat is over. In-Combat Looting can be enabled in general_settings.ini"},
-            {"Misc::Anchor (Char to Anchor to)", "When a character is defined, this toon will stick to that character. They will go out and fight, loot (if enabled) and then return to the defined anchored character."},
-            {"Misc::Remove Torpor After Combat", "Enable if you would like Torpor automatically removed once combat is over."},
-            {"Misc::Auto-Forage (On/Off)", "When enabled you will start foraging. You can leverage [Cursor Delete] section in this Ini to manage the junk loot."},
-            {"Misc::Dismount On Interrupt (On/Off)", "If you are on a mount and your priority requires you to inturrupt a spell for a higher priority spell (ex: Nuking -> Heal)."},
-            {"Misc::Delay in MS After CastWindow Drops For Spell Completion", "Will delay the defined MS before beginning a new action. Useful when server lag creates an issue where you're finished castingt but the server hasn't caught up."},
-            {"Misc::If FD stay down (true/false)", "When enabled, if you are Feigned when an /assist command is issued, E3 will stand you up."},
-            {"Misc::Debuffs/Dots are visible", "If you have Leadership AA 'Inspect Buffs', set this to On. If not, E3 will internally track timers to determine when to recast DoTs and Debuffs."},
-            {"Assist Settings::Assist Type (Melee/Ranged/Off)",
-                "Defines how your character will behave in combat.\n\n"
-                + "     [color=teal]Melee[/color] - Engages in melee combat, uses /stick, and follows all configured abilities.\n"
-                + "     [color=teal]AutoAttack[/color] - Melees and uses configured abilities without automated movement or /stick.\n"
-                + "     [color=teal]Ranged[/color] - Uses ranged attacks, /stick, and full configuration logic.\n"
-                + "     [color=teal]AutoFire[/color] - Uses ranged attacks and configuration without automated movement or /stick.\n"
-                + "     [color=teal]Off[/color] - Disables all movement, facing, and /stick; only uses configuration-based abilities."
-            },
-            {"Assist Settings::SmartTaunt(On/Off)", "If enabled, WAR/SK/PAL classes will automatically try and taunt off non-tank PCs to maintain aggro control."},
-            {"Assist Settings::Melee Stick Point", "The position you want your character to stand during combat.\n\n"
-                + "     [color=teal]behind[/color] - Stay behind the target and constantly readjust to keep position.\n"
-                + "     [color=teal]behindonce[/color] - Move behind the target once and only readjust when /assist is issued again.\n"
-                + "     [color=teal]front[/color] - Plant yourself in front of the mob facing it. Ideal for tanks.\n"
-                + "     [color=teal]pin[/color] - Stick to the side of the target, not quite front or rear.\n"
-                + "     [color=teal]!front[/color] - Stand anywhere that is not the target's front arc."},
-            {"Assist Settings::Delayed Strafe Enabled (On/Off)", "If Enabled, E3 will delay before readjusting position to a moved target."},
-            {"Assist Settings::CommandOnAssist", "E3 will execute these values as a command each time an assist is called. Useful for triggering custom actions or macros when engaging targets.  Examples: \n\n   [color=teal]/stick 15 moveback[/color]  \n\n   [color=teal]/g Engaging %T[/color]"},
-            {"Assist Settings::Melee Distance", "The distance you wish to stand from the target when melee'ing. MaxMelee - Will calculate based off the target the furthest point to melee, between 25 - 33."},
-            {"Assist Settings::Ranged Distance", "When Ranged is specified as Assist Type will keep you the defined distance away from target. Clamped - Doesn't care about a defined distance as long as you are between 30 and 200."},
-            {"Assist Settings::Auto-Assist Engage Percent", "Off by default.  When this character's target hits the specfied hit point percentage E3 will automatically issue /assistme.\n\n [color=red] It is generally recommended to not use Auto Assist.  Instead, manually issue the /assistme command for greater character control.[/color]"},
-            {"Assist Settings::Pet back off on Enrage (On/Off)", "When Enrage is detected, E3 will automatically tell your pet to back off."},
-            {"Assist Settings::Back off on Enrage (On/Off)", "If enabled, E3 will stop melee when NPC Enrage is detected."},
-            {"Melee Abilities::Ability",
-                "Defines which [color=teal]Ability[/color] you want to utilize.\n"
-                + "These are executed from top to bottom, using each ability as soon as it becomes available.\n\n"
-                + "     [color=teal]Kick[/color]\n"
-                + "     [color=teal]Bash[/color]\n"
-                + "     [color=teal]Backstab[/color]"},
-            {"Buffs::Instant Buff",
-                "Any buff that is self-targetable.\n"
-                + "This ensures the buff stays active both [color=purple]during and out of combat.[/color] Generally, should be 'quick casting' buffs, as it will attempt to cast during combat.\n"
-                + "Great for fights where buffs get dispelled - keeps cheap filler buffs in your first few slots.\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Journeyman's Boots[/color]\n"
-                + "[color=teal]Froglok Gut String Lute/CheckFor|Cantata of Life[/color]"},
-            {"Buffs::Self Buff",
-                "Covers any buff where you can target yourself.  [color=purple]Will not cast during combat.[/color]\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Armor of the Crusader/Gem|5[/color]\n"
-                + "[color=teal]Voice of Thule[/color]"},
-            {"Buffs::Bot Buff",
-                "Used for buffing your other characters.\n"
-                + "Will only cast [color=purple]outside of combat[/color].\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Spirit of Wolf/Gem|3/MyTank\n"
-                + "Spirit of Wolf/Gem|3/MyHealer\n"
-                + "Protection of Vie/Gem|5/MyCleric[/color]"},
-            {"Buffs::Combat Buff",
-                "Buffs or Casts that are only used [color=purple]during combat[/color].\n"
-                + "Can use Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Artifact of the Leopard\n"
-                + "Spirit of the Puma/Gem|5/TargetName\n"
-                + "Thief's Eyes[/color]"},
+			{"Misc::AutoFood", "Monitors hunger & thirst to ensure you don't consume stat food/drink."},
+			{"Misc::Food", "Define what you would like to eat. This can be used to keep stat food from getting consumed. Entries here look like: \n     [color=teal]Misty Thicket Picnic[/color] \n     [color=teal]Fuzzlecutter Formula 5000[/color] \nNote: Multiple Food and Drink can be defined"},
+			{"Misc::Drink", "Define what you would like to drink. This can be used to keep stat drink from getting consumed. Entries here look like: \n     [color=teal]Misty Thicket Picnic[/color] \n     [color=teal]Fuzzlecutter Formula 5000[/color] \nNote: Multiple Food and Drink can be defined"},
+			{"Misc::End MedBreak in Combat(On/Off)", "When enabled, you will cancel medding to assist in combat even if you are not at defined mana percentage."},
+			{"Misc::AutoMedBreak (On/Off)", "Will sit and med when below the defined Mana percentage in your general_settings.ini"},
+			{"Misc::Auto-Loot (On/Off)", "When enabled your character will use E3's autoloot once combat is over. In-Combat Looting can be enabled in general_settings.ini"},
+			{"Misc::Anchor (Char to Anchor to)", "When a character is defined, this toon will stick to that character. They will go out and fight, loot (if enabled) and then return to the defined anchored character."},
+			{"Misc::Remove Torpor After Combat", "Enable if you would like Torpor automatically removed once combat is over."},
+			{"Misc::Auto-Forage (On/Off)", "When enabled you will start foraging. You can leverage [Cursor Delete] section in this Ini to manage the junk loot."},
+			{"Misc::Dismount On Interrupt (On/Off)", "If you are on a mount and your priority requires you to inturrupt a spell for a higher priority spell (ex: Nuking -> Heal)."},
+			{"Misc::Delay in MS After CastWindow Drops For Spell Completion", "Will delay the defined MS before beginning a new action. Useful when server lag creates an issue where you're finished castingt but the server hasn't caught up."},
+			{"Misc::If FD stay down (true/false)", "When enabled, if you are Feigned when an /assist command is issued, E3 will stand you up."},
+			{"Misc::Debuffs/Dots are visible", "If you have Leadership AA 'Inspect Buffs', set this to On. If not, E3 will internally track timers to determine when to recast DoTs and Debuffs."},
+			{"Assist Settings::Assist Type (Melee/Ranged/Off)",
+				"Defines how your character will behave in combat.\n\n"
+				+ "     [color=teal]Melee[/color] - Engages in melee combat, uses /stick, and follows all configured abilities.\n"
+				+ "     [color=teal]AutoAttack[/color] - Melees and uses configured abilities without automated movement or /stick.\n"
+				+ "     [color=teal]Ranged[/color] - Uses ranged attacks, /stick, and full configuration logic.\n"
+				+ "     [color=teal]AutoFire[/color] - Uses ranged attacks and configuration without automated movement or /stick.\n"
+				+ "     [color=teal]Off[/color] - Disables all movement, facing, and /stick; only uses configuration-based abilities."
+			},
+			{"Assist Settings::SmartTaunt(On/Off)", "If enabled, WAR/SK/PAL classes will automatically try and taunt off non-tank PCs to maintain aggro control."},
+			{"Assist Settings::Melee Stick Point", "The position you want your character to stand during combat.\n\n"
+				+ "     [color=teal]behind[/color] - Stay behind the target and constantly readjust to keep position.\n"
+				+ "     [color=teal]behindonce[/color] - Move behind the target once and only readjust when /assist is issued again.\n"
+				+ "     [color=teal]front[/color] - Plant yourself in front of the mob facing it. Ideal for tanks.\n"
+				+ "     [color=teal]pin[/color] - Stick to the side of the target, not quite front or rear.\n"
+				+ "     [color=teal]!front[/color] - Stand anywhere that is not the target's front arc."},
+			{"Assist Settings::Delayed Strafe Enabled (On/Off)", "If Enabled, E3 will delay before readjusting position to a moved target."},
+			{"Assist Settings::CommandOnAssist", "E3 will execute these values as a command each time an assist is called. Useful for triggering custom actions or macros when engaging targets.  Examples: \n\n   [color=teal]/stick 15 moveback[/color]  \n\n   [color=teal]/g Engaging %T[/color]"},
+			{"Assist Settings::Melee Distance", "The distance you wish to stand from the target when melee'ing. MaxMelee - Will calculate based off the target the furthest point to melee, between 25 - 33."},
+			{"Assist Settings::Ranged Distance", "When Ranged is specified as Assist Type will keep you the defined distance away from target. Clamped - Doesn't care about a defined distance as long as you are between 30 and 200."},
+			{"Assist Settings::Auto-Assist Engage Percent", "Off by default.  When this character's target hits the specfied hit point percentage E3 will automatically issue /assistme.\n\n [color=red] It is generally recommended to not use Auto Assist.  Instead, manually issue the /assistme command for greater character control.[/color]"},
+			{"Assist Settings::Pet back off on Enrage (On/Off)", "When Enrage is detected, E3 will automatically tell your pet to back off."},
+			{"Assist Settings::Back off on Enrage (On/Off)", "If enabled, E3 will stop melee when NPC Enrage is detected."},
+			{"Melee Abilities::Ability",
+				"Defines which [color=teal]Ability[/color] you want to utilize.\n"
+				+ "These are executed from top to bottom, using each ability as soon as it becomes available.\n\n"
+				+ "     [color=teal]Kick[/color]\n"
+				+ "     [color=teal]Bash[/color]\n"
+				+ "     [color=teal]Backstab[/color]"},
+			{"Buffs::Instant Buff",
+				"Any buff that is self-targetable.\n"
+				+ "This ensures the buff stays active both [color=purple]during and out of combat.[/color] Generally, should be 'quick casting' buffs, as it will attempt to cast during combat.\n"
+				+ "Great for fights where buffs get dispelled - keeps cheap filler buffs in your first few slots.\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Journeyman's Boots[/color]\n"
+				+ "[color=teal]Froglok Gut String Lute/CheckFor|Cantata of Life[/color]"},
+			{"Buffs::Self Buff",
+				"Covers any buff where you can target yourself.  [color=purple]Will not cast during combat.[/color]\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Armor of the Crusader/Gem|5[/color]\n"
+				+ "[color=teal]Voice of Thule[/color]"},
+			{"Buffs::Bot Buff",
+				"Used for buffing your other characters.\n"
+				+ "Will only cast [color=purple]outside of combat[/color].\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Spirit of Wolf/Gem|3/MyTank\n"
+				+ "Spirit of Wolf/Gem|3/MyHealer\n"
+				+ "Protection of Vie/Gem|5/MyCleric[/color]"},
+			{"Buffs::Combat Buff",
+				"Buffs or Casts that are only used [color=purple]during combat[/color].\n"
+				+ "Can use Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Artifact of the Leopard\n"
+				+ "Spirit of the Puma/Gem|5/TargetName\n"
+				+ "Thief's Eyes[/color]"},
 			 {"Buffs::Assist Buff",
 				"Buffs or Casts that are only used [color=purple]during assist[/color].\n"
 				+ "Can use Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
@@ -1968,142 +1974,142 @@ namespace E3Core.Settings
 				+ "Spirit of the Puma/Gem|5/TargetName\n"
 				+ "Thief's Eyes[/color]"},
 			{"Buffs::Group Buff",
-                "Used for [color=purple]triggered buffing requests[/color] from other players.\n"
-                + "This has nothing to do with automating buffs for your 6-person group.\n"
-                + "Will buff anyone who asks with the phrase [color=teal]\"Buff Me\"[/color] or [color=teal]\"Buff my Pet\"[/color].\n"
-                + "Who can request buffs can be defined in your [color=orange]general_settings.ini[/color].\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Blessing of Aegolism[/color]\n\n"
-                + "Note: You may need to use [color=teal]/tgb on[/color] for group buffs to apply"
-                + "to people outside your group."},
-            {"Buffs::Pet Buff",
-                "Used for buffing [color=purple]other characters' pets[/color] on your bot network.\n"
-                + "Must be a part of your bot network.\n"
-                + "If your class has a pet, it will be defined in the [color=orange][Pets][/color] section.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Artifact of the Leopard/MyPetOwnerName\n"
-                + "Spirit of the Leopard/MyPetOwnerName[/color]"},
-            {"Buffs::Group Buff Request",
-                "Request a buff from someone else running E3 [color=red]not part of your bot network[/color].\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Torpor Rk. V/Tophet/Ifs|TorporIf[/color]\n\n"
-                + "Tip: To avoid spamming, use an [color=purple]If Statement[/color]:\n"
-                + "[color=teal]TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000[/color]"},
-            {"Buffs::Raid Buff Request",
-                "Request a buff from someone else running E3 [color=red]not part of your bot network[/color].\n"
-                + "Note - this is designed to coordinate between two players who are both running E3.  This would allow you to"
-                + "designate buffs that their characters have, that you cannot cast (e.g., you have the tank, they have the shaman)."
-                + "Entries here look like:\n"
-                + "[color=teal]Torpor Rk. V/CasterName/Ifs|TorporIf[/color]\n\n"
-                + "Spell Name/CasterName/Conditionals\n"
-                + "Tip: To avoid spamming, use an [color=purple]If Statement[/color]:\n"
-                + "[color=teal]TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000[/color]"},
-            {"Buffs::Stack Buff Request",
-                "Allows you to request the same buff from multiple characters who can provide it.\n\n"
-                + "This system processes requests in [color=teal]First In, First Out (FIFO)[/color] order.\n\n"
-                + "Parameters:\n"
-                + "     [color=teal]/StackRequestTargets[/color] - A list of all characters capable of casting the buff.\n"
-                + "     [color=teal]/StackRecastDelay[/color] - How long to wait before asking for the buff again.\n"
-                + "     [color=teal]/StackCheckInterval[/color] - How often to check whether you still have the buff.\n"
-                + "     [color=teal]/StackRequestItem[/color] - The item to click if the buff requires an item-based cast."},
-            {"Buffs::Cast Aura(On/Off)", "This will automatically cast your class's highest level aura if your class has one."},
-            {"Nukes::Main",
-                "Add the Spells, Items or Abilities you'd like to use for your main nuke rotation here.\n"
-                + "E3 will cast them in order from [color=purple]top to bottom[/color].\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Chaos Flame/Gem|10\n"
-                + "Concussive Intuition/Ifs|AggroCheck\n"
-                + "Foresaken Sorcerer's Sleeves[/color]"},
-            {"Nukes/Stuns/PBAE::Main",
-                "Name of the spell you wish to cast.\n\n"
-                + "Valid Entries look like:\n"
-                + "[color=teal]Color Shift/Gem|5[/color]"},
-            {"Nukes/Stuns/PBAE::PBAE",
-                "Point Blank Area of Effect (PBAE) is [color=red]turned off by default[/color].\n"
-                + "To toggle on or off use [color=teal]/pbaeon[/color] and [color=teal]/pbaeoff[/color].\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Spear of Ro[/color]\n\n"
-                + "Reminder: Priority matters [color=purple](FIFO - First In, First Out)[/color] for Advanced Settings AE Order and spell cooldowns."},
-            {"DoTs on Assist::Main",
-                "The spells or items here will be automatically cast or used on [color=purple]each assist call[/color].\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Envenomed Bolt/Gem|8\n"
-                + "Dark Nightmare/Gem|9/MaxTries|3[/color]"},
-            {"Debuffs::Debuff on Assist",
-                "The spells or items here will be automatically cast or used on [color=purple]each assist call[/color].\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Malosinete/Gem|7\n"
-                + "Malo Totem/Gem|8[/color]"},
-            {"DoTs on Command::Main",
-                "These items/spells will be used/cast [color=purple]on command[/color] ([color=teal]/dot[/color]).\n"
-                + "This allows for additional control on when they should be utilized.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Envenomed Bolt/Gem|8\n"
-                + "Dark Nightmare/Gem|9[/color]"},
-            {"Debuffs::Debuff on Command",
-                "These items/spells will be used/cast [color=purple]on command[/color] ([color=teal]/debuff[/color]).\n"
-                + "This allows for additional control on when they should be utilized.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Malosinete/Gem|7\n"
-                + "Slow Totem/Gem|8[/color]"},
-            {"Dots/Debuffs::Main",
-                "This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Assist][/color] and [color=orange]Debuff on Assist=[/color].\n"
-                + "These will automatically fire off once they receive one of the assist commands.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
-            {"Dots/Debuffs::Debuff on Assist",
-                "This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Assist][/color] and [color=orange]Debuff on Assist=[/color].\n"
-                + "These will automatically fire off once they receive one of the assist commands.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
-            {"Dots/Debuffs::Debuff on Command",
-                "This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Command][/color] and [color=orange]Debuff on Command=[/color].\n"
-                + "These are [color=red]turned off by default[/color], and allow for more control if you want.\n"
-                + "To toggle on and off use [color=teal]/dot[/color] to toggle for dots and [color=teal]/debuff[/color] for debuffs."},
-            {"Off Assist Spells::Debuff on Assist",
-                "These spells will be cast on [color=purple]every mob in the XTargets list[/color] when the bot receives an assist command.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Scent of Terris/Gem|7/MinDurationBeforeRecast|30000\n"
-                + "Malosinete/Gem|8[/color]"},
-            {"Dispel::Main",
-                "Spell or Item you wish to use to dispel your current target.\n"
-                + "This looks for any beneficial spells on the target.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Abashi's Rod of Disempowerment[/color]"},
-            {"Dispel::Ignore",
-                "Buffs on the target you wish to [color=red]ignore[/color] from trying to debuff.\n"
-                + "Each buff you wish to ignore is a new [color=orange]Ignore=[/color] entry.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Yaulp III\n"
-                + "Spirit of Wolf[/color]"},
-            {"LifeSupport::Life Support",
-                "This is [color=purple]top priority[/color] when it comes to what to process first.\n"
-                + "It is based on your character's health percentage.\n"
-                + "Use this for self heal, mitigation, immunity, or evasions.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Hymn of the Last Stand/HealPct|30\n"
-                + "Shield of Notes/HealPct|40\n"
-                + "Cazel's Distillate of Celestial Healing/HealPct|80[/color]"},
-            {"Rez::AutoRez", "If turned on will rez [color=purple]in and out of combat[/color]."},
-            {"Rez::Auto Rez Spells",
-                "This is the spell to be used if [color=orange]AutoRez=On[/color].\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Blessing of Resurrection[/color]"},
-            {"Rez::Rez Spells",
-                "These are the spells that will be used for the slash commands.\n"
-                + "You can use multiple rez spells for ones with longer cooldowns.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Blessing of Resurrection\n"
-                + "Resurrection[/color]"},
-            {"Burn::Quick Burn",
-                "Will accept any spell or item and the concept is for [color=purple]\"short\" cooldown[/color] spells.\n"
-                + "Your preference on what \"short\" is.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/quickburns \nor \n/e3burns \"Quick Burn\""},
-            {"Burn::Long Burn",
-                "Will accept any spell or item and the concept is for [color=purple]\"long\" cooldown[/color] spells.\n"
-                + "Your preference on what \"long\" is.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/longburns \nor \n/e3burns \"Long Burn\""},
-            {"Burn::Full Burn",
-                "The spells or items you want to use in a [color=purple]\"and the kitchen sink\"[/color] moment.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/fullburns \nor \n/e3burns \"Full Burn\""},
+				"Used for [color=purple]triggered buffing requests[/color] from other players.\n"
+				+ "This has nothing to do with automating buffs for your 6-person group.\n"
+				+ "Will buff anyone who asks with the phrase [color=teal]\"Buff Me\"[/color] or [color=teal]\"Buff my Pet\"[/color].\n"
+				+ "Who can request buffs can be defined in your [color=orange]general_settings.ini[/color].\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Blessing of Aegolism[/color]\n\n"
+				+ "Note: You may need to use [color=teal]/tgb on[/color] for group buffs to apply"
+				+ "to people outside your group."},
+			{"Buffs::Pet Buff",
+				"Used for buffing [color=purple]other characters' pets[/color] on your bot network.\n"
+				+ "Must be a part of your bot network.\n"
+				+ "If your class has a pet, it will be defined in the [color=orange][Pets][/color] section.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Artifact of the Leopard/MyPetOwnerName\n"
+				+ "Spirit of the Leopard/MyPetOwnerName[/color]"},
+			{"Buffs::Group Buff Request",
+				"Request a buff from someone else running E3 [color=red]not part of your bot network[/color].\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Torpor Rk. V/Tophet/Ifs|TorporIf[/color]\n\n"
+				+ "Tip: To avoid spamming, use an [color=purple]If Statement[/color]:\n"
+				+ "[color=teal]TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000[/color]"},
+			{"Buffs::Raid Buff Request",
+				"Request a buff from someone else running E3 [color=red]not part of your bot network[/color].\n"
+				+ "Note - this is designed to coordinate between two players who are both running E3.  This would allow you to"
+				+ "designate buffs that their characters have, that you cannot cast (e.g., you have the tank, they have the shaman)."
+				+ "Entries here look like:\n"
+				+ "[color=teal]Torpor Rk. V/CasterName/Ifs|TorporIf[/color]\n\n"
+				+ "Spell Name/CasterName/Conditionals\n"
+				+ "Tip: To avoid spamming, use an [color=purple]If Statement[/color]:\n"
+				+ "[color=teal]TorporIf=!${Bool[${Me.Song[Torpor Rk. V].ID}]} || ${Me.Song[Torpor Rk. V].Duration} <=9000[/color]"},
+			{"Buffs::Stack Buff Request",
+				"Allows you to request the same buff from multiple characters who can provide it.\n\n"
+				+ "This system processes requests in [color=teal]First In, First Out (FIFO)[/color] order.\n\n"
+				+ "Parameters:\n"
+				+ "     [color=teal]/StackRequestTargets[/color] - A list of all characters capable of casting the buff.\n"
+				+ "     [color=teal]/StackRecastDelay[/color] - How long to wait before asking for the buff again.\n"
+				+ "     [color=teal]/StackCheckInterval[/color] - How often to check whether you still have the buff.\n"
+				+ "     [color=teal]/StackRequestItem[/color] - The item to click if the buff requires an item-based cast."},
+			{"Buffs::Cast Aura(On/Off)", "This will automatically cast your class's highest level aura if your class has one."},
+			{"Nukes::Main",
+				"Add the Spells, Items or Abilities you'd like to use for your main nuke rotation here.\n"
+				+ "E3 will cast them in order from [color=purple]top to bottom[/color].\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Chaos Flame/Gem|10\n"
+				+ "Concussive Intuition/Ifs|AggroCheck\n"
+				+ "Foresaken Sorcerer's Sleeves[/color]"},
+			{"Nukes/Stuns/PBAE::Main",
+				"Name of the spell you wish to cast.\n\n"
+				+ "Valid Entries look like:\n"
+				+ "[color=teal]Color Shift/Gem|5[/color]"},
+			{"Nukes/Stuns/PBAE::PBAE",
+				"Point Blank Area of Effect (PBAE) is [color=red]turned off by default[/color].\n"
+				+ "To toggle on or off use [color=teal]/pbaeon[/color] and [color=teal]/pbaeoff[/color].\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Spear of Ro[/color]\n\n"
+				+ "Reminder: Priority matters [color=purple](FIFO - First In, First Out)[/color] for Advanced Settings AE Order and spell cooldowns."},
+			{"DoTs on Assist::Main",
+				"The spells or items here will be automatically cast or used on [color=purple]each assist call[/color].\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Envenomed Bolt/Gem|8\n"
+				+ "Dark Nightmare/Gem|9/MaxTries|3[/color]"},
+			{"Debuffs::Debuff on Assist",
+				"The spells or items here will be automatically cast or used on [color=purple]each assist call[/color].\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Malosinete/Gem|7\n"
+				+ "Malo Totem/Gem|8[/color]"},
+			{"DoTs on Command::Main",
+				"These items/spells will be used/cast [color=purple]on command[/color] ([color=teal]/dot[/color]).\n"
+				+ "This allows for additional control on when they should be utilized.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Envenomed Bolt/Gem|8\n"
+				+ "Dark Nightmare/Gem|9[/color]"},
+			{"Debuffs::Debuff on Command",
+				"These items/spells will be used/cast [color=purple]on command[/color] ([color=teal]/debuff[/color]).\n"
+				+ "This allows for additional control on when they should be utilized.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Malosinete/Gem|7\n"
+				+ "Slow Totem/Gem|8[/color]"},
+			{"Dots/Debuffs::Main",
+				"This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Assist][/color] and [color=orange]Debuff on Assist=[/color].\n"
+				+ "These will automatically fire off once they receive one of the assist commands.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
+			{"Dots/Debuffs::Debuff on Assist",
+				"This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Assist][/color] and [color=orange]Debuff on Assist=[/color].\n"
+				+ "These will automatically fire off once they receive one of the assist commands.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available."},
+			{"Dots/Debuffs::Debuff on Command",
+				"This applies to [color=orange]Main=[/color] under [color=orange][DoTs on Command][/color] and [color=orange]Debuff on Command=[/color].\n"
+				+ "These are [color=red]turned off by default[/color], and allow for more control if you want.\n"
+				+ "To toggle on and off use [color=teal]/dot[/color] to toggle for dots and [color=teal]/debuff[/color] for debuffs."},
+			{"Off Assist Spells::Debuff on Assist",
+				"These spells will be cast on [color=purple]every mob in the XTargets list[/color] when the bot receives an assist command.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Scent of Terris/Gem|7/MinDurationBeforeRecast|30000\n"
+				+ "Malosinete/Gem|8[/color]"},
+			{"Dispel::Main",
+				"Spell or Item you wish to use to dispel your current target.\n"
+				+ "This looks for any beneficial spells on the target.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Abashi's Rod of Disempowerment[/color]"},
+			{"Dispel::Ignore",
+				"Buffs on the target you wish to [color=red]ignore[/color] from trying to debuff.\n"
+				+ "Each buff you wish to ignore is a new [color=orange]Ignore=[/color] entry.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Yaulp III\n"
+				+ "Spirit of Wolf[/color]"},
+			{"LifeSupport::Life Support",
+				"This is [color=purple]top priority[/color] when it comes to what to process first.\n"
+				+ "It is based on your character's health percentage.\n"
+				+ "Use this for self heal, mitigation, immunity, or evasions.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Hymn of the Last Stand/HealPct|30\n"
+				+ "Shield of Notes/HealPct|40\n"
+				+ "Cazel's Distillate of Celestial Healing/HealPct|80[/color]"},
+			{"Rez::AutoRez", "If turned on will rez [color=purple]in and out of combat[/color]."},
+			{"Rez::Auto Rez Spells",
+				"This is the spell to be used if [color=orange]AutoRez=On[/color].\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Blessing of Resurrection[/color]"},
+			{"Rez::Rez Spells",
+				"These are the spells that will be used for the slash commands.\n"
+				+ "You can use multiple rez spells for ones with longer cooldowns.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Blessing of Resurrection\n"
+				+ "Resurrection[/color]"},
+			{"Burn::Quick Burn",
+				"Will accept any spell or item and the concept is for [color=purple]\"short\" cooldown[/color] spells.\n"
+				+ "Your preference on what \"short\" is.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/quickburns \nor \n/e3burns \"Quick Burn\""},
+			{"Burn::Long Burn",
+				"Will accept any spell or item and the concept is for [color=purple]\"long\" cooldown[/color] spells.\n"
+				+ "Your preference on what \"long\" is.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/longburns \nor \n/e3burns \"Long Burn\""},
+			{"Burn::Full Burn",
+				"The spells or items you want to use in a [color=purple]\"and the kitchen sink\"[/color] moment.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/fullburns \nor \n/e3burns \"Full Burn\""},
 			 {"Burn::Epic",
 				"if you want to override the default epic 1.5/2.0 calls\n\n"
 				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/epicburns \nor \n/e3burns \"Epic\""},
@@ -2111,199 +2117,199 @@ namespace E3Core.Settings
 				"if you want to override the default swarm calls\n\n"
 				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.\n\nExecute with \n/swarmpets \nor \n/e3burns \"Swarm\""},
 			{"Pets::Pet Spell",
-                "The pet spell you wish to use for summoning.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Servant of Ro[/color]"},
-            {"Pets::Pet Heal",
-                "Spells you wish to use to heal your pet.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Healing of Mikkily/Gem|1/HealPct|55[/color]"},
-            {"Pets::Pet Buff",
-                "Buff you wish for your pet to have.\n"
-                + "You can configure multiple [color=orange]Pet Buff=[/color] entries.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Spirit of Irionu\n"
-                + "Growl of the Beast[/color]"},
-            {"Pets::Pet Mend (Pct)",
-                "What percentage you want your character to use Mend AA.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Pet Mend(Pct)=40[/color]\n\n"
-                + "This will trigger at [color=purple]40% of pet's health[/color]."},
-            {"Pets::Pet Taunt (On/Off)", "Sets whether your pet taunts or not."},
-            {"Pets::Pet Auto-Shrink (On/Off)", "Will auto shrink your pet when summoned or illusioned."},
-            {"Pets::Pet Summon Combat (On/Off)",
-                "If your pet dies during combat will [color=purple]prioritize summoning[/color] your pet based on what is defined in [color=orange]Pet Spell=[/color]."},
-            {"Pets::Pet Buff Combat (On/Off)",
-                "If a buff drops off during combat your bot will rebuff during combat.\n"
-                + "Good if you're casting puma/leopard line spells in combat."},
-            {"Cures::AutoRadiant (On/Off)",
-                "Default is [color=purple]On[/color].\n"
-                + "Will leverage your [color=orange]Radiant Cure AA[/color] if defined."},
-            {"Cures::Cure",
-                "Specify a cure to a particular debuff to a [color=purple]particular person[/color] [color=gold](Higher Priority 2)[/color].\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Remove Greater Curse/CharName/CheckFor|Feeblemind/Gem|12\n"
-                + "Crusader's Touch/TankName/CheckFor|Ikaav's Venom[/color]"},
-            {"Cures::CureAll",
-                "Specify a cure to a particular debuff to [color=purple]anyone in group[/color] [color=gold](Lower Priority 3)[/color].\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Remove Greater Curse/CheckFor|Relinquish Spirit/Gem|12\n"
-                + "Remove Greater Curse/CheckFor|Torment of Body/Gem|12[/color]"},
-            {"Cures::RadiantCure",
-                "Specify a type of debuff to use radiant cure if at least this many people have it [color=gold](Highest Priority 1)[/color].\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Fulmination/MinSick|1/Zone|txevu\n"
-                + "Fabled Destruction/MinSick|1/Zone|Unrest[/color]"},
-            {"Cures::CurseCounters",
-                "Catch All [color=gold](Lowest Priority 4)[/color].\n"
-                + "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Remove Greater Curse[/color]"},
-            {"Cures::PoisonCounters",
-                "Catch All [color=gold](Lowest Priority 4)[/color].\n"
-                + "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Blood of Nadox[/color]"},
-            {"Cures::DiseaseCounters",
-                "Catch All [color=gold](Lowest Priority 4)[/color].\n"
-                + "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Blood of Nadox[/color]"},
-            {"Cures::CorruptedCounters",
-                "Catch All [color=gold](Lowest Priority 4)[/color].\n"
-                + "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Remove Corruption[/color]"},
-            {"Cures::CurseCountersIgnore",
-                "Specify debuff names with curse counters that should [color=red]NOT[/color] be cured automatically.\n"
-                + "This is for catch all counter curing only.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Aura of Destruction[/color]"},
-            {"Cures::PoisonCountersIgnore",
-                "Specify debuff names with poison counters that should [color=red]NOT[/color] be cured automatically.\n"
-                + "This is for catch all counter curing only.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Aura of Destruction[/color]"},
-            {"Cures::DiseaseCountersIgnore",
-                "Specify debuff names with disease counters that should [color=red]NOT[/color] be cured automatically.\n"
-                + "This is for catch all counter curing only.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Aura of Destruction[/color]"},
-            {"Cures::CorruptedCountersIgnore",
-                "Specify debuff names with corruption counters that should [color=red]NOT[/color] be cured automatically.\n"
-                + "This is for catch all counter curing only.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Aura of Destruction[/color]"},
-            {"Heals::Who to Heal",
-                "Default: [color=purple]Tanks/ImportantBots/XTargets/Pets/Party[/color]\n"
-                + "Defines which key you would like to be healed.\n"
-                + "This allows for quick on and off without having to comment lines out."},
-            {"Heals::Who to HoT",
-                "Same as [color=orange]Who to Heal=[/color] just for [color=orange]Heal Over Time Spell=[/color] defined keys.\n"
-                + "Same options as Who to Heal: Tanks/ImportantBots/XTargets/Pets/Party\n"
-                + "Entries here look like:\n"
-                + "[color=teal]Tanks[/color]"},
-            {"Heals::Tank",
-                "Define who your tank/tanks will be.\n"
-                + "The bots defined here will receive the [color=purple]highest priority for heals[/color].\n"
-                + "Must be a part of your bot network.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]TankName[/color]"},
-            {"Heals::Tank Heal",
-                "Heal spell/item/aa you wish to use on your tanks.\n"
-                + "Recommend you order from [color=purple]lowest HealPct to highest[/color].\n"
-                + "One exception might be for spells like Reptile.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Aged Dragon Spine Staff/HealPct|50/NoInterrupt[/color]\n"
+				"The pet spell you wish to use for summoning.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Servant of Ro[/color]"},
+			{"Pets::Pet Heal",
+				"Spells you wish to use to heal your pet.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Healing of Mikkily/Gem|1/HealPct|55[/color]"},
+			{"Pets::Pet Buff",
+				"Buff you wish for your pet to have.\n"
+				+ "You can configure multiple [color=orange]Pet Buff=[/color] entries.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Spirit of Irionu\n"
+				+ "Growl of the Beast[/color]"},
+			{"Pets::Pet Mend (Pct)",
+				"What percentage you want your character to use Mend AA.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Pet Mend(Pct)=40[/color]\n\n"
+				+ "This will trigger at [color=purple]40% of pet's health[/color]."},
+			{"Pets::Pet Taunt (On/Off)", "Sets whether your pet taunts or not."},
+			{"Pets::Pet Auto-Shrink (On/Off)", "Will auto shrink your pet when summoned or illusioned."},
+			{"Pets::Pet Summon Combat (On/Off)",
+				"If your pet dies during combat will [color=purple]prioritize summoning[/color] your pet based on what is defined in [color=orange]Pet Spell=[/color]."},
+			{"Pets::Pet Buff Combat (On/Off)",
+				"If a buff drops off during combat your bot will rebuff during combat.\n"
+				+ "Good if you're casting puma/leopard line spells in combat."},
+			{"Cures::AutoRadiant (On/Off)",
+				"Default is [color=purple]On[/color].\n"
+				+ "Will leverage your [color=orange]Radiant Cure AA[/color] if defined."},
+			{"Cures::Cure",
+				"Specify a cure to a particular debuff to a [color=purple]particular person[/color] [color=gold](Higher Priority 2)[/color].\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Remove Greater Curse/CharName/CheckFor|Feeblemind/Gem|12\n"
+				+ "Crusader's Touch/TankName/CheckFor|Ikaav's Venom[/color]"},
+			{"Cures::CureAll",
+				"Specify a cure to a particular debuff to [color=purple]anyone in group[/color] [color=gold](Lower Priority 3)[/color].\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Remove Greater Curse/CheckFor|Relinquish Spirit/Gem|12\n"
+				+ "Remove Greater Curse/CheckFor|Torment of Body/Gem|12[/color]"},
+			{"Cures::RadiantCure",
+				"Specify a type of debuff to use radiant cure if at least this many people have it [color=gold](Highest Priority 1)[/color].\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Fulmination/MinSick|1/Zone|txevu\n"
+				+ "Fabled Destruction/MinSick|1/Zone|Unrest[/color]"},
+			{"Cures::CurseCounters",
+				"Catch All [color=gold](Lowest Priority 4)[/color].\n"
+				+ "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Remove Greater Curse[/color]"},
+			{"Cures::PoisonCounters",
+				"Catch All [color=gold](Lowest Priority 4)[/color].\n"
+				+ "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Blood of Nadox[/color]"},
+			{"Cures::DiseaseCounters",
+				"Catch All [color=gold](Lowest Priority 4)[/color].\n"
+				+ "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Blood of Nadox[/color]"},
+			{"Cures::CorruptedCounters",
+				"Catch All [color=gold](Lowest Priority 4)[/color].\n"
+				+ "Use spell(s) to try and cure if you see this type of debuff counter on a toon in group.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Remove Corruption[/color]"},
+			{"Cures::CurseCountersIgnore",
+				"Specify debuff names with curse counters that should [color=red]NOT[/color] be cured automatically.\n"
+				+ "This is for catch all counter curing only.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Aura of Destruction[/color]"},
+			{"Cures::PoisonCountersIgnore",
+				"Specify debuff names with poison counters that should [color=red]NOT[/color] be cured automatically.\n"
+				+ "This is for catch all counter curing only.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Aura of Destruction[/color]"},
+			{"Cures::DiseaseCountersIgnore",
+				"Specify debuff names with disease counters that should [color=red]NOT[/color] be cured automatically.\n"
+				+ "This is for catch all counter curing only.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Aura of Destruction[/color]"},
+			{"Cures::CorruptedCountersIgnore",
+				"Specify debuff names with corruption counters that should [color=red]NOT[/color] be cured automatically.\n"
+				+ "This is for catch all counter curing only.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Aura of Destruction[/color]"},
+			{"Heals::Who to Heal",
+				"Default: [color=purple]Tanks/ImportantBots/XTargets/Pets/Party[/color]\n"
+				+ "Defines which key you would like to be healed.\n"
+				+ "This allows for quick on and off without having to comment lines out."},
+			{"Heals::Who to HoT",
+				"Same as [color=orange]Who to Heal=[/color] just for [color=orange]Heal Over Time Spell=[/color] defined keys.\n"
+				+ "Same options as Who to Heal: Tanks/ImportantBots/XTargets/Pets/Party\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]Tanks[/color]"},
+			{"Heals::Tank",
+				"Define who your tank/tanks will be.\n"
+				+ "The bots defined here will receive the [color=purple]highest priority for heals[/color].\n"
+				+ "Must be a part of your bot network.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]TankName[/color]"},
+			{"Heals::Tank Heal",
+				"Heal spell/item/aa you wish to use on your tanks.\n"
+				+ "Recommend you order from [color=purple]lowest HealPct to highest[/color].\n"
+				+ "One exception might be for spells like Reptile.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Aged Dragon Spine Staff/HealPct|50/NoInterrupt[/color]\n"
 				+ "[color=teal]Mask of the Ancients/HealPct|60/NoInterrupt[/color]\n"
 				+ "[color=teal]Chlorotrope/Gem|1/HealPct|85/NoInterrupt[/color]\n"
 				+ "[color=teal]Artifact of the Reptile/HealPct|100/CheckFor|Skin of the Reptile[/color]\n" },
-            {"Heals::Important Bot",
-                "Define which bots you would like to pay close attention to just behind the tank priority.\n"
-                + "In essence [color=purple]\"second priority\"[/color].\n"
-                + "Often used for other healers, offtanks, or high threat classes.\n"
-                + "Must be a part of your bot network.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]BotName\n"
-                + "Bot2Name\n"
-                + "Bot3Name[/color]"},
-            {"Heals::Important Heal",
-                "Heal spell/item/aa you wish to use on your important bots.\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Chlorotrope/Gem|1/HealPct|65[/color]"},
-            {"Heals::Group Heal",
-                "This is not based on individual group members, but on the [color=purple]average missing health of the group[/color]\n"
-                + "There is a minimal number required to be injured which can be controlled with the next setting.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Wave of Marr/Gem|10/HealPct|20/NoInterrupt\n"
-                + "Wave of Trushar/HealPct|40/NoInterrupt\n"
-                + "Healing Wave of Prexus/HealPct|65\n"
-                + "Wave of Life/HealPct|70[/color]"},
-            {"Heals::Number Of Injured Members For Group Heal",
-                "Default: [color=purple]3[/color]\n"
-                + "This defines how many people need to be injured before triggering average Group heal."},
-            {"Heals::Party Heal",
-                "This heals your individual party members based on your configured [color=orange]/HealPct[/color] tag.\n"
-                + "Whether they are part of your bot network or not.\n"
-                + "[color=red]Heals outside your bot network[/color].\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Touch of Piety/HealPct|60[/color]"},
-            {"Heals::Heal Over Time Spell",
-                "The HoT spell/item/aa you wish to use for the groups defined in [color=orange]Who to HoT=[/color].\n"
-                + "Must be a part of your bot network.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Breath of Trushar/Gem|9/HealPct|95[/color]"},
-            {"Heals::All Heal",
-                "Heals all bots part of your network [color=purple]whether bots are in your group or not[/color].\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Yoppa's Mending/Gem|1/HealPct|65[/color]"},
-            {"Heals::XTarget Heal",
-                "How to heal individuals [color=red]not part of your bot network[/color] but in your group.\n"
-                + "You will need to assign each player you want to heal to your [color=orange]XTarget Window[/color].\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Chlorotrope/Gem|1/HealPct|65[/color]"},
-            {"Heals::Pet Owner",
-                "The bot in your network whose pet you would like to heal.\n\n"
-                + "Entries here look like:\n"
-                + "[color=teal]MageName[/color]"},
-            {"Heals::Pet Heal",
-                "Heal spell/item/aa you wish to use on pets.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Chlorotrope/Gem|1/HealPct|55[/color]"},
-            {"Heals::Emergency Heal",
-                "Heal spell/item/aa that will be used [color=red]immediately (cancels other casts)[/color] when health drops below the threshold for the specified target.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Burst of Life/MyTank/HealPct|40[/color]"},
-            {"Heals::Emergency Group Heal",
-                "Heal spell/item/aa that will be used [color=red]immediately (cancels other casts)[/color] when health of any character drops below the threshold.\n\n"
-                + "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
-                + "[color=teal]Divine Arbitration/HealPct|40[/color]"},
-            {"Bando Buff::Enabled", "Turns on the automated bandolier swapper that watches the BuffName on you (and DebuffName on your target) and flips between your configured Bando sets accordingly."},
-            {"Bando Buff::BuffName", "The Buff Name on yourself you wish to monitor"},
-            {"Bando Buff::DebuffName", "The Debuff Name on target you wish to monitor"},
-            {"Bando Buff::PrimaryWithBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-            {"Bando Buff::SecondaryWithBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-            {"Bando Buff::PrimaryWithoutBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-            {"Bando Buff::SecondaryWithoutBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
-            {"Bando Buff::BandoNameWithBuff", "The name of the bandolier when you have buff"},
-            {"Bando Buff::BandoNameWithoutBuff", "The name of the bandolier when you don't have buff"},
-            {"Bando Buff::BandoNameWithoutDeBuff", "When the mob doesn't have debuff. Should move back to BandoNameWithBuff= when debuff detected and you have your buff on"},
-            {"Events::_EventName_", "Allows you to define arbitrary commands for your bot to perform. These commands must be triggered by a /BeforeEvent or /AfterEvent conditional, or by a line in the [EventLoop] section. You make up your own _EventName_ on the left side of the equal sign, and then on the right side you write the command that will be performed when the event is triggered. The command will be executed whenever the event is triggered by a /BeforeEvent or /AfterEvent conditional, or by a line in the [EventLoop] section. Example: [Life Support] Life Support=Divine Barrier/HealPct|20/Gem|7/AfterEvent|TellGroupIUsedDivineBarrier [Events] TellGroupIUsedDivineBarrier=/g I just used Divine Barrier!"},
-            {"EventLoop::_EventName_", "Allows you to define conditions that will trigger lines from the [Events] section to execute. Lines in the [EventLoop] section are evaluated about once every second, and whenever one of the lines evaluates to True, its associated event is executed. On the left side of the equal sign you put the name of an event that's defined in your [Events] section, and on the right side you put the condition that you want to trigger the event and execute its command. Example: [Events] DropInvisCombat=/makemevisible [EventLoop] DropInvisCombat=(${Me.CombatState.Equal[Combat]} && ${Me.Invis})"},
-            {"AutoMed::Override Old Settings and use This(On/Off)", "Use the AutoMed section instead of the legacy med break settings."},
-            {"AutoMed::PctMana", "Minimum mana percent that will trigger the automatic med break routine."},
-            {"AutoMed::PctStam", "Minimum endurance percent that will trigger the automatic med break routine."},
-            {"AutoMed::PctHealth", "Minimum health percent that will trigger the automatic med break routine."},
-            {"Heals::AutoFood", "Allow the heal routine to eat/drink automatically when hunger or thirst is low."},
-            {"Heals::Food", "Food item used by the healer when AutoFood is enabled."},
-            {"Heals::Drink", "Drink item used by the healer when AutoFood is enabled."},
-            {"Buffs::AutoBuff (On/Off)", "Toggle automatic buffing for the entries configured in this section."},
-            {"Buffs::Check Interval", "Delay between automatic buff checks (supports s/m suffix)."},
-            {"Assist::Auto-Assist (On/Off)", "Automatically assist the designated main assist when the routine is active."},
-            {"Assist::Assist Target", "Name or alias of the character that this toon should assist."},
-            {"Assist::PctAggro", "Maximum aggro percent allowed before backing off when assisting."},
-            {"Burn::Auto-Burn (On/Off)", "Enable burn routines to trigger discs and abilities based on configured criteria."},
-            {"Burn::Trigger", "Condition or command that activates the burn routine (e.g. /burn)."},
-        };
+			{"Heals::Important Bot",
+				"Define which bots you would like to pay close attention to just behind the tank priority.\n"
+				+ "In essence [color=purple]\"second priority\"[/color].\n"
+				+ "Often used for other healers, offtanks, or high threat classes.\n"
+				+ "Must be a part of your bot network.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]BotName\n"
+				+ "Bot2Name\n"
+				+ "Bot3Name[/color]"},
+			{"Heals::Important Heal",
+				"Heal spell/item/aa you wish to use on your important bots.\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Chlorotrope/Gem|1/HealPct|65[/color]"},
+			{"Heals::Group Heal",
+				"This is not based on individual group members, but on the [color=purple]average missing health of the group[/color]\n"
+				+ "There is a minimal number required to be injured which can be controlled with the next setting.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Wave of Marr/Gem|10/HealPct|20/NoInterrupt\n"
+				+ "Wave of Trushar/HealPct|40/NoInterrupt\n"
+				+ "Healing Wave of Prexus/HealPct|65\n"
+				+ "Wave of Life/HealPct|70[/color]"},
+			{"Heals::Number Of Injured Members For Group Heal",
+				"Default: [color=purple]3[/color]\n"
+				+ "This defines how many people need to be injured before triggering average Group heal."},
+			{"Heals::Party Heal",
+				"This heals your individual party members based on your configured [color=orange]/HealPct[/color] tag.\n"
+				+ "Whether they are part of your bot network or not.\n"
+				+ "[color=red]Heals outside your bot network[/color].\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Touch of Piety/HealPct|60[/color]"},
+			{"Heals::Heal Over Time Spell",
+				"The HoT spell/item/aa you wish to use for the groups defined in [color=orange]Who to HoT=[/color].\n"
+				+ "Must be a part of your bot network.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Breath of Trushar/Gem|9/HealPct|95[/color]"},
+			{"Heals::All Heal",
+				"Heals all bots part of your network [color=purple]whether bots are in your group or not[/color].\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Yoppa's Mending/Gem|1/HealPct|65[/color]"},
+			{"Heals::XTarget Heal",
+				"How to heal individuals [color=red]not part of your bot network[/color] but in your group.\n"
+				+ "You will need to assign each player you want to heal to your [color=orange]XTarget Window[/color].\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Chlorotrope/Gem|1/HealPct|65[/color]"},
+			{"Heals::Pet Owner",
+				"The bot in your network whose pet you would like to heal.\n\n"
+				+ "Entries here look like:\n"
+				+ "[color=teal]MageName[/color]"},
+			{"Heals::Pet Heal",
+				"Heal spell/item/aa you wish to use on pets.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Chlorotrope/Gem|1/HealPct|55[/color]"},
+			{"Heals::Emergency Heal",
+				"Heal spell/item/aa that will be used [color=red]immediately (cancels other casts)[/color] when health drops below the threshold for the specified target.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Burst of Life/MyTank/HealPct|40[/color]"},
+			{"Heals::Emergency Group Heal",
+				"Heal spell/item/aa that will be used [color=red]immediately (cancels other casts)[/color] when health of any character drops below the threshold.\n\n"
+				+ "Valid Entries include Spells, Items, AA's, or Abilities.  Modifiers available.  Entries here look like:\n"
+				+ "[color=teal]Divine Arbitration/HealPct|40[/color]"},
+			{"Bando Buff::Enabled", "Turns on the automated bandolier swapper that watches the BuffName on you (and DebuffName on your target) and flips between your configured Bando sets accordingly."},
+			{"Bando Buff::BuffName", "The Buff Name on yourself you wish to monitor"},
+			{"Bando Buff::DebuffName", "The Debuff Name on target you wish to monitor"},
+			{"Bando Buff::PrimaryWithBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
+			{"Bando Buff::SecondaryWithBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
+			{"Bando Buff::PrimaryWithoutBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
+			{"Bando Buff::SecondaryWithoutBuff", "The items you wish to have in your your equipment slots, with and without buff. These weapons need to match with/without your bandolier setup"},
+			{"Bando Buff::BandoNameWithBuff", "The name of the bandolier when you have buff"},
+			{"Bando Buff::BandoNameWithoutBuff", "The name of the bandolier when you don't have buff"},
+			{"Bando Buff::BandoNameWithoutDeBuff", "When the mob doesn't have debuff. Should move back to BandoNameWithBuff= when debuff detected and you have your buff on"},
+			{"Events::_EventName_", "Allows you to define arbitrary commands for your bot to perform. These commands must be triggered by a /BeforeEvent or /AfterEvent conditional, or by a line in the [EventLoop] section. You make up your own _EventName_ on the left side of the equal sign, and then on the right side you write the command that will be performed when the event is triggered. The command will be executed whenever the event is triggered by a /BeforeEvent or /AfterEvent conditional, or by a line in the [EventLoop] section. Example: [Life Support] Life Support=Divine Barrier/HealPct|20/Gem|7/AfterEvent|TellGroupIUsedDivineBarrier [Events] TellGroupIUsedDivineBarrier=/g I just used Divine Barrier!"},
+			{"EventLoop::_EventName_", "Allows you to define conditions that will trigger lines from the [Events] section to execute. Lines in the [EventLoop] section are evaluated about once every second, and whenever one of the lines evaluates to True, its associated event is executed. On the left side of the equal sign you put the name of an event that's defined in your [Events] section, and on the right side you put the condition that you want to trigger the event and execute its command. Example: [Events] DropInvisCombat=/makemevisible [EventLoop] DropInvisCombat=(${Me.CombatState.Equal[Combat]} && ${Me.Invis})"},
+			{"AutoMed::Override Old Settings and use This(On/Off)", "Use the AutoMed section instead of the legacy med break settings."},
+			{"AutoMed::PctMana", "Minimum mana percent that will trigger the automatic med break routine."},
+			{"AutoMed::PctStam", "Minimum endurance percent that will trigger the automatic med break routine."},
+			{"AutoMed::PctHealth", "Minimum health percent that will trigger the automatic med break routine."},
+			{"Heals::AutoFood", "Allow the heal routine to eat/drink automatically when hunger or thirst is low."},
+			{"Heals::Food", "Food item used by the healer when AutoFood is enabled."},
+			{"Heals::Drink", "Drink item used by the healer when AutoFood is enabled."},
+			{"Buffs::AutoBuff (On/Off)", "Toggle automatic buffing for the entries configured in this section."},
+			{"Buffs::Check Interval", "Delay between automatic buff checks (supports s/m suffix)."},
+			{"Assist::Auto-Assist (On/Off)", "Automatically assist the designated main assist when the routine is active."},
+			{"Assist::Assist Target", "Name or alias of the character that this toon should assist."},
+			{"Assist::PctAggro", "Maximum aggro percent allowed before backing off when assisting."},
+			{"Burn::Auto-Burn (On/Off)", "Enable burn routines to trigger discs and abilities based on configured criteria."},
+			{"Burn::Trigger", "Condition or command that activates the burn routine (e.g. /burn)."},
+		};
 	}
 }
