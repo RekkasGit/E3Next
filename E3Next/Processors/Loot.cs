@@ -634,6 +634,7 @@ namespace E3Core.Processors
 		}
         public static void DestroyCorpse(Spawn corpse)
         {
+            e3util.ClearCursor();
             MQ.Cmd("/loot");
             MQ.Delay(1000, "${Window[LootWnd].Open}");
             MQ.Delay(100);
@@ -864,6 +865,7 @@ namespace E3Core.Processors
         }
         public static void LootCorpse(Spawn corpse, bool bypassLootSettings = false, bool lootAll = false)
         {
+            e3util.ClearCursor();
 			Int32 lootTryCount = 0;
 	
             tryandLoot:
