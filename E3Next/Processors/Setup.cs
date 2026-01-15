@@ -261,8 +261,11 @@ namespace E3Core.Processors
                     MQ.Cmd("/plugin MQ2LinkDB");
                     MQ.Cmd("/link /scan off");
                 }
-
-            }
+				if (MQ.Query<bool>($"${{Plugin[MQ2Log]}}"))
+				{
+					MQ.Write("\ar***WARNING*** MQ2Log detected, could cause unforseen performance issues..");
+				}
+			}
         }
 		public static void GetExposedDataMappedToDictionary()
 		{

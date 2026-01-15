@@ -243,10 +243,16 @@ namespace E3Core.Processors
                 {
                     _itemToConsume = x.args[0];
                 }
+                else if(MQ.Query<bool>("${Cursor}"))
+                {
+
+                    _itemToConsume = MQ.Query<string>("${Cursor}");
+                    e3util.ClearCursor();
+                    MQ.Delay(300);
+				}
                 else
                 {
-                    _itemToConsume = string.Empty;
-
+					_itemToConsume = string.Empty;
 				}
 			}, "Click an item until no more exist");
 
