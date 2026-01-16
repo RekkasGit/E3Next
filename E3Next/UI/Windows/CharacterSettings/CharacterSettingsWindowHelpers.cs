@@ -83,6 +83,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 		,{"E3BotsPublishData (key/value)",new List<string>()},{"EventLoopTiming",new List<string>() },{"EventRegMatches",new List<string>() }
 		};
 
+		public static readonly Dictionary<string, List<string>> Sections_NeedsTarget = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+		{ { "Buffs", new List<string>(){"Assist Buff","Combat Buff","Bot Buff","Pet Buff","Combat Pet Buff","Group Buff Request","Raid Buff Request"} }, { "Rez", new List<string>(){} }
+			,{ "Heals", new List<string>(){"Emergency Heal"} }
+		};
+
+		public static readonly Dictionary<string, List<string>> Sections_HealPertcentage = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+		{ { "Heals", new List<string>(){"Tank Heal","Important Heal","All Heal","Party Heal","Pet Heal","Emergency Heal","Emergency Group Heal" } }, { "Life Support", new List<string>(){} }
+		};
+
 		public static readonly Dictionary<string, string> _spellKeyAliasMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
 			{"AfterCast", "AfterSpell"},

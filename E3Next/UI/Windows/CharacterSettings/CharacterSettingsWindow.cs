@@ -1944,7 +1944,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 					//to specify the id of an input text use ## so its not visable
 
 					Render_TwoColumn_TableText("##SpellEditor_CastName", "Cast Name:", currentSpell.CastName, (u) => { currentSpell.CastName = u; currentSpell.SpellName = u; });
-					RenderSpellEditorCastTargetRow(currentSpell);
+
+					if (data.Sections_NeedsTarget.ContainsKey(mainWindowState.SelectedSection))
+					{
+						var subKeys = data.Sections_NeedsTarget[mainWindowState.SelectedSection];
+						if (subKeys.Count == 0 || subKeys.Contains(mainWindowState.SelectedKey))
+						{
+							RenderSpellEditorCastTargetRow(currentSpell);
+						}
+					}
 					///GEM SLOTS
 					imgui_TableNextRow();
 					imgui_TableNextColumn();
@@ -1975,6 +1983,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 						}
 					}
 
+					//does this section need to include the heal % value?
+					if(data.Sections_HealPertcentage.ContainsKey(mainWindowState.SelectedSection))
+					{
+						var subKeys = data.Sections_HealPertcentage[mainWindowState.SelectedSection];
+						if(subKeys.Count==0 || subKeys.Contains(mainWindowState.SelectedKey))
+						{
+
+							Render_TwoColumn_TableInt("##SpellEditor_HealPct", "Heal %:", currentSpell.HealPct, (u) => { currentSpell.HealPct = u; });
+						}
+					}
+
+					
 
 					//CAST TYPES
 					imgui_TableNextRow();
