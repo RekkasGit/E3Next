@@ -4,6 +4,7 @@ using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
+using Google.Protobuf.Collections;
 using IniParser.Model;
 using MonoCore;
 using System;
@@ -11,6 +12,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -550,14 +552,56 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterCommand("/e3burnreport", (x) =>
 			{
-				if (x.args.Count > 0)
+				if (x.args.Count > 0 && x.args[0]=="me")
 				{
-					PrintE3BReportEntries();
+                    //any filters?
+                    string filter = String.Empty;
+                    if(x.args.Count>1) filter = x.args[1];
+
+					List<string> burnReport = new List<string>();
+
+					foreach (var pair in E3.CharacterSettings.BurnCollection)
+					{
+                        if(!string.IsNullOrWhiteSpace(filter))
+                        {
+							if(!String.Equals(pair.Key,filter,StringComparison.OrdinalIgnoreCase))
+                            {
+                                continue;
+                            }
+						}
+                     	List<string> burnReportGroup = new List<string>();
+                		foreach (var spell in pair.Value.ItemsToBurn)
+						{
+							string result = Create_E3BurnReportEntry(spell, true);
+							if(!String.IsNullOrWhiteSpace(result))
+							{
+								burnReportGroup.Add(result);
+							}
+						}
+
+						if(burnReportGroup.Count>0)
+						{
+							foreach(var entry in burnReportGroup)
+							{
+								burnReport.Add($"\ay{pair.Key} \aw: {entry}");
+							}
+						}
+
+					}
+					if(burnReport.Count>0)
+					{
+						foreach(var entry in burnReport)
+						{
+							E3.Bots.Broadcast(entry);
+						}
+					}
 				}
 				else
 				{
-					E3.Bots.BroadcastCommandToGroup("/e3burnreport me");//send command to everyone else
-					EventProcessor.ProcessMQCommand("/e3burnreport me");//make sure we do the command as well
+					string filter = String.Empty;
+					if (x.args.Count > 0) filter =" "+ x.args[0];
+					E3.Bots.BroadcastCommandToGroup($"/e3burnreport me{filter}");//send command to everyone else
+					EventProcessor.ProcessMQCommand($"/e3burnreport me{filter}");//make sure we do the command as well
 				}
 
 			}, "list burn timers");
@@ -1330,8 +1374,49 @@ namespace E3Core.Processors
 			_amIDeadCachedValue = true;
 			return _amIDeadCachedValue;
 		}
+		private static string Create_E3BurnReport_Information(Spell spell, Int32 timeInMS, Int32 charges = 0)
+		{
+			string chargesLeftString = String.Empty;
+			if (charges > 0)
+			{
+				chargesLeftString = $" \atCharges left:\ay {charges}";
 
-        private static void PrintE3TReport_Information(Spell spell, Int32 timeInMS,Int32 charges=0)
+			}
+			//bug with thiefs eyes, always return true 8001
+			if (timeInMS > 0 && spell.CastID != 8001)
+			{
+				TimeSpan t = TimeSpan.FromMilliseconds(timeInMS);
+
+				if (t.TotalDays >= 1)
+				{
+					return $"\am{spell.CastName}: \at {t.Days} \aw days \at{t.Hours} \awhours \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}";
+
+				}
+				else if (t.TotalHours >= 1)
+				{
+					return $"\am{spell.CastName}: \at{t.Hours} \awhours \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}";
+
+				}
+				else if (t.TotalMinutes >= 1)
+				{
+					return $"\am{spell.CastName}: \at{t.Minutes} \awminutes \at{t.Seconds} \awseconds{chargesLeftString}";
+
+				}
+				else
+				{
+					return $"\am{spell.CastName}: \at{t.Seconds} \awseconds{chargesLeftString}";
+
+				}
+
+			}
+			else
+			{
+				return $"\am{spell.CastName}\aw: \agReady\aw!{chargesLeftString}";
+
+
+			}
+		}
+		private static void PrintE3TReport_Information(Spell spell, Int32 timeInMS,Int32 charges=0)
 		{
 			string chargesLeftString = String.Empty;
 			if (charges > 0)
@@ -1406,7 +1491,51 @@ namespace E3Core.Processors
 				}
 			}
 		}
+		public static string Create_E3BurnReportEntry(Spell spell, bool onlyReportCooldowns = false)
+		{
+			if (spell.CastType == CastingType.AA)
+			{
+				Int32 timeInMS = MQ.Query<Int32>($"${{Me.AltAbilityTimer[{spell.CastName}]}}");
+				if (onlyReportCooldowns && timeInMS == 0) return "";
+				return Create_E3BurnReport_Information(spell, timeInMS);
+			}
+			else if (spell.CastType == CastingType.Spell)
+			{
 
+				Int32 timeInMS = MQ.Query<Int32>($"${{Me.GemTimer[{spell.CastName}]}}");
+				if (onlyReportCooldowns && timeInMS == 0) return "";
+				return Create_E3BurnReport_Information(spell, timeInMS);
+			}
+			else if (spell.CastType == CastingType.Disc)
+			{
+				Int32 timeInTicks = MQ.Query<Int32>($"${{Me.CombatAbilityTimer[{spell.CastName}]}}");
+				if (onlyReportCooldowns && timeInTicks == 0) return "";
+				return Create_E3BurnReport_Information(spell, timeInTicks * 6 * 1000);
+
+			}
+			else if (spell.CastType == Data.CastingType.Ability)
+			{
+				Int32 timeInMS = MQ.Query<Int32>($"${{Me.AbilityTimer[{spell.CastName}]}}");
+				if (onlyReportCooldowns && timeInMS == 0) return "";
+				return Create_E3BurnReport_Information(spell, timeInMS);
+			}
+			else if (spell.CastType == CastingType.Item || spell.CastType == CastingType.None)
+			{
+
+				if (MQ.Query<bool>($"${{FindItem[{spell.CastName}].ID}}"))
+				{
+					Int32 timeInTicks = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Timer}}");
+					Int32 charges = MQ.Query<Int32>($"${{FindItem[{spell.CastName}].Charges}}");
+					if (onlyReportCooldowns && timeInTicks == 0) return "";
+					return Create_E3BurnReport_Information(spell, timeInTicks * 6 * 1000, charges);
+
+				}
+			}
+			return String.Empty;
+
+			//${FindItem[Kreljnok's Sword of Eternal Power].Timer}
+
+		}
 		public static void PrintE3TReport(Spell spell, bool onlyReportCooldowns = false)
         {
             if (spell.CastType == CastingType.AA)
