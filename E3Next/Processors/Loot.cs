@@ -173,7 +173,7 @@ namespace E3Core.Processors
 				else
 				{
 					E3.Bots.Broadcast("\agLooting current area.");
-					LootArea();
+					LootArea(force:true);
 				}
 			});
 
@@ -534,7 +534,7 @@ namespace E3Core.Processors
 			E3.Bots.Broadcast("\agFinished looting commanded corpses");
 			
 		}
-		private static void LootArea()
+        private static void LootArea(bool force = false)
         {
             Double startX = MQ.Query<Double>("${Me.X}");
             Double startY = MQ.Query<Double>("${Me.Y}");
@@ -587,17 +587,20 @@ namespace E3Core.Processors
                     
                     EventProcessor.ProcessEventsInQueues("/lootoff");
 					
-                    if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-                    if (EventProcessor.CommandListQueue.Count > 0)
+                    if(!force)
                     {
-                        E3.Bots.Broadcast("Exiting looting to process command.");
-                        return;
-                    }
-                    if(Basics.InCombat())
-                    {
-						if (LootStackableSettings.Enabled && !LootStackableSettings.LootInCombat) return;
-						//if not individual settings, and global loot in combat isn't on, return
-						if (!LootStackableSettings.Enabled && !E3.GeneralSettings.Loot_LootInCombat) return;
+						if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
+						if (EventProcessor.CommandListQueue.Count > 0)
+						{
+							E3.Bots.Broadcast("Exiting looting to process command.");
+							return;
+						}
+						if (Basics.InCombat())
+						{
+							if (LootStackableSettings.Enabled && !LootStackableSettings.LootInCombat) return;
+							//if not individual settings, and global loot in combat isn't on, return
+							if (!LootStackableSettings.Enabled && !E3.GeneralSettings.Loot_LootInCombat) return;
+						}
 					}
                    
                     if (MQ.Query<double>($"${{Spawn[id {c.ID}].Distance3D}}") > E3.GeneralSettings.Loot_CorpseSeekRadius*2)
