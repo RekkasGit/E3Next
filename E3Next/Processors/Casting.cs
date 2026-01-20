@@ -106,10 +106,11 @@ namespace E3Core.Processors
 
 					}
 					String targetName = String.Empty;
-
+					BeforeEventCheck(spell);
+					BeforeSpellCheck(spell, targetID);
+					
 					if (_spawns.TryByID(targetID, out var s))
 					{
-
 						//targets of 0 means keep current target
 						if (targetID > 0)
 						{
@@ -121,8 +122,7 @@ namespace E3Core.Processors
 						}
 						MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 					}
-					BeforeEventCheck(spell);
-					BeforeSpellCheck(spell, targetID);
+				
 					MQ.Cmd($"/alt activate {spell.CastID}");
 					MQ.Delay(300); //necessary to keep things... in order
 					AfterSpellCheck(spell, targetID);

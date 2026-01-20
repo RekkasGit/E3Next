@@ -200,7 +200,7 @@ namespace E3Core.Processors
 						should_be_targeting_mob = E3.CharacterSettings.Nukes.Count > 0;
 						if (!should_be_targeting_mob) should_be_targeting_mob = E3.CharacterSettings.Dots_Assist.Count > 0;
 						if (!should_be_targeting_mob) should_be_targeting_mob = E3.CharacterSettings.Debuffs_OnAssist.Count > 0;
-						if (!should_be_targeting_mob) should_be_targeting_mob = E3.CharacterSettings.Debuffs_OnAssist.Count > 0;
+						if (!should_be_targeting_mob) should_be_targeting_mob = E3.CharacterSettings.Dispels.Count > 0;
 						if (!should_be_targeting_mob) should_be_targeting_mob = !String.Equals(E3.CharacterSettings.Assist_Type, "Off", StringComparison.OrdinalIgnoreCase);
 					}
 

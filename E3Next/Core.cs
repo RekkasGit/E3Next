@@ -181,7 +181,7 @@ namespace MonoCore
             {
                 //some filter regular expressions so we can quicly get rid of combat and "has cast a spell" stuff. 
                 //if your app needs them remove these :)
-                System.Text.RegularExpressions.Regex filterRegex = new Regex(@" points of damage\.");
+                System.Text.RegularExpressions.Regex filterRegex = new Regex(@" points of damage\.",RegexOptions.Compiled);
                 //  _filterRegexes.Add(filterRegex);
                 // filterRegex = new Regex(@" points of non-melee damage\.");
                 // _filterRegexes.Add(filterRegex);
@@ -1043,7 +1043,7 @@ namespace MonoCore
             EventListItem eventToAdd = new EventListItem();
             eventToAdd.regexs = new List<Regex>();
 
-            eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern));
+            eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern,RegexOptions.Compiled));
             eventToAdd.method = method;
             eventToAdd.keyName = keyName;
 
