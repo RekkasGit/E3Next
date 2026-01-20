@@ -56,6 +56,7 @@ namespace E3Core.Processors
 		public static string _guildListFilePath = String.Empty;
 		public static List<string> GuildListMembers = new List<string>();
         public static bool _broadcastWrites = false;
+		public static bool _disableWrites = false;
 
 		public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where legacy e3 was born i believe.
         public static Logging _log = E3.Log;
@@ -170,9 +171,15 @@ namespace E3Core.Processors
 
 			},"Have your toon broadcast writes out to the MQ window for a conssolidated view.");
 
-           
+			EventProcessor.RegisterCommand("/e3debug_disablewrites", (x) =>
+			{
 
-        }
+				e3util.ToggleBooleanSetting(ref _disableWrites, "Disable Writes", x.args);
+
+
+			}, "Disable writes locally");
+
+		}
 		private static void InitSubSystems()
         {
             var methods = AppDomain.CurrentDomain.GetAssemblies()
