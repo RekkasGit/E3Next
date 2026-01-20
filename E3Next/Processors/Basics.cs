@@ -599,7 +599,7 @@ namespace E3Core.Processors
 				else
 				{
 					string filter = String.Empty;
-					if (x.args.Count > 0) filter =" "+ x.args[0];
+					if (x.args.Count > 0) filter =" \""+ x.args[0]+"\"";
 					E3.Bots.BroadcastCommandToGroup($"/e3burnreport me{filter}");//send command to everyone else
 					EventProcessor.ProcessMQCommand($"/e3burnreport me{filter}");//make sure we do the command as well
 				}
