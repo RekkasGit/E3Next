@@ -131,6 +131,16 @@ namespace E3Core.Processors
 
 		}
 
+        public static void DisableAssistIfNeeded()
+        {
+			bool isCorpse = MQ.Query<bool>($"${{Spawn[id {AssistTargetID}].Type.Equal[Corpse]}}");
+			if (isCorpse)
+			{
+				AssistOff();
+				return;
+			}
+		}
+
         /// <summary>
         /// Checks the assist status.
         /// </summary>
@@ -180,8 +190,22 @@ namespace E3Core.Processors
                 }
                 else if (targetId != AssistTargetID)
                 {
-                   //somehow we are not on the proper target and not in manual control and not the issuer of /assistme, put us back on target.
-                    if(!AllowControl)
+                    //somehow we are not on the proper target and not in manual control and not the issuer of /assistme, put us back on target.
+
+                    //however if we have nothing setup to actually force a target, and a priest class
+                    bool should_be_targeting_mob = true;
+                    if ((E3.CurrentClass & Class.Priest) == E3.CurrentClass)
+                    {
+						should_be_targeting_mob = false;
+						should_be_targeting_mob = E3.CharacterSettings.Nukes.Count > 0;
+						if (!should_be_targeting_mob) should_be_targeting_mob = E3.CharacterSettings.Dots_Assist.Count > 0;
+						if (!should_be_targeting_mob) should_be_targeting_mob = E3.CharacterSettings.Debuffs_OnAssist.Count > 0;
+						if (!should_be_targeting_mob) should_be_targeting_mob = E3.CharacterSettings.Debuffs_OnAssist.Count > 0;
+						if (!should_be_targeting_mob) should_be_targeting_mob = !String.Equals(E3.CharacterSettings.Assist_Type, "Off", StringComparison.OrdinalIgnoreCase);
+					}
+
+
+					if (!AllowControl && should_be_targeting_mob)
                     {
                         Casting.TrueTarget(AssistTargetID);
                     }
@@ -846,6 +870,13 @@ namespace E3Core.Processors
         {
            EventProcessor.RegisterCommand("/assistme", (x) =>
            {
+
+               //don't process assist if paused.
+               if(Basics.IsPaused) {
+                   E3.Bots.Broadcast("\arNot assisting! \agI am paused!");
+                   return; 
+               }
+
                 //clear in case its not reset by other means
                 //or you want to attack in enrage
                 _assistIsEnraged = false;

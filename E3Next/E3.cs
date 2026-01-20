@@ -116,6 +116,8 @@ namespace E3Core.Processors
 				}
 				//instant buffs have their own shouldcheck, need it snappy so check quickly.
 				BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
+
+				
 				Assist.Process();
 			}
 			Rez.Process();
