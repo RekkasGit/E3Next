@@ -258,7 +258,7 @@ namespace E3Core.Processors
 				E3.Bots.BroadcastCommandToGroup("/CastingRadiantCure FALSE");
 				//did we find enough sick people? if so, cast cure.
 				Casting.Cast(0, rcSpell);
-				E3.Bots.BroadcastCommandToGroup("/CastingRadiantCure TRUE");
+				E3.Bots.BroadcastCommandToGroup("/timed 15 /CastingRadiantCure TRUE");
 			}
 		}
 	}

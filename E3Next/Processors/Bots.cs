@@ -5,6 +5,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -46,6 +47,7 @@ namespace E3Core.Processors
 		Int32 BaseCorruptedCounters(string name);
 		Int32 BasePoisonedCounters(string name);
         Int32 BaseCursedCounters(string name);
+		void GetMemoryUsage(string name, out double Csharpmemory, out double EQPageMemory);
         bool IsMyBot(string name);
         void Trade(string name);
 		string Query(string name, string query);
@@ -165,22 +167,27 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3botreport", (x) =>
 			{
 
-				int spellShield = MQ.Query<Int32>("${Me.SpellShieldBonus}");
-				int spellDamage = MQ.Query<Int32>("${Me.SpellDamageBonus}");
-				int hitPoints = MQ.Query<Int32>("${Me.CurrentHPs}");
-				int manaPoints = MQ.Query<Int32>("${Me.CurrentMana}");
 
-				Int32 plat = MQ.Query<Int32>("${Me.Platinum}") + MQ.Query<Int32>("${PlatinumBank}");
+				if(!e3util.FilterMe(x))
+				{
+					int spellShield = MQ.Query<Int32>("${Me.SpellShieldBonus}");
+					int spellDamage = MQ.Query<Int32>("${Me.SpellDamageBonus}");
+					int hitPoints = MQ.Query<Int32>("${Me.CurrentHPs}");
+					int manaPoints = MQ.Query<Int32>("${Me.CurrentMana}");
 
-				Int32 AAPts = MQ.Query<Int32>("${Me.AAPoints}");
-				Int32 AAAsigned = MQ.Query<Int32>("${Me.AAPointsAssigned}");
-				Int32 AASpent = MQ.Query<Int32>("${Me.AAPointsSpent}");
-				string AATotal = MQ.Query<string>("${Me.AAPointsTotal}");
-	
-				Broadcast($"HP:\ag{hitPoints}\aw MP:\ag{manaPoints} \awSpellShield:\ag{spellShield} \awSpell DMG:\ag{spellDamage} \awAA:\ag{AAPts.ToString("N0")} \awAA Total:\ag{AASpent.ToString("N0")}  \awPlat:\ag {plat.ToString("N0")}");
+					Int32 plat = MQ.Query<Int32>("${Me.Platinum}") + MQ.Query<Int32>("${PlatinumBank}");
+
+					Int32 AAPts = MQ.Query<Int32>("${Me.AAPoints}");
+					Int32 AAAsigned = MQ.Query<Int32>("${Me.AAPointsAssigned}");
+					Int32 AASpent = MQ.Query<Int32>("${Me.AAPointsSpent}");
+					string AATotal = MQ.Query<string>("${Me.AAPointsTotal}");
+
+					Broadcast($"HP:\ag{hitPoints}\aw MP:\ag{manaPoints} \awSpellShield:\ag{spellShield} \awSpell DMG:\ag{spellDamage} \awAA:\ag{AAPts.ToString("N0")} \awAA Total:\ag{AASpent.ToString("N0")}  \awPlat:\ag {plat.ToString("N0")}");
+				}
+
 				if (x.args.Count == 0)
 				{
-					BroadcastCommand("/e3botreport me");
+					BroadcastCommand("/e3botreport me",false,x);
 				}
 			});
 
@@ -472,7 +479,37 @@ namespace E3Core.Processors
 			
 			return sharedInfo.Data;
 		}
-
+		public void GetMemoryUsage(string name, out double Csharpmemory, out double EQPageMemory)
+		{
+			Csharpmemory = 0;
+			EQPageMemory = 0;
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				//don't have the data yet
+				return; //dunno just say 0
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string keyToUse = "${Me.Memory_CSharp}";
+			if (userTopics.ContainsKey(keyToUse))
+			{
+				var entry = userTopics[keyToUse];
+				lock (entry)
+				{
+					Double.TryParse(entry.Data, out Csharpmemory);
+				}
+			}
+			keyToUse = "${Me.Memory_EQPageFile}";
+			if (userTopics.ContainsKey(keyToUse))
+			{
+				var entry = userTopics[keyToUse];
+				lock (entry)
+				{
+					Double.TryParse(entry.Data, out EQPageMemory);
+				}
+			}
+		}
 		Dictionary<string, SharedNumericDataInt32> _debuffCurseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
 		public int BaseCursedCounters(string name)
         {

@@ -199,18 +199,22 @@ namespace E3Core.Processors
 				}
 			}
 		}
+
+		static Int64 _useBurnsTimeStamp = 0;
+		static Int64 _useBurnsInterval = 500;
+
 		public static void UseBurns()
         {
-            //  if (!e3util.ShouldCheck(ref _nextBurnCheck, _nextBurnCheckInterval)) return;
+              if (!e3util.ShouldCheck(ref _useBurnsTimeStamp, _useBurnsInterval)) return;
             //lets check if there are any events in the queue that we need to check on. 
             EventProcessor.ProcessEventsInQueues("/quickburns");
 			EventProcessor.ProcessEventsInQueues("/epicburns");
 			EventProcessor.ProcessEventsInQueues("/fullburns");
 			EventProcessor.ProcessEventsInQueues("/longburns");
 			EventProcessor.ProcessEventsInQueues("/e3burns");
+			
+			
 			CheckTimeouts();
-
-
 			foreach (var pair in E3.CharacterSettings.BurnCollection)
 			{
 				Burn burn = pair.Value;

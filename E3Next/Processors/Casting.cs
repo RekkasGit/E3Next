@@ -44,7 +44,7 @@ namespace E3Core.Processors
 				Interrupt();
 				return CastReturn.CAST_INTERRUPTED;
 			}
-
+			bool stickPaused = false;
 			bool navActive = false;
 			bool navPaused = false;
 			bool e3PausedNav = false;
@@ -223,9 +223,13 @@ namespace E3Core.Processors
 				}
 				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastingType.Spell)
 				{
+					while (IsCasting())
+					{
+						MQ.Delay(50);
+					}
 					Sing(targetID, spell);
-					Int32 delay = (int)MQ.Query<int>("${Me.CastTimeLeft}") + Classes.Bard.BardLatency();
-					MQ.Delay(delay);
+					//Int32 delay = (int)MQ.Query<int>("${Me.CastTimeLeft}") + Classes.Bard.BardLatency();
+					//MQ.Delay(delay);
 					return CastReturn.CAST_SUCCESS;
 				}
 				else
@@ -314,7 +318,7 @@ namespace E3Core.Processors
 
 
 				CastReturn returnValue = CastReturn.CAST_RESIST;
-
+			
 				//using (_log.Trace())
 				{
 
@@ -435,6 +439,7 @@ namespace E3Core.Processors
 							if (Basics.InCombat() && targetID != Assist.AssistTargetID && MQ.Query<bool>("${Stick.Active}"))
 							{
 								MQ.Cmd("/stick pause");
+								stickPaused = true;
 							}
 							if (!TrueTarget(targetID))
 							{
@@ -595,6 +600,7 @@ namespace E3Core.Processors
 								if (MQ.Query<bool>("${AdvPath.Following}") && E3.Following) MQ.Cmd("/squelch /afollow off");
 								if (MQ.Query<bool>("${MoveTo.Moving}") && E3.Following) MQ.Cmd("/moveto off");
 								MQ.Cmd("/stick pause");
+								stickPaused = true;
 								navActive = MQ.Query<bool>("${Navigation.Active}");
 								navPaused = MQ.Query<bool>("${Navigation.Paused}");
 								e3PausedNav = false;
@@ -964,7 +970,11 @@ namespace E3Core.Processors
 				PubServer.AddTopicMessage("${Casting}", String.Empty);
 				PubServer.AddTopicMessage("${Me.Casting}", String.Empty);
 				//unpause any stick command that may be paused
-				MQ.Cmd("/stick unpause");
+				if(stickPaused)
+				{
+					MQ.Cmd("/stick unpause");
+
+				}
 				//resume navigation.
 				if (e3PausedNav)
 				{
@@ -982,7 +992,7 @@ namespace E3Core.Processors
 			}
 		}
 
-		private static void BeforeEventCheck(Spell spell)
+		public static void BeforeEventCheck(Spell spell)
 		{
 			_log.Write("Checking BeforeEvent...");
 			if (!String.IsNullOrWhiteSpace(spell.BeforeEvent))
@@ -1021,7 +1031,7 @@ namespace E3Core.Processors
 			}
 
 		}
-		private static void AfterEventCheck(Spell spell)
+		public static void AfterEventCheck(Spell spell)
 		{
 
 			//after event, after all things are done
@@ -1249,6 +1259,11 @@ namespace E3Core.Processors
 					_log.Write($"Doing AfterEvent:{spell.AfterEvent}");
 					MQ.Cmd($"/docommand {spell.AfterEvent}");
 				}
+
+
+				MQ.Delay(300);
+				MQ.Delay((int)spell.MyCastTime);
+
 			}
 			else if (spell.CastType == CastingType.AA)
 			{
@@ -1783,7 +1798,7 @@ namespace E3Core.Processors
 				//if a timestamp was set			
 				if(spell.LastCastTimeStamp>0)
 				{
-					if ((Core.StopWatch.ElapsedMilliseconds - spell.LastCastTimeStamp) < spell.RecastDelay)
+					if ((Core.StopWatch.ElapsedMilliseconds - spell.LastCastTimeStamp) < (spell.RecastDelay*1000))
 					{
 						return false;
 					}
@@ -2449,9 +2464,9 @@ namespace E3Core.Processors
 		}
 
 		static Regex _e3buffexistsRegEx = new Regex(@"\$\{E3BuffExists\[([A-Za-z0-9 _]+),([A-Za-z0-9 _]+)\]\}", RegexOptions.Compiled);
-		static Regex _e3BotsRegEx = new Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.([A-Za-z]+)\}", RegexOptions.Compiled);
+		static Regex _e3BotsRegEx = new Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.([A-Za-z0-9 _]+)\}", RegexOptions.Compiled);
 		static Regex _e3BotsBuffsRegEx = new Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.Buffs\[([A-Za-z0-9 _]+)\]\.([A-Za-z0-9]+)\}", RegexOptions.Compiled);
-		static Regex _e3BotsQuery = new Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.Query\[([A-Za-z]+)\]\}", RegexOptions.Compiled);
+		static Regex _e3BotsQuery = new Regex(@"\$\{E3Bots\[([A-Za-z0-9 _]+)\]\.Query\[([A-Za-z0-9 _]+)\]\}", RegexOptions.Compiled);
 		//
 		//to replace the NetBots functionality of query data in the ini files
 		//a bit of regex hell while trying to be somewhat efficent
@@ -2577,6 +2592,12 @@ namespace E3Core.Processors
 						string replacevalue = replaceString;
 						//Rekken
 						string targetname = match.Groups[1].Value;
+
+						if (String.Equals("LOCAL_NAME",targetname,StringComparison.OrdinalIgnoreCase))
+						{
+							targetname = E3.CurrentName;
+						}
+
 						//CurrentHps
 						string query = match.Groups[2].Value;
 
@@ -2585,7 +2606,7 @@ namespace E3Core.Processors
 						{
 							replaceValue = "100";
 						}
-				
+						//string startTime = E3.Bots.Query(user, "${Me.Memory_CSharpStartTime}");
 						string result = E3.Bots.Query(targetname, $"${{Me.{query}}}");
 						if (result != "NULL")
 						{

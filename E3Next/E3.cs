@@ -6,6 +6,7 @@ using E3Core.Utility;
 using MonoCore;
 using NetMQ;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -39,7 +40,7 @@ namespace E3Core.Processors
 			if (!IsInit) { Init(); }
 			var sw = new Stopwatch();
 			sw.Start();
-			//auto 5 min gc check
+			//auto X min gc check
 			CheckGC();
 
 			//did someone send us a command? lets process it. 
@@ -54,10 +55,15 @@ namespace E3Core.Processors
 			//kickout after updates if paused
 			if (IsPaused()) return;
 			//stunned, no sense in processing
+
+			EventProcessor.ProcessEventsInQueues("/nowcast");
+			EventProcessor.ProcessEventsInQueues("/backoff");
+			EventProcessor.ProcessEventsInQueues("/assistme");
+
 			if (MQ.Query<bool>("${Me.Stunned}")) return;
+			if (MQ.Query<bool>("${Me.Invulnerable}")) return; //can't do anything anyway
 			if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //we are dead
 			if (MQ.Query<bool>("${Me.Feigning}") && E3.CharacterSettings.IfFDStayDown) return;
-
 
 			//global action taken key, used by adv settings
 			//if true, adv settings will stop processing for this loop.
@@ -93,10 +99,7 @@ namespace E3Core.Processors
 			{
 				Heals.Check_LifeSupport();
 			}
-			//nowcast before all.
-			EventProcessor.ProcessEventsInQueues("/nowcast");
-			EventProcessor.ProcessEventsInQueues("/backoff");
-			EventProcessor.ProcessEventsInQueues("/assistme");
+			
 
 			if (!_amIDead)
 			{
@@ -113,6 +116,8 @@ namespace E3Core.Processors
 				}
 				//instant buffs have their own shouldcheck, need it snappy so check quickly.
 				BuffCheck.BuffInstant(E3.CharacterSettings.InstantBuffs);
+
+				
 				Assist.Process();
 			}
 			Rez.Process();
@@ -297,10 +302,33 @@ namespace E3Core.Processors
 		private static Int64 _nextBuffUpdateCheckTime = 0;
 		private static Int64 _nextSlowUpdateCheckTime = 0;
 		private static Int64 _nextMiscUpdateCheckTime = 0;
+		private static Int64 _nextMemoryUpdateCheckTime = 0;
+		private static Int64 _nextMemoryUpdateCheckRate = 2000;
 		private static Int64 _MiscUpdateCheckRate = 100;
+
 	
 		//qick hack to prevent calling state update... while in state updates. 
 		public static bool InStateUpdate = false;
+
+		public static void StateUpdates_Memory()
+		{
+			double eqprocessMemoryMB = 0;
+			if (Core._MQ2MonoVersion > 0.35M)
+			{
+				eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
+			}
+			Process currentProcess = System.Diagnostics.Process.GetCurrentProcess();
+			DateTime startTime = currentProcess.StartTime;
+			// Get the private memory size (commit size) in bytes
+			long privateMemoryBytes = GC.GetTotalMemory(false);
+			// Convert to Kilobytes (KB) for easier reading
+			double privateMemoryMb = privateMemoryBytes / 1024f / 1024;
+
+			PubServer.AddTopicMessage("${Me.Memory_CSharp}", $"{Math.Round(privateMemoryMb,2)}");
+			PubServer.AddTopicMessage("${Me.Memory_EQPageFile}", $"{Math.Round(eqprocessMemoryMB,2)}");
+			PubServer.AddTopicMessage("${Me.Memory_EQStartTime}", $"{startTime.ToString()}");
+
+		}
 
 		public static void StateUpdates_Counters()
 		{
@@ -317,6 +345,8 @@ namespace E3Core.Processors
 			string combatString = Basics.InCombat(skipBotCheck: true).ToString();
 			PubServer.AddTopicMessage("${InCombat}", combatString);
 			PubServer.AddTopicMessage("${Me.InCombat}", combatString);
+			bool invulnerable = MQ.Query<bool>("${Me.Invulnerable}");
+			PubServer.AddTopicMessage("${Me.Invulnerable}", invulnerable.ToString());
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 			//PubServer.AddTopicMessage("${EQ.CurrentHoveredWindowName}", MQ.GetHoverWindowName());
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
@@ -326,9 +356,12 @@ namespace E3Core.Processors
 		}
 		public static void StateUpdates_Stats()
 		{
-			PubServer.AddTopicMessage("${Me.PctMana}", MQ.Query<string>("${Me.PctMana}"));
-			PubServer.AddTopicMessage("${Me.PctEndurance}", MQ.Query<string>("${Me.PctEndurance}"));
-			PubServer.AddTopicMessage("${Me.PctHPs}", PctHPs.ToString());
+			string mana = MQ.Query<string>("${Me.PctMana}");
+			PubServer.AddTopicMessage("${Me.PctMana}", mana);
+			string endurance = MQ.Query<string>("${Me.PctEndurance}");
+			PubServer.AddTopicMessage("${Me.PctEndurance}", endurance);
+			string hps = PctHPs.ToString();
+			PubServer.AddTopicMessage("${Me.PctHPs}", hps);
 			PubServer.AddTopicMessage("${Me.CurrentHPs}", MQ.Query<string>("${Me.CurrentHPs}"));
 			PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
 			PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
@@ -363,6 +396,7 @@ namespace E3Core.Processors
 				InStateUpdate = true;
 				PctHPs = MQ.Query<int>("${Me.PctHPs}");
 				IsInvis = MQ.Query<bool>("${Me.Invis}");
+				IsInvul = MQ.Query<bool>("${Me.Invulnerable}");
 				CurrentId = MQ.Query<int>("${Me.ID}");
 				CurrentInCombat = Basics.InCombat();
 
@@ -372,7 +406,7 @@ namespace E3Core.Processors
 					StateUpdates_Stats();
 				}
 				//other stuff not quite so quickly
-				if (e3util.ShouldCheck(ref _nextMiscUpdateCheckTime, _MiscUpdateCheckRate))
+				if (e3util.ShouldCheck(ref _nextMiscUpdateCheckTime, E3.CharacterSettings.CPU_PublishMiscDataInMS))
 				{
 					StateUpdates_Misc();
 				}
@@ -382,7 +416,10 @@ namespace E3Core.Processors
 					StateUpdates_BuffInformation();
 					StateUpdates_Counters();
 				}
-				
+				if (e3util.ShouldCheck(ref _nextMemoryUpdateCheckTime, _nextMemoryUpdateCheckRate))
+				{
+					StateUpdates_Memory();
+				}
 				//not horribly important stuff, can just be sent out whever, currently once per second
 				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
 				{
@@ -448,6 +485,7 @@ namespace E3Core.Processors
         {
             Casting.RefreshGemCache();
             Basics.RefreshGroupMembers();
+			Basics.RefreshRaidMembers();
         }
 		public static void ReInit()
 		{
@@ -460,12 +498,15 @@ namespace E3Core.Processors
 				e3util.MobMaxDebuffSlots = 200;
 			}
 		}
-        private static void Init()
+		
+		private static void Init()
         {
 
             if (!IsInit)
-            {
-                MQ.ClearCommands();
+			{
+				BufferPool.SetCustomBufferPool(new ArrayBufferPool());
+				//BufferPool.SetBufferManagerBufferPool(1024 * 1024 *10, (1024 *1024));
+				MQ.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
 				if (e3util.IsEQLive())
 				{
@@ -540,17 +581,9 @@ namespace E3Core.Processors
         //test to see if we need to GC every 5 min to maintain proper memory profile
         private static void CheckGC()
         {
-            if(_lastGCCollect==0)
-            {
-                _lastGCCollect = Core.StopWatch.ElapsedMilliseconds;
-            }
-
-            if(Core.StopWatch.ElapsedMilliseconds - _lastGCCollect> 300000)
-            {
-                //GC collect every 5 min
-                GC.Collect();
-                _lastGCCollect = Core.StopWatch.ElapsedMilliseconds;
-            }
+			if (Basics.InCombat()) return;
+			if (!e3util.ShouldCheck(ref _lastGCCollect, 300000)) return;
+			GC.Collect();
         }
 
         public static bool ActionTaken = false;
@@ -584,6 +617,7 @@ namespace E3Core.Processors
 		public static int PctHPs;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
+		public static bool IsInvul;
 		public static bool IsMoving;
 		public static bool IsFD;
 

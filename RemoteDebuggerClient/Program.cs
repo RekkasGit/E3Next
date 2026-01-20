@@ -73,9 +73,9 @@ namespace MQServerClient
             _requestSocket.Options.ReceiveHighWatermark = 10000;
             _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
         }
-        public bool TryByID(Int32 id, out Spawn s)
+        public bool TryByID(Int32 id, out Spawn s, bool refresh = true)
         {
-            RefreshListIfNeeded();
+            if(refresh) RefreshListIfNeeded();
             return _spawnsByID.TryGetValue(id, out s);
         }
         public bool TryByName(string name, out Spawn s)
@@ -484,7 +484,7 @@ namespace MQServerClient
 
             //data is back, lets parse out the data
 
-            string mqReturnValue = System.Text.Encoding.Default.GetString(_requestMsg.Data, 0, _requestMsg.Data.Length);
+            string mqReturnValue = System.Text.Encoding.Default.GetString(_requestMsg.Data, 0, _requestMsg.Size);
 
             _requestMsg.Close();
 
@@ -861,7 +861,7 @@ namespace MQServerClient
 
 			//data is back, lets parse out the data
 
-			string mqReturnValue = System.Text.Encoding.Default.GetString(_requestMsg.Data, 0, _requestMsg.Data.Length);
+			string mqReturnValue = System.Text.Encoding.Default.GetString(_requestMsg.Data, 0, _requestMsg.Size);
 
 			_requestMsg.Close();
 
@@ -927,7 +927,7 @@ namespace MQServerClient
 
 			//data is back, lets parse out the data
 
-			string mqReturnValue = System.Text.Encoding.Default.GetString(_requestMsg.Data, 0, _requestMsg.Data.Length);
+			string mqReturnValue = System.Text.Encoding.Default.GetString(_requestMsg.Data, 0, _requestMsg.Size);
 
 			_requestMsg.Close();
 

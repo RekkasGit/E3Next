@@ -86,6 +86,11 @@ namespace E3NextConfigEditor.Client
 			throw new NotImplementedException();
 		}
 
+		public void GetMemoryUsage(string name, out double Csharpmemory, out double EQPageMemory)
+		{
+			throw new NotImplementedException();
+		}
+
 		public bool HasShortBuff(string name, int buffid)
 		{
 			return false;

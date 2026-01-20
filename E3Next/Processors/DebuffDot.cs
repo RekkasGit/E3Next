@@ -83,18 +83,6 @@ namespace E3Core.Processors
 			{
 				return;
 			}
-			//do not off assist if you are in the middle of gather dusk. It sucks to put it on an add. 
-			if (e3util.IsEQEMU() && String.Equals(E3.ServerName,"Lazarus", StringComparison.OrdinalIgnoreCase))
-            {
-				if (E3.CurrentClass == Data.Class.Necromancer)
-				{
-					bool duskfall = MQ.Query<bool>("${$Bool[${Me.Song[Fading Light]}]}");
-					if (duskfall) return;
-					int gatheringDuskTicks = MQ.Query<int>("${Me.Song[Gathering Dusk].Duration.Ticks}");
-
-					if (gatheringDuskTicks > 0 && gatheringDuskTicks <= 2) return;
-				}
-			}
 
 			using (_log.Trace())
 			{
@@ -110,7 +98,7 @@ namespace E3Core.Processors
 					if (!s.Aggressive) continue;
 					if (s.CleanName.EndsWith("s pet")) continue;
 					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-					if (s.Distance > 60) break;//mob is too far away, and since it is ordered, kick out.
+					if (s.Distance > 200) break;//mob is too far away, and since it is ordered, kick out.
 											   //its valid to attack!
                     if(_mobsToIgnoreOffAsist.Contains(s.ID)) continue;
 
@@ -158,6 +146,7 @@ namespace E3Core.Processors
                             _tempOffAssistSpellList.Add(spell);
                     		foreach (Int32 mobid in _mobsToOffAsist.ToList())
                             {
+                                if (!Casting.InRange(mobid, spell)) continue;
                                 CastLongTermSpell(mobid, _tempOffAssistSpellList, _debuffdotTimers);
                                 if (E3.ActionTaken) return;
                             }

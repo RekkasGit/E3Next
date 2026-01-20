@@ -45,7 +45,7 @@ namespace E3Core.Processors
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
 		[ExposedData("Setup", "Version")]
-		public const string E3Version = "1.51-devbuild";
+		public const string E3Version = "1.52_devbuild";
 		[ExposedData("Setup", "BuildDate")]
 		public static string BuildDate = string.Empty;
         public static Boolean _debug = true;
@@ -261,8 +261,11 @@ namespace E3Core.Processors
                     MQ.Cmd("/plugin MQ2LinkDB");
                     MQ.Cmd("/link /scan off");
                 }
-
-            }
+				if (MQ.Query<bool>($"${{Plugin[MQ2Log]}}"))
+				{
+					MQ.Write("\ar***WARNING*** MQ2Log detected, could cause unforseen performance issues..");
+				}
+			}
         }
 		public static void GetExposedDataMappedToDictionary()
 		{

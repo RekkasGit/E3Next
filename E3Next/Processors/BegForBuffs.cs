@@ -15,7 +15,7 @@ namespace E3Core.Processors
   
     public static class BegForBuffs
     {
-        class BuffQueuedItem
+        public class BuffQueuedItem
         {
             public String Requester = String.Empty;
             public String SpellTouse = String.Empty;
@@ -29,10 +29,9 @@ namespace E3Core.Processors
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
-        private static Dictionary<string, Int64> _DIStickCooldown = new Dictionary<string, long>();
         private static Int64 _nextBegCheck = 0;
         private static Int64 _nextBegCheckInterval = 1000;
-        private static Queue<BuffQueuedItem> _queuedBuffs = new Queue<BuffQueuedItem>();
+        public static Queue<BuffQueuedItem> _queuedBuffs = new Queue<BuffQueuedItem>();
         private static SpellAliasDataFile _spellAliasesDataFile = new SpellAliasDataFile();
         public static Dictionary<string, string> SpellAliases;
         [SubSystemInit]

@@ -21,6 +21,9 @@ using System.Windows.Forms.VisualStyles;
 using System.Xml.Linq;
 using System.Diagnostics;
 using E3Core.Utility;
+using Google.Protobuf.WellKnownTypes;
+using E3Core.UI.Windows.NetworkingStats;
+using System.Runtime.InteropServices;
 
 namespace E3Core.Server
 {
@@ -601,13 +604,28 @@ namespace E3Core.Server
 			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 			//timespan we expect to have some type of message
 			TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 2, 0);
+
+
+			//create a cache of all topics sent in their binary form so we do not have to allocate strings.
+			ByteArrayComparer byteComparer = new ByteArrayComparer();
+			ByteArrayComparer byteComparerForDataCache = new ByteArrayComparer();
+			
+			//two caches to avoid allocating strings that are super common. 
+			//for topics we capture all topics as there is a limited amount of them
+			Dictionary<byte[], String> topicCache = new Dictionary<byte[], string>(byteComparer);
+			//for data, we use a LRU as there are way more possiblities
+			//LRU<byte[], string> dataCache = new LRU<byte[], string>(byteComparerForDataCache, 1000);
+
+			//splitting up normal subsocket trans data and command data to deal with different buffer requirements
 			using (var subSocket = new SubscriberSocket())
 			{
-
-				subSocket.Options.ReceiveHighWatermark = 100000;
+				subSocket.Options.ReceiveHighWatermark = 2000;
 				subSocket.Options.TcpKeepalive = true;
 				subSocket.Options.TcpKeepaliveIdle = TimeSpan.FromSeconds(5);
 				subSocket.Options.TcpKeepaliveInterval = TimeSpan.FromSeconds(1);
+				subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
+				subSocket.Subscribe("${Data."); //all the custom data keys a user can create
+				subSocket.Subscribe("${DataChannel.");
 				subSocket.Subscribe(OnCommandName);
 				subSocket.Subscribe("OnCommand-All");
 				subSocket.Subscribe("OnCommand-AllZone");
@@ -630,38 +648,56 @@ namespace E3Core.Server
 				subSocket.Subscribe("ConfigValueReq-");
 				subSocket.Subscribe("ConfigValueResp-");
 				subSocket.Subscribe("ConfigValueUpdate-");
-				subSocket.Subscribe("${Me."); //all Me stuff should be subscribed to
-				subSocket.Subscribe("${Data."); //all the custom data keys a user can create
-				subSocket.Subscribe("${DataChannel.");
+
+				NetMQ.Msg msg_topic = new NetMQ.Msg();
+				NetMQ.Msg msg_payload = new NetMQ.Msg();
 
 				while (Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
 				{
 					Process_CheckNewConnections(subSocket);
 					Process_CheckConnectionsIfStillValid(subSocket, ref lastConnectionCheck);
-
 					string messageTopicReceived;
-					if (subSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
+					
+					msg_topic.InitEmpty();
+					msg_payload.InitEmpty();
+
+					try
 					{
-						string messageReceived;
-						string originalMessage;
-						string payloaduser;
-						try
+						if (subSocket.TryReceive(ref msg_topic, recieveTimeout))
 						{
-							messageReceived = subSocket.ReceiveFrameString();
-							originalMessage = messageReceived;
-							messageReceived = originalMessage;
+							//got a topic, need to update collections
+							byteComparer.ByteArrayLength = msg_topic.Size; //this needs to be here to limit the comparer to how deep into the array to look
+							if (!topicCache.ContainsKey(msg_topic.Data))
+							{
+								string topicString = System.Text.Encoding.Default.GetString(msg_topic.Data, 0, msg_topic.Size);
+								byte[] topickey = new byte[msg_topic.Size];
+								Buffer.BlockCopy(msg_topic.Data, 0, topickey, 0, msg_topic.Size);
+								topicCache.Add(topickey, topicString);
+
+							}
+							//get reused string! no allocation needed.
+							messageTopicReceived = topicCache[msg_topic.Data];
+
+							subSocket.Receive(ref msg_payload);
+
+							string messageReceived;
+							messageReceived = System.Text.Encoding.Default.GetString(msg_payload.Data, 0, msg_payload.Size);
+
+							string originalMessage = messageReceived;
+							string payloaduser;
 							Int32 indexOfColon = messageReceived.IndexOf(':');
 							payloaduser = messageReceived.Substring(0, indexOfColon);
 							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
 							indexOfColon = messageReceived.IndexOf(':');
 							string payloadServer = messageReceived.Substring(0, indexOfColon);
-							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
 
-							//message not from the same server, skip it.
 							if (!String.Equals(payloadServer, E3.ServerName))
 							{
 								continue;
 							}
+
+							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
+
 							if (UsersConnectedTo.TryGetValue(payloaduser, out var connectionInfo))
 							{
 								connectionInfo.LastMessageTimeStamp = Core.StopWatch.ElapsedMilliseconds;
@@ -855,19 +891,23 @@ namespace E3Core.Server
 								ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
 
 							}
-						}
-						catch (Exception ex)
-						{
-							Debug.WriteLine($"Error{ex.Message}");
-							//MQ.WriteDelayed("Error in shared data thread. Message:" + ex.Message + "  stack:" + ex.StackTrace);
+
 						}
 					}
+					catch(Exception ex)
+					{
+						MQ.WriteDelayed("Networking error:"+ex.Message );
+					}
+					finally
+					{
+						msg_payload.Close();
+						msg_topic.Close();
+					}
 				}
-				subSocket.Dispose();
 			}
 			MQ.WriteDelayed($"Shutting down Share Data Thread.");
 		}
-
+		
 		// Helper to scan local inventory for a given item type (e.g., "Food" or "Drink")
 		private static List<string> ScanInventoryByType(string type)
 		{

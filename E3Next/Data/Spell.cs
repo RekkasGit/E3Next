@@ -194,7 +194,10 @@ namespace E3Core.Data
                     }
 					else if (value.StartsWith("MinDurationBeforeRecast|", StringComparison.OrdinalIgnoreCase))
 					{
-						MinDurationBeforeRecast = GetArgument<Int64>(value) *1000;
+                        string minDuration = value;
+                        if (minDuration.EndsWith("s")) minDuration = minDuration.Substring(0, value.Length - 1);
+
+						MinDurationBeforeRecast = GetArgument<Int64>(minDuration) *1000;
 					}
 					else if (value.StartsWith("BeforeCast|", StringComparison.OrdinalIgnoreCase))
                     {
@@ -655,7 +658,7 @@ namespace E3Core.Data
                     DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.Duration.TotalSeconds}}");
                     RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Spell.RecastTime}}");
                     RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.RecoveryTime}}");
-                    MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Spell.CastTime}}");
+                    MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].CastTime}}");
 					MyRange = MQ.Query<Double>($"${{Me.Inventory[{invSlot}].Spell.MyRange}}");
 					Description = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.Description}}");
                     ResistType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Spell.ResistType}}");
@@ -1455,7 +1458,7 @@ namespace E3Core.Data
             string t_maxMana = (MaxMana == 0) ? String.Empty : $"/MaxMana|{MaxMana}";
             string t_ignoreStackRules = (!IgnoreStackRules) ? String.Empty : $"/IgnoreStackRules";
             string t_healthMax = (HealthMax == 100) ? String.Empty : $"/HealthMax|{HealthMax}";
-            string t_MinDurationBeforeRecast = (MinDurationBeforeRecast == 0) ? String.Empty : $"/MinDurationBeforeRecast|{MinDurationBeforeRecast / 1000}s";
+            string t_MinDurationBeforeRecast = (MinDurationBeforeRecast == 0) ? String.Empty : $"/MinDurationBeforeRecast|{MinDurationBeforeRecast / 1000}";
             string t_MaxTries = (MaxTries == MaxTriesDefault) ? String.Empty : $"/MaxTries|{MaxTries}";
             string t_CastIF = (String.IsNullOrWhiteSpace(this.CastIF)) ? String.Empty : $"/CastIF|{CastIF}";
             string t_MinEnd = (MinEnd == 0) ? String.Empty : $"/MinEnd|{MinEnd}";
