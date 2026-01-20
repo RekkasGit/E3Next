@@ -164,7 +164,20 @@ namespace E3Core.Processors
                 } 
             });
 
-            EventProcessor.RegisterCommand("/looton", (x) =>
+            EventProcessor.RegisterCommand("/e3loot-area", (x) =>
+            {
+				if (x.args.Count > 0 && E3.Bots.BotsConnected().Contains(x.args[0], StringComparer.OrdinalIgnoreCase) && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+				{
+					E3.Bots.BroadcastCommandToPerson(x.args[0], "/e3loot-area");
+				}
+				else
+				{
+					E3.Bots.Broadcast("\agLooting current area.");
+					LootArea();
+				}
+			});
+
+		   EventProcessor.RegisterCommand("/looton", (x) =>
             {
                 
                 if (x.args.Count >0 && E3.Bots.BotsConnected().Contains(x.args[0], StringComparer.OrdinalIgnoreCase) && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
