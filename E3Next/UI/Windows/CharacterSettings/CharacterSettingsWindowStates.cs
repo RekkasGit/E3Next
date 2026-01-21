@@ -85,6 +85,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		public bool ShowGemOverlay = true;
 
+		// Tools pane tab selection (0 = Info, 1 = General)
+		public int ToolsPaneSelectedTab = 0;
+
 	}
 	public class State_AllPlayers
 	{
