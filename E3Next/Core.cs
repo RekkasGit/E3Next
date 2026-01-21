@@ -181,7 +181,7 @@ namespace MonoCore
             {
                 //some filter regular expressions so we can quicly get rid of combat and "has cast a spell" stuff. 
                 //if your app needs them remove these :)
-                System.Text.RegularExpressions.Regex filterRegex = new Regex(@" points of damage\.");
+                System.Text.RegularExpressions.Regex filterRegex = new Regex(@" points of damage\.",RegexOptions.Compiled);
                 //  _filterRegexes.Add(filterRegex);
                 // filterRegex = new Regex(@" points of non-melee damage\.");
                 // _filterRegexes.Add(filterRegex);
@@ -1043,7 +1043,7 @@ namespace MonoCore
             EventListItem eventToAdd = new EventListItem();
             eventToAdd.regexs = new List<Regex>();
 
-            eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern));
+            eventToAdd.regexs.Add(new System.Text.RegularExpressions.Regex(pattern,RegexOptions.Compiled));
             eventToAdd.method = method;
             eventToAdd.keyName = keyName;
 
@@ -1752,23 +1752,21 @@ namespace MonoCore
 
         public void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
-            //write on current thread, it will be queued up by MQ. 
-            //needed to deal with certain lock situations and just keeps things simple. 
-            if (E3Core.Processors.Setup._broadcastWrites)
-            {
-                E3.Bots.Broadcast(query);
-            }
+			if (E3Core.Processors.Setup._disableWrites) return;
+			//write on current thread, it will be queued up by MQ. 
+			//needed to deal with certain lock situations and just keeps things simple. 
+			if (E3Core.Processors.Setup._broadcastWrites) E3.Bots.Broadcast(query);
+			
             Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
             return;
         }
         public void WriteDelayed(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
         {
-            //delay the write until we are in the C# area and the MQ thread are haulted to prevent crashes
-            if (E3Core.Processors.Setup._broadcastWrites)
-            {
-                E3.Bots.Broadcast(query);
-            }
-            DelayedWrites.Enqueue($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
+			if (E3Core.Processors.Setup._disableWrites) return;
+			//delay the write until we are in the C# area and the MQ thread are haulted to prevent crashes
+			if (E3Core.Processors.Setup._broadcastWrites) E3.Bots.Broadcast(query);
+
+			DelayedWrites.Enqueue($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss")} \aw- {query}");
             return;
         }
         public void TraceStart(string methodName)
