@@ -1920,7 +1920,8 @@ namespace E3Core.Settings
 				+ "     [color=teal]AutoAttack[/color] - Melees and uses configured abilities without automated movement or /stick.\n"
 				+ "     [color=teal]Ranged[/color] - Uses ranged attacks, /stick, and full configuration logic.\n"
 				+ "     [color=teal]AutoFire[/color] - Uses ranged attacks and configuration without automated movement or /stick.\n"
-				+ "     [color=teal]Off[/color] - Disables all movement, facing, and /stick; only uses configuration-based abilities."
+				+ "     [color=teal]Off[/color] - Disables all movement, facing, and /stick; only uses configuration-based abilities.\n"
+				+ "     [color=teal]Manual[/color] - Completely ignores /assistme commands so this character never auto-targets from E3."
 			},
 			{"Assist Settings::SmartTaunt(On/Off)", "If enabled, WAR/SK/PAL classes will automatically try and taunt off non-tank PCs to maintain aggro control."},
 			{"Assist Settings::Melee Stick Point", "The position you want your character to stand during combat.\n\n"

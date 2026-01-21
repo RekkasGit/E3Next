@@ -638,6 +638,7 @@ namespace E3Core.Server
 				subSocket.Subscribe("OnCommand-Zone");
 				subSocket.Subscribe("BroadCastMessage");
 				subSocket.Subscribe("BroadCastMessageZone");
+				subSocket.Subscribe("E3Tasks");
 				// e3imgui Add From Catalog peer relay topics
 				// Requests addressed to specific toons and responses back to requester
 				subSocket.Subscribe($"CatalogReq-{E3.CurrentName.ToLower()}");
