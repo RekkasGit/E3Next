@@ -476,6 +476,10 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static IntPtr mq_CreateTextureFromData(byte[] data, int width, int height, int channels);
 		[MethodImpl(MethodImplOptions.InternalCall)]
+
+		public extern static void imgui_SetNextWindowBgAlpha(float alpha);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+
 		public extern static void mq_DestroyTexture(IntPtr textureId);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_SetNextWindowSize(float width, float height);

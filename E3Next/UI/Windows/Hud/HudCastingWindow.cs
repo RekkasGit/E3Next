@@ -23,7 +23,7 @@ namespace E3Core.UI.Windows.Hud
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 		private static string _WindowName = "E3 Casting Hud";
-		
+		private static float _windowAlpha = 0;
 		[SubSystemInit]
 		public static void Init()
 		{
@@ -37,6 +37,13 @@ namespace E3Core.UI.Windows.Hud
 					MQ.Write("This requires MQ2Mono 0.36 or greater");
 					return;
 				}	
+
+				if(x.args.Count>0)
+				{
+					float.TryParse(x.args[0], out _windowAlpha);
+					MQ.Write($"Setting alpha to {_windowAlpha}");
+
+				}
 
 				ToggleWindow();
 			}, "toggle memory stats window");
@@ -104,12 +111,13 @@ namespace E3Core.UI.Windows.Hud
 			try
 			{
 				CheckRefresh();
+			
 				using (var window = ImGUIWindow.Aquire())
 				{
 					imgui_SetNextWindowSizeWithCond(360f, 320f, (int)ImGuiCond.FirstUseEver);
 					int flags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse
-						| ImGuiWindowFlags.ImGuiWindowFlags_NoBackground);
-					
+						);
+					imgui_SetNextWindowBgAlpha(_windowAlpha);
 					if (window.Begin(_WindowName, flags))
 					{
 						var entries = _tableRows;
