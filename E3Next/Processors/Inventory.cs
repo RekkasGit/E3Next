@@ -545,7 +545,7 @@ namespace E3Core.Processors
                     }
                     else if (E3.GeneralSettings.AutoTrade_Group)
                     {
-                        if (Basics.GroupMembers.Contains(trader.ID))
+                        if (Basics.GroupMembersInZone.Contains(trader.ID))
                         {
                             doTrade = true;
                         }

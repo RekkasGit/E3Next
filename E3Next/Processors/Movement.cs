@@ -725,7 +725,7 @@ namespace E3Core.Processors
                     Spawn s;
                     if (_spawns.TryByName(cothTarget, out s))
                     {
-                        if (!Basics.GroupMembers.Contains(s.ID)) 
+                        if (!Basics.GroupMembersInZone.Contains(s.ID)) 
                         {
                             E3.Bots.Broadcast($"{s.CleanName} is not in our group, can't summon.");
                             return;
@@ -797,7 +797,7 @@ namespace E3Core.Processors
             }
 
             //randomly pick group member
-            foreach (int memberid in Basics.GroupMembers.OrderBy(x=>Guid.NewGuid()).ToList())
+            foreach (int memberid in Basics.GroupMembersInZone.OrderBy(x=>Guid.NewGuid()).ToList())
             {
                 //if (Basics.InCombat())
                 //{

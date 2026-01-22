@@ -937,7 +937,7 @@ namespace E3Core.Processors
 			//using (_log.Trace())
 			{
 
-				foreach (var name in Basics.GroupMembers)
+				foreach (var name in Basics.GroupMembersInZone)
 				{
 					
 					Int32 targetID = 0;

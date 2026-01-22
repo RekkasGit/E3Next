@@ -31,7 +31,7 @@ namespace E3Core.Processors
 		[ExposedData("Basics", "IsPaused")]
 		public static bool IsPaused = false;
 		[ExposedData("Basics", "GroupMembers")]
-		public static List<int> GroupMembers = new List<int>();
+		public static List<int> GroupMembersInZone = new List<int>();
         public static List<string> GroupMemberNames = new List<string>();
         public static List<int> RaidMembers = new List<int>();
         public static List<string> RaidMemberNames = new List<string>();
@@ -1290,18 +1290,23 @@ namespace E3Core.Processors
 
             int groupCount = MQ.Query<int>("${Group}");
             groupCount++;
-            GroupMembers.Clear();
+            GroupMembersInZone.Clear();
             GroupMemberNames.Clear();
             //refresh group members.
             
             for (int i = 0; i < groupCount; i++)
-            {
-                int id = MQ.Query<int>($"${{Group.Member[{i}].ID}}");
+			{
+				string name = MQ.Query<string>($"${{Group.Member[{i}].Name}}");
+				if(name!="NULL")
+				{
+					GroupMemberNames.Add(name);
+				}
+				int id = MQ.Query<int>($"${{Group.Member[{i}].ID}}");
                 if(id>0)
                 {
-                    string name = MQ.Query<string>($"${{Group.Member[{i}].Name}}");
-					GroupMembers.Add(id);
-                    GroupMemberNames.Add(name);
+                  
+					GroupMembersInZone.Add(id);
+                  
                 }
             }
 

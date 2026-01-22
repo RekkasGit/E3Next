@@ -886,6 +886,7 @@ namespace E3Core.Utility
 			}
 		}
 		static System.Text.StringBuilder buffInfoStringBuilder = new StringBuilder();
+		//this is accessed about 1 per second, to publish out buff info, while we are here we will populate the buff cache.
 		public static string GenerateBuffInfoForPubSub()
 		{
 			using (_log.Trace())
@@ -900,10 +901,50 @@ namespace E3Core.Utility
 					string spellID = MQ.Query<string>($"${{Me.Buff[{i}].Spell.ID}}");
 					if (spellID != "NULL")
 					{
+						Int32 spell_id = 0;
+						if (Int32.TryParse(spellID, out spell_id))
+						{
+
+							if (!BuffCheck.BuffInfoCache.ContainsKey(spell_id))
+							{
+								var spell = new Data.Spell(spellID);
+								if (spell.CastType == CastingType.Spell || spell.CastType == CastingType.AA)
+								{
+									for (Int32 inc = 0; inc < 12; inc++)
+									{
+										string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), inc);
+										if(!String.IsNullOrEmpty(teffect))
+										{
+											spell.SpellEffects.Add(teffect);
+										}
+									}
+								}
+								BuffCheck.BuffInfoCache.TryAdd(spell_id, spell);
+							}
+						}
+
+
 						string duration = MQ.Query<string>($"${{Me.Buff[{i}].Duration}}");
+						string hitcount = MQ.Query<string>($"${{Me.Buff[{i}].HitCount}}");
+						string spellType = MQ.Query<string>($"${{Me.Buff[{i}].SpellType}}");
+						/*	SpellType_Detrimental = 0,
+							SpellType_Beneficial = 1,
+							SpellType_BeneficialGroupOnly = 2
+						*/
+						Int32 spellTypeID = 0;
+						if (spellType == "Detrimental") spellTypeID = 0;
+						if (spellType == "Beneficial") spellTypeID = 1;
+						if (spellType == "Beneficial(Group)") spellTypeID = 2;
+
 						buffInfoStringBuilder.Append(spellID);
 						buffInfoStringBuilder.Append(",");
 						buffInfoStringBuilder.Append(duration);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(hitcount);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(spellTypeID);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(0); //0 for buff
 						buffInfoStringBuilder.Append(":");
 					}
 				}
@@ -914,9 +955,22 @@ namespace E3Core.Utility
 					if (spellID != "NULL")
 					{
 						string duration = MQ.Query<string>($"${{Me.Song[{i}].Duration}}");
+						string hitcount = MQ.Query<string>($"${{Me.Song[{i}].HitCount}}");
+						string spellType = MQ.Query<string>($"${{Me.Song[{i}].SpellType}}");
+						Int32 spellTypeID = 0;
+						if (spellType == "Detrimental") spellTypeID = 0;
+						if (spellType == "Beneficial") spellTypeID = 1;
+						if (spellType == "Beneficial(Group)") spellTypeID = 2;
+
 						buffInfoStringBuilder.Append(spellID);
 						buffInfoStringBuilder.Append(",");
 						buffInfoStringBuilder.Append(duration);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(hitcount);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(spellTypeID);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(1); //1 for song
 						buffInfoStringBuilder.Append(":");
 					}
 				}

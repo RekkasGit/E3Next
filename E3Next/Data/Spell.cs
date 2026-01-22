@@ -20,7 +20,8 @@ namespace E3Core.Data
         Ability,
         Item,
         None,
-        SpellInBook
+        SpellInBook,
+        SpellByID
     }
 
     public class Spell
@@ -567,38 +568,43 @@ namespace E3Core.Data
             Initialized = true;
 			if (CastTypeOverride == CastingType.None)
 			{
-				if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
-				{
-					CastType = CastingType.AA;
-				}
-				else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}"))
-				{
-					CastType = CastingType.Spell;
-					SpellInBook = true;
-				}
-				else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}"))
-				{
-					CastType = CastingType.Disc;
-				}
-				else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}") || String.Compare("Slam", CastName, true) == 0)
-				{
-					CastType = CastingType.Ability;
-				}
-				else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}"))
-				{
+                if(Int32.TryParse(CastName,out _))
+                {
+                    //its a spell id of some type
+                    CastType = CastingType.SpellByID;
+                }
+                else if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
+                {
+                    CastType = CastingType.AA;
+                }
+                else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}"))
+                {
+                    CastType = CastingType.Spell;
+                    SpellInBook = true;
+                }
+                else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}"))
+                {
+                    CastType = CastingType.Disc;
+                }
+                else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}") || String.Compare("Slam", CastName, true) == 0)
+                {
+                    CastType = CastingType.Ability;
+                }
+                else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}"))
+                {
 
-					CastType = CastingType.Item;
-				}
-				else if (MQ.Query<bool>($"${{Spell[{CastName}]}}"))
-				{
-					//final check to see if its a spell, that maybe a mob casts?
-					CastType = CastingType.Spell;
-				}
-				else
-				{
-					//bad spell/item/etc
-					CastType = CastingType.None;
-				}
+                    CastType = CastingType.Item;
+                }
+                else if (MQ.Query<bool>($"${{Spell[{CastName}]}}"))
+                {
+                    //final check to see if its a spell, that maybe a mob casts?
+                    CastType = CastingType.Spell;
+                }
+                else
+                {
+                    //bad spell/item/etc
+                    CastType = CastingType.None;
+                }
 			}
 			else
 			{
@@ -816,7 +822,7 @@ namespace E3Core.Data
                 Subcategory = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.Subcategory}}");
                
 			}
-			else if (CastType == CastingType.Spell || CastType== CastingType.SpellInBook)
+			else if (CastType == CastingType.Spell || CastType== CastingType.SpellInBook || CastType==CastingType.SpellByID)
             {
 				
 				if (SpellInBook && Int32.TryParse(CastName, out _)==false)
@@ -881,6 +887,7 @@ namespace E3Core.Data
                 else
                 {
                    
+                   
 
 
                     TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
@@ -902,7 +909,6 @@ namespace E3Core.Data
                     Description = MQ.Query<string>($"${{Spell[{CastName}].Description}}");
 					ResistType = MQ.Query<String>($"${{Spell[{CastName}].ResistType}}");
 					ResistAdj = MQ.Query<Int32>($"${{Spell[{CastName}].ResistAdj}}");
-
 
 					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
@@ -927,8 +933,14 @@ namespace E3Core.Data
 
                     }
                     Mana = MQ.Query<Int32>($"${{Spell[{CastName}].Mana}}");
-                    SpellName = CastName;
-                    SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
+					SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
+					if (CastType == CastingType.SpellByID)
+					{
+						CastName = MQ.Query<String>($"${{Spell[{CastName}].Name}}");
+                        CastType = CastingType.Spell;
+					}
+					SpellName = CastName;
+                   
                     CastID = SpellID;
 					//this was to work around issues using spell IDs
 					if (CastType == CastingType.SpellInBook)

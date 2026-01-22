@@ -1,4 +1,5 @@
-﻿using E3Core.Processors;
+﻿using E3Core.Data;
+using E3Core.Processors;
 using E3Core.Utility;
 using MonoCore;
 using System;
@@ -22,7 +23,7 @@ namespace E3Core.UI.Windows.Hud
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 		private static string _WindowName = "E3 Casting Hud";
-	
+		
 		[SubSystemInit]
 		public static void Init()
 		{
@@ -37,7 +38,7 @@ namespace E3Core.UI.Windows.Hud
 					return;
 				}	
 
-				HudCastingWindow.ToggleWindow();
+				ToggleWindow();
 			}, "toggle memory stats window");
 		}
 		public static void ToggleWindow()

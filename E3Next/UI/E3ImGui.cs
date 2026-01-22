@@ -247,6 +247,13 @@ namespace MonoCore
 			ImGuiTableColumnFlags_IndentEnable = 1 << 16,  // Use current Indent value when entering cell (default for column 0).
 			ImGuiTableColumnFlags_IndentDisable = 1 << 17,  // Ignore current Indent value when entering cell (default for columns > 0). Indentation changes _within_ the cell will still be honored.
 		}
+
+		public static uint GetColor(uint r, uint g, uint b, uint a)
+		{
+			return (a << 24) | (b << 16) | (g << 8) | r;
+		}
+
+
 		public static UITheme _currentTheme = UITheme.DarkTeal;
 
         private static readonly int _themePushCount = 27;
@@ -366,6 +373,8 @@ namespace MonoCore
 		public extern static void imgui_EndTable();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_TableSetupColumn(string label, int flags, float initWidth);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_TableSetupColumn_Default(string label);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_TableHeadersRow();
 		[MethodImpl(MethodImplOptions.InternalCall)]

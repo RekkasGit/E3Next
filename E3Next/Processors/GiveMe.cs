@@ -266,7 +266,7 @@ namespace E3Core.Processors
                             if (_spawns.TryByName(item.Supplier, out s))
                             {
                                 //can only request group spells for group members
-                                if (_groupSpellRequests.ContainsKey(item.ItemName) && !Basics.GroupMembers.Contains(s.ID)) return;
+                                if (_groupSpellRequests.ContainsKey(item.ItemName) && !Basics.GroupMembersInZone.Contains(s.ID)) return;
 
                                 if (s.Distance < 100)
                                 {
@@ -414,7 +414,7 @@ namespace E3Core.Processors
             if(_spawns.TryByName(whoToGiveTo, out spawn))
             {
                 //check if group member
-                if (!Basics.GroupMembers.Contains(spawn.ID)) return;
+                if (!Basics.GroupMembersInZone.Contains(spawn.ID)) return;
 
                 Spell s;
                 if(!String.IsNullOrWhiteSpace(spellToUse))
@@ -457,7 +457,7 @@ namespace E3Core.Processors
 			{
 			
 				//check if group member
-				if (!Basics.GroupMembers.Contains(spawn.ID)) return;
+				if (!Basics.GroupMembersInZone.Contains(spawn.ID)) return;
 				Casting.TrueTarget(spawn.ID);
 				Spell s;
 				if (!Spell.LoadedSpellsByName.TryGetValue(spellToUse, out s))

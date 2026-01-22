@@ -350,7 +350,9 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 			//PubServer.AddTopicMessage("${EQ.CurrentHoveredWindowName}", MQ.GetHoverWindowName());
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
-			PubServer.AddTopicMessage("${Me.ZoneID}", MQ.Query<string>("${Zone.ID}"));
+			ZoneID = MQ.Query<Int32>("${Zone.ID}");
+			PubServer.AddTopicMessage("${Me.ZoneID}", ZoneID.ToString());
+			PubServer.AddTopicMessage("${Me.ZoneShortName}", MQ.Query<string>("${Zone.ShortName}"));
 			PubServer.AddTopicMessage("${Me.Instance}", MQ.Query<string>("${Me.Instance}"));
 
 		}
@@ -365,6 +367,16 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.CurrentHPs}", MQ.Query<string>("${Me.CurrentHPs}"));
 			PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
 			PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
+
+			Loc_X = MQ.Query<double>("${Me.X}");
+			Loc_Y = MQ.Query<double>("${Me.Y}");
+			Loc_Z = MQ.Query<double>("${Me.Z}");
+			PubServer.AddTopicMessage("${Me.X}", Loc_X.ToString());
+			PubServer.AddTopicMessage("${Me.Y}", Loc_Y.ToString());
+			PubServer.AddTopicMessage("${Me.Z}", Loc_Z.ToString());
+			PubServer.AddTopicMessage("${Me.IsInvis}", IsInvis.ToString());
+
+
 		}
 		public static void StateUpdates_BuffInformation()
 		{
@@ -615,6 +627,10 @@ namespace E3Core.Processors
         public static string CurrentShortClassString;
 		public static System.Random Random = new System.Random();
 		public static int PctHPs;
+		public static int ZoneID;
+		public static double Loc_X;
+		public static double Loc_Y;
+		public static double Loc_Z;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
 		public static bool IsInvul;

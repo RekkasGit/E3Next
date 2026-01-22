@@ -31,7 +31,7 @@ namespace E3Core.Classes
         public static void Check_RangerAggro()
         {
             if (!e3util.ShouldCheck(ref _nextAggroCheck, _nextAggroRefreshTimeInterval)) return;
-            if (Basics.GroupMembers.Count <5) return;
+            if (Basics.GroupMembersInZone.Count <5) return;
             if (!Assist.IsAssisting) return;
             //lets check our aggro.
             Int32 aggroPct = MQ.Query<Int32>("${Target.PctAggro}");

@@ -73,7 +73,7 @@ namespace E3Core.Processors
 			foreach (var spell in E3.CharacterSettings.CureAll)
 			{
 
-				foreach (var id in Basics.GroupMembers)
+				foreach (var id in Basics.GroupMembersInZone)
 				{
 					Spawn s;
 					if (_spawns.TryByID(id, out s))
@@ -119,7 +119,7 @@ namespace E3Core.Processors
 							}
 							Int32 numberSick = 0;
 
-							foreach (var id in Basics.GroupMembers)
+							foreach (var id in Basics.GroupMembersInZone)
 							{
 								Spawn s;
 								if (_spawns.TryByID(id, out s))

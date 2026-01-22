@@ -5,6 +5,7 @@ using E3Core.Settings;
 using E3Core.Utility;
 using MonoCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
@@ -33,6 +34,8 @@ namespace E3Core.Processors
 		private static Int64 _nextBandoBuffCheck = 0;
 		private static Int64 _nextBandoBuffCheckInterval = 1000;
 
+		public static ConcurrentDictionary<Int32, Spell> BuffInfoCache = new ConcurrentDictionary<int, Spell>();
+
 		private static Int64 _nextBotCacheCheckTime = 0;
 		private static Int64 _nextBotCacheCheckTimeInterval = 1000;
 		private static Int64 _nextInstantBuffRefresh = 0;
@@ -54,6 +57,15 @@ namespace E3Core.Processors
 		private static Int64 _nextBlockBuffCheckInterval = 250;
 		[ExposedData("BuffCheck", "InitAuras")]
 		static bool _initAuras = false;
+
+
+		private static void UpdateBuffCache()
+		{
+
+
+
+
+		}
 
 		public static void AddToBuffCheckTimer(int millisecondsToAdd)
 		{
@@ -902,7 +914,7 @@ namespace E3Core.Processors
 								return BuffBots_ReturnType.Continue;
 							}
 
-							if (!Basics.GroupMembers.Any() || !Basics.GroupMembers.Contains(spawn.ID))
+							if (!Basics.GroupMembersInZone.Any() || !Basics.GroupMembersInZone.Contains(spawn.ID))
 							{
 								return BuffBots_ReturnType.Continue;
 							}
