@@ -41,7 +41,7 @@ namespace E3Core.UI.Windows.Hud
 				if(x.args.Count>0)
 				{
 					float.TryParse(x.args[0], out _windowAlpha);
-					MQ.Write($"Setting alpha to {_windowAlpha}");
+					//MQ.Write($"Setting alpha to {_windowAlpha}");
 
 				}
 
