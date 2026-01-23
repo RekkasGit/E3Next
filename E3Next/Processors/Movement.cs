@@ -38,6 +38,7 @@ namespace E3Core.Processors
         private static Int64 _nextChaseCheckInterval = 10;
 		[ExposedData("Movement", "ChaseTarget")]
 		public static string ChaseTargetName = String.Empty;
+        public static float _followMeDistance = 10;
 		public static List<string> _clickitUseDoorZones = new List<string>() { "poknowledge", "potranq", "potimea", "potimeb","anguish","solrotower" };
 
 		[SubSystemInit]
@@ -169,7 +170,9 @@ namespace E3Core.Processors
                             {
                                 MQ.Delay(100);
                                 //if a bot, use afollow, else use stick
-                                MQ.Cmd("/afollow on nodoor");
+                                string mqcommand = $"/afollow on nodoor {_followMeDistance}";
+								MQ.Cmd(mqcommand);
+                               // E3.Bots.Broadcast($"issuing command {mqcommand}");
                                 Following = true;
                             }
                         }
@@ -545,10 +548,36 @@ namespace E3Core.Processors
                 }
 
             });
+
+           
+
             EventProcessor.RegisterCommand("/followme", (x) =>
             {
                 string user = string.Empty;
 
+                //need to check if a distance is supplid in the args
+                //kinda hacky bit keeps the old legacy logic the same and allows users to do /followme 30
+                string distance =String.Empty;
+                //using strings as well floats can get weird going from value to string and back
+                foreach (var arg in x.args)
+                {
+                    if(float.TryParse(arg, out var _))
+                    {
+                        distance = arg;
+                        break;
+                    }
+                }
+                if (distance !=String.Empty)
+                {
+                    _followMeDistance = float.Parse(distance);
+                    if (_followMeDistance < 1) _followMeDistance = 1;
+                    if (_followMeDistance > 200) _followMeDistance = 200;
+                    x.args.Remove(distance);
+                }
+                else
+                {
+                    _followMeDistance = 10;
+                }
                 if (x.args.Count > 0)
                 {
                     if (!e3util.FilterMe(x))
@@ -557,10 +586,10 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByName(user, out s))
                         {
-                           
+
                             FollowTargetName = user;
                             Following = false;
-                            if(E3.CurrentClass!=Class.Bard)
+                            if (E3.CurrentClass != Class.Bard)
                             {
                                 Casting.Interrupt();
                             }
@@ -575,8 +604,8 @@ namespace E3Core.Processors
                 {
                     Rez.Reset();
                     //we are telling people to follow us
-                    E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName, x);
-                   
+                    E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName + $" {_followMeDistance}", x);
+
                 }
             });
 
