@@ -602,7 +602,7 @@ namespace E3Core.Processors
 			//have to parse out all the MQ macro information
 			if (!noparse)
 			{
-				message = MQ.Query<string>(message);
+				message = MQ.Query<string>(message,false);
 			}
 			PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
 		}
@@ -611,10 +611,10 @@ namespace E3Core.Processors
 			//have to parse out all the MQ macro information
 			if (!noparse)
 			{
-				message = MQ.Query<string>(message);
+				message = MQ.Query<string>(message, false);
 			}
 			PubServer.AddTopicMessage("BroadCastMessageZone", $"{E3.CurrentName}:{message}");
-			//	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
+			//	MQ.WriteDelayed($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
 		}
 		public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
         {
@@ -631,11 +631,11 @@ namespace E3Core.Processors
 			}
             if(!noparse)
             {
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 
 			PubServer.AddTopicMessage("OnCommand-AllExceptMe", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayAll: \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ayAll: \ag{command}");
 		}
 		public void BroadcastCommandAll(string command, bool noparse = false, CommandMatch match = null)
 		{
@@ -652,7 +652,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -671,7 +671,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-Raid", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -690,10 +690,10 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-RaidNotMe", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayRaid All: \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ayRaid All: \ag{command}");
 		}
 
 		public void BroadcastCommandRaidZone(string command, CommandMatch match = null, bool noparse = false)
@@ -712,7 +712,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-RaidZone", $"{E3.CurrentName}:{noparse}:{command}");
 
@@ -734,7 +734,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-RaidZoneNotMe", $"{E3.CurrentName}:{noparse}:{command}");
 
@@ -754,7 +754,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-AllZone", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -773,10 +773,10 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-AllExceptMeZone", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayGroup All: \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ayGroup All: \ag{command}");
 		}
 		public void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false)
         {
@@ -810,10 +810,10 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-Group", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayGroup: \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ayGroup: \ag{command}");
 		}
 		public void BroadcastCommandToGroupZone(string command, CommandMatch match = null, bool noparse = false)
 		{
@@ -847,10 +847,10 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupZone", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayGroup Zone : \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ayGroup Zone : \ag{command}");
 		}
 		public void BroadcastCommandToGroupAll(string command, CommandMatch match = null, bool noparse = false)
 		{
@@ -884,7 +884,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupAll", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -920,7 +920,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command, false);
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupAllZone", $"{E3.CurrentName}:{noparse}:{command}");
 			
@@ -929,10 +929,10 @@ namespace E3Core.Processors
 		{
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command,false);
 			}
 			PubServer.AddTopicMessage($"${{DataChannel.{channel}}}", $"{E3.CurrentName}:{false}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ay{channel} : \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ay{channel} : \ag{command}");
 
 		}
 		public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
@@ -940,10 +940,10 @@ namespace E3Core.Processors
             person = e3util.FirstCharToUpper(person);
             if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				command = MQ.Query<string>(command,false);
 			}
      		PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ay{person} : \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ay{person} : \ag{command}");
 
 		}
 		List<int> _buffListReturnValue = new List<int>();

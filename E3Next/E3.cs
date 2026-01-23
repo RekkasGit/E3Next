@@ -162,7 +162,8 @@ namespace E3Core.Processors
 
 			//process any requests commands from the UI.
 			PubClient.ProcessRequests();
-
+			
+			
 			//bard song player
 			if (E3.CurrentClass == Data.Class.Bard)
 			{
@@ -411,6 +412,8 @@ namespace E3Core.Processors
 				IsInvul = MQ.Query<bool>("${Me.Invulnerable}");
 				CurrentId = MQ.Query<int>("${Me.ID}");
 				CurrentInCombat = Basics.InCombat();
+
+				E3ImGUI.ProcessMQCommands();
 
 				//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
 				if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, E3.CharacterSettings.CPU_PublishStateDataInMS))

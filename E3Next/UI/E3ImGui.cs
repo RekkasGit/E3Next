@@ -1,3 +1,4 @@
+using E3Core.Processors;
 using System;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
@@ -5,41 +6,55 @@ using System.Windows.Forms;
 
 namespace MonoCore
 {
-    // /e3imgui UI extracted into dedicated partial class file
-    public static  class E3ImGUI
-    {
-        // Theme system with multiple themes
-        public enum UITheme
-        {
-            DarkTeal,      // Original E3 theme
-            DarkBlue,      // Blue accent variant
-            DarkPurple,    // Purple accent variant
-            DarkOrange,    // Orange accent variant
-            DarkGreen      // Green accent variant
-        }
-	public enum ImGuiWindowFlags
+
+	// /e3imgui UI extracted into dedicated partial class file
+	public static class E3ImGUI
 	{
-		ImGuiWindowFlags_None = 0,
-		ImGuiWindowFlags_NoTitleBar = 1 << 0,   // Disable title-bar
-		ImGuiWindowFlags_NoResize = 1 << 1,   // Disable user resizing with the lower-right grip
-		ImGuiWindowFlags_NoMove = 1 << 2,   // Disable user moving the window
-		ImGuiWindowFlags_NoScrollbar = 1 << 3,   // Disable scrollbars (window can still scroll with mouse or programmatically)
-		ImGuiWindowFlags_NoScrollWithMouse = 1 << 4,   // Disable user vertically scrolling with mouse wheel. On child window, mouse wheel will be forwarded to the parent unless NoScrollbar is also set.
-		ImGuiWindowFlags_NoCollapse = 1 << 5,   // Disable user collapsing window by double-clicking on it. Also referred to as "window menu button" within a docking node.
-		ImGuiWindowFlags_AlwaysAutoResize = 1 << 6,   // Resize every window to its content every frame
-		ImGuiWindowFlags_NoBackground = 1 << 7,   // Disable drawing background color (WindowBg, etc.) and outside border. Similar as using SetNextWindowBgAlpha(0.0f).
-		ImGuiWindowFlags_NoSavedSettings = 1 << 8,   // Never load/save settings in .ini file
-		ImGuiWindowFlags_NoMouseInputs = 1 << 9,   // Disable catching mouse, hovering test with pass through.
-		ImGuiWindowFlags_MenuBar = 1 << 10,  // Has a menu-bar
-		ImGuiWindowFlags_HorizontalScrollbar = 1 << 11,  // Allow horizontal scrollbar to appear (off by default). You may use SetNextWindowContentSize(ImVec2(width,0.0f)); prior to calling Begin() to specify width. Read code in imgui_demo in the "Horizontal Scrolling" section.
-		ImGuiWindowFlags_NoFocusOnAppearing = 1 << 12,  // Disable taking focus when transitioning from hidden to visible state
-		ImGuiWindowFlags_NoBringToFrontOnFocus = 1 << 13,  // Disable bringing window to front when taking focus (e.g. clicking on it or programmatically giving it focus)
-		ImGuiWindowFlags_AlwaysVerticalScrollbar = 1 << 14,  // Always show vertical scrollbar (even if ContentSize.y < Size.y)
-		ImGuiWindowFlags_AlwaysHorizontalScrollbar = 1 << 15,  // Always show horizontal scrollbar (even if ContentSize.x < Size.x)
-		ImGuiWindowFlags_NoNavInputs = 1 << 16,  // No keyboard/gamepad navigation within the window
-		ImGuiWindowFlags_NoNavFocus = 1 << 17,  // No focusing toward this window with keyboard/gamepad navigation (e.g. skipped by CTRL+TAB)
-		ImGuiWindowFlags_UnsavedDocument = 1 << 18,  // Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
-		ImGuiWindowFlags_NoDocking = 1 << 19,  // Disable docking of this window
+		private static IMQ MQ = E3.MQ;
+		public static ConcurrentQueue<string> MQCommandQueue = new ConcurrentQueue<string>();
+		public static void ProcessMQCommands()
+		{
+			while (MQCommandQueue.Count > 0)
+			{
+				string command;
+				if (MQCommandQueue.TryDequeue(out command))
+				{
+					E3.MQ.Cmd(command);
+				}
+			}
+		}
+		// Theme system with multiple themes
+		public enum UITheme
+		{
+			DarkTeal,      // Original E3 theme
+			DarkBlue,      // Blue accent variant
+			DarkPurple,    // Purple accent variant
+			DarkOrange,    // Orange accent variant
+			DarkGreen      // Green accent variant
+		}
+		public enum ImGuiWindowFlags
+		{
+			ImGuiWindowFlags_None = 0,
+			ImGuiWindowFlags_NoTitleBar = 1 << 0,   // Disable title-bar
+			ImGuiWindowFlags_NoResize = 1 << 1,   // Disable user resizing with the lower-right grip
+			ImGuiWindowFlags_NoMove = 1 << 2,   // Disable user moving the window
+			ImGuiWindowFlags_NoScrollbar = 1 << 3,   // Disable scrollbars (window can still scroll with mouse or programmatically)
+			ImGuiWindowFlags_NoScrollWithMouse = 1 << 4,   // Disable user vertically scrolling with mouse wheel. On child window, mouse wheel will be forwarded to the parent unless NoScrollbar is also set.
+			ImGuiWindowFlags_NoCollapse = 1 << 5,   // Disable user collapsing window by double-clicking on it. Also referred to as "window menu button" within a docking node.
+			ImGuiWindowFlags_AlwaysAutoResize = 1 << 6,   // Resize every window to its content every frame
+			ImGuiWindowFlags_NoBackground = 1 << 7,   // Disable drawing background color (WindowBg, etc.) and outside border. Similar as using SetNextWindowBgAlpha(0.0f).
+			ImGuiWindowFlags_NoSavedSettings = 1 << 8,   // Never load/save settings in .ini file
+			ImGuiWindowFlags_NoMouseInputs = 1 << 9,   // Disable catching mouse, hovering test with pass through.
+			ImGuiWindowFlags_MenuBar = 1 << 10,  // Has a menu-bar
+			ImGuiWindowFlags_HorizontalScrollbar = 1 << 11,  // Allow horizontal scrollbar to appear (off by default). You may use SetNextWindowContentSize(ImVec2(width,0.0f)); prior to calling Begin() to specify width. Read code in imgui_demo in the "Horizontal Scrolling" section.
+			ImGuiWindowFlags_NoFocusOnAppearing = 1 << 12,  // Disable taking focus when transitioning from hidden to visible state
+			ImGuiWindowFlags_NoBringToFrontOnFocus = 1 << 13,  // Disable bringing window to front when taking focus (e.g. clicking on it or programmatically giving it focus)
+			ImGuiWindowFlags_AlwaysVerticalScrollbar = 1 << 14,  // Always show vertical scrollbar (even if ContentSize.y < Size.y)
+			ImGuiWindowFlags_AlwaysHorizontalScrollbar = 1 << 15,  // Always show horizontal scrollbar (even if ContentSize.x < Size.x)
+			ImGuiWindowFlags_NoNavInputs = 1 << 16,  // No keyboard/gamepad navigation within the window
+			ImGuiWindowFlags_NoNavFocus = 1 << 17,  // No focusing toward this window with keyboard/gamepad navigation (e.g. skipped by CTRL+TAB)
+			ImGuiWindowFlags_UnsavedDocument = 1 << 18,  // Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
+			ImGuiWindowFlags_NoDocking = 1 << 19,  // Disable docking of this window
 
 			ImGuiWindowFlags_NoNav = ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus,
 			ImGuiWindowFlags_NoDecoration = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse,
@@ -104,54 +119,71 @@ namespace MonoCore
 		{
 			Text,
 			TextDisabled,
-			WindowBg,
-			ChildBg,
-			PopupBg,
+			WindowBg,              // Background of normal windows
+			ChildBg,               // Background of child windows
+			PopupBg,               // Background of popups, menus, tooltips windows
 			Border,
 			BorderShadow,
-			FrameBg,
+			FrameBg,               // Background of checkbox, radio button, plot, slider, text input
 			FrameBgHovered,
 			FrameBgActive,
-			TitleBg,
-			TitleBgActive,
-			TitleBgCollapsed,
+			TitleBg,               // Title bar
+			TitleBgActive,         // Title bar when focused
+			TitleBgCollapsed,      // Title bar when collapsed
 			MenuBarBg,
 			ScrollbarBg,
 			ScrollbarGrab,
 			ScrollbarGrabHovered,
 			ScrollbarGrabActive,
-			CheckMark,
+			CheckMark,             // Checkbox tick and RadioButton circle
 			SliderGrab,
 			SliderGrabActive,
 			Button,
 			ButtonHovered,
 			ButtonActive,
-			Header,
+			Header,                // Header* colors are used for CollapsingHeader, TreeNode, Selectable, MenuItem
 			HeaderHovered,
 			HeaderActive,
 			Separator,
 			SeparatorHovered,
 			SeparatorActive,
-			ResizeGrip,
+			ResizeGrip,            // Resize grip in lower-right and lower-left corners of windows.
 			ResizeGripHovered,
 			ResizeGripActive,
-			Tab,
-			TabHovered,
-			TabActive,
-			TabUnfocused,
-			TabUnfocusedActive,
+			TabHovered,            // Tab background, when hovered
+			Tab,                   // Tab background, when tab-bar is focused & tab is unselected
+			TabSelected,           // Tab background, when tab-bar is focused & tab is selected
+			TabSelectedOverline,   // Tab horizontal overline, when tab-bar is focused & tab is selected
+			TabDimmed,             // Tab background, when tab-bar is unfocused & tab is unselected
+			TabDimmedSelected,     // Tab background, when tab-bar is unfocused & tab is selected
+			TabDimmedSelectedOverline,//..horizontal overline, when tab-bar is unfocused & tab is selected
+			DockingPreview,        // Preview overlay color when about to docking something
+			DockingEmptyBg,        // Background color for empty node (e.g. CentralNode with no window docked into it)
 			PlotLines,
 			PlotLinesHovered,
 			PlotHistogram,
 			PlotHistogramHovered,
+			TableHeaderBg,         // Table header background
+			TableBorderStrong,     // Table outer and header borders (prefer using Alpha=1.0 here)
+			TableBorderLight,      // Table inner borders (prefer using Alpha=1.0 here)
+			TableRowBg,            // Table row background (even rows)
+			TableRowBgAlt,         // Table row background (odd rows)
+			TextLink,              // Hyperlink color
 			TextSelectedBg,
-			DragDropTarget,
-			NavHighlight,
-			NavWindowingHighlight,
-			NavWindowingDimBg,
-			ModalWindowDimBg,
-			COUNT
+			DragDropTarget,        // Rectangle highlighting a drop target
+			NavCursor,             // Color of keyboard/gamepad navigation cursor/rectangle, when visible
+			NavWindowingHighlight, // Highlight window when using CTRL+TAB
+			NavWindowingDimBg,     // Darken/colorize entire screen behind the CTRL+TAB window list, when active
+			ModalWindowDimBg,      // Darken/colorize entire screen behind a modal window, when one is active
+			COUNT,
 		}
+		public enum ImGuiTableBgTarget
+		{
+			None = 0,
+			RowBg0 = 1,        // Set row background color 0 (generally used for background, automatically set when ImGuiTableFlags_RowBg is used)
+			RowBg1 = 2,        // Set row background color 1 (generally used for selection marking)
+			CellBg = 3,        // Set cell background color (top-most color)
+		};
 		public enum ImGuiCond
 		{
 			None = 0,        // No condition (always set the variable), same as _Always
@@ -256,10 +288,10 @@ namespace MonoCore
 
 		public static UITheme _currentTheme = UITheme.DarkTeal;
 
-        private static readonly int _themePushCount = 27;
+		private static readonly int _themePushCount = 27;
 		// Rounding settings
 		public static float _rounding = 6.0f;
-        public static string _roundingBuf = string.Empty; // UI buffer for editing rounding
+		public static string _roundingBuf = string.Empty; // UI buffer for editing rounding
 		public static int _roundingVersion = 0; // bump to force InputText to refresh its content
 		public static readonly int _roundingPushCount = 7; // Window, Child, Popup, Frame, Grab, Tab, Scrollbar
 
@@ -345,7 +377,7 @@ namespace MonoCore
 		public extern static bool imgui_InputInt_Clear(string id);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static bool imgui_InputInt(string id, int initial,int steps,int faststeps);
+		public extern static bool imgui_InputInt(string id, int initial, int steps, int faststeps);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static int imgui_InputInt_Get(string id);
 
@@ -366,7 +398,7 @@ namespace MonoCore
 		public extern static bool imgui_MenuItem(string label);
 		// Tables
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static bool imgui_BeginTable(string id, int columns, int flags, float outerWidth,float outerHeight);
+		public extern static bool imgui_BeginTable(string id, int columns, int flags, float outerWidth, float outerHeight);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_BeginTableS(string id, int columns, int flags);
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -508,310 +540,313 @@ namespace MonoCore
 		public extern static void imgui_SetCursorPosX(float x);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
-	public extern static void imgui_SetNextWindowSizeWithCond(float width, float height, int cond);
+		public extern static void imgui_SetNextWindowSizeWithCond(float width, float height, int cond);
 
-	[MethodImpl(MethodImplOptions.InternalCall)]
-	public extern static void imgui_SetNextWindowSizeConstraints(float min_width, float min_height,float max_width,float max_height);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetNextWindowSizeConstraints(float min_width, float min_height, float max_width, float max_height);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetWindowHeight();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetWindowWidth();
 
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_TableSetBgColor(int tablebgcolortarget, uint color, int currentcolumn);
+
 
 		#endregion
 
 		private static void PushCommonRounding()
-        {
-            // Apply consistent rounding across key style vars
-            imgui_PushStyleVarFloat((int)ImGuiStyleVar.WindowRounding, _rounding);
-            imgui_PushStyleVarFloat((int)ImGuiStyleVar.ChildRounding, _rounding);
-            imgui_PushStyleVarFloat((int)ImGuiStyleVar.PopupRounding, _rounding);
-            imgui_PushStyleVarFloat((int)ImGuiStyleVar.FrameRounding, _rounding);
-            imgui_PushStyleVarFloat((int)ImGuiStyleVar.GrabRounding, Math.Max(3.0f, _rounding - 2.0f));
-            imgui_PushStyleVarFloat((int)ImGuiStyleVar.TabRounding, _rounding);
-            imgui_PushStyleVarFloat((int)ImGuiStyleVar.ScrollbarRounding, _rounding);
-        }
-        
-        public static void PushCurrentTheme()
-        {
-            // Always push rounding first so it applies consistently regardless of selected theme
-            PushCommonRounding();
-            switch (_currentTheme)
-            {
-                case UITheme.DarkTeal:
-                    PushDarkTealTheme();
-                    break;
-                case UITheme.DarkBlue:
-                    PushDarkBlueTheme();
-                    break;
-                case UITheme.DarkPurple:
-                    PushDarkPurpleTheme();
-                    break;
-                case UITheme.DarkOrange:
-                    PushDarkOrangeTheme();
-                    break;
-                case UITheme.DarkGreen:
-                    PushDarkGreenTheme();
-                    break;
-                default:
-                    PushDarkTealTheme();
-                    break;
-            }
-        }
-        
-        private static void PushDarkTealTheme()
-        {
-            // Backgrounds
-            imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.13f, 0.13f, 0.14f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0.11f, 0.11f, 0.12f, 1.0f);
-            // Frames
-            imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.17f, 0.18f, 0.20f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered, 0.20f, 0.21f, 0.23f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgActive, 0.19f, 0.20f, 0.22f, 1.0f);
-            // Buttons (teal accent)
-            imgui_PushStyleColor((int)ImGuiCol.Button, 0.13f, 0.55f, 0.53f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.17f, 0.66f, 0.64f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.12f, 0.48f, 0.47f, 1.0f);
-            // Headers (used by tree nodes, selectable headers)
-            imgui_PushStyleColor((int)ImGuiCol.Header, 0.12f, 0.50f, 0.49f, 0.55f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderHovered, 0.16f, 0.62f, 0.60f, 0.80f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderActive, 0.12f, 0.50f, 0.49f, 1.00f);
-            // Tabs
-            imgui_PushStyleColor((int)ImGuiCol.Tab, 0.11f, 0.48f, 0.46f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabHovered, 0.16f, 0.62f, 0.60f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabActive, 0.13f, 0.55f, 0.53f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocused, 0.09f, 0.09f, 0.10f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocusedActive, 0.11f, 0.11f, 0.12f, 1.0f);
-            // Sliders / checks
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrab, 0.29f, 0.79f, 0.76f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 0.36f, 0.86f, 0.80f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.CheckMark, 0.36f, 0.86f, 0.80f, 1.0f);
-            // Titles
-            imgui_PushStyleColor((int)ImGuiCol.TitleBg, 0.10f, 0.10f, 0.11f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TitleBgActive, 0.12f, 0.12f, 0.14f, 1.0f);
-            // Separators
-            imgui_PushStyleColor((int)ImGuiCol.Separator, 0.25f, 0.27f, 0.30f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered, 0.30f, 0.33f, 0.36f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorActive, 0.21f, 0.60f, 0.60f, 1.0f);
-            // Scrollbars
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab, 0.28f, 0.30f, 0.32f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.32f, 0.34f, 0.36f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive, 0.36f, 0.38f, 0.40f, 1.0f);
-        }
-        
-        private static void PushDarkBlueTheme()
-        {
-            // Backgrounds
-            imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.13f, 0.13f, 0.16f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0.11f, 0.11f, 0.14f, 1.0f);
-            // Frames
-            imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.17f, 0.18f, 0.22f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered, 0.20f, 0.21f, 0.26f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgActive, 0.19f, 0.20f, 0.24f, 1.0f);
-            // Buttons (blue accent)
-            imgui_PushStyleColor((int)ImGuiCol.Button, 0.26f, 0.39f, 0.98f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.32f, 0.45f, 1.0f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.22f, 0.35f, 0.85f, 1.0f);
-            // Headers
-            imgui_PushStyleColor((int)ImGuiCol.Header, 0.26f, 0.39f, 0.98f, 0.55f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderHovered, 0.32f, 0.45f, 1.0f, 0.80f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderActive, 0.26f, 0.39f, 0.98f, 1.00f);
-            // Tabs
-            imgui_PushStyleColor((int)ImGuiCol.Tab, 0.22f, 0.35f, 0.85f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabHovered, 0.32f, 0.45f, 1.0f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabActive, 0.26f, 0.39f, 0.98f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocused, 0.09f, 0.09f, 0.12f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocusedActive, 0.11f, 0.11f, 0.14f, 1.0f);
-            // Sliders / checks
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrab, 0.32f, 0.45f, 1.0f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 0.38f, 0.51f, 1.0f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.CheckMark, 0.38f, 0.51f, 1.0f, 1.0f);
-            // Titles
-            imgui_PushStyleColor((int)ImGuiCol.TitleBg, 0.10f, 0.10f, 0.13f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TitleBgActive, 0.12f, 0.12f, 0.16f, 1.0f);
-            // Separators
-            imgui_PushStyleColor((int)ImGuiCol.Separator, 0.25f, 0.27f, 0.32f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered, 0.30f, 0.33f, 0.38f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorActive, 0.26f, 0.39f, 0.98f, 1.0f);
-            // Scrollbars
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab, 0.28f, 0.30f, 0.34f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.32f, 0.34f, 0.38f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive, 0.36f, 0.38f, 0.42f, 1.0f);
-        }
-        
-        private static void PushDarkPurpleTheme()
-        {
-            // Backgrounds
-            imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.15f, 0.12f, 0.16f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0.13f, 0.10f, 0.14f, 1.0f);
-            // Frames
-            imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.19f, 0.16f, 0.22f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered, 0.22f, 0.19f, 0.26f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgActive, 0.21f, 0.18f, 0.24f, 1.0f);
-            // Buttons (purple accent)
-            imgui_PushStyleColor((int)ImGuiCol.Button, 0.68f, 0.26f, 0.78f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.78f, 0.32f, 0.88f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.58f, 0.22f, 0.68f, 1.0f);
-            // Headers
-            imgui_PushStyleColor((int)ImGuiCol.Header, 0.68f, 0.26f, 0.78f, 0.55f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderHovered, 0.78f, 0.32f, 0.88f, 0.80f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderActive, 0.68f, 0.26f, 0.78f, 1.00f);
-            // Tabs
-            imgui_PushStyleColor((int)ImGuiCol.Tab, 0.58f, 0.22f, 0.68f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabHovered, 0.78f, 0.32f, 0.88f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabActive, 0.68f, 0.26f, 0.78f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocused, 0.11f, 0.08f, 0.12f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocusedActive, 0.13f, 0.10f, 0.14f, 1.0f);
-            // Sliders / checks
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrab, 0.78f, 0.32f, 0.88f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 0.88f, 0.42f, 0.98f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.CheckMark, 0.88f, 0.42f, 0.98f, 1.0f);
-            // Titles
-            imgui_PushStyleColor((int)ImGuiCol.TitleBg, 0.12f, 0.09f, 0.13f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TitleBgActive, 0.14f, 0.11f, 0.16f, 1.0f);
-            // Separators
-            imgui_PushStyleColor((int)ImGuiCol.Separator, 0.27f, 0.24f, 0.32f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered, 0.32f, 0.29f, 0.38f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorActive, 0.68f, 0.26f, 0.78f, 1.0f);
-            // Scrollbars
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab, 0.30f, 0.27f, 0.34f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.34f, 0.31f, 0.38f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive, 0.38f, 0.35f, 0.42f, 1.0f);
-        }
-        
-        private static void PushDarkOrangeTheme()
-        {
-            // Backgrounds
-            imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.16f, 0.13f, 0.12f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0.14f, 0.11f, 0.10f, 1.0f);
-            // Frames
-            imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.22f, 0.18f, 0.16f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered, 0.26f, 0.21f, 0.19f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgActive, 0.24f, 0.20f, 0.18f, 1.0f);
-            // Buttons (orange accent)
-            imgui_PushStyleColor((int)ImGuiCol.Button, 0.98f, 0.55f, 0.26f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 1.0f, 0.65f, 0.32f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.85f, 0.48f, 0.22f, 1.0f);
-            // Headers
-            imgui_PushStyleColor((int)ImGuiCol.Header, 0.98f, 0.55f, 0.26f, 0.55f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderHovered, 1.0f, 0.65f, 0.32f, 0.80f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderActive, 0.98f, 0.55f, 0.26f, 1.00f);
-            // Tabs
-            imgui_PushStyleColor((int)ImGuiCol.Tab, 0.85f, 0.48f, 0.22f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabHovered, 1.0f, 0.65f, 0.32f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabActive, 0.98f, 0.55f, 0.26f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocused, 0.12f, 0.09f, 0.08f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocusedActive, 0.14f, 0.11f, 0.10f, 1.0f);
-            // Sliders / checks
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrab, 1.0f, 0.65f, 0.32f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 1.0f, 0.75f, 0.42f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.CheckMark, 1.0f, 0.75f, 0.42f, 1.0f);
-            // Titles
-            imgui_PushStyleColor((int)ImGuiCol.TitleBg, 0.13f, 0.10f, 0.09f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TitleBgActive, 0.16f, 0.12f, 0.11f, 1.0f);
-            // Separators
-            imgui_PushStyleColor((int)ImGuiCol.Separator, 0.32f, 0.27f, 0.24f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered, 0.38f, 0.33f, 0.30f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorActive, 0.98f, 0.55f, 0.26f, 1.0f);
-            // Scrollbars
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab, 0.34f, 0.30f, 0.28f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.38f, 0.34f, 0.32f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive, 0.42f, 0.38f, 0.36f, 1.0f);
-        }
-        
-        private static void PushDarkGreenTheme()
-        {
-            // Backgrounds
-            imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.12f, 0.16f, 0.13f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0.10f, 0.14f, 0.11f, 1.0f);
-            // Frames
-            imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.16f, 0.22f, 0.18f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered, 0.19f, 0.26f, 0.21f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.FrameBgActive, 0.18f, 0.24f, 0.20f, 1.0f);
-            // Buttons (green accent)
-            imgui_PushStyleColor((int)ImGuiCol.Button, 0.26f, 0.78f, 0.39f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.32f, 0.88f, 0.45f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.22f, 0.68f, 0.35f, 1.0f);
-            // Headers
-            imgui_PushStyleColor((int)ImGuiCol.Header, 0.26f, 0.78f, 0.39f, 0.55f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderHovered, 0.32f, 0.88f, 0.45f, 0.80f);
-            imgui_PushStyleColor((int)ImGuiCol.HeaderActive, 0.26f, 0.78f, 0.39f, 1.00f);
-            // Tabs
-            imgui_PushStyleColor((int)ImGuiCol.Tab, 0.22f, 0.68f, 0.35f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabHovered, 0.32f, 0.88f, 0.45f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabActive, 0.26f, 0.78f, 0.39f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocused, 0.08f, 0.12f, 0.09f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TabUnfocusedActive, 0.10f, 0.14f, 0.11f, 1.0f);
-            // Sliders / checks
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrab, 0.32f, 0.88f, 0.45f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 0.42f, 0.98f, 0.55f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.CheckMark, 0.42f, 0.98f, 0.55f, 1.0f);
-            // Titles
-            imgui_PushStyleColor((int)ImGuiCol.TitleBg, 0.09f, 0.13f, 0.10f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.TitleBgActive, 0.11f, 0.16f, 0.12f, 1.0f);
-            // Separators
-            imgui_PushStyleColor((int)ImGuiCol.Separator, 0.24f, 0.32f, 0.27f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered, 0.30f, 0.38f, 0.33f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.SeparatorActive, 0.26f, 0.78f, 0.39f, 1.0f);
-            // Scrollbars
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab, 0.27f, 0.34f, 0.30f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.31f, 0.38f, 0.34f, 1.0f);
-            imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive, 0.35f, 0.42f, 0.38f, 1.0f);
-        }
-        
-        
-        public static void PopCurrentTheme()
-        {
-            // Pop in reverse order: style vars then colors
-            imgui_PopStyleVar(_roundingPushCount);
-            imgui_PopStyleColor(_themePushCount);
-        }
+		{
+			// Apply consistent rounding across key style vars
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.WindowRounding, _rounding);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.ChildRounding, _rounding);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.PopupRounding, _rounding);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.FrameRounding, _rounding);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.GrabRounding, Math.Max(3.0f, _rounding - 2.0f));
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.TabRounding, _rounding);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.ScrollbarRounding, _rounding);
+		}
 
-        
-        public static float[] GetThemePreviewColor(UITheme theme)
-        {
-            switch (theme)
-            {
-                case UITheme.DarkTeal:
-                    return new float[] { 0.13f, 0.55f, 0.53f, 1.0f };
-                case UITheme.DarkBlue:
-                    return new float[] { 0.26f, 0.39f, 0.98f, 1.0f };
-                case UITheme.DarkPurple:
-                    return new float[] { 0.68f, 0.26f, 0.78f, 1.0f };
-                case UITheme.DarkOrange:
-                    return new float[] { 0.98f, 0.55f, 0.26f, 1.0f };
-                case UITheme.DarkGreen:
-                    return new float[] { 0.26f, 0.78f, 0.39f, 1.0f };
-                default:
-                    return new float[] { 0.13f, 0.55f, 0.53f, 1.0f };
-            }
-        }
-        
-        public static string GetThemeDescription(UITheme theme)
-        {
-            switch (theme)
-            {
-                case UITheme.DarkTeal:
-                    return "The original E3Next dark theme with teal accents. Professional and easy on the eyes for long sessions.";
-                case UITheme.DarkBlue:
-                    return "Dark theme with vibrant blue accents. Clean and modern appearance with good contrast.";
-                case UITheme.DarkPurple:
-                    return "Dark theme with purple accents. Unique and stylish with a mystical feel.";
-                case UITheme.DarkOrange:
-                    return "Dark theme with warm orange accents. Energetic and attention-grabbing design.";
-                case UITheme.DarkGreen:
-                    return "Dark theme with green accents. Natural and calming, easy on the eyes.";
-                default:
-                    return "Theme description not available.";
-            }
-        }
-        /// <summary>
-        /// Primary C++ entry point, calls the Invoke on all registered windows.
-        /// </summary>
-        public static void OnUpdateImGui()
-        {
-            if(Core.IsProcessing)
-            {
+		public static void PushCurrentTheme()
+		{
+			// Always push rounding first so it applies consistently regardless of selected theme
+			PushCommonRounding();
+			switch (_currentTheme)
+			{
+				case UITheme.DarkTeal:
+					PushDarkTealTheme();
+					break;
+				case UITheme.DarkBlue:
+					PushDarkBlueTheme();
+					break;
+				case UITheme.DarkPurple:
+					PushDarkPurpleTheme();
+					break;
+				case UITheme.DarkOrange:
+					PushDarkOrangeTheme();
+					break;
+				case UITheme.DarkGreen:
+					PushDarkGreenTheme();
+					break;
+				default:
+					PushDarkTealTheme();
+					break;
+			}
+		}
+
+		private static void PushDarkTealTheme()
+		{
+			// Backgrounds
+			imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.13f, 0.13f, 0.14f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0.11f, 0.11f, 0.12f, 1.0f);
+			// Frames
+			imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.17f, 0.18f, 0.20f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered, 0.20f, 0.21f, 0.23f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.FrameBgActive, 0.19f, 0.20f, 0.22f, 1.0f);
+			// Buttons (teal accent)
+			imgui_PushStyleColor((int)ImGuiCol.Button, 0.13f, 0.55f, 0.53f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.17f, 0.66f, 0.64f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.12f, 0.48f, 0.47f, 1.0f);
+			// Headers (used by tree nodes, selectable headers)
+			imgui_PushStyleColor((int)ImGuiCol.Header, 0.12f, 0.50f, 0.49f, 0.55f);
+			imgui_PushStyleColor((int)ImGuiCol.HeaderHovered, 0.16f, 0.62f, 0.60f, 0.80f);
+			imgui_PushStyleColor((int)ImGuiCol.HeaderActive, 0.12f, 0.50f, 0.49f, 1.00f);
+			// Tabs
+			imgui_PushStyleColor((int)ImGuiCol.Tab, 0.11f, 0.48f, 0.46f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabHovered, 0.16f, 0.62f, 0.60f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabSelected, 0.13f, 0.55f, 0.53f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabDimmed, 0.09f, 0.09f, 0.10f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabDimmedSelected, 0.11f, 0.11f, 0.12f, 1.0f);
+			// Sliders / checks
+			imgui_PushStyleColor((int)ImGuiCol.SliderGrab, 0.29f, 0.79f, 0.76f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 0.36f, 0.86f, 0.80f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.CheckMark, 0.36f, 0.86f, 0.80f, 1.0f);
+			// Titles
+			imgui_PushStyleColor((int)ImGuiCol.TitleBg, 0.10f, 0.10f, 0.11f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TitleBgActive, 0.12f, 0.12f, 0.14f, 1.0f);
+			// Separators
+			imgui_PushStyleColor((int)ImGuiCol.Separator, 0.25f, 0.27f, 0.30f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered, 0.30f, 0.33f, 0.36f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SeparatorActive, 0.21f, 0.60f, 0.60f, 1.0f);
+			// Scrollbars
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab, 0.28f, 0.30f, 0.32f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.32f, 0.34f, 0.36f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive, 0.36f, 0.38f, 0.40f, 1.0f);
+		}
+
+		private static void PushDarkBlueTheme()
+		{
+			// Backgrounds
+			imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.13f, 0.13f, 0.16f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0.11f, 0.11f, 0.14f, 1.0f);
+			// Frames
+			imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.17f, 0.18f, 0.22f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered, 0.20f, 0.21f, 0.26f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.FrameBgActive, 0.19f, 0.20f, 0.24f, 1.0f);
+			// Buttons (blue accent)
+			imgui_PushStyleColor((int)ImGuiCol.Button, 0.26f, 0.39f, 0.98f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.32f, 0.45f, 1.0f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.22f, 0.35f, 0.85f, 1.0f);
+			// Headers
+			imgui_PushStyleColor((int)ImGuiCol.Header, 0.26f, 0.39f, 0.98f, 0.55f);
+			imgui_PushStyleColor((int)ImGuiCol.HeaderHovered, 0.32f, 0.45f, 1.0f, 0.80f);
+			imgui_PushStyleColor((int)ImGuiCol.HeaderActive, 0.26f, 0.39f, 0.98f, 1.00f);
+			// Tabs
+			imgui_PushStyleColor((int)ImGuiCol.Tab, 0.22f, 0.35f, 0.85f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabHovered, 0.32f, 0.45f, 1.0f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabSelected, 0.26f, 0.39f, 0.98f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabDimmed, 0.09f, 0.09f, 0.12f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabDimmedSelected, 0.11f, 0.11f, 0.14f, 1.0f);
+			// Sliders / checks
+			imgui_PushStyleColor((int)ImGuiCol.SliderGrab, 0.32f, 0.45f, 1.0f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 0.38f, 0.51f, 1.0f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.CheckMark, 0.38f, 0.51f, 1.0f, 1.0f);
+			// Titles
+			imgui_PushStyleColor((int)ImGuiCol.TitleBg, 0.10f, 0.10f, 0.13f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TitleBgActive, 0.12f, 0.12f, 0.16f, 1.0f);
+			// Separators
+			imgui_PushStyleColor((int)ImGuiCol.Separator, 0.25f, 0.27f, 0.32f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered, 0.30f, 0.33f, 0.38f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SeparatorActive, 0.26f, 0.39f, 0.98f, 1.0f);
+			// Scrollbars
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab, 0.28f, 0.30f, 0.34f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.32f, 0.34f, 0.38f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive, 0.36f, 0.38f, 0.42f, 1.0f);
+		}
+
+		private static void PushDarkPurpleTheme()
+		{
+			// Backgrounds
+			imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.15f, 0.12f, 0.16f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0.13f, 0.10f, 0.14f, 1.0f);
+			// Frames
+			imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.19f, 0.16f, 0.22f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered, 0.22f, 0.19f, 0.26f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.FrameBgActive, 0.21f, 0.18f, 0.24f, 1.0f);
+			// Buttons (purple accent)
+			imgui_PushStyleColor((int)ImGuiCol.Button, 0.68f, 0.26f, 0.78f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.78f, 0.32f, 0.88f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.58f, 0.22f, 0.68f, 1.0f);
+			// Headers
+			imgui_PushStyleColor((int)ImGuiCol.Header, 0.68f, 0.26f, 0.78f, 0.55f);
+			imgui_PushStyleColor((int)ImGuiCol.HeaderHovered, 0.78f, 0.32f, 0.88f, 0.80f);
+			imgui_PushStyleColor((int)ImGuiCol.HeaderActive, 0.68f, 0.26f, 0.78f, 1.00f);
+			// Tabs
+			imgui_PushStyleColor((int)ImGuiCol.Tab, 0.58f, 0.22f, 0.68f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabHovered, 0.78f, 0.32f, 0.88f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabSelected, 0.68f, 0.26f, 0.78f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabDimmed, 0.11f, 0.08f, 0.12f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabDimmedSelected, 0.13f, 0.10f, 0.14f, 1.0f);
+			// Sliders / checks
+			imgui_PushStyleColor((int)ImGuiCol.SliderGrab, 0.78f, 0.32f, 0.88f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 0.88f, 0.42f, 0.98f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.CheckMark, 0.88f, 0.42f, 0.98f, 1.0f);
+			// Titles
+			imgui_PushStyleColor((int)ImGuiCol.TitleBg, 0.12f, 0.09f, 0.13f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TitleBgActive, 0.14f, 0.11f, 0.16f, 1.0f);
+			// Separators
+			imgui_PushStyleColor((int)ImGuiCol.Separator, 0.27f, 0.24f, 0.32f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered, 0.32f, 0.29f, 0.38f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SeparatorActive, 0.68f, 0.26f, 0.78f, 1.0f);
+			// Scrollbars
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab, 0.30f, 0.27f, 0.34f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.34f, 0.31f, 0.38f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive, 0.38f, 0.35f, 0.42f, 1.0f);
+		}
+
+		private static void PushDarkOrangeTheme()
+		{
+			// Backgrounds
+			imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.16f, 0.13f, 0.12f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0.14f, 0.11f, 0.10f, 1.0f);
+			// Frames
+			imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.22f, 0.18f, 0.16f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered, 0.26f, 0.21f, 0.19f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.FrameBgActive, 0.24f, 0.20f, 0.18f, 1.0f);
+			// Buttons (orange accent)
+			imgui_PushStyleColor((int)ImGuiCol.Button, 0.98f, 0.55f, 0.26f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 1.0f, 0.65f, 0.32f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.85f, 0.48f, 0.22f, 1.0f);
+			// Headers
+			imgui_PushStyleColor((int)ImGuiCol.Header, 0.98f, 0.55f, 0.26f, 0.55f);
+			imgui_PushStyleColor((int)ImGuiCol.HeaderHovered, 1.0f, 0.65f, 0.32f, 0.80f);
+			imgui_PushStyleColor((int)ImGuiCol.HeaderActive, 0.98f, 0.55f, 0.26f, 1.00f);
+			// Tabs
+			imgui_PushStyleColor((int)ImGuiCol.Tab, 0.85f, 0.48f, 0.22f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabHovered, 1.0f, 0.65f, 0.32f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabSelected, 0.98f, 0.55f, 0.26f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabDimmed, 0.12f, 0.09f, 0.08f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabDimmedSelected, 0.14f, 0.11f, 0.10f, 1.0f);
+			// Sliders / checks
+			imgui_PushStyleColor((int)ImGuiCol.SliderGrab, 1.0f, 0.65f, 0.32f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 1.0f, 0.75f, 0.42f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.CheckMark, 1.0f, 0.75f, 0.42f, 1.0f);
+			// Titles
+			imgui_PushStyleColor((int)ImGuiCol.TitleBg, 0.13f, 0.10f, 0.09f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TitleBgActive, 0.16f, 0.12f, 0.11f, 1.0f);
+			// Separators
+			imgui_PushStyleColor((int)ImGuiCol.Separator, 0.32f, 0.27f, 0.24f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered, 0.38f, 0.33f, 0.30f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SeparatorActive, 0.98f, 0.55f, 0.26f, 1.0f);
+			// Scrollbars
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab, 0.34f, 0.30f, 0.28f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.38f, 0.34f, 0.32f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive, 0.42f, 0.38f, 0.36f, 1.0f);
+		}
+
+		private static void PushDarkGreenTheme()
+		{
+			// Backgrounds
+			imgui_PushStyleColor((int)ImGuiCol.WindowBg, 0.12f, 0.16f, 0.13f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0.10f, 0.14f, 0.11f, 1.0f);
+			// Frames
+			imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.16f, 0.22f, 0.18f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.FrameBgHovered, 0.19f, 0.26f, 0.21f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.FrameBgActive, 0.18f, 0.24f, 0.20f, 1.0f);
+			// Buttons (green accent)
+			imgui_PushStyleColor((int)ImGuiCol.Button, 0.26f, 0.78f, 0.39f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.32f, 0.88f, 0.45f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.22f, 0.68f, 0.35f, 1.0f);
+			// Headers
+			imgui_PushStyleColor((int)ImGuiCol.Header, 0.26f, 0.78f, 0.39f, 0.55f);
+			imgui_PushStyleColor((int)ImGuiCol.HeaderHovered, 0.32f, 0.88f, 0.45f, 0.80f);
+			imgui_PushStyleColor((int)ImGuiCol.HeaderActive, 0.26f, 0.78f, 0.39f, 1.00f);
+			// Tabs
+			imgui_PushStyleColor((int)ImGuiCol.Tab, 0.22f, 0.68f, 0.35f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabHovered, 0.32f, 0.88f, 0.45f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabSelected, 0.26f, 0.78f, 0.39f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabDimmed, 0.08f, 0.12f, 0.09f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TabDimmedSelected, 0.10f, 0.14f, 0.11f, 1.0f);
+			// Sliders / checks
+			imgui_PushStyleColor((int)ImGuiCol.SliderGrab, 0.32f, 0.88f, 0.45f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SliderGrabActive, 0.42f, 0.98f, 0.55f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.CheckMark, 0.42f, 0.98f, 0.55f, 1.0f);
+			// Titles
+			imgui_PushStyleColor((int)ImGuiCol.TitleBg, 0.09f, 0.13f, 0.10f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.TitleBgActive, 0.11f, 0.16f, 0.12f, 1.0f);
+			// Separators
+			imgui_PushStyleColor((int)ImGuiCol.Separator, 0.24f, 0.32f, 0.27f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SeparatorHovered, 0.30f, 0.38f, 0.33f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.SeparatorActive, 0.26f, 0.78f, 0.39f, 1.0f);
+			// Scrollbars
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrab, 0.27f, 0.34f, 0.30f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabHovered, 0.31f, 0.38f, 0.34f, 1.0f);
+			imgui_PushStyleColor((int)ImGuiCol.ScrollbarGrabActive, 0.35f, 0.42f, 0.38f, 1.0f);
+		}
+
+
+		public static void PopCurrentTheme()
+		{
+			// Pop in reverse order: style vars then colors
+			imgui_PopStyleVar(_roundingPushCount);
+			imgui_PopStyleColor(_themePushCount);
+		}
+
+
+		public static float[] GetThemePreviewColor(UITheme theme)
+		{
+			switch (theme)
+			{
+				case UITheme.DarkTeal:
+					return new float[] { 0.13f, 0.55f, 0.53f, 1.0f };
+				case UITheme.DarkBlue:
+					return new float[] { 0.26f, 0.39f, 0.98f, 1.0f };
+				case UITheme.DarkPurple:
+					return new float[] { 0.68f, 0.26f, 0.78f, 1.0f };
+				case UITheme.DarkOrange:
+					return new float[] { 0.98f, 0.55f, 0.26f, 1.0f };
+				case UITheme.DarkGreen:
+					return new float[] { 0.26f, 0.78f, 0.39f, 1.0f };
+				default:
+					return new float[] { 0.13f, 0.55f, 0.53f, 1.0f };
+			}
+		}
+
+		public static string GetThemeDescription(UITheme theme)
+		{
+			switch (theme)
+			{
+				case UITheme.DarkTeal:
+					return "The original E3Next dark theme with teal accents. Professional and easy on the eyes for long sessions.";
+				case UITheme.DarkBlue:
+					return "Dark theme with vibrant blue accents. Clean and modern appearance with good contrast.";
+				case UITheme.DarkPurple:
+					return "Dark theme with purple accents. Unique and stylish with a mystical feel.";
+				case UITheme.DarkOrange:
+					return "Dark theme with warm orange accents. Energetic and attention-grabbing design.";
+				case UITheme.DarkGreen:
+					return "Dark theme with green accents. Natural and calming, easy on the eyes.";
+				default:
+					return "Theme description not available.";
+			}
+		}
+		/// <summary>
+		/// Primary C++ entry point, calls the Invoke on all registered windows.
+		/// </summary>
+		public static void OnUpdateImGui()
+		{
+			if (Core.IsProcessing)
+			{
 				foreach (var pair in RegisteredWindows)
 				{
 					pair.Value.Invoke();
@@ -819,20 +854,20 @@ namespace MonoCore
 
 			}
 		}
-        public static ConcurrentDictionary<string, Action> RegisteredWindows = new ConcurrentDictionary<string, Action>();
+		public static ConcurrentDictionary<string, Action> RegisteredWindows = new ConcurrentDictionary<string, Action>();
 
-        //super simple registered method. no unregister, will add one if needed later.
-        public static void RegisterWindow(string windowName, Action method, string description = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
-        {
-            if (!RegisteredWindows.ContainsKey(windowName))
-            {
-                RegisteredWindows.TryAdd(windowName, method);
-            }
-        }
+		//super simple registered method. no unregister, will add one if needed later.
+		public static void RegisterWindow(string windowName, Action method, string description = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+		{
+			if (!RegisteredWindows.ContainsKey(windowName))
+			{
+				RegisteredWindows.TryAdd(windowName, method);
+			}
+		}
 		public class ImGUICombo : IDisposable
 		{
 			bool IsOpen = false;
-			public bool BeginCombo(string id,string preview, int window_flags=0)
+			public bool BeginCombo(string id, string preview, int window_flags = 0)
 			{
 				IsOpen = imgui_BeginCombo(id, preview, window_flags);
 				return IsOpen;
@@ -858,7 +893,7 @@ namespace MonoCore
 				/*ImGui::End():
 				Every ImGui::Begin() call must be paired with an 
 				ImGui::End() call to properly close the window context and ensure correct rendering.*/
-				if(IsOpen)
+				if (IsOpen)
 				{
 					imgui_EndCombo();
 
@@ -993,7 +1028,7 @@ namespace MonoCore
 			}
 			public void Dispose()
 			{
-			
+
 				if (IsOpen)
 				{
 					imgui_EndTabItem();
@@ -1173,7 +1208,7 @@ namespace MonoCore
 				ImGui::BeginTable() returns true if the table is visible and active, and false otherwise. 
 				You should only call ImGui::EndTable() if BeginTable() returns true.
 				*/
-				if(IsOpen)
+				if (IsOpen)
 				{
 					imgui_EndTable();
 				}

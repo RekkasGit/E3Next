@@ -7,6 +7,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.PerformanceData;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -927,6 +928,14 @@ namespace E3Core.Utility
 						string duration = MQ.Query<string>($"${{Me.Buff[{i}].Duration}}");
 						string hitcount = MQ.Query<string>($"${{Me.Buff[{i}].HitCount}}");
 						string spellType = MQ.Query<string>($"${{Me.Buff[{i}].SpellType}}");
+						string counterType = MQ.Query<String>($"${{Me.Buff[{i}].CounterType}}");
+						string counterNumber = MQ.Query<String>($"${{Me.Buff[{i}].CounterNumber}}");
+						Int32 counterTypeID = -1;
+						if (counterType == "Disease") counterTypeID = 0;
+						else if (counterType == "Poison") counterTypeID = 1;
+						else if (counterType == "Curse") counterTypeID = 2;
+						else if (counterType == "Corruption") counterTypeID = 3;
+
 						/*	SpellType_Detrimental = 0,
 							SpellType_Beneficial = 1,
 							SpellType_BeneficialGroupOnly = 2
@@ -945,6 +954,10 @@ namespace E3Core.Utility
 						buffInfoStringBuilder.Append(spellTypeID);
 						buffInfoStringBuilder.Append(",");
 						buffInfoStringBuilder.Append(0); //0 for buff
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(counterTypeID);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(counterNumber);
 						buffInfoStringBuilder.Append(":");
 					}
 				}
@@ -954,6 +967,30 @@ namespace E3Core.Utility
 
 					if (spellID != "NULL")
 					{
+
+
+						Int32 spell_id = 0;
+						if (Int32.TryParse(spellID, out spell_id))
+						{
+
+							if (!BuffCheck.BuffInfoCache.ContainsKey(spell_id))
+							{
+								var spell = new Data.Spell(spellID);
+								if (spell.CastType == CastingType.Spell || spell.CastType == CastingType.AA)
+								{
+									for (Int32 inc = 0; inc < 12; inc++)
+									{
+										string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), inc);
+										if (!String.IsNullOrEmpty(teffect))
+										{
+											spell.SpellEffects.Add(teffect);
+										}
+									}
+								}
+								BuffCheck.BuffInfoCache.TryAdd(spell_id, spell);
+							}
+						}
+
 						string duration = MQ.Query<string>($"${{Me.Song[{i}].Duration}}");
 						string hitcount = MQ.Query<string>($"${{Me.Song[{i}].HitCount}}");
 						string spellType = MQ.Query<string>($"${{Me.Song[{i}].SpellType}}");
@@ -971,6 +1008,10 @@ namespace E3Core.Utility
 						buffInfoStringBuilder.Append(spellTypeID);
 						buffInfoStringBuilder.Append(",");
 						buffInfoStringBuilder.Append(1); //1 for song
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(-1);
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(-1);
 						buffInfoStringBuilder.Append(":");
 					}
 				}
