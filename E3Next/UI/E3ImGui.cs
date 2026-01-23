@@ -1,6 +1,7 @@
 using E3Core.Processors;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
@@ -23,6 +24,35 @@ namespace MonoCore
 				}
 			}
 		}
+		//
+		//RobotoRegular
+		//RobotoRegular (Large)
+		//EQ Font 0 - Arial 10 Thin
+		//EQ Font 1 - Arial 12 Thin
+		//EQ Font 2 - Arial 14 Thin
+		//EQ Font 3 - Arial 15 Thin
+		//EQ Font 4 - Arial 16 Thin
+		//EQ Font 5 - Arial 20 Bold
+		//EQ Font 6 - Arial 24 Bold
+		//EQ Font 7 - Arial 20
+		//EQ Font 8 - Arial 24
+		//EQ Font 9 - Courier New 14
+		//EQ Font 10 - Arial 40 Bold
+		//lucon.ttf, 13px
+		public static Dictionary<String, string> FontList = new Dictionary<string, string>() { {"robo","RobotoRegular" }, {"robo-large", "RobotoRegular (Large)" }
+		,{"arial-10", "EQ Font 0 - Arial 10 Thin" }
+		,{"arial-12", "EQ Font 1 - Arial 12 Thin" }
+		,{"arial-14", "EQ Font 2 - Arial 14 Thin" }
+		,{"arial-15","EQ Font 3 - Arial 15 Thin" }
+		,{"arial-16","EQ Font 4 - Arial 16 Thin" }
+		,{"arial-20","EQ Font 7 - Arial 20" }
+		,{"arial-24","EQ Font 8 - Arial 24" }
+		,{"arial_bold-20","EQ Font 5 - Arial 20 Bold" }
+		,{"arial_bold-24","EQ Font 6 - Arial 24 Bold" }
+		,{"arial_bold-40","EQ Font 10 - Arial 40 Bold" }
+		,{"courier_new-9","EQ Font 9 - Courier New 14" }
+		,{"lucon-13","lucon.ttf, 13px" }};
+
 		// Theme system with multiple themes
 		public enum UITheme
 		{
@@ -420,6 +450,13 @@ namespace MonoCore
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_PushID(int id);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_PushFont(string name);
+
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_PopFont();
 
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -1292,6 +1329,52 @@ namespace MonoCore
 				StaticObjectPool.Push(this);
 			}
 			~PushStyle()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
+		public class IMGUI_Fonts : IDisposable
+		{
+			bool fontChanged = false;
+			public void PushFont(string font)
+			{
+				string fontToUse = font;
+				if (FontList.ContainsKey(font))
+				{
+					fontToUse = FontList[font];
+				}
+				fontChanged = imgui_PushFont(fontToUse);
+			}
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private IMGUI_Fonts()
+			{
+
+			}
+			public static IMGUI_Fonts Aquire()
+			{
+				IMGUI_Fonts obj;
+				if (!StaticObjectPool.TryPop<IMGUI_Fonts>(out obj))
+				{
+					obj = new IMGUI_Fonts();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				if(fontChanged)
+				{
+					imgui_PopFont();
+				}
+				StaticObjectPool.Push(this);
+			}
+			~IMGUI_Fonts()
 			{
 				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
 				//if this is called, it will cause the domain to hang in the GC when shuttind down

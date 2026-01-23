@@ -503,7 +503,7 @@ namespace E3Core.Settings
 		[INI_Section("CPU", "PublishStateDataInMS")]
 		public Int32 CPU_PublishStateDataInMS = 100;
 		[INI_Section("CPU", "PublishBuffDataInMS")]
-		public Int32 CPU_PublishBuffDataInMS = 1000;
+		public Int32 CPU_PublishBuffDataInMS = 500;
 		[INI_Section("CPU", "PublishMiscDataInMS")]
 		public Int32 CPU_PublishMiscDataInMS = 300;
 		[INI_Section("CPU", "PublishSlowDataInMS")]

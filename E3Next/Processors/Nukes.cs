@@ -84,15 +84,15 @@ namespace E3Core.Processors
         public static void Check_Stuns()
         {
 
-            Cast_Instasnt(E3.CharacterSettings.Stuns, ref _stunDelayTimeStamp);
+            Cast_Instant(E3.CharacterSettings.Stuns, ref _stunDelayTimeStamp);
         }
         [AdvSettingInvoke]
         public static void Check_Nukes()
         {
 
-            Cast_Instasnt(E3.CharacterSettings.Nukes, ref _nukeDelayTimeStamp);
+            Cast_Instant(E3.CharacterSettings.Nukes, ref _nukeDelayTimeStamp);
         }
-        private static void Cast_Instasnt(List<Data.Spell> spells, ref Double delayTimeStamp)
+        private static void Cast_Instant(List<Data.Spell> spells, ref Double delayTimeStamp)
         {
             if (Assist.AssistTargetID > 0)
             {
