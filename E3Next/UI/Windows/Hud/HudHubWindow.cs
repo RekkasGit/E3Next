@@ -295,17 +295,38 @@ namespace E3Core.UI.Windows.Hud
 							_newbuffsTimeStamps[buff.Spell.SpellID] = Core.StopWatch.ElapsedMilliseconds;
 						}
 					}
+					foreach (var buff in _tableRowsSongInfo)
+					{
+						if (!_previousBuffs.Contains(buff.Spell.SpellID))
+						{
+							_newbuffsTimeStamps[buff.Spell.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+						}
+					}
+					foreach (var buff in _tableRowsDebuffInfo)
+					{
+						if (!_previousBuffs.Contains(buff.Spell.SpellID))
+						{
+							_newbuffsTimeStamps[buff.Spell.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+						}
+					}
 				}
 				_previousBuffs.Clear();
 				foreach(var buff in _tableRowsBuffInfo)
 				{
 					_previousBuffs.Add(buff.Spell.SpellID);
 				}
-
+				foreach (var buff in _tableRowsSongInfo)
+				{
+					_previousBuffs.Add(buff.Spell.SpellID);
+				}
+				foreach (var buff in _tableRowsDebuffInfo)
+				{
+					_previousBuffs.Add(buff.Spell.SpellID);
+				}
 
 				//comma delimited list of spelid:buffduration_in_ms
 				//need to get the spellid
-				
+
 				//int start = 0;
 				//int end = 0;
 				//char delim = ':';
@@ -322,7 +343,7 @@ namespace E3Core.UI.Windows.Hud
 				//		e3util.StringsToNumbers(tstring, ',', tempBuffer);
 				//		spellid =(Int32) tempBuffer[0];
 
-						
+
 
 
 				//		duration=tempBuffer[1];
@@ -333,8 +354,8 @@ namespace E3Core.UI.Windows.Hud
 				//		counterNumber = tempBuffer[6];
 
 
-						
-							
+
+
 
 				//		start = end + 1;
 				//	}
@@ -503,9 +524,17 @@ namespace E3Core.UI.Windows.Hud
 								float x = imgui_GetCursorScreenPosX();
 								float y = imgui_GetCursorScreenPosY();
 								imgui_DrawSpellIconByIconIndex(stats.iconID, iconSize);
-								if (stats.SpellType == 0)
+								if (_newbuffsTimeStamps.TryGetValue(stats.Spell.SpellID, out var ts))
 								{
-									imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(255, 0, 0, 50));
+									Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
+
+									long alpha = (Int64)(timeDelta * 0.1275);
+
+									if (alpha > 255) alpha = 255;
+									imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
+
+									if (timeDelta > 2000) _newbuffsTimeStamps.Remove(stats.Spell.SpellID);
+
 								}
 								if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
 								{
@@ -703,6 +732,18 @@ namespace E3Core.UI.Windows.Hud
 							float x = imgui_GetCursorScreenPosX();
 							float y = imgui_GetCursorScreenPosY();
 							imgui_DrawSpellIconByIconIndex(stats.iconID, iconSize);
+							if (_newbuffsTimeStamps.TryGetValue(stats.Spell.SpellID, out var ts))
+							{
+								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
+
+								long alpha = (Int64)(timeDelta * 0.1275);
+
+								if (alpha > 255) alpha = 255;
+								imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(0, 255, 0, 255 - (uint)alpha));
+
+								if (timeDelta > 2000) _newbuffsTimeStamps.Remove(stats.Spell.SpellID);
+
+							}
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
 								if (popup.BeginPopupContextItem($"SongTableIconContext-{counter}", 1))
