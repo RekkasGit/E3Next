@@ -766,14 +766,16 @@ namespace E3Core.Processors
                 }
                 else if (_rangeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (!MQ.Query<bool>("${Me.AutoFire}"))
+                    if ((E3.CurrentClass & Class.Caster) != E3.CurrentClass  && (E3.CurrentClass & Class.Priest) != E3.CurrentClass)
                     {
-                        MQ.Delay(1000);
-                        MQ.Cmd("/autofire");
-                        MQ.Delay(1000);
-                    }
-
-                    if (!AllowControl && E3.CharacterSettings.Assist_Type.Equals("Ranged"))
+						if (!MQ.Query<bool>("${Me.AutoFire}"))
+						{
+							MQ.Delay(1000);
+							MQ.Cmd("/autofire");
+							MQ.Delay(1000);
+						}
+					}
+					if (!AllowControl && E3.CharacterSettings.Assist_Type.Equals("Ranged"))
                     {
                         if (E3.CharacterSettings.Assist_RangeDistance.Equals("Clamped"))
                         {   //so we don't calc multiple times

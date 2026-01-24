@@ -120,6 +120,7 @@
     <Compile Include="Data\CharacterBuffs.cs" />
     <Compile Include="Data\Class.cs" />
     <Compile Include="Data\MelodyIfs.cs" />
+    <Compile Include="Data\ProtoBuff\BuffData.cs" />
     <Compile Include="Data\ProtoBuff\SpellData.cs" />
     <Compile Include="Data\ResistCounter.cs" />
     <Compile Include="Data\Skills.cs" />
@@ -211,6 +212,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Data\ProtoBuff\BuffData.proto" />
     <None Include="Data\ProtoBuff\SpellData.proto" />
     <None Include="packages.config" />
   </ItemGroup>

@@ -1,0 +1,17 @@
+﻿syntax = "proto3";
+
+message BuffDataList {
+
+    repeated BuffData data=1;
+}
+
+message BuffData {
+
+    int32 SpellID = 1;
+    int32 Duration = 2;
+	int32 Hitcount = 3;
+    int32 SpellTypeID = 4;
+    int32 BuffType=5;
+    int32 CounterType=6;
+    int32 CounterNumber=7;
+}

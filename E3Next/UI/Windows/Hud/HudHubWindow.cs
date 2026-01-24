@@ -1,6 +1,7 @@
 ﻿using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Utility;
+using Google.Protobuf;
 using MonoCore;
 using System;
 using System.Collections;
@@ -11,6 +12,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.SessionState;
+using System.Xml.Linq;
 using static E3Core.UI.Windows.MemStats.MemoryStatsWindow;
 using static MonoCore.E3ImGUI;
 using static System.Windows.Forms.AxHost;
@@ -144,135 +146,181 @@ namespace E3Core.UI.Windows.Hud
 
 			return (0.9f, 0.9f, 0.9f);
 		}
+
+
+		static Task UpdateTask;
+
+
+		private static void ProcessUpdates()
+		{
+			RefreshBuffInfo();
+			RefreshGroupInfo();
+		}
+
+
+		static string _prevousBuffInfo = string.Empty;
 		private static void RefreshBuffInfo()
 		{
 			if (!e3util.ShouldCheck(ref _lastUpdated_Buffs, _lastUpdateInterval_Buffs)) return;
+			
+			string buffInfo = E3.Bots.Query(E3.CurrentName, "${Me.BuffInfo}");
+
+			if (_prevousBuffInfo!=string.Empty)
+			{
+				if(_prevousBuffInfo==buffInfo)
+				{
+					//no difference
+					return;
+				}
+				
+			}
+			_prevousBuffInfo = buffInfo;
+
 			_tableRowsBuffInfo.Clear();
 			_tableRowsSongInfo.Clear();
 			_tableRowsDebuffInfo.Clear();
-			string buffInfo = E3.Bots.Query(E3.CurrentName, "${Me.BuffInfo}");
 
-			if(!String.IsNullOrWhiteSpace(buffInfo))
+			if (!String.IsNullOrWhiteSpace(buffInfo))
 			{
 				string s = buffInfo;
+
+				BuffDataList bufflist = new BuffDataList();
+				bufflist.MergeFrom(ByteString.FromBase64(s));
+				
+				foreach (var buff in bufflist.Data)
+				{
+
+					Int32 spellid = 0;
+					Int32 duration = 0;
+					Int32 hitcount = 0;
+					Int32 spelltypeid = 0;
+					Int32 bufftype = 0;
+					Int32 counterType = -1;
+					Int32 counterNumber = -1;
+
+					spellid = buff.SpellID;
+					duration = buff.Duration;
+					hitcount = buff.Hitcount;
+					spelltypeid = buff.SpellTypeID;
+					bufftype = buff.BuffType;
+					counterType = buff.CounterType;
+					counterNumber = buff.CounterNumber;
+
+					Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
+					string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
+					var buffRow = new TableRow_BuffInfo(buffName);
+					buffRow.iconID = spellIcon;
+
+					var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+					buffRow.Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+					buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
+					buffRow.SpellType = (Int32)spelltypeid;
+					//check if spellid exists
+
+					if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
+					{
+						buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
+					}
+					else
+					{
+						buffRow.Spell = null;
+					}
+
+
+					if (hitcount > 0)
+					{
+						buffRow.HitCount = hitcount.ToString();
+					}
+
+					if (duration <0)
+					{
+						buffRow.SimpleDuration = "(p)";
+					}
+					else if (buffTimeSpan.TotalHours >= 1)
+					{
+						buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
+					}
+					else if (buffTimeSpan.TotalMinutes >= 1)
+					{
+						buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
+					}
+					else
+					{
+						buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
+					}
+					if (duration < 160000d)
+					{
+						buffRow.DisplayName = buffName + $" ( {buffRow.Duration} )";
+					}
+					else
+					{
+						buffRow.DisplayName = buffName;
+					}
+					if (bufftype == 0) //if normal buff
+					{
+						if (spelltypeid == 0)
+						{
+							if (counterType == 0) buffRow.CounterType = "Disease";
+							else if (counterType == 1) buffRow.CounterType = "Poison";
+							else if (counterType == 2) buffRow.CounterType = "Curse";
+							else if (counterType == 3) buffRow.CounterType = "Corruption";
+
+							if (counterNumber > 0)
+							{
+								buffRow.CounterNumber = counterNumber.ToString();
+
+							}
+							_tableRowsDebuffInfo.Add(buffRow);
+						}
+						else
+						{
+							_tableRowsBuffInfo.Add(buffRow);
+						}
+					}
+					else
+					{
+						//this is a song
+						_tableRowsSongInfo.Add(buffRow);
+					}
+				}
+
 				//comma delimited list of spelid:buffduration_in_ms
 				//need to get the spellid
-				Int32 spellid = 0;
-				Int64 duration = 0;
-				Int64 hitcount = 0;
-				Int64 spelltypeid = 0;
-				Int64 bufftype = 0;
-				Int64 counterType = -1;
-				Int64 counterNumber = -1;
-				int start = 0;
-				int end = 0;
-				char delim = ':';
-				List<Int64> tempBuffer = new List<Int64>();
-				foreach (char x in s)
-				{
-					if (x == delim || end == s.Length - 1)
-					{
-						if (end == s.Length - 1 && x != delim)
-							end++;
-						//number,number
-						tempBuffer.Clear();
-						string tstring = s.Substring(start, end - start);
-						e3util.StringsToNumbers(tstring, ',', tempBuffer);
-						spellid =(Int32) tempBuffer[0];
+				
+				//int start = 0;
+				//int end = 0;
+				//char delim = ':';
+				//List<Int64> tempBuffer = new List<Int64>();
+				//foreach (char x in s)
+				//{
+				//	if (x == delim || end == s.Length - 1)
+				//	{
+				//		if (end == s.Length - 1 && x != delim)
+				//			end++;
+				//		//number,number
+				//		tempBuffer.Clear();
+				//		string tstring = s.Substring(start, end - start);
+				//		e3util.StringsToNumbers(tstring, ',', tempBuffer);
+				//		spellid =(Int32) tempBuffer[0];
 
 						
 
 
-						duration=tempBuffer[1];
-						hitcount = tempBuffer[2];
-						spelltypeid = tempBuffer[3];
-						bufftype = tempBuffer[4];
-						counterType = tempBuffer[5];
-						counterNumber = tempBuffer[6];
+				//		duration=tempBuffer[1];
+				//		hitcount = tempBuffer[2];
+				//		spelltypeid = tempBuffer[3];
+				//		bufftype = tempBuffer[4];
+				//		counterType = tempBuffer[5];
+				//		counterNumber = tempBuffer[6];
 
 
-						Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
-						string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-						var buffRow = new TableRow_BuffInfo(buffName);
-						buffRow.iconID = spellIcon;
-
-						var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
-						buffRow.Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
-						buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
-						buffRow.SpellType =(Int32) spelltypeid;
-						//check if spellid exists
 						
-						if(BuffCheck.BuffInfoCache.ContainsKey(spellid))
-						{
-							buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
-						}
-						else
-						{
-							buffRow.Spell = null;
-						}
-
-
-						if (hitcount > 0)
-						{
-							buffRow.HitCount = hitcount.ToString();
-						}
-
-						if(duration>=4294967292)
-						{
-							buffRow.SimpleDuration = "(p)";
-						}
-						else if (buffTimeSpan.TotalHours >= 1)
-						{
-							buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
-						}
-						else if (buffTimeSpan.TotalMinutes >= 1)
-						{
-							buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
-						}
-						else
-						{
-							buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
-						}
-						if (duration < 160000d)
-						{
-							buffRow.DisplayName = buffName + $" ( {buffRow.Duration} )";
-						}
-						else
-						{
-							buffRow.DisplayName = buffName;
-						}
-						if(bufftype==0) //if normal buff
-						{
-							if(spelltypeid==0)
-							{
-								if (counterType == 0) buffRow.CounterType = "Disease";
-								else if (counterType == 1) buffRow.CounterType = "Poison";
-								else if (counterType == 2) buffRow.CounterType = "Curse";
-								else if (counterType == 3) buffRow.CounterType = "Corruption";
-
-								if (counterNumber > 0)
-								{
-									buffRow.CounterNumber = counterNumber.ToString();
-
-								}
-								_tableRowsDebuffInfo.Add(buffRow);
-							}
-							else
-							{
-								_tableRowsBuffInfo.Add(buffRow);
-							}
-						}
-						else
-						{
-							//this is a song
-							_tableRowsSongInfo.Add(buffRow);
-						}
 							
 
-						start = end + 1;
-					}
-					end++;
-				}
+				//		start = end + 1;
+				//	}
+				//	end++;
+				//}
 			}
 		}
 		private static void RefreshGroupInfo()
@@ -320,7 +368,6 @@ namespace E3Core.UI.Windows.Hud
 
 
 				}
-
 				var row = new TableRow_GroupInfo(user);
 				if (distance == 0)
 				{
@@ -729,62 +776,134 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 		}
+
+
+		private static string GetGroupFontNameForSize()
+		{
+			float sizeOfContent = imgui_GetContentRegionAvailX();
+
+			imgui_Text("Size-forName:");
+			imgui_SameLine(0);
+			imgui_Text(imgui_GetContentRegionAvailX().ToString());
+
+			if (sizeOfContent >= 650)
+			{
+				return "arial_bold-40";
+
+			}
+			if (sizeOfContent > 395)
+			{
+				return "arial_bold-24";
+			}
+			if (sizeOfContent > 375)
+			{
+				return "arial-24";
+
+			}
+			if (sizeOfContent > 305)
+			{
+				return "robo-large";
+
+			}
+			if (sizeOfContent > 244)
+			{
+				return "robo";
+
+			}
+			if (sizeOfContent >225)
+			{
+				return "arial-15";
+
+			}
+			return "arial-10";
+			
+		}
+		private static string _selectedGroupFont = "robo";
 		private static void RenderGroupTable()
 		{
-			using (var table = ImGUITable.Aquire())
+
+				//		_selectedGroupFont = GetGroupFontNameForSize();
+
+			using (var combo = ImGUICombo.Aquire())
 			{
-				int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
-									  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
-									  );
-
-				//float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
-				float tableHeight = 200f;
-
-				if (table.BeginTable("E3HubGroupTable", 5, tableFlags, 0f, 0))
+				if (combo.BeginCombo("##Select Font for GroupTable", _selectedGroupFont))
 				{
-					
-					imgui_TableSetupColumn_Default("Character");
-					imgui_TableSetupColumn_Default("HP");
-					imgui_TableSetupColumn_Default("End");
-					imgui_TableSetupColumn_Default("Mana");
-					imgui_TableSetupColumn_Default("Distance");
-			
-					imgui_TableHeadersRow();
-
-					List<TableRow_GroupInfo> currentStats = _tableRows_GroupInfo;
-
-					foreach (var stats in currentStats)
+					foreach (var pair in E3ImGUI.FontList)
 					{
-						imgui_TableNextRow();
+						bool sel = string.Equals(_selectedGroupFont, pair.Key, StringComparison.OrdinalIgnoreCase);
 
-						imgui_TableNextColumn();
-						var c = stats.DisplayNameColor;
-						imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.DisplayName);
-
-						imgui_TableNextColumn();
-						c = stats.HPColor;
-						imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.HP);
-						imgui_TableNextColumn();
-						c = stats.EndColor;
-						imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Endurance);
-						imgui_TableNextColumn();
-						c = stats.ManaColor;
-						imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Mana);
-						imgui_TableNextColumn();
-
-						if (double.TryParse(stats.Distance, out _))
+						if (imgui_Selectable($"{pair.Key}", sel))
 						{
-							c = stats.DistanceColor;
-							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Distance);
+							_selectedGroupFont = pair.Key;
 						}
-						else
-						{
-							imgui_Text(stats.Distance);
-						}
-						
 					}
 				}
 			}
+
+			using (var imguiFont = IMGUI_Fonts.Aquire())
+			{
+				imguiFont.PushFont(_selectedGroupFont);
+				imgui_Text("Size:");
+				imgui_SameLine(0);
+				imgui_Text(imgui_GetContentRegionAvailX().ToString());
+				using (var table = ImGUITable.Aquire())
+				{
+					int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
+										  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
+										  );
+
+					//float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
+					float tableHeight = 200f;
+
+					if (table.BeginTable("E3HubGroupTable", 5, tableFlags, 0f, 0))
+					{
+
+						imgui_TableSetupColumn_Default("Character");
+						imgui_TableSetupColumn_Default("HP");
+						imgui_TableSetupColumn_Default("End");
+						imgui_TableSetupColumn_Default("Mana");
+						imgui_TableSetupColumn_Default("Distance");
+
+						imgui_TableHeadersRow();
+
+						List<TableRow_GroupInfo> currentStats = _tableRows_GroupInfo;
+
+						foreach (var stats in currentStats)
+						{
+							imgui_TableNextRow();
+
+							imgui_TableNextColumn();
+							var c = stats.DisplayNameColor;
+							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.DisplayName);
+
+							imgui_TableNextColumn();
+							c = stats.HPColor;
+							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.HP);
+							imgui_TableNextColumn();
+							c = stats.EndColor;
+							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Endurance);
+							imgui_TableNextColumn();
+							c = stats.ManaColor;
+							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Mana);
+							imgui_TableNextColumn();
+
+							if (double.TryParse(stats.Distance, out _))
+							{
+								c = stats.DistanceColor;
+								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Distance);
+							}
+							else
+							{
+								imgui_Text(stats.Distance);
+							}
+
+						}
+					}
+				}
+
+			}
+
+			
 		}
 		public class TableRow_BuffInfo
 		{
