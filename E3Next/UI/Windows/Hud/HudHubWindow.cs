@@ -286,11 +286,14 @@ namespace E3Core.UI.Windows.Hud
 					}
 				}
 
-				foreach (var buff in _tableRowsBuffInfo)
+				if (_previousBuffs.Count > 0)
 				{
-					if(!_previousBuffs.Contains(buff.Spell.SpellID))
+					foreach (var buff in _tableRowsBuffInfo)
 					{
-						_newbuffsTimeStamps[buff.Spell.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+						if (!_previousBuffs.Contains(buff.Spell.SpellID))
+						{
+							_newbuffsTimeStamps[buff.Spell.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+						}
 					}
 				}
 				_previousBuffs.Clear();
