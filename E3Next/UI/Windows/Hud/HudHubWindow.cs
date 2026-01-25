@@ -691,17 +691,29 @@ namespace E3Core.UI.Windows.Hud
 									imgui_Separator();
 									if (imgui_MenuItem("Drop buff"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+										string command = $"/removebuff {stats.Name}";
+										if (!String.IsNullOrWhiteSpace(_selectedToonForBuffs))
+										{
+											E3.Bots.BroadcastCommandToPerson(_selectedToonForBuffs, command);
+										}
+										else
+										{
+											E3ImGUI.MQCommandQueue.Enqueue(command);
+										}
 									}
 									if (imgui_MenuItem("Drop buff from group"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
-										E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
+									
+										string command = $"/removebuff {stats.Name}";
+
+										E3ImGUI.MQCommandQueue.Enqueue(command);
+										E3.Bots.BroadcastCommandToGroup(command);
 									}
 									if (imgui_MenuItem("Drop buff from everyone"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
-										E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
+										string command = $"/removebuff {stats.Name}";
+										E3ImGUI.MQCommandQueue.Enqueue(command);
+										E3.Bots.BroadcastCommand(command);
 									}
 									imgui_PopStyleColor(1);
 
@@ -809,7 +821,15 @@ namespace E3Core.UI.Windows.Hud
 									imgui_Separator();
 									if (imgui_MenuItem("Drop buff"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+										string command = $"/removebuff {stats.Name}";
+										if (!String.IsNullOrWhiteSpace(_selectedToonForBuffs))
+										{
+											E3.Bots.BroadcastCommandToPerson(_selectedToonForBuffs, command);
+										}
+										else
+										{
+											E3ImGUI.MQCommandQueue.Enqueue(command);
+										}
 									}
 									if (imgui_MenuItem("Drop buff from group"))
 									{
