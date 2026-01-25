@@ -36,6 +36,10 @@ namespace E3Core.UI.Windows.Hud
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 		private static string _WindowName = "E3 Main Hud";
+		private static string _WindowName_Buffs = "E3 Buff Hud";
+
+		private static bool _deattachBuffs = false;
+
 		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _distanceSeverity = new[]
 		{
 			(0d, 100d,  0.25f, 0.85f, 0.25f),
@@ -447,35 +451,91 @@ namespace E3Core.UI.Windows.Hud
 				_tableRows_GroupInfo.Add(row);
 			}
 		}
+
+		private static void RenderHub_MainWindow()
+		{
+			if (imgui_Begin_OpenFlagGet(_WindowName))
+			{
+				RefreshGroupInfo();
+
+				E3ImGUI.PushCurrentTheme();
+				try
+				{
+					imgui_SetNextWindowSizeWithCond(400, 300, (int)ImGuiCond.FirstUseEver);
+					using (var window = ImGUIWindow.Aquire())
+					{
+						imgui_SetNextWindowBgAlpha(_windowAlpha);
+						if (window.Begin(_WindowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse))
+						{
+							RenderGroupTable();
+
+							if (!_deattachBuffs)
+							{
+								if (imgui_Button("Deattach##detach_buffs"))
+								{
+									_deattachBuffs = true;
+									imgui_Begin_OpenFlagSet(_WindowName_Buffs, true);
+								}
+								else
+								{
+									RenderBuffTableSimple();
+								}
+							}
+						}
+					}
+
+				}
+				finally
+				{
+					E3ImGUI.PopCurrentTheme();
+				}
+			}
+		}
+		private static void RenderHub_TryDeattached(string windowName,bool openFlag, Action ExecuteMethod)
+		{
+			if (openFlag && imgui_Begin_OpenFlagGet(windowName))
+			{
+				E3ImGUI.PushCurrentTheme();
+				try
+				{
+					imgui_SetNextWindowSizeWithCond(400, 300, (int)ImGuiCond.FirstUseEver);
+					using (var window = ImGUIWindow.Aquire())
+					{
+						imgui_SetNextWindowBgAlpha(_windowAlpha);
+						if (window.Begin(windowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse))
+						{
+							ExecuteMethod.Invoke();
+						}
+					}
+				}
+				finally
+				{
+					E3ImGUI.PopCurrentTheme();
+				}
+
+			}
+		}
+		private static void TryReattachWindowsIfClosed()
+		{
+			if (_deattachBuffs && !imgui_Begin_OpenFlagGet(_WindowName_Buffs))
+			{
+				_deattachBuffs = false;
+			}
+
+		}
 		private static void RenderHub()
 		{
 			if (!_imguiContextReady) return;
-			if (!imgui_Begin_OpenFlagGet(_WindowName)) return;
 
-			if (!_imguiContextReady) return;
-			if (!imgui_Begin_OpenFlagGet(_WindowName)) return;
-			RefreshGroupInfo();
-			imgui_SetNextWindowSizeWithCond(400, 300, (int)ImGuiCond.FirstUseEver);
-			E3ImGUI.PushCurrentTheme();
-			try
-			{
-				using (var window = ImGUIWindow.Aquire())
-				{
-					imgui_SetNextWindowBgAlpha(_windowAlpha);
-					if (!window.Begin(_WindowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse))
-						return;
-					
+			TryReattachWindowsIfClosed();
 
-					RenderGroupTable();
-					RenderBuffTableSimple();
+			RenderHub_MainWindow();
+			RenderHub_TryDeattached(_WindowName_Buffs,_deattachBuffs, RenderBuffTableSimple);
 
-					
-				}
-			}
-			finally
-			{
-				E3ImGUI.PopCurrentTheme();
-			}
+		}
+		private static void RenderHub_WindowBuffs()
+		{
+
 		}
 		private static void RenderBuffTableSimple()
 		{
@@ -815,83 +875,10 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 		}
-		private static void RenderBuffTable()
-		{
-			RefreshBuffInfo();
-			
-			using (var table = ImGUITable.Aquire())
-			{
-				int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags.ImGuiTableFlags_RowBg |
-									  ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
-									  ImGuiTableFlags.ImGuiTableFlags_BordersInner |
-									  ImGuiTableFlags.ImGuiTableFlags_ScrollY | ImGuiTableFlags.ImGuiTableFlags_Resizable);
-
-				float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
-
-				if (table.BeginTable("E3HubBuffTable", 2, tableFlags, 0f, tableHeight))
-				{
-					imgui_TableSetupColumn_Default("Buffs");
-					imgui_TableSetupColumn_Default("Name");
-					imgui_TableHeadersRow();
-
-					List<TableRow_BuffInfo> currentStats = _tableRowsBuffInfo;
-
-					foreach (var stats in currentStats)
-					{
-						imgui_TableNextRow();
-						imgui_TableNextColumn();
-						imgui_DrawSpellIconByIconIndex(stats.iconID, 20.0f);
-						imgui_TableNextColumn();
-						var c = stats.DurationColor;
-						imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.DisplayName);
-						imgui_TableNextColumn();
-					}
-				}
-			}
-		}
-
-
-		private static string GetGroupFontNameForSize()
-		{
-			float sizeOfContent = imgui_GetContentRegionAvailX();
-
-			imgui_Text("Size-forName:");
-			imgui_SameLine(0);
-			imgui_Text(imgui_GetContentRegionAvailX().ToString());
-
-			if (sizeOfContent >= 650)
-			{
-				return "arial_bold-40";
-
-			}
-			if (sizeOfContent > 395)
-			{
-				return "arial_bold-24";
-			}
-			if (sizeOfContent > 375)
-			{
-				return "arial-24";
-
-			}
-			if (sizeOfContent > 305)
-			{
-				return "robo-large";
-
-			}
-			if (sizeOfContent > 244)
-			{
-				return "robo";
-
-			}
-			if (sizeOfContent >225)
-			{
-				return "arial-15";
-
-			}
-			return "arial-10";
-			
-		}
+		
 		private static string _selectedGroupFont = "robo";
+		private static string _lastCommand = string.Empty;
+		static int selected_row_group = -1;
 		private static void RenderGroupTable()
 		{
 
@@ -916,9 +903,14 @@ namespace E3Core.UI.Windows.Hud
 			using (var imguiFont = IMGUI_Fonts.Aquire())
 			{
 				imguiFont.PushFont(_selectedGroupFont);
+
 				imgui_Text("Size:");
 				imgui_SameLine(0);
 				imgui_Text(imgui_GetContentRegionAvailX().ToString());
+				imgui_Text("LastCommand:");
+				imgui_SameLine(0);
+				imgui_Text(_lastCommand);
+				
 				using (var table = ImGUITable.Aquire())
 				{
 					int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
@@ -941,11 +933,36 @@ namespace E3Core.UI.Windows.Hud
 
 						List<TableRow_GroupInfo> currentStats = _tableRows_GroupInfo;
 
+						Int32 rowCount = 0;
 						foreach (var stats in currentStats)
 						{
+							rowCount++;
 							imgui_TableNextRow();
-
 							imgui_TableNextColumn();
+							bool is_row_selected = (selected_row_group == rowCount);
+							
+							if (imgui_Selectable_WithFlags($"##row_selected_{rowCount}", is_row_selected, (int)(ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags.ImGuiSelectableFlags_AllowOverlap)))
+							{
+								selected_row_group = rowCount;
+							}
+							using (var popup = ImGUIPopUpContext.Aquire())
+							{
+								if (popup.BeginPopupContextItem($"##row_selected_context_{rowCount}", 1))
+								{
+									selected_row_group = -1;
+									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text(stats.Name);
+									imgui_Separator();
+									if (imgui_MenuItem("Forground Toon"))
+									{
+										string command = $"/e3bct {stats.DisplayName} /foreground";
+										E3ImGUI.MQCommandQueue.Enqueue(command);
+									}
+									imgui_PopStyleColor(1);
+								}
+							}
+							imgui_SameLine(0);
+
 							var c = stats.DisplayNameColor;
 							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.DisplayName);
 
@@ -969,7 +986,7 @@ namespace E3Core.UI.Windows.Hud
 							{
 								imgui_Text(stats.Distance);
 							}
-
+							
 						}
 					}
 				}

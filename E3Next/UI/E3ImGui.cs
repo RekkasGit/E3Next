@@ -102,7 +102,23 @@ namespace MonoCore
 			// [Obsolete]
 			//ImGuiWindowFlags_ResizeFromAnySide    = 1 << 17,  // --> Set io.ConfigWindowsResizeFromEdges=true and make sure mouse cursors are supported by backend (io.BackendFlags & ImGuiBackendFlags_HasMouseCursors)
 		}
-
+		public enum ImGuiMouseButton
+		{
+			Left = 0,
+			Right = 1,
+			Middle = 2,
+			COUNT = 5
+		};
+		public enum ImGuiSelectableFlags
+		{
+			ImGuiSelectableFlags_None = 0,
+			ImGuiSelectableFlags_NoAutoClosePopups = 1 << 0,   // Clicking this doesn't close parent popup window (overrides ImGuiItemFlags_AutoClosePopups)
+			ImGuiSelectableFlags_SpanAllColumns = 1 << 1,   // Frame will span all columns of its container table (text will still fit in current column)
+			ImGuiSelectableFlags_AllowDoubleClick = 1 << 2,   // Generate press events on double clicks too
+			ImGuiSelectableFlags_Disabled = 1 << 3,   // Cannot be selected, display grayed out text
+			ImGuiSelectableFlags_AllowOverlap = 1 << 4,   // (WIP) Hit testing to allow subsequent widgets to overlap this one
+			ImGuiSelectableFlags_Highlight = 1 << 5,   // Make the item be displayed as if it is hovered
+		};
 		public enum ImGuiStyleVar
 		{
 			Alpha,
@@ -375,6 +391,8 @@ namespace MonoCore
 		public extern static void imgui_EndChild();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_Selectable(string label, bool selected);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_Selectable_WithFlags(string label, bool selected,int flags);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetContentRegionAvailX();
 		[MethodImpl(MethodImplOptions.InternalCall)]
