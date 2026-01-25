@@ -32,18 +32,21 @@ namespace E3Core.UI.Windows.Hud
 		private static List<TableRow_BuffInfo> _tableRowsBuffInfo = new List<TableRow_BuffInfo>();
 		private static List<TableRow_BuffInfo> _tableRowsSongInfo = new List<TableRow_BuffInfo>();
 		private static List<TableRow_BuffInfo> _tableRowsDebuffInfo = new List<TableRow_BuffInfo>();
-		private static Dictionary<Int32, Spell> _spellCache = new Dictionary<int, Spell>();
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 		private static string _WindowName = "E3 Main Hud";
 		private static string _WindowName_Buffs = "E3 Buff Hud";
-
+		private static string _WindowName_Songs = "E3 Song Hud";
+		private static Int32 iconSize = 40;
+		private static Int32 fontSize = 8;
 		private static int _fladeTimeInMS = 1000;
 		private static double _fadeRatio = 0; //gets updated on init
 
 
 		private static bool _deattachBuffs = false;
+		private static bool _deattachSongs = false;
 		private const string IMGUI_DETATCH_BUFFS_ID = FontAwesome.FAExternalLinkSquare + "##detach_buffs";
+		private const string IMGUI_DETATCH_SONGS_ID = FontAwesome.FAExternalLinkSquare + "##detach_songs";
 
 		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _distanceSeverity = new[]
 		{
@@ -453,8 +456,6 @@ namespace E3Core.UI.Windows.Hud
 		{
 			if (imgui_Begin_OpenFlagGet(_WindowName))
 			{
-				RefreshGroupInfo();
-
 				E3ImGUI.PushCurrentTheme();
 				try
 				{
@@ -464,12 +465,20 @@ namespace E3Core.UI.Windows.Hud
 						imgui_SetNextWindowBgAlpha(_windowAlpha);
 						if (window.Begin(_WindowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse))
 						{
+							RefreshGroupInfo();
+							RefreshBuffInfo();
+
 							RenderGroupTable();
 
 							if (!_deattachBuffs)
 							{
 								RenderBuffTableSimple();
 							}
+							if(!_deattachSongs)
+							{
+								RenderSongTableSimple();
+							}
+						
 						}
 					}
 
@@ -515,7 +524,10 @@ namespace E3Core.UI.Windows.Hud
 			{
 				_deattachBuffs = false;
 			}
-
+			if (_deattachSongs && !imgui_Begin_OpenFlagGet(_WindowName_Songs))
+			{
+				_deattachSongs = false;
+			}
 		}
 		private static void RenderHub()
 		{
@@ -525,19 +537,164 @@ namespace E3Core.UI.Windows.Hud
 
 			RenderHub_MainWindow();
 			RenderHub_TryDeattached(_WindowName_Buffs, _deattachBuffs, RenderBuffTableSimple, noTitleBar: true);
+			RenderHub_TryDeattached(_WindowName_Songs, _deattachSongs, RenderSongTableSimple, noTitleBar: true);
 
 		}
 		private static void RenderHub_WindowBuffs()
 		{
 
 		}
+		private static void RenderSongTableSimple()
+		{
+			float widthAvail = imgui_GetContentRegionAvailX();
+
+			Int32 numberOfBuffsPerRow = (int)widthAvail / iconSize;
+
+			if (numberOfBuffsPerRow < 1) numberOfBuffsPerRow = 1;
+			imgui_Text("Songs:");
+
+			if (!_deattachSongs)
+			{
+				imgui_SameLine(0);
+				imgui_SetCursorPosX(widthAvail - 20);
+				if (imgui_Button(IMGUI_DETATCH_SONGS_ID))
+				{
+					_deattachSongs = true;
+					imgui_Begin_OpenFlagSet(_WindowName_Songs, true);
+				}
+			}
+			if (_deattachSongs)
+			{
+				float windowWidth = imgui_GetWindowWidth();
+				imgui_SameLine(windowWidth - 35);
+				if (imgui_Button("<<##reattach_songs"))
+				{
+					_deattachSongs = false;
+					imgui_Begin_OpenFlagSet(_WindowName_Songs, false);
+				}
+			}
+
+			using (var table = ImGUITable.Aquire())
+			{
+				int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
+									  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
+									  );
+
+				float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
+				if (table.BeginTable("E3HubSongTableSimple", 1, tableFlags, 0f, 0))
+				{
+					imgui_TableSetupColumn_Default("Songs");
+					List<TableRow_BuffInfo> currentStats = _tableRowsSongInfo;
+					Int32 counter = 0;
+					foreach (var stats in currentStats)
+					{
+						if (counter % numberOfBuffsPerRow == 0)
+						{
+							imgui_TableNextRow();
+							imgui_TableNextColumn();
+
+						}
+						else
+						{
+							imgui_SameLine(0, 0);
+						}
+						float x = imgui_GetCursorScreenPosX();
+						float y = imgui_GetCursorScreenPosY();
+						imgui_DrawSpellIconByIconIndex(stats.iconID, iconSize);
+						if (_newbuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+						{
+							Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
+
+							long alpha = (Int64)(timeDelta * _fadeRatio);
+
+							if (alpha > 255) alpha = 255;
+							imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(0, 255, 0, 255 - (uint)alpha));
+
+							if (timeDelta > _fladeTimeInMS) _newbuffsTimeStamps.Remove(stats.SpellID);
+
+						}
+						using (var popup = ImGUIPopUpContext.Aquire())
+						{
+							if (popup.BeginPopupContextItem($"SongTableIconContext-{counter}", 1))
+							{
+								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text(stats.Name);
+								imgui_Separator();
+								if (imgui_MenuItem("Drop buff"))
+								{
+									string command = $"/removebuff {stats.Name}";
+									if (!String.IsNullOrWhiteSpace(_selectedToonForBuffs))
+									{
+										E3.Bots.BroadcastCommandToPerson(_selectedToonForBuffs, command);
+									}
+									else
+									{
+										E3ImGUI.MQCommandQueue.Enqueue(command);
+									}
+								}
+								if (imgui_MenuItem("Drop buff from group"))
+								{
+									E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+									E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
+								}
+								if (imgui_MenuItem("Drop buff from everyone"))
+								{
+									E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+									E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
+								}
+								imgui_PopStyleColor(1);
+
+							}
+						}
+						if (stats.SpellType == 0)
+						{
+							imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(255, 0, 0, 50));
+						}
+						if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
+						{
+							float newX = x + (float)(iconSize / 2) - (fontSize);
+							float newY = y + (float)((iconSize) - (fontSize * 2));
+							imgui_GetWindowDrawList_AddRectFilled(newX, newY, newX + (fontSize * 2), newY + (iconSize - (newY - y)), GetColor(0, 0, 0, 100));
+							imgui_GetWindowDrawList_AddText(x + (float)(iconSize / 2) - (fontSize), y + (float)((iconSize) - (fontSize * 2)), GetColor(255, 255, 255, 255), stats.SimpleDuration);
+
+						}
+
+						if (!String.IsNullOrWhiteSpace(stats.HitCount))
+						{
+							imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.HitCount);
+
+						}
+						if (imgui_IsItemHovered())
+						{
+							using (var tooltip = ImGUIToolTip.Aquire())
+							{
+								imgui_Text($"Spell: {stats.Name}");
+								imgui_Text($"SpellID: {stats.SpellID}");
+								imgui_Text($"Duration: {stats.Duration}");
+								if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
+								{
+									imgui_Separator();
+									foreach (var effect in stats.Spell.SpellEffects)
+									{
+										if (!string.IsNullOrWhiteSpace(effect))
+										{
+											imgui_Text(effect);
+
+										}
+									}
+
+								}
+							}
+						}
+						counter++;
+					}
+				}
+			}
+
+		}
 		private static void RenderBuffTableSimple()
 		{
 			RefreshBuffInfo();
-
-
-			Int32 iconSize = 40;
-			Int32 fontSize = 8;
 
 			float widthAvail = imgui_GetContentRegionAvailX();
 
@@ -799,124 +956,6 @@ namespace E3Core.UI.Windows.Hud
 
 				}
 
-				imgui_Separator();
-				imgui_Text("Songs:");
-				using (var table = ImGUITable.Aquire())
-				{
-					int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
-										  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
-										  );
-
-					float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
-					if (table.BeginTable("E3HubSongTableSimple", 1, tableFlags, 0f, 0))
-					{
-						imgui_TableSetupColumn_Default("Songs");
-						List<TableRow_BuffInfo> currentStats = _tableRowsSongInfo;
-						Int32 counter = 0;
-						foreach (var stats in currentStats)
-						{
-							if (counter % numberOfBuffsPerRow == 0)
-							{
-								imgui_TableNextRow();
-								imgui_TableNextColumn();
-
-							}
-							else
-							{
-								imgui_SameLine(0, 0);
-							}
-							float x = imgui_GetCursorScreenPosX();
-							float y = imgui_GetCursorScreenPosY();
-							imgui_DrawSpellIconByIconIndex(stats.iconID, iconSize);
-							if (_newbuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
-							{
-								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
-
-								long alpha = (Int64)(timeDelta * _fadeRatio);
-
-								if (alpha > 255) alpha = 255;
-								imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(0, 255, 0, 255 - (uint)alpha));
-
-								if (timeDelta > _fladeTimeInMS) _newbuffsTimeStamps.Remove(stats.SpellID);
-
-							}
-							using (var popup = ImGUIPopUpContext.Aquire())
-							{
-								if (popup.BeginPopupContextItem($"SongTableIconContext-{counter}", 1))
-								{
-									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-									imgui_Text(stats.Name);
-									imgui_Separator();
-									if (imgui_MenuItem("Drop buff"))
-									{
-										string command = $"/removebuff {stats.Name}";
-										if (!String.IsNullOrWhiteSpace(_selectedToonForBuffs))
-										{
-											E3.Bots.BroadcastCommandToPerson(_selectedToonForBuffs, command);
-										}
-										else
-										{
-											E3ImGUI.MQCommandQueue.Enqueue(command);
-										}
-									}
-									if (imgui_MenuItem("Drop buff from group"))
-									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
-										E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
-									}
-									if (imgui_MenuItem("Drop buff from everyone"))
-									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
-										E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
-									}
-									imgui_PopStyleColor(1);
-
-								}
-							}
-							if (stats.SpellType == 0)
-							{
-								imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(255, 0, 0, 50));
-							}
-							if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
-							{
-								float newX = x + (float)(iconSize / 2) - (fontSize);
-								float newY = y + (float)((iconSize) - (fontSize * 2));
-								imgui_GetWindowDrawList_AddRectFilled(newX, newY, newX + (fontSize * 2), newY + (iconSize - (newY - y)), GetColor(0, 0, 0, 100));
-								imgui_GetWindowDrawList_AddText(x + (float)(iconSize / 2) - (fontSize), y + (float)((iconSize) - (fontSize * 2)), GetColor(255, 255, 255, 255), stats.SimpleDuration);
-
-							}
-
-							if (!String.IsNullOrWhiteSpace(stats.HitCount))
-							{
-								imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.HitCount);
-
-							}
-							if (imgui_IsItemHovered())
-							{
-								using (var tooltip = ImGUIToolTip.Aquire())
-								{
-									imgui_Text($"Spell: {stats.Name}");
-									imgui_Text($"SpellID: {stats.SpellID}");
-									imgui_Text($"Duration: {stats.Duration}");
-									if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
-									{
-										imgui_Separator();
-										foreach (var effect in stats.Spell.SpellEffects)
-										{
-											if (!string.IsNullOrWhiteSpace(effect))
-											{
-												imgui_Text(effect);
-
-											}
-										}
-
-									}
-								}
-							}
-							counter++;
-						}
-					}
-				}
 			}
 
 		}
