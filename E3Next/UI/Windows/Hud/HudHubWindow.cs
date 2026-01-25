@@ -161,211 +161,194 @@ namespace E3Core.UI.Windows.Hud
 			RefreshGroupInfo();
 		}
 
-
+		static string _exceptionMessage = String.Empty;
 		static string _prevousBuffInfo = string.Empty;
 		static HashSet<Int32> _previousBuffs = new HashSet<Int32>();
 		static Dictionary<Int32,Int64> _newbuffsTimeStamps = new Dictionary<Int32,Int64>();
 		private static void RefreshBuffInfo()
 		{
 			if (!e3util.ShouldCheck(ref _lastUpdated_Buffs, _lastUpdateInterval_Buffs)) return;
-			
-			string buffInfo = E3.Bots.Query(E3.CurrentName, "${Me.BuffInfo}");
 
-			if (_prevousBuffInfo!=string.Empty)
+
+			try
 			{
-				if(_prevousBuffInfo==buffInfo)
+				string userTouse = E3.CurrentName;
+
+				if (!String.IsNullOrWhiteSpace(_selectedToonForBuffs))
 				{
-					//no difference
-					return;
+					userTouse = _selectedToonForBuffs;
 				}
-				
-			}
-			_prevousBuffInfo = buffInfo;
+				string buffInfo = E3.Bots.Query(userTouse, "${Me.BuffInfo}");
 
-			_tableRowsBuffInfo.Clear();
-			_tableRowsSongInfo.Clear();
-			_tableRowsDebuffInfo.Clear();
-
-			if (!String.IsNullOrWhiteSpace(buffInfo))
-			{
-				string s = buffInfo;
-
-				BuffDataList bufflist = new BuffDataList();
-				bufflist.MergeFrom(ByteString.FromBase64(s));
-				
-				foreach (var buff in bufflist.Data)
+				if (_prevousBuffInfo != string.Empty)
 				{
-
-					Int32 spellid = 0;
-					Int32 duration = 0;
-					Int32 hitcount = 0;
-					Int32 spelltypeid = 0;
-					Int32 bufftype = 0;
-					Int32 counterType = -1;
-					Int32 counterNumber = -1;
-
-					spellid = buff.SpellID;
-					duration = buff.Duration;
-					hitcount = buff.Hitcount;
-					spelltypeid = buff.SpellTypeID;
-					bufftype = buff.BuffType;
-					counterType = buff.CounterType;
-					counterNumber = buff.CounterNumber;
-
-					Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
-					string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-					var buffRow = new TableRow_BuffInfo(buffName);
-					buffRow.iconID = spellIcon;
-
-					var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
-					buffRow.Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
-					buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
-					buffRow.SpellType = (Int32)spelltypeid;
-					//check if spellid exists
-
-					if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
+					if (_prevousBuffInfo == buffInfo)
 					{
-						buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
-					}
-					else
-					{
-						buffRow.Spell = null;
+						//no difference
+						return;
 					}
 
+				}
 
-					if (hitcount > 0)
-					{
-						buffRow.HitCount = hitcount.ToString();
-					}
+			
 
-					if (duration <0)
+				_prevousBuffInfo = buffInfo;
+
+				if (!String.IsNullOrWhiteSpace(buffInfo))
+				{
+					string s = buffInfo;
+					BuffDataList bufflist = new BuffDataList();
+					bufflist.MergeFrom(ByteString.FromBase64(s));
+
+					//if (E3.CurrentName != userTouse) return;
+					_tableRowsBuffInfo.Clear();
+					_tableRowsSongInfo.Clear();
+					_tableRowsDebuffInfo.Clear();
+
+					foreach (var buff in bufflist.Data)
 					{
-						buffRow.SimpleDuration = "(p)";
-					}
-					else if (buffTimeSpan.TotalHours >= 1)
-					{
-						buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
-					}
-					else if (buffTimeSpan.TotalMinutes >= 1)
-					{
-						buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
-					}
-					else
-					{
-						buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
-					}
-					if (duration < 160000d)
-					{
-						buffRow.DisplayName = buffName + $" ( {buffRow.Duration} )";
-					}
-					else
-					{
-						buffRow.DisplayName = buffName;
-					}
-					if (bufftype == 0) //if normal buff
-					{
-						if (spelltypeid == 0)
+
+						Int32 spellid = 0;
+						Int32 duration = 0;
+						Int32 hitcount = 0;
+						Int32 spelltypeid = 0;
+						Int32 bufftype = 0;
+						Int32 counterType = -1;
+						Int32 counterNumber = -1;
+
+						spellid = buff.SpellID;
+						duration = buff.Duration;
+						hitcount = buff.Hitcount;
+						spelltypeid = buff.SpellTypeID;
+						bufftype = buff.BuffType;
+						counterType = buff.CounterType;
+						counterNumber = buff.CounterNumber;
+
+						Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
+						string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
+						var buffRow = new TableRow_BuffInfo(buffName);
+						buffRow.iconID = spellIcon;
+
+						var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+						buffRow.Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+						buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
+						buffRow.SpellType = (Int32)spelltypeid;
+						//check if spellid exists
+
+						buffRow.SpellID = spellid;
+
+						if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
 						{
-							if (counterType == 0) buffRow.CounterType = "Disease";
-							else if (counterType == 1) buffRow.CounterType = "Poison";
-							else if (counterType == 2) buffRow.CounterType = "Curse";
-							else if (counterType == 3) buffRow.CounterType = "Corruption";
-
-							if (counterNumber > 0)
-							{
-								buffRow.CounterNumber = counterNumber.ToString();
-
-							}
-							_tableRowsDebuffInfo.Add(buffRow);
+							buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
 						}
 						else
 						{
-							_tableRowsBuffInfo.Add(buffRow);
+							buffRow.Spell = null;
+						}
+
+
+						if (hitcount > 0)
+						{
+							buffRow.HitCount = hitcount.ToString();
+						}
+
+						if (duration < 0)
+						{
+							buffRow.SimpleDuration = "(p)";
+						}
+						else if (buffTimeSpan.TotalHours >= 1)
+						{
+							buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
+						}
+						else if (buffTimeSpan.TotalMinutes >= 1)
+						{
+							buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
+						}
+						else
+						{
+							buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
+						}
+						if (duration < 160000d)
+						{
+							buffRow.DisplayName = buffName + $" ( {buffRow.Duration} )";
+						}
+						else
+						{
+							buffRow.DisplayName = buffName;
+						}
+						if (bufftype == 0) //if normal buff
+						{
+							if (spelltypeid == 0)
+							{
+								if (counterType == 0) buffRow.CounterType = "Disease";
+								else if (counterType == 1) buffRow.CounterType = "Poison";
+								else if (counterType == 2) buffRow.CounterType = "Curse";
+								else if (counterType == 3) buffRow.CounterType = "Corruption";
+
+								if (counterNumber > 0)
+								{
+									buffRow.CounterNumber = counterNumber.ToString();
+
+								}
+								_tableRowsDebuffInfo.Add(buffRow);
+							}
+							else
+							{
+								_tableRowsBuffInfo.Add(buffRow);
+							}
+						}
+						else
+						{
+							//this is a song
+							_tableRowsSongInfo.Add(buffRow);
 						}
 					}
-					else
-					{
-						//this is a song
-						_tableRowsSongInfo.Add(buffRow);
-					}
-				}
 
-				if (_previousBuffs.Count > 0)
-				{
+					if (_previousBuffs.Count > 0)
+					{
+						foreach (var buff in _tableRowsBuffInfo)
+						{
+							if (!_previousBuffs.Contains(buff.SpellID))
+							{
+								_newbuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+							}
+						}
+						foreach (var buff in _tableRowsSongInfo)
+						{
+							if (!_previousBuffs.Contains(buff.SpellID))
+							{
+								_newbuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+							}
+						}
+						foreach (var buff in _tableRowsDebuffInfo)
+						{
+							if (!_previousBuffs.Contains(buff.SpellID))
+							{
+								_newbuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+							}
+						}
+					}
+					_previousBuffs.Clear();
 					foreach (var buff in _tableRowsBuffInfo)
 					{
-						if (!_previousBuffs.Contains(buff.Spell.SpellID))
-						{
-							_newbuffsTimeStamps[buff.Spell.SpellID] = Core.StopWatch.ElapsedMilliseconds;
-						}
+						_previousBuffs.Add(buff.SpellID);
 					}
 					foreach (var buff in _tableRowsSongInfo)
 					{
-						if (!_previousBuffs.Contains(buff.Spell.SpellID))
-						{
-							_newbuffsTimeStamps[buff.Spell.SpellID] = Core.StopWatch.ElapsedMilliseconds;
-						}
+						_previousBuffs.Add(buff.SpellID);
 					}
 					foreach (var buff in _tableRowsDebuffInfo)
 					{
-						if (!_previousBuffs.Contains(buff.Spell.SpellID))
-						{
-							_newbuffsTimeStamps[buff.Spell.SpellID] = Core.StopWatch.ElapsedMilliseconds;
-						}
+						_previousBuffs.Add(buff.SpellID);
 					}
 				}
-				_previousBuffs.Clear();
-				foreach(var buff in _tableRowsBuffInfo)
-				{
-					_previousBuffs.Add(buff.Spell.SpellID);
-				}
-				foreach (var buff in _tableRowsSongInfo)
-				{
-					_previousBuffs.Add(buff.Spell.SpellID);
-				}
-				foreach (var buff in _tableRowsDebuffInfo)
-				{
-					_previousBuffs.Add(buff.Spell.SpellID);
-				}
-
-				//comma delimited list of spelid:buffduration_in_ms
-				//need to get the spellid
-
-				//int start = 0;
-				//int end = 0;
-				//char delim = ':';
-				//List<Int64> tempBuffer = new List<Int64>();
-				//foreach (char x in s)
-				//{
-				//	if (x == delim || end == s.Length - 1)
-				//	{
-				//		if (end == s.Length - 1 && x != delim)
-				//			end++;
-				//		//number,number
-				//		tempBuffer.Clear();
-				//		string tstring = s.Substring(start, end - start);
-				//		e3util.StringsToNumbers(tstring, ',', tempBuffer);
-				//		spellid =(Int32) tempBuffer[0];
-
-
-
-
-				//		duration=tempBuffer[1];
-				//		hitcount = tempBuffer[2];
-				//		spelltypeid = tempBuffer[3];
-				//		bufftype = tempBuffer[4];
-				//		counterType = tempBuffer[5];
-				//		counterNumber = tempBuffer[6];
-
-
-
-
-
-				//		start = end + 1;
-				//	}
-				//	end++;
-				//}
 			}
+			catch(Exception ex)
+			{
+				_exceptionMessage = ex.StackTrace;
+			}
+
+			
 		}
 		private static void RefreshGroupInfo()
 		{
@@ -541,6 +524,13 @@ namespace E3Core.UI.Windows.Hud
 		{
 			RefreshBuffInfo();
 
+			if (!string.IsNullOrEmpty(_exceptionMessage))
+			{
+				imgui_Text("Error:" + _exceptionMessage);
+
+			}
+
+
 			using (var igFont = IMGUI_Fonts.Aquire())
 			{
 				igFont.PushFont("arial_bold-20");
@@ -584,7 +574,7 @@ namespace E3Core.UI.Windows.Hud
 								float x = imgui_GetCursorScreenPosX();
 								float y = imgui_GetCursorScreenPosY();
 								imgui_DrawSpellIconByIconIndex(stats.iconID, iconSize);
-								if (_newbuffsTimeStamps.TryGetValue(stats.Spell.SpellID, out var ts))
+								if (_newbuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
 								{
 									Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
 
@@ -593,7 +583,7 @@ namespace E3Core.UI.Windows.Hud
 									if (alpha > 255) alpha = 255;
 									imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
 
-									if (timeDelta > 2000) _newbuffsTimeStamps.Remove(stats.Spell.SpellID);
+									if (timeDelta > 2000) _newbuffsTimeStamps.Remove(stats.SpellID);
 
 								}
 								if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
@@ -614,7 +604,7 @@ namespace E3Core.UI.Windows.Hud
 									using (var tooltip = ImGUIToolTip.Aquire())
 									{
 										imgui_Text($"Spell: {stats.Name}");
-										imgui_Text($"SpellID: {stats.Spell.SpellID.ToString()}");
+										imgui_Text($"SpellID: {stats.SpellID}");
 										imgui_Text($"Duration: {stats.Duration}");
 										if (!String.IsNullOrWhiteSpace(stats.CounterType))
 										{
@@ -643,6 +633,11 @@ namespace E3Core.UI.Windows.Hud
 				}
 
 				imgui_Text("Buffs:");
+				if (!String.IsNullOrWhiteSpace(_selectedToonForBuffs))
+				{
+					imgui_SameLine(0);
+					imgui_Text(_selectedToonForBuffs);
+				}
 				using (var table = ImGUITable.Aquire())
 				{
 					int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
@@ -675,7 +670,7 @@ namespace E3Core.UI.Windows.Hud
 							float y = imgui_GetCursorScreenPosY();
 							imgui_DrawSpellIconByIconIndex(stats.iconID, iconSize);
 							
-							if(_newbuffsTimeStamps.TryGetValue(stats.Spell.SpellID,out var ts))
+							if(_newbuffsTimeStamps.TryGetValue(stats.SpellID,out var ts))
 							{
 								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
 
@@ -684,7 +679,7 @@ namespace E3Core.UI.Windows.Hud
 								if (alpha > 255) alpha = 255;
 								imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(0, 255, 0, 255-(uint)alpha));
 								
-								if(timeDelta>2000)	_newbuffsTimeStamps.Remove(stats.Spell.SpellID);
+								if(timeDelta>2000)	_newbuffsTimeStamps.Remove(stats.SpellID);
 								
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
@@ -696,17 +691,17 @@ namespace E3Core.UI.Windows.Hud
 									imgui_Separator();
 									if (imgui_MenuItem("Drop buff"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Spell.SpellName}");
+										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
 									}
 									if (imgui_MenuItem("Drop buff from group"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Spell.SpellName}");
-										E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Spell.SpellName}");
+										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+										E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
 									}
 									if (imgui_MenuItem("Drop buff from everyone"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Spell.SpellName}");
-										E3.Bots.BroadcastCommand($"/removebuff {stats.Spell.SpellName}");
+										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+										E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
 									}
 									imgui_PopStyleColor(1);
 
@@ -730,12 +725,13 @@ namespace E3Core.UI.Windows.Hud
 								imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.HitCount);
 
 							}
+
 							if (imgui_IsItemHovered())
 							{
 								using (var tooltip = ImGUIToolTip.Aquire())
 								{
 									imgui_Text($"Spell: {stats.Name}");
-									imgui_Text($"SpellID: {stats.Spell.SpellID.ToString()}");
+									imgui_Text($"SpellID: {stats.SpellID}");
 									imgui_Text($"Duration: {stats.Duration}");
 
 									if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
@@ -792,7 +788,7 @@ namespace E3Core.UI.Windows.Hud
 							float x = imgui_GetCursorScreenPosX();
 							float y = imgui_GetCursorScreenPosY();
 							imgui_DrawSpellIconByIconIndex(stats.iconID, iconSize);
-							if (_newbuffsTimeStamps.TryGetValue(stats.Spell.SpellID, out var ts))
+							if (_newbuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
 							{
 								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
 
@@ -801,7 +797,7 @@ namespace E3Core.UI.Windows.Hud
 								if (alpha > 255) alpha = 255;
 								imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(0, 255, 0, 255 - (uint)alpha));
 
-								if (timeDelta > 2000) _newbuffsTimeStamps.Remove(stats.Spell.SpellID);
+								if (timeDelta > 2000) _newbuffsTimeStamps.Remove(stats.SpellID);
 
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
@@ -813,17 +809,17 @@ namespace E3Core.UI.Windows.Hud
 									imgui_Separator();
 									if (imgui_MenuItem("Drop buff"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Spell.SpellName}");
+										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
 									}
 									if (imgui_MenuItem("Drop buff from group"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Spell.SpellName}");
-										E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Spell.SpellName}");
+										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+										E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
 									}
 									if (imgui_MenuItem("Drop buff from everyone"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Spell.SpellName}");
-										E3.Bots.BroadcastCommand($"/removebuff {stats.Spell.SpellName}");
+										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+										E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
 									}
 									imgui_PopStyleColor(1);
 
@@ -852,7 +848,7 @@ namespace E3Core.UI.Windows.Hud
 								using (var tooltip = ImGUIToolTip.Aquire())
 								{
 									imgui_Text($"Spell: {stats.Name}");
-									imgui_Text($"SpellID: {stats.Spell.SpellID.ToString()}");
+									imgui_Text($"SpellID: {stats.SpellID}");
 									imgui_Text($"Duration: {stats.Duration}");
 									if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
 									{
@@ -878,6 +874,10 @@ namespace E3Core.UI.Windows.Hud
 		
 		private static string _selectedGroupFont = "robo";
 		static int selected_row_group = -1;
+
+		private static string _selectedToonForBuffs = String.Empty;
+
+
 		private static void RenderGroupTable()
 		{
 			using (var combo = ImGUICombo.Aquire())
@@ -899,11 +899,6 @@ namespace E3Core.UI.Windows.Hud
 			using (var imguiFont = IMGUI_Fonts.Aquire())
 			{
 				imguiFont.PushFont(_selectedGroupFont);
-
-				imgui_Text("Size:");
-				imgui_SameLine(0);
-				imgui_Text(imgui_GetContentRegionAvailX().ToString());
-				
 				using (var table = ImGUITable.Aquire())
 				{
 					int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
@@ -937,16 +932,18 @@ namespace E3Core.UI.Windows.Hud
 							if (imgui_Selectable_WithFlags($"##row_selected_{rowCount}", is_row_selected, (int)(ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags.ImGuiSelectableFlags_AllowOverlap)))
 							{
 								selected_row_group = rowCount;
+								_selectedToonForBuffs = stats.Name;
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
 								if (popup.BeginPopupContextItem($"##row_selected_context_{rowCount}", 1))
 								{
+									_selectedToonForBuffs = String.Empty;
 									selected_row_group = -1;
 									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 									imgui_Text(stats.Name);
 									imgui_Separator();
-									if (imgui_MenuItem("Forground Toon"))
+									if (imgui_MenuItem("Foreground Toon"))
 									{
 										string command = $"/e3bct {stats.Name} /foreground";
 										E3ImGUI.MQCommandQueue.Enqueue(command);
@@ -991,6 +988,7 @@ namespace E3Core.UI.Windows.Hud
 		public class TableRow_BuffInfo
 		{
 			public Spell Spell;
+			public Int32 SpellID = 0;
 			public string Name;
 			public string DisplayName { get; set; }
 			public (float r, float g, float b) DisplayNameColor;
