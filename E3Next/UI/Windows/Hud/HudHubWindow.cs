@@ -43,6 +43,7 @@ namespace E3Core.UI.Windows.Hud
 
 
 		private static bool _deattachBuffs = false;
+		private const string FA_EXTERNAL_LINK_SQUARE = "\uf14c";
 
 		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _distanceSeverity = new[]
 		{
@@ -467,7 +468,7 @@ namespace E3Core.UI.Windows.Hud
 
 							if (!_deattachBuffs)
 							{
-								if (imgui_Button("Deattach##detach_buffs"))
+								if (imgui_Button($"{FA_EXTERNAL_LINK_SQUARE}##detach_buffs"))
 								{
 									_deattachBuffs = true;
 									imgui_Begin_OpenFlagSet(_WindowName_Buffs, true);
@@ -487,7 +488,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 		}
-		private static void RenderHub_TryDeattached(string windowName,bool openFlag, Action ExecuteMethod)
+		private static void RenderHub_TryDeattached(string windowName, bool openFlag, Action ExecuteMethod, bool noTitleBar = false)
 		{
 			if (openFlag && imgui_Begin_OpenFlagGet(windowName))
 			{
@@ -498,7 +499,12 @@ namespace E3Core.UI.Windows.Hud
 					using (var window = ImGUIWindow.Aquire())
 					{
 						imgui_SetNextWindowBgAlpha(_windowAlpha);
-						if (window.Begin(windowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse))
+						int windowFlags = (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse;
+						if (noTitleBar)
+						{
+							windowFlags |= (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar;
+						}
+						if (window.Begin(windowName, windowFlags))
 						{
 							ExecuteMethod.Invoke();
 						}
@@ -526,7 +532,7 @@ namespace E3Core.UI.Windows.Hud
 			TryReattachWindowsIfClosed();
 
 			RenderHub_MainWindow();
-			RenderHub_TryDeattached(_WindowName_Buffs,_deattachBuffs, RenderBuffTableSimple);
+			RenderHub_TryDeattached(_WindowName_Buffs, _deattachBuffs, RenderBuffTableSimple, noTitleBar: true);
 
 		}
 		private static void RenderHub_WindowBuffs()
@@ -652,6 +658,16 @@ namespace E3Core.UI.Windows.Hud
 				{
 					imgui_SameLine(0);
 					imgui_Text(_selectedToonForBuffs);
+				}
+				if (_deattachBuffs)
+				{
+					float windowWidth = imgui_GetWindowWidth();
+					imgui_SameLine(windowWidth - 35);
+					if (imgui_Button("<<##reattach_buffs"))
+					{
+						_deattachBuffs = false;
+						imgui_Begin_OpenFlagSet(_WindowName_Buffs, false);
+					}
 				}
 				using (var table = ImGUITable.Aquire())
 				{
@@ -912,47 +928,99 @@ namespace E3Core.UI.Windows.Hud
 
 		private static string _selectedToonForBuffs = String.Empty;
 
+		// Column visibility settings for group table
+		private static bool _showColumnHP = true;
+		private static bool _showColumnEnd = true;
+		private static bool _showColumnMana = true;
+		private static bool _showColumnDistance = true;
+
 
 		private static void RenderGroupTable()
 		{
-			using (var combo = ImGUICombo.Aquire())
-			{
-				if (combo.BeginCombo("##Select Font for GroupTable", _selectedGroupFont))
-				{
-					foreach (var pair in E3ImGUI.FontList)
-					{
-						bool sel = string.Equals(_selectedGroupFont, pair.Key, StringComparison.OrdinalIgnoreCase);
-
-						if (imgui_Selectable($"{pair.Key}", sel))
-						{
-							_selectedGroupFont = pair.Key;
-						}
-					}
-				}
-			}
-
 			using (var imguiFont = IMGUI_Fonts.Aquire())
 			{
 				imguiFont.PushFont(_selectedGroupFont);
 				using (var table = ImGUITable.Aquire())
 				{
 					int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
-										  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
+										  ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
+										  ImGuiTableFlags.ImGuiTableFlags_BordersInnerV |
+										  ImGuiTableFlags.ImGuiTableFlags_RowBg
 										  );
 
 					//float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
 					float tableHeight = 200f;
 
-					if (table.BeginTable("E3HubGroupTable", 5, tableFlags, 0f, 0))
+					// Calculate visible column count (Name is always visible)
+					int columnCount = 1;
+					if (_showColumnHP) columnCount++;
+					if (_showColumnEnd) columnCount++;
+					if (_showColumnMana) columnCount++;
+					if (_showColumnDistance) columnCount++;
+
+					if (table.BeginTable("E3HubGroupTable", columnCount, tableFlags, 0f, 0))
 					{
 
 						imgui_TableSetupColumn_Default("Name");
-						imgui_TableSetupColumn_Default("HP");
-						imgui_TableSetupColumn_Default("End");
-						imgui_TableSetupColumn_Default("Mana");
-						imgui_TableSetupColumn_Default("Dist");
+						if (_showColumnHP) imgui_TableSetupColumn_Default("HP");
+						if (_showColumnEnd) imgui_TableSetupColumn_Default("End");
+						if (_showColumnMana) imgui_TableSetupColumn_Default("Mana");
+						if (_showColumnDistance) imgui_TableSetupColumn_Default("Dist");
 
 						imgui_TableHeadersRow();
+
+						// Right-click context menu on header for column visibility and font
+						using (var popup = ImGUIPopUpContext.Aquire())
+						{
+							if (popup.BeginPopupContextItem("##GroupTableHeaderContext", 1))
+							{
+								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Show Columns");
+								imgui_PopStyleColor(1);
+								imgui_Separator();
+
+								if (imgui_Checkbox("##col_hp", _showColumnHP))
+									_showColumnHP = imgui_Checkbox_Get("##col_hp");
+								imgui_SameLine(0);
+								imgui_Text("HP");
+
+								if (imgui_Checkbox("##col_end", _showColumnEnd))
+									_showColumnEnd = imgui_Checkbox_Get("##col_end");
+								imgui_SameLine(0);
+								imgui_Text("Endurance");
+
+								if (imgui_Checkbox("##col_mana", _showColumnMana))
+									_showColumnMana = imgui_Checkbox_Get("##col_mana");
+								imgui_SameLine(0);
+								imgui_Text("Mana");
+
+								if (imgui_Checkbox("##col_dist", _showColumnDistance))
+									_showColumnDistance = imgui_Checkbox_Get("##col_dist");
+								imgui_SameLine(0);
+								imgui_Text("Distance");
+
+								imgui_Separator();
+								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Font");
+								imgui_PopStyleColor(1);
+
+								using (var combo = ImGUICombo.Aquire())
+								{
+									if (combo.BeginCombo("##Select Font for GroupTable", _selectedGroupFont))
+									{
+										foreach (var pair in E3ImGUI.FontList)
+										{
+											bool sel = string.Equals(_selectedGroupFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+											if (imgui_Selectable($"{pair.Key}", sel))
+											{
+												_selectedGroupFont = pair.Key;
+											}
+										}
+									}
+								}
+							}
+						}
 
 						List<TableRow_GroupInfo> currentStats = _tableRows_GroupInfo;
 
@@ -991,25 +1059,36 @@ namespace E3Core.UI.Windows.Hud
 							var c = stats.DisplayNameColor;
 							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.DisplayName);
 
-							imgui_TableNextColumn();
-							c = stats.HPColor;
-							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.HP);
-							imgui_TableNextColumn();
-							c = stats.EndColor;
-							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Endurance);
-							imgui_TableNextColumn();
-							c = stats.ManaColor;
-							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Mana);
-							imgui_TableNextColumn();
-
-							if (double.TryParse(stats.Distance, out _))
+							if (_showColumnHP)
 							{
-								c = stats.DistanceColor;
-								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Distance);
+								imgui_TableNextColumn();
+								c = stats.HPColor;
+								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.HP);
 							}
-							else
+							if (_showColumnEnd)
 							{
-								imgui_Text(stats.Distance);
+								imgui_TableNextColumn();
+								c = stats.EndColor;
+								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Endurance);
+							}
+							if (_showColumnMana)
+							{
+								imgui_TableNextColumn();
+								c = stats.ManaColor;
+								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Mana);
+							}
+							if (_showColumnDistance)
+							{
+								imgui_TableNextColumn();
+								if (double.TryParse(stats.Distance, out _))
+								{
+									c = stats.DistanceColor;
+									imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Distance);
+								}
+								else
+								{
+									imgui_Text(stats.Distance);
+								}
 							}
 							
 						}
