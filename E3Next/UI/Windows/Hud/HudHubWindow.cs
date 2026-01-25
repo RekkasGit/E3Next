@@ -38,6 +38,10 @@ namespace E3Core.UI.Windows.Hud
 		private static string _WindowName = "E3 Main Hud";
 		private static string _WindowName_Buffs = "E3 Buff Hud";
 
+		private static int _fladeTimeInMS = 1000;
+		private static double _fadeRatio = 0; //gets updated on init
+
+
 		private static bool _deattachBuffs = false;
 
 		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _distanceSeverity = new[]
@@ -69,6 +73,7 @@ namespace E3Core.UI.Windows.Hud
 		[SubSystemInit]
 		public static void Init()
 		{
+			_fadeRatio = ((double)255) / _fladeTimeInMS;
 			if (Core._MQ2MonoVersion < 0.37m) return;
 			E3ImGUI.RegisterWindow(_WindowName, RenderHub);
 
@@ -578,12 +583,14 @@ namespace E3Core.UI.Windows.Hud
 								{
 									Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
 
-									long alpha = (Int64)(timeDelta * 0.1275);
+									
+
+									long alpha = (Int64)(timeDelta * _fadeRatio);
 
 									if (alpha > 255) alpha = 255;
 									imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
 
-									if (timeDelta > 2000) _newbuffsTimeStamps.Remove(stats.SpellID);
+									if (timeDelta > _fladeTimeInMS) _newbuffsTimeStamps.Remove(stats.SpellID);
 
 								}
 								if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
@@ -674,12 +681,12 @@ namespace E3Core.UI.Windows.Hud
 							{
 								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
 
-								long alpha = (Int64)(timeDelta * 0.1275);
+								long alpha = (Int64)(timeDelta * _fadeRatio);
 
 								if (alpha > 255) alpha = 255;
 								imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(0, 255, 0, 255-(uint)alpha));
 								
-								if(timeDelta>2000)	_newbuffsTimeStamps.Remove(stats.SpellID);
+								if(timeDelta> _fladeTimeInMS)	_newbuffsTimeStamps.Remove(stats.SpellID);
 								
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
@@ -804,12 +811,12 @@ namespace E3Core.UI.Windows.Hud
 							{
 								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
 
-								long alpha = (Int64)(timeDelta * 0.1275);
+								long alpha = (Int64)(timeDelta * _fadeRatio);
 
 								if (alpha > 255) alpha = 255;
 								imgui_GetWindowDrawList_AddRectFilled(x, y, x + iconSize, y + iconSize, GetColor(0, 255, 0, 255 - (uint)alpha));
 
-								if (timeDelta > 2000) _newbuffsTimeStamps.Remove(stats.SpellID);
+								if (timeDelta > _fladeTimeInMS) _newbuffsTimeStamps.Remove(stats.SpellID);
 
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
