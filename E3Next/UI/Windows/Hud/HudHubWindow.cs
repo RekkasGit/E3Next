@@ -877,13 +877,9 @@ namespace E3Core.UI.Windows.Hud
 		}
 		
 		private static string _selectedGroupFont = "robo";
-		private static string _lastCommand = string.Empty;
 		static int selected_row_group = -1;
 		private static void RenderGroupTable()
 		{
-
-				//		_selectedGroupFont = GetGroupFontNameForSize();
-
 			using (var combo = ImGUICombo.Aquire())
 			{
 				if (combo.BeginCombo("##Select Font for GroupTable", _selectedGroupFont))
@@ -907,9 +903,6 @@ namespace E3Core.UI.Windows.Hud
 				imgui_Text("Size:");
 				imgui_SameLine(0);
 				imgui_Text(imgui_GetContentRegionAvailX().ToString());
-				imgui_Text("LastCommand:");
-				imgui_SameLine(0);
-				imgui_Text(_lastCommand);
 				
 				using (var table = ImGUITable.Aquire())
 				{
