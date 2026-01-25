@@ -21,7 +21,7 @@ namespace E3Core.UI.Windows.Hud
 {
 	public static class HudHubWindow
 	{
-		private static float _windowAlpha = 0;
+		private static float _windowAlpha = 0.4f;
 		private static bool _windowInitialized = false;
 		private static bool _imguiContextReady = false;
 		private static Int64 _lastUpdated_GroupInfo = 0;

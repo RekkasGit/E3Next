@@ -23,7 +23,7 @@ namespace E3Core.UI.Windows.Hud
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 		private static string _WindowName = "E3 Casting Hud";
-		private static float _windowAlpha = 0;
+		private static float _windowAlpha = 0.4f;
 		[SubSystemInit]
 		public static void Init()
 		{
