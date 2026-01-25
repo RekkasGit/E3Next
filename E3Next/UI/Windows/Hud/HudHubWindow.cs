@@ -955,7 +955,7 @@ namespace E3Core.UI.Windows.Hud
 									imgui_Separator();
 									if (imgui_MenuItem("Forground Toon"))
 									{
-										string command = $"/e3bct {stats.DisplayName} /foreground";
+										string command = $"/e3bct {stats.Name} /foreground";
 										E3ImGUI.MQCommandQueue.Enqueue(command);
 									}
 									imgui_PopStyleColor(1);
