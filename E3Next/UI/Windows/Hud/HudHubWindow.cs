@@ -408,7 +408,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				else
 				{
-					row.Distance = distance.ToString("N2");
+					row.Distance = distance.ToString("N0");
 					row.DistanceColor = GetDistanceSeverityColor(distance);
 				}
 
@@ -427,7 +427,15 @@ namespace E3Core.UI.Windows.Hud
 					row.DisplayName = user;
 					row.DisplayNameColor= (0.275f, 0.860f, 0.85f);
 				}
-				row.Mana = mana.ToString() + "%";
+				if(mana == 0)
+				{
+					row.Mana = "-";
+				}
+				else
+				{
+					row.Mana = mana.ToString() + "%";
+
+				}
 				row.ManaColor = GetResourceSeverityColor(mana);
 
 				row.Endurance = endurance.ToString() + "%";
@@ -938,11 +946,11 @@ namespace E3Core.UI.Windows.Hud
 					if (table.BeginTable("E3HubGroupTable", 5, tableFlags, 0f, 0))
 					{
 
-						imgui_TableSetupColumn_Default("Character");
+						imgui_TableSetupColumn_Default("Name");
 						imgui_TableSetupColumn_Default("HP");
 						imgui_TableSetupColumn_Default("End");
 						imgui_TableSetupColumn_Default("Mana");
-						imgui_TableSetupColumn_Default("Distance");
+						imgui_TableSetupColumn_Default("Dist");
 
 						imgui_TableHeadersRow();
 
