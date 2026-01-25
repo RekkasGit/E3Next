@@ -932,7 +932,7 @@ namespace E3Core.UI.Windows.Hud
 		private static bool _showColumnMana = true;
 		private static bool _showColumnDistance = true;
 
-
+		static List<string> _grouptable_column_names = new List<string>();
 		private static void RenderGroupTable()
 		{
 			using (var imguiFont = IMGUI_Fonts.Aquire())
@@ -948,76 +948,83 @@ namespace E3Core.UI.Windows.Hud
 
 					//float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
 					float tableHeight = 200f;
-
+					_grouptable_column_names.Clear();
+					_grouptable_column_names.Add("Name");
 					// Calculate visible column count (Name is always visible)
 					int columnCount = 1;
-					if (_showColumnHP) columnCount++;
-					if (_showColumnEnd) columnCount++;
-					if (_showColumnMana) columnCount++;
-					if (_showColumnDistance) columnCount++;
+
+					if (_showColumnHP) { columnCount++; _grouptable_column_names.Add("HP"); }
+					if (_showColumnEnd) { columnCount++; _grouptable_column_names.Add("End"); }
+					if (_showColumnMana) { columnCount++; _grouptable_column_names.Add("Mana"); }
+					if (_showColumnDistance) { columnCount++; _grouptable_column_names.Add("Dist"); }
+
+
 
 					if (table.BeginTable("E3HubGroupTable", columnCount, tableFlags, 0f, 0))
 					{
 
-						imgui_TableSetupColumn_Default("Name");
-						if (_showColumnHP) imgui_TableSetupColumn_Default("HP");
-						if (_showColumnEnd) imgui_TableSetupColumn_Default("End");
-						if (_showColumnMana) imgui_TableSetupColumn_Default("Mana");
-						if (_showColumnDistance) imgui_TableSetupColumn_Default("Dist");
-
-						imgui_TableHeadersRow();
-
-						// Right-click context menu on header for column visibility and font
-						using (var popup = ImGUIPopUpContext.Aquire())
+						for (Int32 i = 0; i < columnCount; i++)
 						{
-							if (popup.BeginPopupContextItem("##GroupTableHeaderContext", 1))
+							imgui_TableSetupColumn_Default(_grouptable_column_names[i]);
+						}
+
+						for (Int32 i = 0; i < columnCount; i++)
+						{
+							imgui_TableNextColumn();
+							imgui_TableHeader(_grouptable_column_names[i]);
+
+							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Show Columns");
-								imgui_PopStyleColor(1);
-								imgui_Separator();
-
-								if (imgui_Checkbox("##col_hp", _showColumnHP))
-									_showColumnHP = imgui_Checkbox_Get("##col_hp");
-								imgui_SameLine(0);
-								imgui_Text("HP");
-
-								if (imgui_Checkbox("##col_end", _showColumnEnd))
-									_showColumnEnd = imgui_Checkbox_Get("##col_end");
-								imgui_SameLine(0);
-								imgui_Text("Endurance");
-
-								if (imgui_Checkbox("##col_mana", _showColumnMana))
-									_showColumnMana = imgui_Checkbox_Get("##col_mana");
-								imgui_SameLine(0);
-								imgui_Text("Mana");
-
-								if (imgui_Checkbox("##col_dist", _showColumnDistance))
-									_showColumnDistance = imgui_Checkbox_Get("##col_dist");
-								imgui_SameLine(0);
-								imgui_Text("Distance");
-
-								imgui_Separator();
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Font");
-								imgui_PopStyleColor(1);
-
-								using (var combo = ImGUICombo.Aquire())
+								if (popup.BeginPopupContextItem($"##GroupTableHeaderContext-{i}", 1))
 								{
-									if (combo.BeginCombo("##Select Font for GroupTable", _selectedGroupFont))
-									{
-										foreach (var pair in E3ImGUI.FontList)
-										{
-											bool sel = string.Equals(_selectedGroupFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Show Columns");
+									imgui_PopStyleColor(1);
+									imgui_Separator();
 
-											if (imgui_Selectable($"{pair.Key}", sel))
+									if (imgui_Checkbox("##col_hp", _showColumnHP))
+										_showColumnHP = imgui_Checkbox_Get("##col_hp");
+									imgui_SameLine(0);
+									imgui_Text("HP");
+
+									if (imgui_Checkbox("##col_end", _showColumnEnd))
+										_showColumnEnd = imgui_Checkbox_Get("##col_end");
+									imgui_SameLine(0);
+									imgui_Text("Endurance");
+
+									if (imgui_Checkbox("##col_mana", _showColumnMana))
+										_showColumnMana = imgui_Checkbox_Get("##col_mana");
+									imgui_SameLine(0);
+									imgui_Text("Mana");
+
+									if (imgui_Checkbox("##col_dist", _showColumnDistance))
+										_showColumnDistance = imgui_Checkbox_Get("##col_dist");
+									imgui_SameLine(0);
+									imgui_Text("Distance");
+
+									imgui_Separator();
+									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Font");
+									imgui_PopStyleColor(1);
+
+									using (var combo = ImGUICombo.Aquire())
+									{
+										if (combo.BeginCombo("##Select Font for GroupTable", _selectedGroupFont))
+										{
+											foreach (var pair in E3ImGUI.FontList)
 											{
-												_selectedGroupFont = pair.Key;
+												bool sel = string.Equals(_selectedGroupFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+												if (imgui_Selectable($"{pair.Key}", sel))
+												{
+													_selectedGroupFont = pair.Key;
+												}
 											}
 										}
 									}
 								}
 							}
+
 						}
 
 						List<TableRow_GroupInfo> currentStats = _tableRows_GroupInfo;
