@@ -2287,8 +2287,8 @@ namespace MonoCore
         IEnumerable<Spawn> Get();
         void RefreshList();
         void EmptyLists();
-        bool TryByID(Int32 id, out Spawn s, bool refresh = true);
-        bool TryByName(string name, out Spawn s);
+        bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false);
+        bool TryByName(string name, out Spawn s, Boolean useCurrentCache = false);
         Int32 GetIDByName(string name);
         bool Contains(string name);
         bool Contains(Int32 id);
@@ -2303,19 +2303,19 @@ namespace MonoCore
         private static List<Spawn> _tmpSpawnList = new List<Spawn>();
 
         public static List<Spawn> _spawns = new List<Spawn>(2048);
-        public static Dictionary<string, Spawn> _spawnsByName = new Dictionary<string, Spawn>(2048, StringComparer.OrdinalIgnoreCase);
+        public static ConcurrentDictionary<string, Spawn> _spawnsByName = new ConcurrentDictionary<string, Spawn>(3,2048,StringComparer.OrdinalIgnoreCase);
         public static Dictionary<Int32, Spawn> SpawnsByID = new Dictionary<int, Spawn>(2048);
         public static Int64 _lastRefesh = 0;
-        public static Int64 RefreshTimePeriodInMS = 1000;
+        public static Int64 RefreshTimePeriodInMS = 750;
 
-        public bool TryByID(Int32 id, out Spawn s, bool refresh = true)
+        public bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false)
         {
-            if(refresh) RefreshListIfNeeded();
+            if(refresh && !useCurrentCache) RefreshListIfNeeded();
             return SpawnsByID.TryGetValue(id, out s);
         }
-        public bool TryByName(string name, out Spawn s)
+        public bool TryByName(string name, out Spawn s, Boolean useCurrentCache = false)
         {
-            RefreshListIfNeeded();
+            if(!useCurrentCache) RefreshListIfNeeded();
             return _spawnsByName.TryGetValue(name, out s);
         }
         public Int32 GetIDByName(string name)
@@ -2398,7 +2398,7 @@ namespace MonoCore
                     {
                         if (!_spawnsByName.ContainsKey(spawn.Name))
                         {
-                            _spawnsByName.Add(spawn.Name, spawn);
+                            _spawnsByName.TryAdd(spawn.Name, spawn);
                         }
                     }
                     SpawnsByID.Add(spawn.ID, spawn);

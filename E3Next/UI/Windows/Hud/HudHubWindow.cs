@@ -385,6 +385,7 @@ namespace E3Core.UI.Windows.Hud
 				double.TryParse(E3.Bots.Query(user, "${Me.X}"), out x);
 				double.TryParse(E3.Bots.Query(user, "${Me.Y}"), out y);
 				double.TryParse(E3.Bots.Query(user, "${Me.Z}"), out z);
+
 				string zoneid = E3.Bots.Query(user, "${Me.ZoneID}");
 				string zonename = E3.Bots.Query(user, "${Me.ZoneShortName}");
 				double distance = 0;
@@ -393,8 +394,7 @@ namespace E3Core.UI.Windows.Hud
 				bool isInvul = false;
 				bool.TryParse(E3.Bots.Query(user, "${Me.Invulnerable}"), out isInvul);
 
-
-				if (_spawns.TryByName(user, out var spawn))
+				if (_spawns.TryByName(user, out var spawn, true))
 				{
 					x = E3.Loc_X - x;
 					y = E3.Loc_Y - y;
@@ -474,11 +474,11 @@ namespace E3Core.UI.Windows.Hud
 							{
 								RenderBuffTableSimple();
 							}
-							if(!_deattachSongs)
+							if (!_deattachSongs)
 							{
 								RenderSongTableSimple();
 							}
-						
+
 						}
 					}
 
@@ -972,8 +972,30 @@ namespace E3Core.UI.Windows.Hud
 		private static bool _showColumnDistance = true;
 
 		static List<string> _grouptable_column_names = new List<string>();
+		private static bool _showPicker = false;
+		private static float[] _nameColors = { 0.95f, 0.85f, 0.35f, 1.0f };
 		private static void RenderGroupTable()
 		{
+
+			if(imgui_Button("Test##TestButton_forPicker"))
+			{
+				_showPicker = !_showPicker;
+				imgui_ColorPicker_Clear("testpicker");
+				
+			}
+
+			if(_showPicker)
+			{
+		
+				if (imgui_ColorPicker4_Float("testpicker", _nameColors[0], _nameColors[1], _nameColors[2], _nameColors[3], 0))
+				{
+
+					float[] _newColors = imgui_ColorPicker_GetRGBA_Float("testpicker");
+					_nameColors = _newColors;
+
+				}
+			}
+
 			using (var imguiFont = IMGUI_Fonts.Aquire())
 			{
 				imguiFont.PushFont(_selectedGroupFont);
@@ -1101,7 +1123,7 @@ namespace E3Core.UI.Windows.Hud
 							imgui_SameLine(0);
 
 							var c = stats.DisplayNameColor;
-							imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.DisplayName);
+							imgui_TextColored(_nameColors[0], _nameColors[1], _nameColors[2], _nameColors[3], stats.DisplayName);
 
 							if (_showColumnHP)
 							{

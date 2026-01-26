@@ -227,7 +227,6 @@ namespace E3Core.Processors
 			}
 			
             if (targetId != AssistTargetID && manualControl) return;
-            _spawns.RefreshList();
             if (_spawns.TryByID(AssistTargetID, out s))
             {
                 //if range/melee

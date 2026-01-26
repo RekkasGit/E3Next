@@ -1779,7 +1779,39 @@ namespace MonoCore
 			public const string FAYoutubeSquare = "\uf166";
 		}
 
+		public enum ImGuiColorEditFlags
+		{
+			None = 0,
+			NoAlpha = 1 << 1,   //              // ColorEdit, ColorPicker, ColorButton: ignore Alpha component (will only read 3 components from the input pointer).
+			NoPicker = 1 << 2,   //              // ColorEdit: disable picker when clicking on color square.
+			NoOptions = 1 << 3,   //              // ColorEdit: disable toggling options menu when right-clicking on inputs/small preview.
+			NoSmallPreview = 1 << 4,   //              // ColorEdit, ColorPicker: disable color square preview next to the inputs. (e.g. to show only the inputs)
+			NoInputs = 1 << 5,   //              // ColorEdit, ColorPicker: disable inputs sliders/text widgets (e.g. to show only the small preview color square).
+			NoTooltip = 1 << 6,   //              // ColorEdit, ColorPicker, ColorButton: disable tooltip when hovering the preview.
+			NoLabel = 1 << 7,   //              // ColorEdit, ColorPicker: disable display of inline text label (the label is still forwarded to the tooltip and picker).
+			NoSidePreview = 1 << 8,   //              // ColorPicker: disable bigger color preview on right side of the picker, use small color square preview instead.
+			NoDragDrop = 1 << 9,   //              // ColorEdit: disable drag and drop target. ColorButton: disable drag and drop source.
+			NoBorder = 1 << 10,  //              // ColorButton: disable border (which is enforced by default)
 
+			// User Options (right-click on widget to change some of them).
+			AlphaBar = 1 << 16,  //              // ColorEdit, ColorPicker: show vertical alpha bar/gradient in picker.
+			AlphaPreview = 1 << 17,  //              // ColorEdit, ColorPicker, ColorButton: display preview as a transparent color over a checkerboard, instead of opaque.
+			AlphaPreviewHalf = 1 << 18,  //              // ColorEdit, ColorPicker, ColorButton: display half opaque / half checkerboard, instead of opaque.
+			HDR = 1 << 19,  //              // (WIP) ColorEdit: Currently only disable 0.0f..1.0f limits in RGBA edition (note: you probably want to use Float flag as well).
+			DisplayRGB = 1 << 20,  // [Display]    // ColorEdit: override _display_ type among RGB/HSV/Hex. ColorPicker: select any combination using one or more of RGB/HSV/Hex.
+			DisplayHSV = 1 << 21,  // [Display]    // "
+			DisplayHex = 1 << 22,  // [Display]    // "
+			Uint8 = 1 << 23,  // [DataType]   // ColorEdit, ColorPicker, ColorButton: _display_ values formatted as 0..255.
+			Float = 1 << 24,  // [DataType]   // ColorEdit, ColorPicker, ColorButton: _display_ values formatted as 0.0f..1.0f floats instead of 0..255 integers. No round-trip of value via integers.
+			PickerHueBar = 1 << 25,  // [Picker]     // ColorPicker: bar for Hue, rectangle for Sat/Value.
+			PickerHueWheel = 1 << 26,  // [Picker]     // ColorPicker: wheel for Hue, triangle for Sat/Value.
+			InputRGB = 1 << 27,  // [Input]      // ColorEdit, ColorPicker: input and output data in RGB format.
+			InputHSV = 1 << 28,  // [Input]      // ColorEdit, ColorPicker: input and output data in HSV format.
+
+			// Defaults Options. You can set application defaults using SetColorEditOptions(). The intent is that you probably don't want to
+			// override them in most of your calls. Let the user choose via the option menu and/or call SetColorEditOptions() once during startup.
+			DefaultOptions_ = Uint8 | DisplayRGB | InputRGB | PickerHueBar
+		}
 		// Theme system with multiple themes
 		public enum UITheme
 		{
@@ -2339,6 +2371,19 @@ namespace MonoCore
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_TableSetBgColor(int tablebgcolortarget, uint color, int currentcolumn);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_ColorPicker4(string label, int r, int g, int b, int a, int flags);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int[] imgui_ColorPicker_GetRGBA(string label);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_ColorPicker4_Float(string label, float r, float g, float b, float a, int flags);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float[] imgui_ColorPicker_GetRGBA_Float(string label);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_ColorPicker_Clear(string label);
+	
+
 
 
 		#endregion

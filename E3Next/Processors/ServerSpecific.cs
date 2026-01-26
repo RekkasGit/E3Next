@@ -9,7 +9,7 @@ using System.Windows.Forms;
 
 namespace E3Core.Processors
 {
-	public static class SeverSpecific
+	public static class ServerSpecific
 	{
 
 		private static IMQ MQ = E3.MQ;

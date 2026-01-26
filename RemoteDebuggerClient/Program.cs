@@ -73,14 +73,14 @@ namespace MQServerClient
             _requestSocket.Options.ReceiveHighWatermark = 10000;
             _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
         }
-        public bool TryByID(Int32 id, out Spawn s, bool refresh = true)
+        public bool TryByID(Int32 id, out Spawn s, bool refresh = true  , Boolean useCurrentCache = false)
         {
-            if(refresh) RefreshListIfNeeded();
+            if(refresh && !useCurrentCache) RefreshListIfNeeded();
             return _spawnsByID.TryGetValue(id, out s);
         }
-        public bool TryByName(string name, out Spawn s)
+        public bool TryByName(string name, out Spawn s, Boolean useCurrentCache = false)
         {
-            RefreshListIfNeeded();
+            if(!useCurrentCache) RefreshListIfNeeded();
             return _spawnsByName.TryGetValue(name, out s);
         }
         public Int32 GetIDByName(string name)

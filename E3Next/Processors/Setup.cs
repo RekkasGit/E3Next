@@ -106,7 +106,7 @@ namespace E3Core.Processors
                 InitSubSystems();
 
 				//after all subsystems have been init, lets init the server specific ones, as they can override events/commands
-				SeverSpecific.SeverSpecific_Init();
+				ServerSpecific.SeverSpecific_Init();
 
 				GetExposedDataMappedToDictionary();
 
