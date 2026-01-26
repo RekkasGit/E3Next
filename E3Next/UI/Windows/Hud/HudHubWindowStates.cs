@@ -94,15 +94,12 @@ namespace E3Core.UI.Windows.Hud
 				fadeTimeInMS = value;
 				if (fadeTimeInMS < 1) fadeTimeInMS = 1;
 				FadeRatio = ((double)255) / value; 
-			
 			} 
 		}
-
 		public State_BuffWindow()
 		{
 			FadeRatio=((double)255) / FadeTimeInMS;
 		}
-
 	}
 	public class State_SongWindow
 	{
@@ -114,7 +111,6 @@ namespace E3Core.UI.Windows.Hud
 		public Int32 FontSize = 8;
 		private int fadeTimeInMS = 1000;
 		public double FadeRatio = 0;
-
 		public int FadeTimeInMS
 		{
 			get { return fadeTimeInMS; }
@@ -123,11 +119,8 @@ namespace E3Core.UI.Windows.Hud
 				fadeTimeInMS = value;
 				if (fadeTimeInMS < 1) fadeTimeInMS = 1;
 				FadeRatio = ((double)255) / value;
-
 			}
 		}
-
-
 	}
 
 	public class State_DebuffWindow
@@ -140,7 +133,6 @@ namespace E3Core.UI.Windows.Hud
 		public Int32 FontSize = 8;
 		private int fadeTimeInMS = 1000;
 		public double FadeRatio = 0;
-
 		public int FadeTimeInMS
 		{
 			get { return fadeTimeInMS; }
