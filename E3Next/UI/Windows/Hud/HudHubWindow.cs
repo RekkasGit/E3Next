@@ -161,9 +161,8 @@ namespace E3Core.UI.Windows.Hud
 		}
 
 		static string _exceptionMessage = String.Empty;
-		static string _prevousBuffInfo = string.Empty;
-		static HashSet<Int32> _previousBuffs = new HashSet<Int32>();
-		static Dictionary<Int32, Int64> _newbuffsTimeStamps = new Dictionary<Int32, Int64>();
+		
+		
 		private static void RefreshBuffInfo()
 		{
 			var buffState = _state.GetState<State_BuffWindow>();
@@ -183,16 +182,16 @@ namespace E3Core.UI.Windows.Hud
 				}
 				string buffInfo = E3.Bots.Query(userTouse, "${Me.BuffInfo}");
 
-				if (_prevousBuffInfo != string.Empty)
+				if (buffState.PreviousBuffInfo != string.Empty)
 				{
-					if (_prevousBuffInfo == buffInfo)
+					if (buffState.PreviousBuffInfo == buffInfo)
 					{
 						//no difference
 						return;
 					}
 
 				}
-				_prevousBuffInfo = buffInfo;
+				buffState.PreviousBuffInfo = buffInfo;
 
 				if (!String.IsNullOrWhiteSpace(buffInfo))
 				{
@@ -304,42 +303,43 @@ namespace E3Core.UI.Windows.Hud
 						}
 					}
 
-					if (_previousBuffs.Count > 0)
+				
+					if (buffState.PreviousBuffs.Count > 0)
 					{
 						foreach (var buff in buffState.BuffInfo)
 						{
-							if (!_previousBuffs.Contains(buff.SpellID))
+							if (!buffState.PreviousBuffs.Contains(buff.SpellID))
 							{
-								_newbuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+								buffState.NewBuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
 							}
 						}
 						foreach (var buff in songState.SongInfo)
 						{
-							if (!_previousBuffs.Contains(buff.SpellID))
+							if (!buffState.PreviousBuffs.Contains(buff.SpellID))
 							{
-								_newbuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+								buffState.NewBuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
 							}
 						}
 						foreach (var buff in debuffState.DebuffInfo)
 						{
-							if (!_previousBuffs.Contains(buff.SpellID))
+							if (!buffState.PreviousBuffs.Contains(buff.SpellID))
 							{
-								_newbuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+								buffState.NewBuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
 							}
 						}
 					}
-					_previousBuffs.Clear();
+					buffState.PreviousBuffs.Clear();
 					foreach (var buff in buffState.BuffInfo)
 					{
-						_previousBuffs.Add(buff.SpellID);
+						buffState.PreviousBuffs.Add(buff.SpellID);
 					}
 					foreach (var buff in songState.SongInfo)
 					{
-						_previousBuffs.Add(buff.SpellID);
+						buffState.PreviousBuffs.Add(buff.SpellID);
 					}
 					foreach (var buff in debuffState.DebuffInfo)
 					{
-						_previousBuffs.Add(buff.SpellID);
+						buffState.PreviousBuffs.Add(buff.SpellID);
 					}
 				}
 			}
@@ -549,7 +549,7 @@ namespace E3Core.UI.Windows.Hud
 		private static void RenderSongTableSimple()
 		{
 			var state = _state.GetState<State_SongWindow>();
-
+			var buffState = _state.GetState<State_BuffWindow>();
 			float widthAvail = imgui_GetContentRegionAvailX();
 
 			Int32 numberOfBuffsPerRow = (int)widthAvail / state.IconSize;
@@ -605,7 +605,7 @@ namespace E3Core.UI.Windows.Hud
 						float x = imgui_GetCursorScreenPosX();
 						float y = imgui_GetCursorScreenPosY();
 						imgui_DrawSpellIconByIconIndex(stats.iconID, state.IconSize);
-						if (_newbuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+						if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
 						{
 							Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
 
@@ -614,7 +614,7 @@ namespace E3Core.UI.Windows.Hud
 							if (alpha > 255) alpha = 255;
 							imgui_GetWindowDrawList_AddRectFilled(x, y, x + state.IconSize, y + state.IconSize, GetColor(0, 255, 0, 255 - (uint)alpha));
 
-							if (timeDelta > state.FadeTimeInMS) _newbuffsTimeStamps.Remove(stats.SpellID);
+							if (timeDelta > state.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
 
 						}
 						using (var popup = ImGUIPopUpContext.Aquire())
@@ -739,7 +739,7 @@ namespace E3Core.UI.Windows.Hud
 							float x = imgui_GetCursorScreenPosX();
 							float y = imgui_GetCursorScreenPosY();
 							imgui_DrawSpellIconByIconIndex(stats.iconID, debuffState.IconSize);
-							if (_newbuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+							if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
 							{
 								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
 
@@ -750,7 +750,7 @@ namespace E3Core.UI.Windows.Hud
 								if (alpha > 255) alpha = 255;
 								imgui_GetWindowDrawList_AddRectFilled(x, y, x + debuffState.IconSize, y + debuffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
 
-								if (timeDelta > debuffState.FadeTimeInMS) _newbuffsTimeStamps.Remove(stats.SpellID);
+								if (timeDelta > debuffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
 
 							}
 							if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
@@ -862,7 +862,7 @@ namespace E3Core.UI.Windows.Hud
 							float y = imgui_GetCursorScreenPosY();
 							imgui_DrawSpellIconByIconIndex(stats.iconID, buffState.IconSize);
 
-							if (_newbuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+							if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
 							{
 								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
 
@@ -871,7 +871,7 @@ namespace E3Core.UI.Windows.Hud
 								if (alpha > 255) alpha = 255;
 								imgui_GetWindowDrawList_AddRectFilled(x, y, x + buffState.IconSize, y + buffState.IconSize, GetColor(0, 255, 0, 255 - (uint)alpha));
 
-								if (timeDelta > buffState.FadeTimeInMS) _newbuffsTimeStamps.Remove(stats.SpellID);
+								if (timeDelta > buffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
 
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())

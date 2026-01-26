@@ -63,6 +63,9 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_BuffWindow
 	{
+		public HashSet<Int32> PreviousBuffs = new HashSet<Int32>();
+		public Dictionary<Int32, Int64> NewBuffsTimeStamps = new Dictionary<Int32, Int64>();
+		public string PreviousBuffInfo = string.Empty;
 		public bool DeAttached = false;
 		public string WindowName = "E3 Buff Hud";
 		public float WindowAlpha = 0.8f;
