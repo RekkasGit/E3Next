@@ -165,6 +165,7 @@ namespace E3Core.UI.Windows.Hud
 		
 		private static void RefreshBuffInfo()
 		{
+			var hubState = _state.GetState<State_HubWindow>();
 			var buffState = _state.GetState<State_BuffWindow>();
 			var songState = _state.GetState<State_SongWindow>();
 			var debuffState = _state.GetState<State_DebuffWindow>();
@@ -176,9 +177,9 @@ namespace E3Core.UI.Windows.Hud
 			{
 				string userTouse = E3.CurrentName;
 
-				if (!String.IsNullOrWhiteSpace(_selectedToonForBuffs))
+				if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
 				{
-					userTouse = _selectedToonForBuffs;
+					userTouse = hubState.SelectedToonForBuffs;
 				}
 				string buffInfo = E3.Bots.Query(userTouse, "${Me.BuffInfo}");
 
@@ -548,6 +549,7 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private static void RenderSongTableSimple()
 		{
+			var hubState = _state.GetState<State_HubWindow>();
 			var state = _state.GetState<State_SongWindow>();
 			var buffState = _state.GetState<State_BuffWindow>();
 			float widthAvail = imgui_GetContentRegionAvailX();
@@ -627,9 +629,9 @@ namespace E3Core.UI.Windows.Hud
 								if (imgui_MenuItem("Drop buff"))
 								{
 									string command = $"/removebuff {stats.Name}";
-									if (!String.IsNullOrWhiteSpace(_selectedToonForBuffs))
+									if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
 									{
-										E3.Bots.BroadcastCommandToPerson(_selectedToonForBuffs, command);
+										E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
 									}
 									else
 									{
@@ -698,6 +700,7 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private static void RenderBuffTableSimple()
 		{
+			var hubState = _state.GetState<State_HubWindow>();
 			var buffState = _state.GetState<State_BuffWindow>();
 			var debuffState = _state.GetState<State_DebuffWindow>();
 
@@ -800,10 +803,10 @@ namespace E3Core.UI.Windows.Hud
 			}
 
 			imgui_Text("Buffs:");
-			if (!String.IsNullOrWhiteSpace(_selectedToonForBuffs))
+			if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
 			{
 				imgui_SameLine(0);
-				imgui_Text(_selectedToonForBuffs);
+				imgui_Text(hubState.SelectedToonForBuffs);
 			}
 
 			if (!buffState.DeAttached)
@@ -884,9 +887,9 @@ namespace E3Core.UI.Windows.Hud
 									if (imgui_MenuItem("Drop buff"))
 									{
 										string command = $"/removebuff {stats.Name}";
-										if (!String.IsNullOrWhiteSpace(_selectedToonForBuffs))
+										if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
 										{
-											E3.Bots.BroadcastCommandToPerson(_selectedToonForBuffs, command);
+											E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
 										}
 										else
 										{
@@ -967,20 +970,10 @@ namespace E3Core.UI.Windows.Hud
 
 		}
 
-		private static string _selectedGroupFont = "robo";
-		static int selected_row_group = -1;
-
-		private static string _selectedToonForBuffs = String.Empty;
+	
 
 		// Column visibility settings for group table
-		private static bool _showColumnHP = true;
-		private static bool _showColumnEnd = true;
-		private static bool _showColumnMana = true;
-		private static bool _showColumnDistance = true;
 
-		static List<string> _grouptable_column_names = new List<string>();
-		private static bool _showPicker = false;
-		private static float[] _nameColors = { 0.95f, 0.85f, 0.35f, 1.0f };
 		private static void RenderGroupTable()
 		{
 
@@ -997,15 +990,15 @@ namespace E3Core.UI.Windows.Hud
 
 				//float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
 				float tableHeight = 200f;
-				_grouptable_column_names.Clear();
-				_grouptable_column_names.Add("Name");
+				state._grouptable_column_names.Clear();
+				state._grouptable_column_names.Add("Name");
 				// Calculate visible column count (Name is always visible)
 				int columnCount = 1;
 
-				if (_showColumnHP) { columnCount++; _grouptable_column_names.Add("HP"); }
-				if (_showColumnEnd) { columnCount++; _grouptable_column_names.Add("End"); }
-				if (_showColumnMana) { columnCount++; _grouptable_column_names.Add("Mana"); }
-				if (_showColumnDistance) { columnCount++; _grouptable_column_names.Add("Dist"); }
+				if (state.ShowColumnHP) { columnCount++; state._grouptable_column_names.Add("HP"); }
+				if (state.ShowColumnEnd) { columnCount++; state._grouptable_column_names.Add("End"); }
+				if (state.ShowColumnMana) { columnCount++; state._grouptable_column_names.Add("Mana"); }
+				if (state.ShowColumnDistance) { columnCount++; state._grouptable_column_names.Add("Dist"); }
 
 
 
@@ -1014,13 +1007,13 @@ namespace E3Core.UI.Windows.Hud
 
 					for (Int32 i = 0; i < columnCount; i++)
 					{
-						imgui_TableSetupColumn_Default(_grouptable_column_names[i]);
+						imgui_TableSetupColumn_Default(state._grouptable_column_names[i]);
 					}
 
 					for (Int32 i = 0; i < columnCount; i++)
 					{
 						imgui_TableNextColumn();
-						imgui_TableHeader(_grouptable_column_names[i]);
+						imgui_TableHeader(state._grouptable_column_names[i]);
 
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
@@ -1031,23 +1024,23 @@ namespace E3Core.UI.Windows.Hud
 								imgui_PopStyleColor(1);
 								imgui_Separator();
 
-								if (imgui_Checkbox("##col_hp", _showColumnHP))
-									_showColumnHP = imgui_Checkbox_Get("##col_hp");
+								if (imgui_Checkbox("##col_hp", state.ShowColumnHP))
+									state.ShowColumnHP = imgui_Checkbox_Get("##col_hp");
 								imgui_SameLine(0);
 								imgui_Text("HP");
 
-								if (imgui_Checkbox("##col_end", _showColumnEnd))
-									_showColumnEnd = imgui_Checkbox_Get("##col_end");
+								if (imgui_Checkbox("##col_end", state.ShowColumnEnd))
+									state.ShowColumnEnd = imgui_Checkbox_Get("##col_end");
 								imgui_SameLine(0);
 								imgui_Text("Endurance");
 
-								if (imgui_Checkbox("##col_mana", _showColumnMana))
-									_showColumnMana = imgui_Checkbox_Get("##col_mana");
+								if (imgui_Checkbox("##col_mana", state.ShowColumnMana))
+									state.ShowColumnMana = imgui_Checkbox_Get("##col_mana");
 								imgui_SameLine(0);
 								imgui_Text("Mana");
 
-								if (imgui_Checkbox("##col_dist", _showColumnDistance))
-									_showColumnDistance = imgui_Checkbox_Get("##col_dist");
+								if (imgui_Checkbox("##col_dist", state.ShowColumnDistance))
+									state.ShowColumnDistance = imgui_Checkbox_Get("##col_dist");
 								imgui_SameLine(0);
 								imgui_Text("Distance");
 
@@ -1058,15 +1051,15 @@ namespace E3Core.UI.Windows.Hud
 
 								using (var combo = ImGUICombo.Aquire())
 								{
-									if (combo.BeginCombo("##Select Font for GroupTable", _selectedGroupFont))
+									if (combo.BeginCombo("##Select Font for GroupTable", state.SelectedFont))
 									{
 										foreach (var pair in E3ImGUI.FontList)
 										{
-											bool sel = string.Equals(_selectedGroupFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+											bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
 
 											if (imgui_Selectable($"{pair.Key}", sel))
 											{
-												_selectedGroupFont = pair.Key;
+												state.SelectedFont = pair.Key;
 											}
 										}
 									}
@@ -1076,14 +1069,14 @@ namespace E3Core.UI.Windows.Hud
 								imgui_Text("Name Color:");
 								imgui_PopStyleColor(1);
 								imgui_Separator();
-								if (imgui_ColorPicker4_Float("##NameColorPicker", _nameColors[0], _nameColors[1], _nameColors[2], _nameColors[3], 0))
+								if (imgui_ColorPicker4_Float("##NameColorPicker", state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3], 0))
 								{
 
 									float[] newColors = imgui_ColorPicker_GetRGBA_Float("##NameColorPicker");
-									_nameColors[0] = newColors[0];
-									_nameColors[1] = newColors[1];
-									_nameColors[3] = newColors[2];
-									_nameColors[3] = newColors[3];
+									state.NameColors[0] = newColors[0];
+									state.NameColors[1] = newColors[1];
+									state.NameColors[3] = newColors[2];
+									state.NameColors[3] = newColors[3];
 								}
 							}
 						}
@@ -1091,7 +1084,7 @@ namespace E3Core.UI.Windows.Hud
 					}
 					using (var imguiFont = IMGUI_Fonts.Aquire())
 					{
-						imguiFont.PushFont(_selectedGroupFont);
+						imguiFont.PushFont(state.SelectedFont);
 						List<TableRow_GroupInfo> currentStats = state.GroupInfo;
 
 						Int32 rowCount = 0;
@@ -1100,23 +1093,23 @@ namespace E3Core.UI.Windows.Hud
 							rowCount++;
 							imgui_TableNextRow();
 							imgui_TableNextColumn();
-							bool is_row_selected = (selected_row_group == rowCount);
+							bool is_row_selected = (state.SelectedRow == rowCount);
 
 							if (imgui_Selectable_WithFlags($"##row_selected_{rowCount}", is_row_selected, (int)(ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags.ImGuiSelectableFlags_AllowOverlap)))
 							{
-								selected_row_group = rowCount;
+								state.SelectedRow = rowCount;
 
-								_selectedToonForBuffs = stats.Name;
+								state.SelectedToonForBuffs = stats.Name;
 
-								if (_selectedToonForBuffs == E3.CurrentName) _selectedToonForBuffs = String.Empty;
+								if (state.SelectedToonForBuffs == E3.CurrentName) state.SelectedToonForBuffs = String.Empty;
 
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
 								if (popup.BeginPopupContextItem($"##row_selected_context_{rowCount}", 1))
 								{
-									_selectedToonForBuffs = String.Empty;
-									selected_row_group = -1;
+									state.SelectedToonForBuffs = String.Empty;
+									state.SelectedRow = -1;
 									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 									imgui_Text(stats.Name);
 									imgui_Separator();
@@ -1131,27 +1124,27 @@ namespace E3Core.UI.Windows.Hud
 							imgui_SameLine(0);
 
 							var c = stats.DisplayNameColor;
-							imgui_TextColored(_nameColors[0], _nameColors[1], _nameColors[2], _nameColors[3], stats.DisplayName);
+							imgui_TextColored(state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3], stats.DisplayName);
 
-							if (_showColumnHP)
+							if (state.ShowColumnHP)
 							{
 								imgui_TableNextColumn();
 								c = stats.HPColor;
 								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.HP);
 							}
-							if (_showColumnEnd)
+							if (state.ShowColumnEnd)
 							{
 								imgui_TableNextColumn();
 								c = stats.EndColor;
 								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Endurance);
 							}
-							if (_showColumnMana)
+							if (state.ShowColumnMana)
 							{
 								imgui_TableNextColumn();
 								c = stats.ManaColor;
 								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.Mana);
 							}
-							if (_showColumnDistance)
+							if (state.ShowColumnDistance)
 							{
 								imgui_TableNextColumn();
 								if (double.TryParse(stats.Distance, out _))
@@ -1168,10 +1161,7 @@ namespace E3Core.UI.Windows.Hud
 						}
 					}
 				}
-
 			}
-
-
 		}
 		public class TableRow_BuffInfo
 		{

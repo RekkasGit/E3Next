@@ -59,6 +59,16 @@ namespace E3Core.UI.Windows.Hud
 		public Int64 LastUpdateInterval = 500;
 
 		public List<TableRow_GroupInfo> GroupInfo = new List<TableRow_GroupInfo>();
+		public bool ShowColumnHP = true;
+		public bool ShowColumnEnd = true;
+		public bool ShowColumnMana = true;
+		public bool ShowColumnDistance = true;
+
+		public List<string> _grouptable_column_names = new List<string>();
+		public float[] NameColors = { 0.95f, 0.85f, 0.35f, 1.0f };
+		public string SelectedToonForBuffs = String.Empty;
+		public string SelectedFont = "robo";
+		public int SelectedRow = -1;
 
 	}
 	public class State_BuffWindow
