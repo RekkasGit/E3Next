@@ -197,6 +197,7 @@
     <Compile Include="UI\Windows\CharacterSettings\CharacterSettingsWindowStates.cs" />
     <Compile Include="UI\Windows\Hud\HudCastingWindow.cs" />
     <Compile Include="UI\Windows\Hud\HudHubWindow.cs" />
+    <Compile Include="UI\Windows\Hud\HudHubWindowStates.cs" />
     <Compile Include="UI\Windows\MemStats\MemoryStatsWindow.cs" />
     <Compile Include="UI\Windows\NetworkingStats\NetStatWindow.cs" />
     <Compile Include="Utility\ArrayBufferPool.cs" />
