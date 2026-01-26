@@ -63,6 +63,7 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_BuffWindow
 	{
+		public bool DeAttached = false;
 		public string WindowName = "E3 Buff Hud";
 		public float WindowAlpha = 0.8f;
 		public Int64 LastUpdated = 0;
@@ -92,6 +93,7 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_SongWindow
 	{
+		public bool DeAttached = false;
 		public List<TableRow_BuffInfo> SongInfo = new List<TableRow_BuffInfo>();
 		public string WindowName = "E3 Song Hud";
 		public float WindowAlpha = 0.8f;
@@ -117,6 +119,7 @@ namespace E3Core.UI.Windows.Hud
 
 	public class State_DebuffWindow
 	{
+		public bool DeAttached = false;
 		public List<TableRow_BuffInfo> DebuffInfo = new List<TableRow_BuffInfo>();
 		public string WindowName = "E3 Debuff Hud";
 		public float WindowAlpha = 0.8f;

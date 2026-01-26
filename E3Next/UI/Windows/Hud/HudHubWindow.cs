@@ -29,8 +29,7 @@ namespace E3Core.UI.Windows.Hud
 		private static ISpawns _spawns = E3.Spawns;
 
 		public static HudHubWindowStates _state = new HudHubWindowStates();
-		private static bool _deattachBuffs = false;
-		private static bool _deattachSongs = false;
+
 		private const string IMGUI_DETATCH_BUFFS_ID = FontAwesome.FAExternalLinkSquare + "##detach_buffs";
 		private const string IMGUI_DETATCH_SONGS_ID = FontAwesome.FAExternalLinkSquare + "##detach_songs";
 
@@ -450,7 +449,8 @@ namespace E3Core.UI.Windows.Hud
 		private static void RenderHub_MainWindow()
 		{
 			var state = _state.GetState<State_HubWindow>();
-
+			var buffstate = _state.GetState<State_BuffWindow>();
+			var songstate = _state.GetState<State_SongWindow>();
 			if (imgui_Begin_OpenFlagGet(state.WindowName))
 			{
 				E3ImGUI.PushCurrentTheme();
@@ -467,11 +467,11 @@ namespace E3Core.UI.Windows.Hud
 
 							RenderGroupTable();
 
-							if (!_deattachBuffs)
+							if (!buffstate.DeAttached)
 							{
 								RenderBuffTableSimple();
 							}
-							if (!_deattachSongs)
+							if (!songstate.DeAttached)
 							{
 								RenderSongTableSimple();
 							}
@@ -517,17 +517,16 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private static void TryReattachWindowsIfClosed()
 		{
-			var buffState = _state.GetState<State_BuffWindow>();
-
-			if (_deattachBuffs && !imgui_Begin_OpenFlagGet(buffState.WindowName))
+			var buffstate = _state.GetState<State_BuffWindow>();
+			var songstate = _state.GetState<State_SongWindow>();
+			if (buffstate.DeAttached && !imgui_Begin_OpenFlagGet(buffstate.WindowName))
 			{
-				_deattachBuffs = false;
+				buffstate.DeAttached = false;
 			}
-			var songState = _state.GetState<State_SongWindow>();
-
-			if (_deattachSongs && !imgui_Begin_OpenFlagGet(songState.WindowName))
+			
+			if (songstate.DeAttached && !imgui_Begin_OpenFlagGet(songstate.WindowName))
 			{
-				_deattachSongs = false;
+				songstate.DeAttached = false;
 			}
 		}
 		private static void RenderHub()
@@ -538,9 +537,9 @@ namespace E3Core.UI.Windows.Hud
 			RenderHub_MainWindow();
 
 			var buffState = _state.GetState<State_BuffWindow>();
-			RenderHub_TryDeattached(buffState.WindowName, _deattachBuffs, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true);
+			RenderHub_TryDeattached(buffState.WindowName, buffState.DeAttached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true);
 			var songState = _state.GetState<State_SongWindow>();
-			RenderHub_TryDeattached(songState.WindowName, _deattachSongs, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true);
+			RenderHub_TryDeattached(songState.WindowName, songState.DeAttached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true);
 
 		}
 		private static void RenderHub_WindowBuffs()
@@ -558,23 +557,23 @@ namespace E3Core.UI.Windows.Hud
 			if (numberOfBuffsPerRow < 1) numberOfBuffsPerRow = 1;
 			imgui_Text("Songs:");
 
-			if (!_deattachSongs)
+			if (!state.DeAttached)
 			{
 				imgui_SameLine(0);
 				imgui_SetCursorPosX(widthAvail - 20);
 				if (imgui_Button(IMGUI_DETATCH_SONGS_ID))
 				{
-					_deattachSongs = true;
+					state.DeAttached = true;
 					imgui_Begin_OpenFlagSet(state.WindowName, true);
 				}
 			}
-			if (_deattachSongs)
+			if (state.DeAttached)
 			{
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(windowWidth - 35);
 				if (imgui_Button("<<##reattach_songs"))
 				{
-					_deattachSongs = false;
+					state.DeAttached = false;
 					imgui_Begin_OpenFlagSet(state.WindowName, false);
 				}
 			}
@@ -807,23 +806,23 @@ namespace E3Core.UI.Windows.Hud
 				imgui_Text(_selectedToonForBuffs);
 			}
 
-			if (!_deattachBuffs)
+			if (!buffState.DeAttached)
 			{
 				imgui_SameLine(0);
 				imgui_SetCursorPosX(widthAvail - 20);
 				if (imgui_Button(IMGUI_DETATCH_BUFFS_ID))
 				{
-					_deattachBuffs = true;
+					buffState.DeAttached = true;
 					imgui_Begin_OpenFlagSet(buffState.WindowName, true);
 				}
 			}
-			if (_deattachBuffs)
+			if (buffState.DeAttached)
 			{
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(windowWidth - 35);
 				if (imgui_Button("<<##reattach_buffs"))
 				{
-					_deattachBuffs = false;
+					buffState.DeAttached = false;
 					imgui_Begin_OpenFlagSet(buffState.WindowName, false);
 				}
 			}
