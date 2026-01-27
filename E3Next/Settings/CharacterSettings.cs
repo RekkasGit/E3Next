@@ -124,6 +124,63 @@ namespace E3Core.Settings
 		[INI_Section("UI Theme", "Rounding")]
 		public float UITheme_Rounding = 8.0f;
 
+
+		[INI_Section("E3Hud_Hub", "Alpha")]
+		public float E3Hud_Hub_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub", "ShowColumnHP")]
+		public Boolean E3Hud_Hub_ShowColumnHP = true;
+		[INI_Section("E3Hud_Hub", "ShowColumnEnd")]
+		public Boolean E3Hud_Hub_ShowColumnEnd = true;
+		[INI_Section("E3Hud_Hub", "ShowColumnMana")]
+		public Boolean E3Hud_Hub_ShowColumnMana = true;
+		[INI_Section("E3Hud_Hub", "ShowColumnDistance")]
+		public Boolean E3Hud_Hub_ShowColumnDistance = true;
+		[INI_Section("E3Hud_Hub", "FadeTimeInMS")]
+		public int E3Hud_Hub_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub", "NameColorR")]
+		public float E3Hud_Hub_NameColorR = 0.95f;
+		[INI_Section("E3Hud_Hub", "NameColorG")]
+		public float E3Hud_Hub_NameColorG = 0.85f;
+		[INI_Section("E3Hud_Hub", "NameColorB")]
+		public float E3Hud_Hub_NameColorB = 0.35f;
+		[INI_Section("E3Hud_Hub", "NameColorA")]
+		public float E3Hud_Hub_NameColorA = 1.0f;
+		[INI_Section("E3Hud_Hub", "SelectedFont")]
+		public string E3Hud_Hub_SelectedFont = "robo";
+		
+		[INI_Section("E3Hud_Hub_Buff", "SelectedFont")]
+		public string E3Hud_Hub_Buff_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_Buff", "DeAttached")]
+		public bool E3Hud_Hub_Buff_DeAttached = false;
+		[INI_Section("E3Hud_Hub_Buff", "IconSize")]
+		public int E3Hud_Hub_Buff_IconSize = 40;
+		[INI_Section("E3Hud_Hub_Buff", "FadeTimeInMS")]
+		public Int32 E3Hud_Hub_Buff_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub_Buff", "Alpha")]
+		public float E3Hud_Hub_Buff_Alpha = 0.8f;
+
+		[INI_Section("E3Hud_Hub_Song", "SelectedFont")]
+		public string E3Hud_Hub_Song_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_Song", "DeAttached")]
+		public bool E3Hud_Hub_Song_DeAttached = false;
+		[INI_Section("E3Hud_Hub_Song", "IconSize")]
+		public int E3Hud_Hub_Song_IconSize = 40;
+		[INI_Section("E3Hud_Hub_Song", "FadeTimeInMS")]
+		public Int32 E3Hud_Hub_Song_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub_Song", "Alpha")]
+		public float E3Hud_Hub_Song_Alpha = 0.8f;
+
+		[INI_Section("E3Hud_Hub_Debuff", "SelectedFont")]
+		public string E3Hud_Hub_Debuff_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_Debuff", "DeAttached")]
+		public bool E3Hud_Hub_Debuff_DeAttached = false;
+		[INI_Section("E3Hud_Hub_Debuff", "IconSize")]
+		public int E3Hud_Hub_Debuff_IconSize = 40;
+		[INI_Section("E3Hud_Hub_Debuff", "FadeTimeInMS")]
+		public Int32 E3Hud_Hub_Debuff_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub_Debuff", "Alpha")]
+		public float E3Hud_Hub_Debuff_Alpha = 0.8f;
+
 		[INI_Section("AutoMed", "Override Old Settings and use This(On/Off)")]
 		public bool AutoMed_OverrideOldSettings;
 		[INI_Section("AutoMed", "End MedBreak in Combat(On/Off)")]
@@ -684,7 +741,38 @@ namespace E3Core.Settings
 			LoadKeyData("Misc", "Echo Command Received", ParsedData, ref Misc_EchoCommandReceived);
 
 			LoadKeyData("UI Theme", "E3 Config", ParsedData, ref UITheme_E3Config);
-			LoadFloatKeyData("UI Theme", "Rounding", ParsedData, ref UITheme_Rounding);
+			LoadKeyData("UI Theme", "Rounding", ParsedData, ref UITheme_Rounding);
+
+			LoadKeyData("E3Hud_Hub", "Alpha", ParsedData, ref E3Hud_Hub_Alpha);
+			LoadKeyData("E3Hud_Hub", "ShowColumnHP", ParsedData, ref E3Hud_Hub_ShowColumnHP);
+			LoadKeyData("E3Hud_Hub", "ShowColumnEnd", ParsedData, ref E3Hud_Hub_ShowColumnEnd);
+			LoadKeyData("E3Hud_Hub", "ShowColumnMana", ParsedData, ref E3Hud_Hub_ShowColumnMana);
+			LoadKeyData("E3Hud_Hub", "ShowColumnDistance", ParsedData, ref E3Hud_Hub_ShowColumnDistance);
+			LoadKeyData("E3Hud_Hub", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub", "NameColorR", ParsedData, ref E3Hud_Hub_NameColorR);
+			LoadKeyData("E3Hud_Hub", "NameColorG", ParsedData, ref E3Hud_Hub_NameColorG);
+			LoadKeyData("E3Hud_Hub", "NameColorB", ParsedData, ref E3Hud_Hub_NameColorB);
+			LoadKeyData("E3Hud_Hub", "NameColorA", ParsedData, ref E3Hud_Hub_NameColorA);
+			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData, ref E3Hud_Hub_SelectedFont);
+
+
+			LoadKeyData("E3Hud_Hub_Buff", "Alpha", ParsedData, ref E3Hud_Hub_Buff_Alpha);
+			LoadKeyData("E3Hud_Hub_Buff", "DeAttached", ParsedData, ref E3Hud_Hub_Buff_DeAttached);
+			LoadKeyData("E3Hud_Hub_Buff", "IconSize", ParsedData, ref E3Hud_Hub_Buff_IconSize);
+			LoadKeyData("E3Hud_Hub_Buff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Buff_FadeTimeInMS);
+
+			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData, ref E3Hud_Hub_Song_Alpha);
+			LoadKeyData("E3Hud_Hub_Song", "DeAttached", ParsedData, ref E3Hud_Hub_Song_DeAttached);
+			LoadKeyData("E3Hud_Hub_Song", "IconSize", ParsedData, ref E3Hud_Hub_Song_IconSize);
+			LoadKeyData("E3Hud_Hub_Song", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Song_FadeTimeInMS);
+
+
+			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData, ref E3Hud_Hub_Debuff_Alpha);
+			LoadKeyData("E3Hud_Hub_Debuff", "DeAttached", ParsedData, ref E3Hud_Hub_Debuff_DeAttached);
+			LoadKeyData("E3Hud_Hub_Debuff", "IconSize", ParsedData, ref E3Hud_Hub_Debuff_IconSize);
+			LoadKeyData("E3Hud_Hub_Debuff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Debuff_FadeTimeInMS);
+
+
 
 			LoadKeyData("Alerts", "Rampage Messages(On/Off)", ParsedData, ref Alerts_RampageMessages);
 			LoadKeyData("Alerts", "Damage Messages(On/Off)", ParsedData, ref Alerts_DamageMessages);
@@ -1074,6 +1162,42 @@ namespace E3Core.Settings
 			section = newFile.Sections.GetSectionData("UI Theme");
 			section.Keys.AddKey("E3 Config", "DarkTeal");
 			section.Keys.AddKey("Rounding", "8.0");
+
+
+			newFile.Sections.AddSection("E3Hud_Hub");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("ShowColumnHP", "True");
+			section.Keys.AddKey("ShowColumnEnd", "True");
+			section.Keys.AddKey("ShowColumnMana", "True");
+			section.Keys.AddKey("ShowColumnDistance", "True");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("NameColorR", "0.95");
+			section.Keys.AddKey("NameColorG", "0.85");
+			section.Keys.AddKey("NameColorB", "0.35");
+			section.Keys.AddKey("NameColorA", "1.00");
+
+			newFile.Sections.AddSection("E3Hud_Hub_Buff");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_Buff");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("DeAttached", "False");
+			section.Keys.AddKey("IconSize", "40");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
+
+			newFile.Sections.AddSection("E3Hud_Hub_Song");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_Song");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("DeAttached", "False");
+			section.Keys.AddKey("IconSize", "40");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
+
+			newFile.Sections.AddSection("E3Hud_Hub_Debuff");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_Debuff");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("DeAttached", "False");
+			section.Keys.AddKey("IconSize", "40");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
 
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");
@@ -1682,6 +1806,7 @@ namespace E3Core.Settings
 								{
 									section_keyCollection.AddKey(keyName, (string)reference);
 								}
+								
 								else if (reference is bool)
 								{
 									string boolString = "On";
@@ -1694,6 +1819,14 @@ namespace E3Core.Settings
 								else if (reference is Int32)
 								{
 									section_keyCollection.AddKey(keyName, ((Int32)reference).ToString());
+								}
+								else if (reference is Single)
+								{
+									section_keyCollection.AddKey(keyName, ((Single)reference).ToString());
+								}
+								else if (reference is decimal)
+								{
+									section_keyCollection.AddKey(keyName, ((decimal)reference).ToString());
 								}
 								else if (reference is Int64)
 								{

@@ -78,7 +78,7 @@ namespace E3Core.UI.Windows.Hud
 				{
 
 
-					float.TryParse(x.args[0], out state.WindowAlpha);
+					//float.TryParse(x.args[0], out state.WindowAlpha);
 					//MQ.Write($"Setting alpha to {_windowAlpha}");
 
 				}
@@ -466,6 +466,17 @@ namespace E3Core.UI.Windows.Hud
 							RefreshGroupInfo();
 							RefreshBuffInfo();
 
+							if(state.IsDirty || buffstate.IsDirty || songstate.IsDirty)
+							{
+								if(imgui_Button("Save"))
+								{
+									state.UpdateSettings_WithoutSaving();
+									buffstate.UpdateSettings_WithoutSaving();
+									songstate.UpdateSettings_WithoutSaving();
+									E3.CharacterSettings.SaveData();
+								}
+							}
+
 							RenderGroupTable();
 
 							if (!buffstate.DeAttached)
@@ -572,6 +583,42 @@ namespace E3Core.UI.Windows.Hud
 			if (state.DeAttached)
 			{
 				float windowWidth = imgui_GetWindowWidth();
+				imgui_SameLine(0);
+				imgui_SetCursorPosX(windowWidth - 70);
+				if(imgui_Button($"{MaterialFont.settings}##song_window_settings"))
+				{ 
+				}
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem($"##SongWindowSettingsPopup", 1))
+					{
+						imgui_Separator();
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Alpha");
+						imgui_PopStyleColor(1);
+
+						string keyForInput = $"##songWindow_alpha_set";
+						imgui_SetNextItemWidth(100);
+						if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
+						{
+							int updated = imgui_InputInt_Get(keyForInput);
+
+							if (updated > 255)
+							{
+								updated = 255;
+
+							}
+							if (updated < 0)
+							{
+								updated = 0;
+
+							}
+							state.WindowAlpha = ((float)updated) / 255f;
+							imgui_InputInt_Clear(keyForInput);
+						}
+
+					}
+				}
 				imgui_SameLine(windowWidth - 35);
 				if (imgui_Button("<<##reattach_songs"))
 				{
@@ -822,6 +869,42 @@ namespace E3Core.UI.Windows.Hud
 			if (buffState.DeAttached)
 			{
 				float windowWidth = imgui_GetWindowWidth();
+				imgui_SameLine(0);
+				imgui_SetCursorPosX(windowWidth - 70);
+				if (imgui_Button($"{MaterialFont.settings}##buff_window_settings"))
+				{
+				}
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem($"##BuffgWindowSettingsPopup", 1))
+					{
+						imgui_Separator();
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Alpha");
+						imgui_PopStyleColor(1);
+
+						string keyForInput = "##BuffWindow_alpha_set";
+						imgui_SetNextItemWidth(100);
+						if (imgui_InputInt(keyForInput, (int)(buffState.WindowAlpha * 255), 1, 20))
+						{
+							int updated = imgui_InputInt_Get(keyForInput);
+
+							if (updated > 255)
+							{
+								updated = 255;
+
+							}
+							if (updated < 0)
+							{
+								updated = 0;
+
+							}
+							buffState.WindowAlpha = ((float)updated) / 255f;
+							imgui_InputInt_Clear(keyForInput);
+						}
+
+					}
+				}
 				imgui_SameLine(windowWidth - 35);
 				if (imgui_Button("<<##reattach_buffs"))
 				{
@@ -990,15 +1073,15 @@ namespace E3Core.UI.Windows.Hud
 
 				//float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
 				float tableHeight = 200f;
-				state._grouptable_column_names.Clear();
-				state._grouptable_column_names.Add("Name");
+				state.ColumNameBuffer.Clear();
+				state.ColumNameBuffer.Add("Name");
 				// Calculate visible column count (Name is always visible)
 				int columnCount = 1;
 
-				if (state.ShowColumnHP) { columnCount++; state._grouptable_column_names.Add("HP"); }
-				if (state.ShowColumnEnd) { columnCount++; state._grouptable_column_names.Add("End"); }
-				if (state.ShowColumnMana) { columnCount++; state._grouptable_column_names.Add("Mana"); }
-				if (state.ShowColumnDistance) { columnCount++; state._grouptable_column_names.Add("Dist"); }
+				if (state.ShowColumnHP) { columnCount++; state.ColumNameBuffer.Add("HP"); }
+				if (state.ShowColumnEnd) { columnCount++; state.ColumNameBuffer.Add("End"); }
+				if (state.ShowColumnMana) { columnCount++; state.ColumNameBuffer.Add("Mana"); }
+				if (state.ShowColumnDistance) { columnCount++; state.ColumNameBuffer.Add("Dist"); }
 
 
 
@@ -1007,13 +1090,13 @@ namespace E3Core.UI.Windows.Hud
 
 					for (Int32 i = 0; i < columnCount; i++)
 					{
-						imgui_TableSetupColumn_Default(state._grouptable_column_names[i]);
+						imgui_TableSetupColumn_Default(state.ColumNameBuffer[i]);
 					}
 
 					for (Int32 i = 0; i < columnCount; i++)
 					{
 						imgui_TableNextColumn();
-						imgui_TableHeader(state._grouptable_column_names[i]);
+						imgui_TableHeader(state.ColumNameBuffer[i]);
 
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
@@ -1065,6 +1148,33 @@ namespace E3Core.UI.Windows.Hud
 									}
 								}
 								imgui_Separator();
+								imgui_Separator();
+								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Alpha");
+								imgui_PopStyleColor(1);
+								
+								string keyForInput = $"##alpha_set-{i}";
+								imgui_SetNextItemWidth(100);
+								if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
+								{
+									int updated = imgui_InputInt_Get(keyForInput);
+									
+									if(updated > 255)
+									{
+										updated = 255;
+
+									}
+									if(updated<0)
+									{
+										updated = 0;
+
+									}
+									state.WindowAlpha = ((float)updated) / 255f;
+									imgui_InputInt_Clear(keyForInput);
+								}
+
+
+								imgui_Separator();
 								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 								imgui_Text("Name Color:");
 								imgui_PopStyleColor(1);
@@ -1077,6 +1187,7 @@ namespace E3Core.UI.Windows.Hud
 									state.NameColors[1] = newColors[1];
 									state.NameColors[3] = newColors[2];
 									state.NameColors[3] = newColors[3];
+									state.IsDirty = true;
 								}
 							}
 						}

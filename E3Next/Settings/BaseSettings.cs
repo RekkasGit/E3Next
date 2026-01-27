@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace E3Core.Settings
 {
@@ -150,7 +149,7 @@ namespace E3Core.Settings
             }
         }
         
-        public static void LoadFloatKeyData(string sectionKey, string Key, IniData parsedData, ref float valueToSet)
+        public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref float valueToSet)
         {
             _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
