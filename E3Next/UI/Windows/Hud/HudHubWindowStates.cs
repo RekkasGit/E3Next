@@ -57,7 +57,7 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_HubWindow
 	{
-		public string WindowName = "E3 Main Hud";
+		public string WindowName = $"E3 Main Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		private float _windowAlpha = 0.8f;
 		public float WindowAlpha { get => _windowAlpha; set { _windowAlpha = value; IsDirty = true; } }
 		public Int64 LastUpdated = 0;
@@ -125,7 +125,7 @@ namespace E3Core.UI.Windows.Hud
 		public Dictionary<Int32, Int64> NewBuffsTimeStamps = new Dictionary<Int32, Int64>();
 		public string PreviousBuffInfo = string.Empty;
 		
-		public string WindowName = "E3 Buff Hud";
+		public string WindowName = $"E3 Buff Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;
 		public List<TableRow_BuffInfo> BuffInfo = new List<TableRow_BuffInfo>();
@@ -173,7 +173,7 @@ namespace E3Core.UI.Windows.Hud
 		private float _windowAlpha = 0.8f;
 
 		public List<TableRow_BuffInfo> SongInfo = new List<TableRow_BuffInfo>();
-		public string WindowName = "E3 Song Hud";
+		public string WindowName = $"E3 Song Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public Int32 IconSize = 40;
 		public Int32 FontSize = 8;
 		private int fadeTimeInMS = 1000;
@@ -221,7 +221,7 @@ namespace E3Core.UI.Windows.Hud
 		private bool _detached = false;
 		private float _windowAlpha = 0.8f;
 
-		public string WindowName = "E3 Hotbutton Hud";
+		public string WindowName = $"E3 Hotbutton Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public Int32 ButtonSizeX = 50;
 		public Int32 ButtonSizeY = 30;
 		public Int32 FontSize = 8;
@@ -262,7 +262,7 @@ namespace E3Core.UI.Windows.Hud
 		public bool IsDirty = false;
 
 		public List<TableRow_BuffInfo> DebuffInfo = new List<TableRow_BuffInfo>();
-		public string WindowName = "E3 Debuff Hud";
+		public string WindowName = $"E3 Debuff Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public Int32 IconSize = 40;
 		public Int32 FontSize = 8;
 		private int fadeTimeInMS = 1000;
