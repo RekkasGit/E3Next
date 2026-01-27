@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using static MonoCore.E3ImGUI;
+using static System.Windows.Forms.AxHost;
 
 namespace E3Core.UI.Windows.Hud
 {
@@ -17,6 +18,7 @@ namespace E3Core.UI.Windows.Hud
 	{
 		private static bool _windowInitialized = false;
 		private static bool _imguiContextReady = false;
+		private static float[] _nameColors = { 0.169f, 1f, 0f, 1f };
 		private static Int64 _lastUpdate = 0;
 		private static Int64 _lastUpdateInterval = 250;
 		private static List<TableRow> _tableRows = new List<TableRow>();
@@ -115,7 +117,7 @@ namespace E3Core.UI.Windows.Hud
 				using (var window = ImGUIWindow.Aquire())
 				{
 					imgui_SetNextWindowSizeWithCond(360f, 320f, (int)ImGuiCond.FirstUseEver);
-					int flags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse
+					int flags = ((int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse) | (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar
 						);
 					imgui_SetNextWindowBgAlpha(_windowAlpha);
 					if (window.Begin(_WindowName, flags))
@@ -135,7 +137,7 @@ namespace E3Core.UI.Windows.Hud
 				PopCurrentTheme();
 			}
 		}
-
+		static string _selectedFont = "robo";
 		private static void RenderBotCastingGrid(IReadOnlyList<TableRow> entries)
 		{
 			int columnCount = 3;
@@ -164,52 +166,127 @@ namespace E3Core.UI.Windows.Hud
 					}
 				}
 			}
+			using (var popup = ImGUIPopUpContext.Aquire())
+			{
+				if (popup.BeginPopupContextItem($"##CastingHudPopup", 1))
+				{
+					
+
+					imgui_Separator();
+					imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+					imgui_Text("Font");
+					imgui_PopStyleColor(1);
+
+					using (var combo = ImGUICombo.Aquire())
+					{
+						if (combo.BeginCombo("##Select Font for GroupTable", _selectedFont))
+						{
+							foreach (var pair in E3ImGUI.FontList)
+							{
+								bool sel = string.Equals(_selectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+								if (imgui_Selectable($"{pair.Key}", sel))
+								{
+									_selectedFont = pair.Key;
+								}
+							}
+						}
+					}
+					imgui_Separator();
+					imgui_Separator();
+					imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+					imgui_Text("Alpha");
+					imgui_PopStyleColor(1);
+
+					string keyForInput = $"##CastingHud_alpha_set";
+					imgui_SetNextItemWidth(100);
+					if (imgui_InputInt(keyForInput, (int)(_windowAlpha * 255), 1, 20))
+					{
+						int updated = imgui_InputInt_Get(keyForInput);
+
+						if (updated > 255)
+						{
+							updated = 255;
+
+						}
+						if (updated < 0)
+						{
+							updated = 0;
+
+						}
+						_windowAlpha = ((float)updated) / 255f;
+						imgui_InputInt_Clear(keyForInput);
+					}
+
+
+					imgui_Separator();
+					imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+					imgui_Text("Name Color:");
+					imgui_PopStyleColor(1);
+					imgui_Separator();
+					if (imgui_ColorPicker4_Float("##CastingHudNameColorPicker", _nameColors[0], _nameColors[1], _nameColors[2], _nameColors[3], 0))
+					{
+
+						float[] newColors = imgui_ColorPicker_GetRGBA_Float("##CastingHudNameColorPicker");
+						_nameColors[0] = newColors[0];
+						_nameColors[1] = newColors[1];
+						_nameColors[3] = newColors[2];
+						_nameColors[3] = newColors[3];
+						
+					}
+				}
+			}
 		}
 
 		private static void RenderBotCastingCell(TableRow entry)
 		{
+
 			if (entry == null)
 			{
 				imgui_Text(" ");
 				return;
 			}
-
-			if (entry.IsSelf)
+			using (var imguiFont = IMGUI_Fonts.Aquire())
 			{
-				imgui_TextColored(0.169f, 1f, 0f, 1f, entry.Name);
+				imguiFont.PushFont(_selectedFont);
+				imgui_TextColored(_nameColors[0], _nameColors[1], _nameColors[2], _nameColors[3], entry.Name);
+				//if (entry.IsSelf)
+				//{
+				//	imgui_TextColored(0.169f, 1f, 0f, 1f, entry.Name);
+				//}
+				//else
+				//{
+				//	imgui_TextColored(0.85f, 0.75f, 1.0f, 1.0f, entry.Name);
+				//}
+
+				imgui_SameLine();
+				imgui_Text("(");
+				imgui_SameLine(0.0f, 0.0f);
+				imgui_TextColored(0.169f, 1f, 0f, 1f, entry.AATotal);
+				imgui_SameLine(0.0f, 0.0f);
+				imgui_Text(")");
+
+
+				string targetDisplay = string.IsNullOrWhiteSpace(entry.TargetName)
+					? "None"
+					: entry.TargetName;
+
+				imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, "Target:");
+				imgui_SameLine();
+				imgui_TextColored(0.536f, 1f, 0.333f, 1f, targetDisplay);
+
+				if (string.IsNullOrWhiteSpace(entry.SpellName) || entry.SpellName == "NULL")
+				{
+					imgui_Text(String.Empty);
+					return;
+				}
+				imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, "    Spell:");
+				imgui_SameLine();
+				string stateText;
+				float sr = 0.95f, sg = 0.9f, sb = 0.55f;
+				stateText = $"{entry.SpellName}";
+				imgui_TextColored(sr, sg, sb, 1.0f, stateText);
 			}
-			else
-			{
-				imgui_TextColored(0.85f, 0.75f, 1.0f, 1.0f, entry.Name);
-			}
-
-			imgui_SameLine();
-			imgui_Text("(");
-			imgui_SameLine(0.0f, 0.0f);
-			imgui_TextColored(0.169f, 1f, 0f, 1f, entry.AATotal);
-			imgui_SameLine(0.0f, 0.0f);
-			imgui_Text(")");
-
-
-			string targetDisplay = string.IsNullOrWhiteSpace(entry.TargetName)
-				? "None"
-				: entry.TargetName;
-		
-			imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, "Target:");
-			imgui_SameLine();
-			imgui_TextColored(0.536f, 1f, 0.333f, 1f, targetDisplay);
-
-			if (string.IsNullOrWhiteSpace(entry.SpellName) || entry.SpellName == "NULL")
-			{
-				imgui_Text(String.Empty);
-				return;
-			}
-			imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, "    Spell:");
-			imgui_SameLine();
-			string stateText;
-			float sr = 0.95f, sg = 0.9f, sb = 0.55f;
-			stateText = $"{entry.SpellName}";
-			imgui_TextColored(sr, sg, sb, 1.0f, stateText);
 		}
 
 

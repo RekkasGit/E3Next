@@ -44,7 +44,7 @@ namespace E3Core.UI.Windows.Hud
 		};
 		private static readonly (double MaxValue, double MinValue, float R, float G, float B)[] _resourceSeverity = new[]
 		{
-			(100d, 90d,  0.25f, 0.85f, 0.25f),
+			(200d, 90d,  0.25f, 0.85f, 0.25f),
 			(90d, 80d,0.6f, 0.9f, 0.6f),
 			(80d, 60d, 0.95f, 0.85f, 0.35f),
 			(60d, 50d, 1.0f, 0.7f, 0.2f),
@@ -1153,7 +1153,7 @@ namespace E3Core.UI.Windows.Hud
 								imgui_Text("Alpha");
 								imgui_PopStyleColor(1);
 								
-								string keyForInput = $"##alpha_set-{i}";
+								string keyForInput = $"##E3Hud_Hub_alpha_set-{i}";
 								imgui_SetNextItemWidth(100);
 								if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
 								{
