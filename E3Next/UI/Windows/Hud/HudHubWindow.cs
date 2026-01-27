@@ -1224,11 +1224,36 @@ namespace E3Core.UI.Windows.Hud
 									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 									imgui_Text(stats.Name);
 									imgui_Separator();
+									if (imgui_MenuItem("Target Toon"))
+									{
+										if (_spawns.TryByName(stats.Name, out var spawns))
+										{
+											string command = $"/target id {spawns.ID}";
+											E3ImGUI.MQCommandQueue.Enqueue(command);
+										}
+									}
+									if (imgui_MenuItem("Nav to Toon"))
+									{
+										if (_spawns.TryByName(stats.Name, out var spawns))
+										{
+											string command = $"/nav id {spawns.ID}";
+											E3ImGUI.MQCommandQueue.Enqueue(command);
+										}
+									}
+									if (imgui_MenuItem("Nav Toon to us"))
+									{
+										if (_spawns.TryByName(E3.CurrentName, out var spawns))
+										{
+											string command = $"/e3bct {stats.Name} /nav id {spawns.ID}";
+											E3ImGUI.MQCommandQueue.Enqueue(command);
+										}
+									}
 									if (imgui_MenuItem("Foreground Toon"))
 									{
 										string command = $"/e3bct {stats.Name} /foreground";
 										E3ImGUI.MQCommandQueue.Enqueue(command);
 									}
+									
 									imgui_PopStyleColor(1);
 								}
 							}
