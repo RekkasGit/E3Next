@@ -479,11 +479,11 @@ namespace E3Core.UI.Windows.Hud
 
 							RenderGroupTable();
 
-							if (!buffstate.DeAttached)
+							if (!buffstate.Detached)
 							{
 								RenderBuffTableSimple();
 							}
-							if (!songstate.DeAttached)
+							if (!songstate.Detached)
 							{
 								RenderSongTableSimple();
 							}
@@ -498,7 +498,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 		}
-		private static void RenderHub_TryDeattached(string windowName, bool openFlag, Action ExecuteMethod, float alpha, bool noTitleBar = false)
+		private static void RenderHub_TryDetached(string windowName, bool openFlag, Action ExecuteMethod, float alpha, bool noTitleBar = false)
 		{
 			if (openFlag && imgui_Begin_OpenFlagGet(windowName))
 			{
@@ -531,14 +531,14 @@ namespace E3Core.UI.Windows.Hud
 		{
 			var buffstate = _state.GetState<State_BuffWindow>();
 			var songstate = _state.GetState<State_SongWindow>();
-			if (buffstate.DeAttached && !imgui_Begin_OpenFlagGet(buffstate.WindowName))
+			if (buffstate.Detached && !imgui_Begin_OpenFlagGet(buffstate.WindowName))
 			{
-				buffstate.DeAttached = false;
+				buffstate.Detached = false;
 			}
 			
-			if (songstate.DeAttached && !imgui_Begin_OpenFlagGet(songstate.WindowName))
+			if (songstate.Detached && !imgui_Begin_OpenFlagGet(songstate.WindowName))
 			{
-				songstate.DeAttached = false;
+				songstate.Detached = false;
 			}
 		}
 		private static void RenderHub()
@@ -549,9 +549,9 @@ namespace E3Core.UI.Windows.Hud
 			RenderHub_MainWindow();
 
 			var buffState = _state.GetState<State_BuffWindow>();
-			RenderHub_TryDeattached(buffState.WindowName, buffState.DeAttached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true);
+			RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true);
 			var songState = _state.GetState<State_SongWindow>();
-			RenderHub_TryDeattached(songState.WindowName, songState.DeAttached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true);
+			RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true);
 
 		}
 		private static void RenderHub_WindowBuffs()
@@ -570,17 +570,17 @@ namespace E3Core.UI.Windows.Hud
 			if (numberOfBuffsPerRow < 1) numberOfBuffsPerRow = 1;
 			imgui_Text("Songs:");
 
-			if (!state.DeAttached)
+			if (!state.Detached)
 			{
 				imgui_SameLine(0);
 				imgui_SetCursorPosX(widthAvail - 20);
 				if (imgui_Button(IMGUI_DETATCH_SONGS_ID))
 				{
-					state.DeAttached = true;
+					state.Detached = true;
 					imgui_Begin_OpenFlagSet(state.WindowName, true);
 				}
 			}
-			if (state.DeAttached)
+			if (state.Detached)
 			{
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(0);
@@ -622,7 +622,7 @@ namespace E3Core.UI.Windows.Hud
 				imgui_SameLine(windowWidth - 35);
 				if (imgui_Button("<<##reattach_songs"))
 				{
-					state.DeAttached = false;
+					state.Detached = false;
 					imgui_Begin_OpenFlagSet(state.WindowName, false);
 				}
 			}
@@ -856,17 +856,17 @@ namespace E3Core.UI.Windows.Hud
 				imgui_Text(hubState.SelectedToonForBuffs);
 			}
 
-			if (!buffState.DeAttached)
+			if (!buffState.Detached)
 			{
 				imgui_SameLine(0);
 				imgui_SetCursorPosX(widthAvail - 20);
 				if (imgui_Button(IMGUI_DETATCH_BUFFS_ID))
 				{
-					buffState.DeAttached = true;
+					buffState.Detached = true;
 					imgui_Begin_OpenFlagSet(buffState.WindowName, true);
 				}
 			}
-			if (buffState.DeAttached)
+			if (buffState.Detached)
 			{
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(0);
@@ -908,7 +908,7 @@ namespace E3Core.UI.Windows.Hud
 				imgui_SameLine(windowWidth - 35);
 				if (imgui_Button("<<##reattach_buffs"))
 				{
-					buffState.DeAttached = false;
+					buffState.Detached = false;
 					imgui_Begin_OpenFlagSet(buffState.WindowName, false);
 				}
 			}
@@ -1210,9 +1210,13 @@ namespace E3Core.UI.Windows.Hud
 							{
 								state.SelectedRow = rowCount;
 
-								state.SelectedToonForBuffs = stats.Name;
-
-								if (state.SelectedToonForBuffs == E3.CurrentName) state.SelectedToonForBuffs = String.Empty;
+							
+								if (_spawns.TryByName(stats.Name, out var spawns))
+								{
+									string command = $"/target id {spawns.ID}";
+									E3ImGUI.MQCommandQueue.Enqueue(command);
+								}
+								
 
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
@@ -1224,13 +1228,10 @@ namespace E3Core.UI.Windows.Hud
 									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 									imgui_Text(stats.Name);
 									imgui_Separator();
-									if (imgui_MenuItem("Target Toon"))
+									if (imgui_MenuItem("Toon buffs"))
 									{
-										if (_spawns.TryByName(stats.Name, out var spawns))
-										{
-											string command = $"/target id {spawns.ID}";
-											E3ImGUI.MQCommandQueue.Enqueue(command);
-										}
+										state.SelectedToonForBuffs = stats.Name;
+										if (state.SelectedToonForBuffs == E3.CurrentName) state.SelectedToonForBuffs = String.Empty;
 									}
 									if (imgui_MenuItem("Nav to Toon"))
 									{

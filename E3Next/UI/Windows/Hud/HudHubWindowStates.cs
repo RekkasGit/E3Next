@@ -1,12 +1,8 @@
-﻿using E3Core.Data;
-using E3Core.Processors;
-using E3Core.UI.Windows.CharacterSettings;
-using IniParser.Model;
+﻿using E3Core.Processors;
 using MonoCore;
 using System;
 using System.Collections.Generic;
 using static E3Core.UI.Windows.Hud.HudHubWindow;
-using static MonoCore.E3ImGUI;
 
 namespace E3Core.UI.Windows.Hud
 {
@@ -111,10 +107,10 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_BuffWindow
 	{
-		private bool _deattached = false;
+		private bool _detached = false;
 		private float _windowAlpha = 0.8f; 
 		public float WindowAlpha { get => _windowAlpha; set { _windowAlpha = value; IsDirty = true; } }
-		public bool DeAttached { get => _deattached; set { _deattached = value; IsDirty = true; } }
+		public bool Detached { get => _detached; set { _detached = value; IsDirty = true; } }
 	
 		public bool IsDirty = false;
 
@@ -149,7 +145,7 @@ namespace E3Core.UI.Windows.Hud
 			FadeTimeInMS = E3.CharacterSettings.E3Hud_Hub_Buff_FadeTimeInMS;
 			SelectedFont = E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont;
 			IconSize = E3.CharacterSettings.E3Hud_Hub_Buff_IconSize;
-			_deattached = E3.CharacterSettings.E3Hud_Hub_Buff_DeAttached;
+			_detached = E3.CharacterSettings.E3Hud_Hub_Buff_Detached;
 			IsDirty = false;
 		}
 
@@ -160,13 +156,13 @@ namespace E3Core.UI.Windows.Hud
 			E3.CharacterSettings.E3Hud_Hub_Buff_FadeTimeInMS = FadeTimeInMS;
 			E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont = SelectedFont;
 			E3.CharacterSettings.E3Hud_Hub_Buff_IconSize = IconSize;
-			E3.CharacterSettings.E3Hud_Hub_Buff_DeAttached = DeAttached;
+			E3.CharacterSettings.E3Hud_Hub_Buff_Detached = Detached;
 			IsDirty = false;
 		}
 	}
 	public class State_SongWindow
 	{
-		private bool _deattached = false;
+		private bool _detached = false;
 		private float _windowAlpha = 0.8f;
 
 		public List<TableRow_BuffInfo> SongInfo = new List<TableRow_BuffInfo>();
@@ -188,13 +184,13 @@ namespace E3Core.UI.Windows.Hud
 			}
 		}
 
-		public bool DeAttached { get => _deattached; set { _deattached = value; IsDirty = true; } }
+		public bool Detached { get => _detached; set { _detached = value; IsDirty = true; } }
 		public float WindowAlpha { get => _windowAlpha; set { _windowAlpha = value; IsDirty = true; } }
 
 		public State_SongWindow()
 		{
 			_windowAlpha = E3.CharacterSettings.E3Hud_Hub_Song_Alpha;
-			_deattached = E3.CharacterSettings.E3Hud_Hub_Song_DeAttached;
+			_detached = E3.CharacterSettings.E3Hud_Hub_Song_Detached;
 
 			FadeTimeInMS = E3.CharacterSettings.E3Hud_Hub_Song_FadeTimeInMS;
 			SelectedFont = E3.CharacterSettings.E3Hud_Hub_Song_SelectedFont;
@@ -209,7 +205,7 @@ namespace E3Core.UI.Windows.Hud
 			E3.CharacterSettings.E3Hud_Hub_Song_FadeTimeInMS = FadeTimeInMS;
 			E3.CharacterSettings.E3Hud_Hub_Song_SelectedFont = SelectedFont;
 			E3.CharacterSettings.E3Hud_Hub_Song_IconSize = IconSize;
-			E3.CharacterSettings.E3Hud_Hub_Song_DeAttached = DeAttached;
+			E3.CharacterSettings.E3Hud_Hub_Song_Detached = Detached;
 			IsDirty = false;
 
 		}
@@ -218,9 +214,9 @@ namespace E3Core.UI.Windows.Hud
 	public class State_DebuffWindow
 	{
 
-		private bool _deattached = false;
+		private bool _detached = false;
 		private float _windowAlpha = 0.8f;
-		public bool DeAttached { get => _deattached; set { _deattached = value; IsDirty = true; } }
+		public bool Detached { get => _detached; set { _detached = value; IsDirty = true; } }
 		public float WindowAlpha { get => _windowAlpha; set { _windowAlpha = value; IsDirty = true; } }
 		public bool IsDirty = false;
 
@@ -249,7 +245,7 @@ namespace E3Core.UI.Windows.Hud
 			FadeTimeInMS = E3.CharacterSettings.E3Hud_Hub_Debuff_FadeTimeInMS;
 			SelectedFont = E3.CharacterSettings.E3Hud_Hub_Debuff_SelectedFont;
 			IconSize = E3.CharacterSettings.E3Hud_Hub_Debuff_IconSize;
-			_deattached = E3.CharacterSettings.E3Hud_Hub_Debuff_DeAttached;
+			_detached = E3.CharacterSettings.E3Hud_Hub_Debuff_Detached;
 			IsDirty = false;
 		}
 
@@ -260,7 +256,7 @@ namespace E3Core.UI.Windows.Hud
 			E3.CharacterSettings.E3Hud_Hub_Debuff_FadeTimeInMS = FadeTimeInMS;
 			E3.CharacterSettings.E3Hud_Hub_Debuff_SelectedFont = SelectedFont;
 			E3.CharacterSettings.E3Hud_Hub_Debuff_IconSize = IconSize;
-			E3.CharacterSettings.E3Hud_Hub_Debuff_DeAttached = DeAttached;
+			E3.CharacterSettings.E3Hud_Hub_Debuff_Detached = Detached;
 			IsDirty = false;
 
 		}

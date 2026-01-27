@@ -150,8 +150,8 @@ namespace E3Core.Settings
 		
 		[INI_Section("E3Hud_Hub_Buff", "SelectedFont")]
 		public string E3Hud_Hub_Buff_SelectedFont = "robo";
-		[INI_Section("E3Hud_Hub_Buff", "DeAttached")]
-		public bool E3Hud_Hub_Buff_DeAttached = false;
+		[INI_Section("E3Hud_Hub_Buff", "Detached")]
+		public bool E3Hud_Hub_Buff_Detached = false;
 		[INI_Section("E3Hud_Hub_Buff", "IconSize")]
 		public int E3Hud_Hub_Buff_IconSize = 40;
 		[INI_Section("E3Hud_Hub_Buff", "FadeTimeInMS")]
@@ -161,8 +161,8 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Hub_Song", "SelectedFont")]
 		public string E3Hud_Hub_Song_SelectedFont = "robo";
-		[INI_Section("E3Hud_Hub_Song", "DeAttached")]
-		public bool E3Hud_Hub_Song_DeAttached = false;
+		[INI_Section("E3Hud_Hub_Song", "Detached")]
+		public bool E3Hud_Hub_Song_Detached = false;
 		[INI_Section("E3Hud_Hub_Song", "IconSize")]
 		public int E3Hud_Hub_Song_IconSize = 40;
 		[INI_Section("E3Hud_Hub_Song", "FadeTimeInMS")]
@@ -172,8 +172,8 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Hub_Debuff", "SelectedFont")]
 		public string E3Hud_Hub_Debuff_SelectedFont = "robo";
-		[INI_Section("E3Hud_Hub_Debuff", "DeAttached")]
-		public bool E3Hud_Hub_Debuff_DeAttached = false;
+		[INI_Section("E3Hud_Hub_Debuff", "Detached")]
+		public bool E3Hud_Hub_Debuff_Detached = false;
 		[INI_Section("E3Hud_Hub_Debuff", "IconSize")]
 		public int E3Hud_Hub_Debuff_IconSize = 40;
 		[INI_Section("E3Hud_Hub_Debuff", "FadeTimeInMS")]
@@ -757,18 +757,18 @@ namespace E3Core.Settings
 
 
 			LoadKeyData("E3Hud_Hub_Buff", "Alpha", ParsedData, ref E3Hud_Hub_Buff_Alpha);
-			LoadKeyData("E3Hud_Hub_Buff", "DeAttached", ParsedData, ref E3Hud_Hub_Buff_DeAttached);
+			LoadKeyData("E3Hud_Hub_Buff", "Detached", ParsedData, ref E3Hud_Hub_Buff_Detached);
 			LoadKeyData("E3Hud_Hub_Buff", "IconSize", ParsedData, ref E3Hud_Hub_Buff_IconSize);
 			LoadKeyData("E3Hud_Hub_Buff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Buff_FadeTimeInMS);
 
 			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData, ref E3Hud_Hub_Song_Alpha);
-			LoadKeyData("E3Hud_Hub_Song", "DeAttached", ParsedData, ref E3Hud_Hub_Song_DeAttached);
+			LoadKeyData("E3Hud_Hub_Song", "Detached", ParsedData, ref E3Hud_Hub_Song_Detached);
 			LoadKeyData("E3Hud_Hub_Song", "IconSize", ParsedData, ref E3Hud_Hub_Song_IconSize);
 			LoadKeyData("E3Hud_Hub_Song", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Song_FadeTimeInMS);
 
 
 			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData, ref E3Hud_Hub_Debuff_Alpha);
-			LoadKeyData("E3Hud_Hub_Debuff", "DeAttached", ParsedData, ref E3Hud_Hub_Debuff_DeAttached);
+			LoadKeyData("E3Hud_Hub_Debuff", "Detached", ParsedData, ref E3Hud_Hub_Debuff_Detached);
 			LoadKeyData("E3Hud_Hub_Debuff", "IconSize", ParsedData, ref E3Hud_Hub_Debuff_IconSize);
 			LoadKeyData("E3Hud_Hub_Debuff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Debuff_FadeTimeInMS);
 
@@ -1181,21 +1181,21 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("E3Hud_Hub_Buff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Buff");
 			section.Keys.AddKey("Alpha", "0.8");
-			section.Keys.AddKey("DeAttached", "False");
+			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Song");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Song");
 			section.Keys.AddKey("Alpha", "0.8");
-			section.Keys.AddKey("DeAttached", "False");
+			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Debuff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Debuff");
 			section.Keys.AddKey("Alpha", "0.8");
-			section.Keys.AddKey("DeAttached", "False");
+			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 
