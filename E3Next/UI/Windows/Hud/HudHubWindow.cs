@@ -32,6 +32,7 @@ namespace E3Core.UI.Windows.Hud
 
 		private const string IMGUI_DETATCH_BUFFS_ID = FontAwesome.FAExternalLinkSquare + "##detach_buffs";
 		private const string IMGUI_DETATCH_SONGS_ID = FontAwesome.FAExternalLinkSquare + "##detach_songs";
+		private const string IMGUI_DETATCH_HOTBUTTON_ID = FontAwesome.FAExternalLinkSquare + "##detach_hotbuttons";
 
 		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _distanceSeverity = new[]
 		{
@@ -161,8 +162,8 @@ namespace E3Core.UI.Windows.Hud
 		}
 
 		static string _exceptionMessage = String.Empty;
-		
-		
+
+
 		private static void RefreshBuffInfo()
 		{
 			var hubState = _state.GetState<State_HubWindow>();
@@ -304,7 +305,7 @@ namespace E3Core.UI.Windows.Hud
 						}
 					}
 
-				
+
 					if (buffState.PreviousBuffs.Count > 0)
 					{
 						foreach (var buff in buffState.BuffInfo)
@@ -452,6 +453,7 @@ namespace E3Core.UI.Windows.Hud
 			var state = _state.GetState<State_HubWindow>();
 			var buffstate = _state.GetState<State_BuffWindow>();
 			var songstate = _state.GetState<State_SongWindow>();
+			var buttonstate = _state.GetState<State_HotbuttonsWindow>();
 			if (imgui_Begin_OpenFlagGet(state.WindowName))
 			{
 				E3ImGUI.PushCurrentTheme();
@@ -461,24 +463,28 @@ namespace E3Core.UI.Windows.Hud
 					using (var window = ImGUIWindow.Aquire())
 					{
 						imgui_SetNextWindowBgAlpha(state.WindowAlpha);
-						if (window.Begin(state.WindowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse |(int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar))
+						if (window.Begin(state.WindowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar))
 						{
 							RefreshGroupInfo();
 							RefreshBuffInfo();
 
-							if(state.IsDirty || buffstate.IsDirty || songstate.IsDirty)
+							if (state.IsDirty || buffstate.IsDirty || songstate.IsDirty || buttonstate.IsDirty)
 							{
-								if(imgui_Button("Save"))
+								if (imgui_Button("Save"))
 								{
 									state.UpdateSettings_WithoutSaving();
 									buffstate.UpdateSettings_WithoutSaving();
 									songstate.UpdateSettings_WithoutSaving();
+									buttonstate.UpdateSettings_WithoutSaving();
 									E3.CharacterSettings.SaveData();
 								}
 							}
 
 							RenderGroupTable();
-
+							if (!buttonstate.Detached)
+							{
+								RenderHotbuttons();
+							}
 							if (!buffstate.Detached)
 							{
 								RenderBuffTableSimple();
@@ -487,6 +493,7 @@ namespace E3Core.UI.Windows.Hud
 							{
 								RenderSongTableSimple();
 							}
+
 
 						}
 					}
@@ -531,14 +538,19 @@ namespace E3Core.UI.Windows.Hud
 		{
 			var buffstate = _state.GetState<State_BuffWindow>();
 			var songstate = _state.GetState<State_SongWindow>();
+			var buttonState = _state.GetState<State_HotbuttonsWindow>();
 			if (buffstate.Detached && !imgui_Begin_OpenFlagGet(buffstate.WindowName))
 			{
 				buffstate.Detached = false;
 			}
-			
+
 			if (songstate.Detached && !imgui_Begin_OpenFlagGet(songstate.WindowName))
 			{
 				songstate.Detached = false;
+			}
+			if (buttonState.Detached && !imgui_Begin_OpenFlagGet(buttonState.WindowName))
+			{
+				buttonState.Detached = false;
 			}
 		}
 		private static void RenderHub()
@@ -552,10 +564,8 @@ namespace E3Core.UI.Windows.Hud
 			RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true);
 			var songState = _state.GetState<State_SongWindow>();
 			RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true);
-
-		}
-		private static void RenderHub_WindowBuffs()
-		{
+			var buttonState = _state.GetState<State_HotbuttonsWindow>();
+			RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true);
 
 		}
 		private static void RenderSongTableSimple()
@@ -585,8 +595,8 @@ namespace E3Core.UI.Windows.Hud
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(0);
 				imgui_SetCursorPosX(windowWidth - 70);
-				if(imgui_Button($"{MaterialFont.settings}##song_window_settings"))
-				{ 
+				if (imgui_Button($"{MaterialFont.settings}##song_window_settings"))
+				{
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
@@ -744,6 +754,255 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 
+		}
+
+		static List<string> _hotButtonCommandNamesOrder = new List<string>() { "Follow me", "Follow off", "Click it", "Move to me" };
+		static Dictionary<string, string> _hotbuttonCommands = new Dictionary<string, string>() { { "Follow me", "/followme" }, { "Follow off", "/followoff" }, { "Click it", "/clickit" }, { "Move to me", "/mtm" } };
+		private static void RenderHotbuttons()
+		{
+
+			var state = _state.GetState<State_HotbuttonsWindow>();
+
+			float widthAvail = imgui_GetContentRegionAvailX();
+
+			if (state.Detached)
+			{
+				float windowWidth = imgui_GetWindowWidth();
+				imgui_SameLine(0);
+				imgui_SetCursorPosX(windowWidth - 70);
+				if (imgui_Button($"{MaterialFont.settings}##hotbutton_window_settings"))
+				{
+				}
+				using (var popup = ImGUIPopUpContext.Aquire())
+				{
+					if (popup.BeginPopupContextItem($"##Hotbutton_WindowSettingsPopup", 1))
+					{
+						imgui_Separator();
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Font");
+						imgui_PopStyleColor(1);
+
+						using (var combo = ImGUICombo.Aquire())
+						{
+							if (combo.BeginCombo("##Select Font for GroupTable", state.SelectedFont))
+							{
+								foreach (var pair in E3ImGUI.FontList)
+								{
+									bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+									if (imgui_Selectable($"{pair.Key}", sel))
+									{
+										state.SelectedFont = pair.Key;
+									}
+								}
+							}
+						}
+						imgui_Separator();
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Alpha");
+						imgui_PopStyleColor(1);
+
+						string keyForInput = "##Hotbutton_Window_alpha_set";
+						imgui_SetNextItemWidth(100);
+						if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
+						{
+							int updated = imgui_InputInt_Get(keyForInput);
+
+							if (updated > 255)
+							{
+								updated = 255;
+
+							}
+							if (updated < 0)
+							{
+								updated = 0;
+
+							}
+							state.WindowAlpha = ((float)updated) / 255f;
+							imgui_InputInt_Clear(keyForInput);
+						}
+						imgui_Separator();
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Button Width");
+						imgui_PopStyleColor(1);
+
+						keyForInput = "##Hotbutton_Window_buttonX_set";
+						imgui_SetNextItemWidth(100);
+						if (imgui_InputInt(keyForInput, (int)(state.ButtonSizeX), 1, 5))
+						{
+							int updated = imgui_InputInt_Get(keyForInput);
+
+							if (updated > 100)
+							{
+								updated = 100;
+
+							}
+							if (updated < 20)
+							{
+								updated = 20;
+
+							}
+							state.ButtonSizeX = updated;
+							imgui_InputInt_Clear(keyForInput);
+						}
+						imgui_Separator();
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Button Height");
+						imgui_PopStyleColor(1);
+
+						keyForInput = "##Hotbutton_Window_buttonY_set";
+						imgui_SetNextItemWidth(100);
+						if (imgui_InputInt(keyForInput, (int)(state.ButtonSizeY), 1, 5))
+						{
+							int updated = imgui_InputInt_Get(keyForInput);
+
+							if (updated > 100)
+							{
+								updated = 100;
+
+							}
+							if (updated < 20)
+							{
+								updated = 20;
+
+							}
+							state.ButtonSizeY = updated;
+							imgui_InputInt_Clear(keyForInput);
+						}
+
+					}
+				}
+				imgui_SameLine(windowWidth - 35);
+				if (imgui_Button("<<##reattach_hotbutton"))
+				{
+					state.Detached = false;
+					imgui_Begin_OpenFlagSet(state.WindowName, false);
+				}
+			}
+			widthAvail = imgui_GetContentRegionAvailX();
+
+
+			using (var table = ImGUITable.Aquire())
+			{
+				int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
+									  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
+									  );
+
+
+				Int32 numberOfBuffsPerRow = (int)widthAvail / state.ButtonSizeX;
+				if (numberOfBuffsPerRow < 1) numberOfBuffsPerRow = 1;
+
+				if (table.BeginTable("E3HubHotButtonsTable", 1, tableFlags, 0f, 0))
+				{
+					imgui_TableSetupColumn_Default("Hotbuttons");
+					Int32 counter = 0;
+
+					foreach (var stats in _hotButtonCommandNamesOrder)
+					{
+						if (counter % numberOfBuffsPerRow == 0)
+						{
+							imgui_TableNextRow();
+							imgui_TableNextColumn();
+						}
+						else
+						{
+							imgui_SameLine(0, 5);
+						}
+						using (var imguiFont = IMGUI_Fonts.Aquire())
+						{
+							imguiFont.PushFont(state.SelectedFont);
+							if (imgui_ButtonEx(stats, state.ButtonSizeX, state.ButtonSizeY))
+							{
+								E3ImGUI.MQCommandQueue.Enqueue(_hotbuttonCommands[stats]);
+							}
+						}
+						using (var popup = ImGUIPopUpContext.Aquire())
+						{
+							if (popup.BeginPopupContextItem($"##Hotbutton_detach-{counter}", 1))
+							{
+								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								if (imgui_MenuItem("Pop Out"))
+								{
+									state.Detached = true;
+									imgui_Begin_OpenFlagSet(state.WindowName, true);
+								}
+								imgui_Separator();
+								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Font");
+								imgui_PopStyleColor(1);
+
+								using (var combo = ImGUICombo.Aquire())
+								{
+									if (combo.BeginCombo("##Select Font for GroupTable", state.SelectedFont))
+									{
+										foreach (var pair in E3ImGUI.FontList)
+										{
+											bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+											if (imgui_Selectable($"{pair.Key}", sel))
+											{
+												state.SelectedFont = pair.Key;
+											}
+										}
+									}
+								}
+								imgui_PopStyleColor(1);
+								imgui_Separator();
+								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Button Width");
+								imgui_PopStyleColor(1);
+
+								string keyForInput = "##Hotbutton_Window_buttonX_set";
+								imgui_SetNextItemWidth(100);
+								if (imgui_InputInt(keyForInput, (int)(state.ButtonSizeX), 1, 5))
+								{
+									int updated = imgui_InputInt_Get(keyForInput);
+
+									if (updated > 100)
+									{
+										updated = 100;
+
+									}
+									if (updated < 20)
+									{
+										updated = 20;
+
+									}
+									state.ButtonSizeX = updated;
+									imgui_InputInt_Clear(keyForInput);
+								}
+								imgui_Separator();
+								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Button Height");
+								imgui_PopStyleColor(1);
+
+								keyForInput = "##Hotbutton_Window_buttonY_set";
+								imgui_SetNextItemWidth(100);
+								if (imgui_InputInt(keyForInput, (int)(state.ButtonSizeY), 1, 5))
+								{
+									int updated = imgui_InputInt_Get(keyForInput);
+
+									if (updated > 100)
+									{
+										updated = 100;
+
+									}
+									if (updated < 20)
+									{
+										updated = 20;
+
+									}
+									state.ButtonSizeY = updated;
+									imgui_InputInt_Clear(keyForInput);
+								}
+							}
+						}
+						counter++;
+					}
+
+				}
+
+			}
 		}
 		private static void RenderBuffTableSimple()
 		{
@@ -922,10 +1181,6 @@ namespace E3Core.UI.Windows.Hud
 										  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
 										  );
 
-
-					//imgui_PushStyleColor((int)ImGuiCol.TableRowBg,0,0,0,0);
-					//imgui_PushStyleColor((int)ImGuiCol.TableRowBgAlt, 0, 0, 0, 0);
-					//imgui_PushStyleColor((int)ImGuiCol.ChildBg, 0, 0, 0, 0);
 					if (table.BeginTable("E3HubBuffTableSimple", 1, tableFlags, 0f, 0))
 					{
 						imgui_TableSetupColumn_Default("Buffs");
@@ -937,8 +1192,6 @@ namespace E3Core.UI.Windows.Hud
 							{
 								imgui_TableNextRow();
 								imgui_TableNextColumn();
-								//imgui_TableSetBgColor((int)ImGuiTableBgTarget.RowBg0, GetColor(0, 0, 0, 0), -1);
-
 							}
 							else
 							{
@@ -1045,7 +1298,6 @@ namespace E3Core.UI.Windows.Hud
 							counter++;
 						}
 					}
-					//imgui_PopStyleColor(3);
 
 				}
 
@@ -1053,7 +1305,7 @@ namespace E3Core.UI.Windows.Hud
 
 		}
 
-	
+
 
 		// Column visibility settings for group table
 
@@ -1152,19 +1404,19 @@ namespace E3Core.UI.Windows.Hud
 								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 								imgui_Text("Alpha");
 								imgui_PopStyleColor(1);
-								
+
 								string keyForInput = $"##E3Hud_Hub_alpha_set-{i}";
 								imgui_SetNextItemWidth(100);
 								if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
 								{
 									int updated = imgui_InputInt_Get(keyForInput);
-									
-									if(updated > 255)
+
+									if (updated > 255)
 									{
 										updated = 255;
 
 									}
-									if(updated<0)
+									if (updated < 0)
 									{
 										updated = 0;
 
@@ -1210,13 +1462,13 @@ namespace E3Core.UI.Windows.Hud
 							{
 								state.SelectedRow = rowCount;
 
-							
+
 								if (_spawns.TryByName(stats.Name, out var spawns))
 								{
 									string command = $"/target id {spawns.ID}";
 									E3ImGUI.MQCommandQueue.Enqueue(command);
 								}
-								
+
 
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
@@ -1254,7 +1506,7 @@ namespace E3Core.UI.Windows.Hud
 										string command = $"/e3bct {stats.Name} /foreground";
 										E3ImGUI.MQCommandQueue.Enqueue(command);
 									}
-									
+
 									imgui_PopStyleColor(1);
 								}
 							}

@@ -170,6 +170,18 @@ namespace E3Core.Settings
 		[INI_Section("E3Hud_Hub_Song", "Alpha")]
 		public float E3Hud_Hub_Song_Alpha = 0.8f;
 
+
+		[INI_Section("E3Hud_Hub_HotButtons", "Alpha")]
+		public float E3Hud_Hub_HotButtons_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_HotButtons", "ButtonSizeX")]
+		public int E3Hud_Hub_HotButtons_ButtonSizeX = 50;
+		[INI_Section("E3Hud_Hub_HotButtons", "ButtonSizeY")]
+		public int E3Hud_Hub_HotButtons_ButtonSizeY = 30;
+		[INI_Section("E3Hud_Hub_HotButtons", "Detached")]
+		public bool E3Hud_Hub_HotButtons_Detached = false;
+		[INI_Section("E3Hud_Hub_HotButtons", "SelectedFont")]
+		public string E3Hud_Hub_HotButtons_SelectedFont = "robo";
+
 		[INI_Section("E3Hud_Hub_Debuff", "SelectedFont")]
 		public string E3Hud_Hub_Debuff_SelectedFont = "robo";
 		[INI_Section("E3Hud_Hub_Debuff", "Detached")]
@@ -767,6 +779,12 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Song", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Song_FadeTimeInMS);
 
 
+			LoadKeyData("E3Hud_Hub_HotButtons", "Alpha", ParsedData, ref E3Hud_Hub_HotButtons_Alpha);
+			LoadKeyData("E3Hud_Hub_HotButtons", "Detached", ParsedData, ref E3Hud_Hub_HotButtons_Detached);
+			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeX", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeX);
+			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeY", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeY);
+			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFont", ParsedData, ref E3Hud_Hub_HotButtons_SelectedFont);
+
 			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData, ref E3Hud_Hub_Debuff_Alpha);
 			LoadKeyData("E3Hud_Hub_Debuff", "Detached", ParsedData, ref E3Hud_Hub_Debuff_Detached);
 			LoadKeyData("E3Hud_Hub_Debuff", "IconSize", ParsedData, ref E3Hud_Hub_Debuff_IconSize);
@@ -1198,6 +1216,15 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
+
+			newFile.Sections.AddSection("E3Hud_Hub_HotButtons");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("ButtonSizeX", "50");
+			section.Keys.AddKey("ButtonSizeY", "30");
+			section.Keys.AddKey("SelectedFont", "arial-14");
+
 
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");

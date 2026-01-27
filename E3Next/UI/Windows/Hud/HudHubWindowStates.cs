@@ -3,6 +3,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using static E3Core.UI.Windows.Hud.HudHubWindow;
+using static E3Core.UI.Windows.Hud.State_SongWindow;
 
 namespace E3Core.UI.Windows.Hud
 {
@@ -17,6 +18,7 @@ namespace E3Core.UI.Windows.Hud
 		private State_BuffWindow _buffWindowState = new State_BuffWindow();
 		private State_DebuffWindow _debuffWindowState = new State_DebuffWindow();
 		private State_SongWindow _songWindowState = new State_SongWindow();
+		private State_HotbuttonsWindow _hotbuttonWindowState = new State_HotbuttonsWindow();
 
 		public T GetState<T>()
 		{
@@ -37,6 +39,11 @@ namespace E3Core.UI.Windows.Hud
 			{
 				return (T)(object)_debuffWindowState;
 			}
+			if (type == typeof(State_HotbuttonsWindow))
+			{
+				return (T)(object)_hotbuttonWindowState;
+			}
+			//State_HotbuttonsWindow
 			return default(T);
 		}
 		public void ClearWindows()
@@ -197,7 +204,6 @@ namespace E3Core.UI.Windows.Hud
 			IconSize = E3.CharacterSettings.E3Hud_Hub_Song_IconSize;
 			IsDirty = false;
 		}
-
 		public void UpdateSettings_WithoutSaving()
 		{
 
@@ -208,6 +214,41 @@ namespace E3Core.UI.Windows.Hud
 			E3.CharacterSettings.E3Hud_Hub_Song_Detached = Detached;
 			IsDirty = false;
 
+		}
+	}
+	public class State_HotbuttonsWindow
+	{
+		private bool _detached = false;
+		private float _windowAlpha = 0.8f;
+
+		public string WindowName = "E3 Hotbutton Hud";
+		public Int32 ButtonSizeX = 50;
+		public Int32 ButtonSizeY = 30;
+		public Int32 FontSize = 8;
+		public string SelectedFont = "arial-14";
+		public bool IsDirty = false;
+		
+		public bool Detached { get => _detached; set { _detached = value; IsDirty = true; } }
+		public float WindowAlpha { get => _windowAlpha; set { _windowAlpha = value; IsDirty = true; } }
+
+		public State_HotbuttonsWindow()
+		{
+			_windowAlpha = E3.CharacterSettings.E3Hud_Hub_HotButtons_Alpha;
+			_detached = E3.CharacterSettings.E3Hud_Hub_HotButtons_Detached;
+			SelectedFont = E3.CharacterSettings.E3Hud_Hub_HotButtons_SelectedFont;
+			ButtonSizeX = E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeX;
+			ButtonSizeY = E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeY;
+			IsDirty = false;
+		}
+
+		public void UpdateSettings_WithoutSaving()
+		{
+			E3.CharacterSettings.E3Hud_Hub_HotButtons_Alpha = WindowAlpha;
+			E3.CharacterSettings.E3Hud_Hub_HotButtons_SelectedFont = SelectedFont;
+			E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeX = ButtonSizeX;
+			E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeY = ButtonSizeY;
+			E3.CharacterSettings.E3Hud_Hub_HotButtons_Detached = Detached;
+			IsDirty = false;
 		}
 	}
 
