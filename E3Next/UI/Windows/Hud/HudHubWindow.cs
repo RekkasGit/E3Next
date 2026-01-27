@@ -461,7 +461,7 @@ namespace E3Core.UI.Windows.Hud
 					using (var window = ImGUIWindow.Aquire())
 					{
 						imgui_SetNextWindowBgAlpha(state.WindowAlpha);
-						if (window.Begin(state.WindowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse))
+						if (window.Begin(state.WindowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse |(int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar))
 						{
 							RefreshGroupInfo();
 							RefreshBuffInfo();
