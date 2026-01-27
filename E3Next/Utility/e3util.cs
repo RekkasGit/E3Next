@@ -1786,6 +1786,7 @@ namespace E3Core.Utility
 			TryMoveToTarget();
 			MQ.Cmd("/click right target");
 			MQ.Delay(2000, "${Merchant.ItemsReceived}");
+			MQ.Delay(1000);
 			return true;
 		}
 		public static bool OpenBank()
