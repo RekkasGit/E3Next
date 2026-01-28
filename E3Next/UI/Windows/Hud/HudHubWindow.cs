@@ -397,12 +397,13 @@ namespace E3Core.UI.Windows.Hud
 				double x, y, z = 0;
 
 
-				Int32 mana, endurance, hp, aggroPct, aggroPctXtarget;
+				Int32 mana, endurance, hp, aggroPct, aggroPctXtarget, aggroPctMinXtarget;
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctHPs}"), out hp);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctMana}"), out mana);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctEndurance}"), out endurance);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctAggro}"), out aggroPct);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMaxAggro}"), out aggroPctXtarget);
+				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMinAggro}"), out aggroPctMinXtarget);
 
 				double.TryParse(E3.Bots.Query(user, "${Me.X}"), out x);
 				double.TryParse(E3.Bots.Query(user, "${Me.Y}"), out y);
@@ -473,16 +474,35 @@ namespace E3Core.UI.Windows.Hud
 				if(aggroPct>0)
 				{
 					row.AggroPct = aggroPct.ToString();
-					row.AggroColor = GetAggroSeverityColor(aggroPct);
-
-				}
 			
-				if(aggroPctXtarget>0)
+				}
+				else
+				{
+					row.AggroPct = "-";
+				}
+				row.AggroColor = GetAggroSeverityColor(aggroPct);
+
+				if (aggroPctXtarget>0)
 				{
 					row.XtargetAggroPct = aggroPctXtarget.ToString();
-					row.AggroXTargetColor = GetAggroSeverityColor(aggroPctXtarget);
+			
+				}
+				else
+				{
+					row.XtargetAggroPct = "-";
+				}
+				row.AggroXTargetColor = GetAggroSeverityColor(aggroPctXtarget);
+				if (aggroPctMinXtarget > 0)
+				{
+					row.XtargetMinAggroPct = aggroPctMinXtarget.ToString();
 
 				}
+				else
+				{
+					row.XtargetMinAggroPct = "-";
+				}
+				row.AggroMinXTargetColor = GetAggroSeverityColor(aggroPctMinXtarget);
+
 				state.GroupInfo.Add(row);
 			}
 		}
@@ -1378,6 +1398,7 @@ namespace E3Core.UI.Windows.Hud
 				if (state.ShowColumnMana) { columnCount++; state.ColumNameBuffer.Add("Mana"); }
 				if (state.ShowColumnDistance) { columnCount++; state.ColumNameBuffer.Add("Dist"); }
 				if (state.ShowColumnAggroXTarget) { columnCount++; state.ColumNameBuffer.Add("AX"); }
+				if (state.ShowColumnAggroMinXTarget) { columnCount++; state.ColumNameBuffer.Add("AMX"); }
 
 
 
@@ -1430,7 +1451,12 @@ namespace E3Core.UI.Windows.Hud
 								if (imgui_Checkbox("##col_aggroXTarMax", state.ShowColumnAggroXTarget))
 									state.ShowColumnAggroXTarget = imgui_Checkbox_Get("##col_aggroXTarMax");
 								imgui_SameLine(0);
-								imgui_Text("AggroXTar");
+								imgui_Text("AggroXTar Max");
+
+								if (imgui_Checkbox("##col_aggroMinXTarMax", state.ShowColumnAggroMinXTarget))
+									state.ShowColumnAggroMinXTarget = imgui_Checkbox_Get("##col_aggroMinXTarMax");
+								imgui_SameLine(0);
+								imgui_Text("AggroXTar Min");
 
 								imgui_Separator();
 								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -1564,7 +1590,6 @@ namespace E3Core.UI.Windows.Hud
 								}
 							}
 							imgui_SameLine(0);
-							
 							var c = stats.DisplayNameColor;
 							imgui_TextColored(state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3], stats.DisplayName);
 					
@@ -1611,6 +1636,13 @@ namespace E3Core.UI.Windows.Hud
 								imgui_TableNextColumn();
 								c = stats.AggroColor;
 								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.XtargetAggroPct);
+
+							}
+							if (state.ShowColumnAggroMinXTarget)
+							{
+								imgui_TableNextColumn();
+								c = stats.AggroColor;
+								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.XtargetMinAggroPct);
 
 							}
 
@@ -1672,6 +1704,9 @@ namespace E3Core.UI.Windows.Hud
 			public string XtargetAggroPct { get; set; }
 
 			public (float r, float g, float b) AggroXTargetColor;
+			public string XtargetMinAggroPct { get; set; }
+
+			public (float r, float g, float b) AggroMinXTargetColor;
 
 			public TableRow_GroupInfo()
 			{

@@ -141,6 +141,8 @@ namespace E3Core.Settings
 		public Boolean E3Hud_Hub_ShowColumnAggro = true;
 		[INI_Section("E3Hud_Hub", "ShowColumnAggroXTarget")]
 		public Boolean E3Hud_Hub_ShowColumnAggroXTarget = true;
+		[INI_Section("E3Hud_Hub", "ShowColumnAggroMinXTarget")]
+		public Boolean E3Hud_Hub_ShowColumnAggroMinXTarget = true;
 		[INI_Section("E3Hud_Hub", "FadeTimeInMS")]
 		public int E3Hud_Hub_FadeTimeInMS = 1000;
 		[INI_Section("E3Hud_Hub", "NameColorR")]
@@ -775,7 +777,7 @@ namespace E3Core.Settings
 
 			LoadKeyData("E3Hud_Hub", "ShowColumnAggro", ParsedData, ref E3Hud_Hub_ShowColumnAggro);
 			LoadKeyData("E3Hud_Hub", "ShowColumnAggroXTarget", ParsedData, ref E3Hud_Hub_ShowColumnAggroXTarget);
-
+			LoadKeyData("E3Hud_Hub", "ShowColumnAggroMinXTarget", ParsedData, ref E3Hud_Hub_ShowColumnAggroMinXTarget);
 
 			LoadKeyData("E3Hud_Hub", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_FadeTimeInMS);
 			LoadKeyData("E3Hud_Hub", "NameColorR", ParsedData, ref E3Hud_Hub_NameColorR);
@@ -1216,6 +1218,7 @@ namespace E3Core.Settings
 
 			section.Keys.AddKey("ShowColumnAggro", "True");
 			section.Keys.AddKey("ShowColumnAggroXTarget", "True");
+			section.Keys.AddKey("ShowColumnAggroMinXTarget", "False");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("NameColorR", "0.95");
 			section.Keys.AddKey("NameColorG", "0.85");

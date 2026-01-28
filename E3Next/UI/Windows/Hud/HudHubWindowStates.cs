@@ -66,14 +66,14 @@ namespace E3Core.UI.Windows.Hud
 		public bool ShowColumnMana { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnMana; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnMana = value; IsDirty = true; } }
 		public bool ShowColumnDistance { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnDistance; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnDistance = value; IsDirty = true; } }
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_SelectedFont = value; IsDirty = true; } }
+		public bool ShowColumnAggro { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggro; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggro = value; IsDirty = true; } }
+		public bool ShowColumnAggroXTarget { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroXTarget; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroXTarget = value;IsDirty = true; } }
+		public bool ShowColumnAggroMinXTarget { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget = value; IsDirty = true; } }
 
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;
 
 		public List<TableRow_GroupInfo> GroupInfo = new List<TableRow_GroupInfo>();
-		private bool showColumnEnd = true;
-		public bool ShowColumnAggro = true;
-		public bool ShowColumnAggroXTarget = true;
 
 		public List<string> ColumNameBuffer = new List<string>();
 		public float[] NameColors = { 0.95f, 0.85f, 0.35f, 1.0f };

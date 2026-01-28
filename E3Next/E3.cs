@@ -382,8 +382,10 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.PctAggro}", pctAggr.ToString());
 			Int32 xtargetMaxAggro = e3util.GetXtargetMaxAggro();
 			if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
-			PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", pctAggr.ToString());
-
+			PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", xtargetMaxAggro.ToString());
+			Int32 xtargetMinAggro = e3util.GetXtargetMinAggro();
+			if (xtargetMinAggro < 0) xtargetMinAggro = 0;
+			PubServer.AddTopicMessage("${Me.XTargetMinAggro}", xtargetMinAggro.ToString());
 		}
 		public static void StateUpdates_BuffInformation()
 		{
