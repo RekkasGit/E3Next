@@ -1,4 +1,5 @@
 ﻿using E3Core.Processors;
+using Google.Protobuf.WellKnownTypes;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -59,49 +60,40 @@ namespace E3Core.UI.Windows.Hud
 	{
 		public string WindowName = $"E3 Main Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		private float _windowAlpha = 0.8f;
-		public float WindowAlpha { get => _windowAlpha; set { _windowAlpha = value; IsDirty = true; } }
+		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_Alpha; set { E3.CharacterSettings.E3Hud_Hub_Alpha = value; IsDirty = true; } }
+ 		public bool ShowColumnHP { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnHP; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnHP = value; IsDirty = true; } }
+		public bool ShowColumnEnd { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnEnd; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnEnd = value; IsDirty = true; } }
+		public bool ShowColumnMana { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnMana; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnMana = value; IsDirty = true; } }
+		public bool ShowColumnDistance { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnDistance; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnDistance = value; IsDirty = true; } }
+		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_SelectedFont = value; IsDirty = true; } }
+
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;
 
 		public List<TableRow_GroupInfo> GroupInfo = new List<TableRow_GroupInfo>();
-		public bool ShowColumnHP = true;
-		public bool ShowColumnEnd = true;
-		public bool ShowColumnMana = true;
-		public bool ShowColumnDistance = true;
+		private bool showColumnEnd = true;
+		public bool ShowAggro = true;
+		public bool ShowAggroXTarget = true;
 
 		public List<string> ColumNameBuffer = new List<string>();
 		public float[] NameColors = { 0.95f, 0.85f, 0.35f, 1.0f };
 		public string SelectedToonForBuffs = String.Empty;
-		public string SelectedFont = "robo";
+		
 		public int SelectedRow = -1;
 		public bool IsDirty = false;
 
 		public State_HubWindow()
 		{
-
-			WindowAlpha = E3.CharacterSettings.E3Hud_Hub_Alpha;
-			ShowColumnHP = E3.CharacterSettings.E3Hud_Hub_ShowColumnHP;
-			ShowColumnEnd = E3.CharacterSettings.E3Hud_Hub_ShowColumnEnd;
-			ShowColumnMana = E3.CharacterSettings.E3Hud_Hub_ShowColumnMana;
-			ShowColumnDistance = E3.CharacterSettings.E3Hud_Hub_ShowColumnDistance;
-			SelectedFont = E3.CharacterSettings.E3Hud_Hub_SelectedFont;
 			NameColors[0] = E3.CharacterSettings.E3Hud_Hub_NameColorR;
 			NameColors[1] = E3.CharacterSettings.E3Hud_Hub_NameColorG;
 			NameColors[2] = E3.CharacterSettings.E3Hud_Hub_NameColorB;
 			NameColors[3] = E3.CharacterSettings.E3Hud_Hub_NameColorA;
-
 			IsDirty = false;
 		}
 
 
 		public void UpdateSettings_WithoutSaving()
 		{
-			E3.CharacterSettings.E3Hud_Hub_Alpha = WindowAlpha;
-			E3.CharacterSettings.E3Hud_Hub_ShowColumnHP= ShowColumnHP;
-			E3.CharacterSettings.E3Hud_Hub_ShowColumnEnd = ShowColumnEnd;
-			E3.CharacterSettings.E3Hud_Hub_ShowColumnMana = ShowColumnMana;
-			E3.CharacterSettings.E3Hud_Hub_ShowColumnDistance = ShowColumnDistance;
-			E3.CharacterSettings.E3Hud_Hub_SelectedFont = SelectedFont;
 			E3.CharacterSettings.E3Hud_Hub_NameColorR = NameColors[0];
 			E3.CharacterSettings.E3Hud_Hub_NameColorG = NameColors[1];
 			E3.CharacterSettings.E3Hud_Hub_NameColorB = NameColors[2];
@@ -114,11 +106,22 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_BuffWindow
 	{
-		private bool _detached = false;
-		private float _windowAlpha = 0.8f; 
-		public float WindowAlpha { get => _windowAlpha; set { _windowAlpha = value; IsDirty = true; } }
-		public bool Detached { get => _detached; set { _detached = value; IsDirty = true; } }
-	
+		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_Buff_Alpha; set { E3.CharacterSettings.E3Hud_Hub_Buff_Alpha = value; IsDirty = true; } }
+		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_Buff_Detached; set { E3.CharacterSettings.E3Hud_Hub_Buff_Detached = value; IsDirty = true; } }
+		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont = value; IsDirty = true; } }
+		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_Buff_IconSize; set { E3.CharacterSettings.E3Hud_Hub_Buff_IconSize = value; IsDirty = true; } }
+
+		public int FadeTimeInMS
+		{
+			get { return E3.CharacterSettings.E3Hud_Hub_Buff_FadeTimeInMS; }
+			set
+			{
+				E3.CharacterSettings.E3Hud_Hub_Buff_FadeTimeInMS = value;
+				if (fadeTimeInMS < 1) fadeTimeInMS = 1;
+				FadeRatio = ((double)255) / value;
+				IsDirty = true;
+			}
+		}
 		public bool IsDirty = false;
 
 		public HashSet<Int32> PreviousBuffs = new HashSet<Int32>();
@@ -130,40 +133,19 @@ namespace E3Core.UI.Windows.Hud
 		public Int64 LastUpdateInterval = 500;
 		public List<TableRow_BuffInfo> BuffInfo = new List<TableRow_BuffInfo>();
 
-		public Int32 IconSize = 40;
+		private Int32 iconSize = 40;
 		public Int32 FontSize = 8;
 		private int fadeTimeInMS = 1000;
 		public double FadeRatio = 0;
-		public string SelectedFont = "robo";
-
 	
-
-		public int FadeTimeInMS { 
-			get { return fadeTimeInMS; } 
-			set  { 
-				fadeTimeInMS = value;
-				if (fadeTimeInMS < 1) fadeTimeInMS = 1;
-				FadeRatio = ((double)255) / value; 
-			} 
-		}
 		public State_BuffWindow()
 		{
-			_windowAlpha = E3.CharacterSettings.E3Hud_Hub_Buff_Alpha;
-			FadeTimeInMS = E3.CharacterSettings.E3Hud_Hub_Buff_FadeTimeInMS;
-			SelectedFont = E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont;
-			IconSize = E3.CharacterSettings.E3Hud_Hub_Buff_IconSize;
-			_detached = E3.CharacterSettings.E3Hud_Hub_Buff_Detached;
+			FadeRatio = ((double)255) / E3.CharacterSettings.E3Hud_Hub_Buff_FadeTimeInMS;
 			IsDirty = false;
 		}
 
 		public void UpdateSettings_WithoutSaving()
 		{
-
-			E3.CharacterSettings.E3Hud_Hub_Buff_Alpha = WindowAlpha;
-			E3.CharacterSettings.E3Hud_Hub_Buff_FadeTimeInMS = FadeTimeInMS;
-			E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont = SelectedFont;
-			E3.CharacterSettings.E3Hud_Hub_Buff_IconSize = IconSize;
-			E3.CharacterSettings.E3Hud_Hub_Buff_Detached = Detached;
 			IsDirty = false;
 		}
 	}
@@ -172,48 +154,37 @@ namespace E3Core.UI.Windows.Hud
 		private bool _detached = false;
 		private float _windowAlpha = 0.8f;
 
+		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_Song_Alpha; set { E3.CharacterSettings.E3Hud_Hub_Song_Alpha = value; IsDirty = true; } }
+		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_Song_Detached; set { E3.CharacterSettings.E3Hud_Hub_Song_Detached = value; IsDirty = true; } }
+		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_Song_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_Song_SelectedFont = value; IsDirty = true; } }
+		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_Song_IconSize; set { E3.CharacterSettings.E3Hud_Hub_Song_IconSize = value; IsDirty = true; } }
+
+		public int FadeTimeInMS
+		{
+			get { return E3.CharacterSettings.E3Hud_Hub_Song_FadeTimeInMS; }
+			set
+			{
+				E3.CharacterSettings.E3Hud_Hub_Song_FadeTimeInMS = value;
+				if (fadeTimeInMS < 1) fadeTimeInMS = 1;
+				FadeRatio = ((double)255) / value;
+				IsDirty = true;
+			}
+		}
 		public List<TableRow_BuffInfo> SongInfo = new List<TableRow_BuffInfo>();
 		public string WindowName = $"E3 Song Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
-		public Int32 IconSize = 40;
 		public Int32 FontSize = 8;
 		private int fadeTimeInMS = 1000;
 		public double FadeRatio = 0;
-		public string SelectedFont = "robo";
 		public bool IsDirty = false;
-		public int FadeTimeInMS
-		{
-			get { return fadeTimeInMS; }
-			set
-			{
-				fadeTimeInMS = value;
-				if (fadeTimeInMS < 1) fadeTimeInMS = 1;
-				FadeRatio = ((double)255) / value;
-			}
-		}
-
-		public bool Detached { get => _detached; set { _detached = value; IsDirty = true; } }
-		public float WindowAlpha { get => _windowAlpha; set { _windowAlpha = value; IsDirty = true; } }
-
+		
 		public State_SongWindow()
 		{
-			_windowAlpha = E3.CharacterSettings.E3Hud_Hub_Song_Alpha;
-			_detached = E3.CharacterSettings.E3Hud_Hub_Song_Detached;
-
-			FadeTimeInMS = E3.CharacterSettings.E3Hud_Hub_Song_FadeTimeInMS;
-			SelectedFont = E3.CharacterSettings.E3Hud_Hub_Song_SelectedFont;
-			IconSize = E3.CharacterSettings.E3Hud_Hub_Song_IconSize;
+			FadeRatio = ((double)255) / E3.CharacterSettings.E3Hud_Hub_Song_FadeTimeInMS;
 			IsDirty = false;
 		}
 		public void UpdateSettings_WithoutSaving()
 		{
-
-			E3.CharacterSettings.E3Hud_Hub_Song_Alpha = WindowAlpha;
-			E3.CharacterSettings.E3Hud_Hub_Song_FadeTimeInMS = FadeTimeInMS;
-			E3.CharacterSettings.E3Hud_Hub_Song_SelectedFont = SelectedFont;
-			E3.CharacterSettings.E3Hud_Hub_Song_IconSize = IconSize;
-			E3.CharacterSettings.E3Hud_Hub_Song_Detached = Detached;
 			IsDirty = false;
-
 		}
 	}
 	public class State_HotbuttonsWindow
@@ -255,49 +226,38 @@ namespace E3Core.UI.Windows.Hud
 	public class State_DebuffWindow
 	{
 
-		private bool _detached = false;
-		private float _windowAlpha = 0.8f;
-		public bool Detached { get => _detached; set { _detached = value; IsDirty = true; } }
-		public float WindowAlpha { get => _windowAlpha; set { _windowAlpha = value; IsDirty = true; } }
+		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_Debuff_Alpha; set { E3.CharacterSettings.E3Hud_Hub_Debuff_Alpha = value; IsDirty = true; } }
+		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_Debuff_Detached; set { E3.CharacterSettings.E3Hud_Hub_Debuff_Detached = value; IsDirty = true; } }
+		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_Debuff_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_Debuff_SelectedFont = value; IsDirty = true; } }
+		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_Debuff_IconSize; set { E3.CharacterSettings.E3Hud_Hub_Debuff_IconSize = value; IsDirty = true; } }
+
+		public int FadeTimeInMS
+		{
+			get { return E3.CharacterSettings.E3Hud_Hub_Debuff_FadeTimeInMS; }
+			set
+			{
+				E3.CharacterSettings.E3Hud_Hub_Debuff_FadeTimeInMS = value;
+				if (fadeTimeInMS < 1) fadeTimeInMS = 1;
+				FadeRatio = ((double)255) / value;
+				IsDirty = true;
+			}
+		}
 		public bool IsDirty = false;
 
 		public List<TableRow_BuffInfo> DebuffInfo = new List<TableRow_BuffInfo>();
 		public string WindowName = $"E3 Debuff Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
-		public Int32 IconSize = 40;
 		public Int32 FontSize = 8;
 		private int fadeTimeInMS = 1000;
 		public double FadeRatio = 0;
-		public string SelectedFont = "robo";
-		public int FadeTimeInMS
-		{
-			get { return fadeTimeInMS; }
-			set
-			{
-				fadeTimeInMS = value;
-				if (fadeTimeInMS < 1) fadeTimeInMS = 1;
-				FadeRatio = ((double)255) / value;
-				IsDirty = true;
-
-			}
-		}
 		public State_DebuffWindow()
 		{
-			_windowAlpha = E3.CharacterSettings.E3Hud_Hub_Debuff_Alpha;
-			FadeTimeInMS = E3.CharacterSettings.E3Hud_Hub_Debuff_FadeTimeInMS;
-			SelectedFont = E3.CharacterSettings.E3Hud_Hub_Debuff_SelectedFont;
-			IconSize = E3.CharacterSettings.E3Hud_Hub_Debuff_IconSize;
-			_detached = E3.CharacterSettings.E3Hud_Hub_Debuff_Detached;
+			FadeRatio = ((double)255) / E3.CharacterSettings.E3Hud_Hub_Debuff_FadeTimeInMS;
 			IsDirty = false;
 		}
 
 		public void UpdateSettings_WithoutSaving()
 		{
 
-			E3.CharacterSettings.E3Hud_Hub_Debuff_Alpha = WindowAlpha;
-			E3.CharacterSettings.E3Hud_Hub_Debuff_FadeTimeInMS = FadeTimeInMS;
-			E3.CharacterSettings.E3Hud_Hub_Debuff_SelectedFont = SelectedFont;
-			E3.CharacterSettings.E3Hud_Hub_Debuff_IconSize = IconSize;
-			E3.CharacterSettings.E3Hud_Hub_Debuff_Detached = Detached;
 			IsDirty = false;
 
 		}

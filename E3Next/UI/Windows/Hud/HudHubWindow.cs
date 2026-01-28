@@ -44,6 +44,15 @@ namespace E3Core.UI.Windows.Hud
 			(400d, 500d, 1.0f, 0.35f, 0.2f),
 			(500d, double.MaxValue, 1.0f, 0.05f, 0.05f)
 		};
+		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _aggroSeverity = new[]
+		{
+			(0d, 10,  0.25f, 0.85f, 0.25f),
+			(10d, 20d,0.6f, 0.9f, 0.6f),
+			(20d, 40, 0.95f, 0.85f, 0.35f),
+			(40d, 60d, 1.0f, 0.7f, 0.2f),
+			(60d, 70d, 1.0f, 0.35f, 0.2f),
+			(00d, double.MaxValue, 1.0f, 0.05f, 0.05f)
+		};
 		private static readonly (double MaxValue, double MinValue, float R, float G, float B)[] _resourceSeverity = new[]
 		{
 			(200d, 90d,  0.25f, 0.85f, 0.25f),
@@ -111,6 +120,19 @@ namespace E3Core.UI.Windows.Hud
 				E3.Log.Write($"Hud Casting Window error: {ex.Message}", Logging.LogLevels.Error);
 				_imguiContextReady = false;
 			}
+		}
+		private static (float r, float g, float b) GetAggroSeverityColor(double distance)
+		{
+
+			foreach (var band in _aggroSeverity)
+			{
+				if (distance >= band.MinDist && distance < band.MaxDist)
+				{
+					return (band.R, band.G, band.B);
+				}
+			}
+
+			return (0.9f, 0.9f, 0.9f);
 		}
 		private static (float r, float g, float b) GetDistanceSeverityColor(double distance)
 		{
@@ -374,10 +396,13 @@ namespace E3Core.UI.Windows.Hud
 				string casting = E3.Bots.Query(user, "${Me.Casting}");
 				double x, y, z = 0;
 
-				Int32 mana, endurance, hp;
+
+				Int32 mana, endurance, hp, aggroPct, aggroPctXtarget;
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctHPs}"), out hp);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctMana}"), out mana);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctEndurance}"), out endurance);
+				Int32.TryParse(E3.Bots.Query(user, "${Me.PctAggro}"), out aggroPct);
+				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMaxAggro}"), out aggroPctXtarget);
 
 				double.TryParse(E3.Bots.Query(user, "${Me.X}"), out x);
 				double.TryParse(E3.Bots.Query(user, "${Me.Y}"), out y);
@@ -445,6 +470,15 @@ namespace E3Core.UI.Windows.Hud
 				row.HP = hp.ToString() + "%";
 				row.HPColor = GetResourceSeverityColor(hp);
 
+				if(aggroPct>0)
+				{
+					row.AggroPct = aggroPct.ToString();
+					row.AggroColor = GetAggroSeverityColor(aggroPct);
+
+				}
+			
+				row.XtargetAggroPct = aggroPctXtarget.ToString();
+				row.AggroXTargetColor = GetAggroSeverityColor(aggroPctXtarget);
 				state.GroupInfo.Add(row);
 			}
 		}
@@ -1515,10 +1549,17 @@ namespace E3Core.UI.Windows.Hud
 								}
 							}
 							imgui_SameLine(0);
-
+							
 							var c = stats.DisplayNameColor;
 							imgui_TextColored(state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3], stats.DisplayName);
+							if (!String.IsNullOrWhiteSpace(stats.AggroPct))
+							{
+								imgui_SameLine(0, 5);
 
+								var ac = stats.AggroColor;
+								imgui_TextColored(ac.r, ac.g, ac.b, 1.0f, stats.AggroPct);
+							
+							}
 							if (state.ShowColumnHP)
 							{
 								imgui_TableNextColumn();
@@ -1600,6 +1641,15 @@ namespace E3Core.UI.Windows.Hud
 			public string Distance { get; set; }
 
 			public (float r, float g, float b) DistanceColor;
+
+
+			public string AggroPct { get; set; }
+
+			public (float r, float g, float b) AggroColor;
+
+			public string XtargetAggroPct { get; set; }
+
+			public (float r, float g, float b) AggroXTargetColor;
 
 			public TableRow_GroupInfo()
 			{

@@ -377,6 +377,12 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.Z}", Loc_Z.ToString());
 			PubServer.AddTopicMessage("${Me.IsInvis}", IsInvis.ToString());
 
+			Int32 pctAggr = MQ.Query<Int32>("${Me.PctAggro}");
+			if (pctAggr < 0) pctAggr = 0;
+			PubServer.AddTopicMessage("${Me.PctAggro}", pctAggr.ToString());
+			Int32 xtargetMaxAggro = e3util.GetXtargetMaxAggro();
+			if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
+			PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", pctAggr.ToString());
 
 		}
 		public static void StateUpdates_BuffInformation()
