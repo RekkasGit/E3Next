@@ -72,8 +72,8 @@ namespace E3Core.UI.Windows.Hud
 
 		public List<TableRow_GroupInfo> GroupInfo = new List<TableRow_GroupInfo>();
 		private bool showColumnEnd = true;
-		public bool ShowAggro = true;
-		public bool ShowAggroXTarget = true;
+		public bool ShowColumnAggro = true;
+		public bool ShowColumnAggroXTarget = true;
 
 		public List<string> ColumNameBuffer = new List<string>();
 		public float[] NameColors = { 0.95f, 0.85f, 0.35f, 1.0f };
@@ -188,37 +188,24 @@ namespace E3Core.UI.Windows.Hud
 		}
 	}
 	public class State_HotbuttonsWindow
-	{
-		private bool _detached = false;
-		private float _windowAlpha = 0.8f;
-
+	{	
 		public string WindowName = $"E3 Hotbutton Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
-		public Int32 ButtonSizeX = 50;
-		public Int32 ButtonSizeY = 30;
 		public Int32 FontSize = 8;
-		public string SelectedFont = "arial-14";
 		public bool IsDirty = false;
-		
-		public bool Detached { get => _detached; set { _detached = value; IsDirty = true; } }
-		public float WindowAlpha { get => _windowAlpha; set { _windowAlpha = value; IsDirty = true; } }
+		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_Alpha; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_Alpha = value; IsDirty = true; } }
+		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_Detached; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_Detached = value; IsDirty = true; } }
+		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_SelectedFont = value; IsDirty = true; } }
+
+		public int ButtonSizeX { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeX; set {E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeX = value; IsDirty=true; } }
+		public int ButtonSizeY { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeY; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeY = value; IsDirty = true; } }
 
 		public State_HotbuttonsWindow()
 		{
-			_windowAlpha = E3.CharacterSettings.E3Hud_Hub_HotButtons_Alpha;
-			_detached = E3.CharacterSettings.E3Hud_Hub_HotButtons_Detached;
-			SelectedFont = E3.CharacterSettings.E3Hud_Hub_HotButtons_SelectedFont;
-			ButtonSizeX = E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeX;
-			ButtonSizeY = E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeY;
 			IsDirty = false;
 		}
 
 		public void UpdateSettings_WithoutSaving()
 		{
-			E3.CharacterSettings.E3Hud_Hub_HotButtons_Alpha = WindowAlpha;
-			E3.CharacterSettings.E3Hud_Hub_HotButtons_SelectedFont = SelectedFont;
-			E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeX = ButtonSizeX;
-			E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeY = ButtonSizeY;
-			E3.CharacterSettings.E3Hud_Hub_HotButtons_Detached = Detached;
 			IsDirty = false;
 		}
 	}

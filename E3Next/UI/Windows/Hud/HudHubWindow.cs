@@ -477,8 +477,12 @@ namespace E3Core.UI.Windows.Hud
 
 				}
 			
-				row.XtargetAggroPct = aggroPctXtarget.ToString();
-				row.AggroXTargetColor = GetAggroSeverityColor(aggroPctXtarget);
+				if(aggroPctXtarget>0)
+				{
+					row.XtargetAggroPct = aggroPctXtarget.ToString();
+					row.AggroXTargetColor = GetAggroSeverityColor(aggroPctXtarget);
+
+				}
 				state.GroupInfo.Add(row);
 			}
 		}
@@ -1368,10 +1372,12 @@ namespace E3Core.UI.Windows.Hud
 				// Calculate visible column count (Name is always visible)
 				int columnCount = 1;
 
+				if (state.ShowColumnAggro) { columnCount++; state.ColumNameBuffer.Add("A"); }
 				if (state.ShowColumnHP) { columnCount++; state.ColumNameBuffer.Add("HP"); }
 				if (state.ShowColumnEnd) { columnCount++; state.ColumNameBuffer.Add("End"); }
 				if (state.ShowColumnMana) { columnCount++; state.ColumNameBuffer.Add("Mana"); }
 				if (state.ShowColumnDistance) { columnCount++; state.ColumNameBuffer.Add("Dist"); }
+				if (state.ShowColumnAggroXTarget) { columnCount++; state.ColumNameBuffer.Add("AX"); }
 
 
 
@@ -1416,6 +1422,15 @@ namespace E3Core.UI.Windows.Hud
 									state.ShowColumnDistance = imgui_Checkbox_Get("##col_dist");
 								imgui_SameLine(0);
 								imgui_Text("Distance");
+								if (imgui_Checkbox("##col_aggro", state.ShowColumnAggro))
+									state.ShowColumnAggro = imgui_Checkbox_Get("##col_aggro");
+								imgui_SameLine(0);
+								imgui_Text("Aggro");
+
+								if (imgui_Checkbox("##col_aggroXTarMax", state.ShowColumnAggroXTarget))
+									state.ShowColumnAggroXTarget = imgui_Checkbox_Get("##col_aggroXTarMax");
+								imgui_SameLine(0);
+								imgui_Text("AggroXTar");
 
 								imgui_Separator();
 								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -1552,13 +1567,13 @@ namespace E3Core.UI.Windows.Hud
 							
 							var c = stats.DisplayNameColor;
 							imgui_TextColored(state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3], stats.DisplayName);
-							if (!String.IsNullOrWhiteSpace(stats.AggroPct))
+					
+							if (state.ShowColumnAggro)
 							{
-								imgui_SameLine(0, 5);
+								imgui_TableNextColumn();
+								c = stats.AggroColor;
+								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.AggroPct);
 
-								var ac = stats.AggroColor;
-								imgui_TextColored(ac.r, ac.g, ac.b, 1.0f, stats.AggroPct);
-							
 							}
 							if (state.ShowColumnHP)
 							{
@@ -1590,6 +1605,13 @@ namespace E3Core.UI.Windows.Hud
 								{
 									imgui_Text(stats.Distance);
 								}
+							}
+							if (state.ShowColumnAggroXTarget)
+							{
+								imgui_TableNextColumn();
+								c = stats.AggroColor;
+								imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.XtargetAggroPct);
+
 							}
 
 						}
