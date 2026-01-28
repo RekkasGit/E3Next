@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using static E3Core.UI.Windows.Hud.HudCastingWindow;
+using static E3Core.UI.Windows.Hud.HudHubWindow.TableRow_GroupInfo;
 
 namespace E3Core.Settings
 {
@@ -235,6 +237,24 @@ namespace E3Core.Settings
 
 						dictionary.Add((K)(object)data.KeyName, tburn);
 						
+					}
+				}
+			}
+		}
+		public static void LoadKeyData(string sectionKey, IniData parsedData, List<Hotbutton_DynamicButton> list)
+		{
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+				var keyData = section;
+				if (keyData != null)
+				{
+					foreach (var data in keyData)
+					{
+						Hotbutton_DynamicButton dynamicButton = new Hotbutton_DynamicButton();
+						dynamicButton.Name = data.KeyName;
+                        dynamicButton.Command = data.Value;
+						list.Add(dynamicButton);
 					}
 				}
 			}

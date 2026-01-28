@@ -557,15 +557,21 @@ namespace E3Core.UI.Windows.Hud
 		{
 			if (!_imguiContextReady) return;
 
-			TryReattachWindowsIfClosed();
-			RenderHub_MainWindow();
+		
+			var state = _state.GetState<State_HubWindow>();
+			if (imgui_Begin_OpenFlagGet(state.WindowName))
+			{
+				TryReattachWindowsIfClosed();
+				RenderHub_MainWindow();
 
-			var buffState = _state.GetState<State_BuffWindow>();
-			RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true);
-			var songState = _state.GetState<State_SongWindow>();
-			RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true);
-			var buttonState = _state.GetState<State_HotbuttonsWindow>();
-			RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true);
+				var buffState = _state.GetState<State_BuffWindow>();
+				RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true);
+				var songState = _state.GetState<State_SongWindow>();
+				RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true);
+				var buttonState = _state.GetState<State_HotbuttonsWindow>();
+				RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true);
+
+			}
 
 		}
 		private static void RenderSongTableSimple()
@@ -756,8 +762,6 @@ namespace E3Core.UI.Windows.Hud
 
 		}
 
-		static List<string> _hotButtonCommandNamesOrder = new List<string>() { "Follow me", "Follow off", "Click it", "Move to me" };
-		static Dictionary<string, string> _hotbuttonCommands = new Dictionary<string, string>() { { "Follow me", "/followme" }, { "Follow off", "/followoff" }, { "Click it", "/clickit" }, { "Move to me", "/mtm" } };
 		private static void RenderHotbuttons()
 		{
 
@@ -897,7 +901,7 @@ namespace E3Core.UI.Windows.Hud
 					imgui_TableSetupColumn_Default("Hotbuttons");
 					Int32 counter = 0;
 
-					foreach (var stats in _hotButtonCommandNamesOrder)
+					foreach (var stats in E3.CharacterSettings.E3Hud_Hub_HotButtons_DynamicButtons)
 					{
 						if (counter % numberOfBuffsPerRow == 0)
 						{
@@ -911,9 +915,9 @@ namespace E3Core.UI.Windows.Hud
 						using (var imguiFont = IMGUI_Fonts.Aquire())
 						{
 							imguiFont.PushFont(state.SelectedFont);
-							if (imgui_ButtonEx(stats, state.ButtonSizeX, state.ButtonSizeY))
+							if (imgui_ButtonEx(stats.Name, state.ButtonSizeX, state.ButtonSizeY))
 							{
-								E3ImGUI.MQCommandQueue.Enqueue(_hotbuttonCommands[stats]);
+								E3ImGUI.MQCommandQueue.Enqueue(stats.Command);
 							}
 						}
 						using (var popup = ImGUIPopUpContext.Aquire())
@@ -1605,6 +1609,11 @@ namespace E3Core.UI.Windows.Hud
 			public TableRow_GroupInfo(string characterName)
 			{
 				Name = characterName;
+			}
+			public class Hotbutton_DynamicButton
+			{
+				public string Name = String.Empty;
+				public string Command = String.Empty;
 			}
 		}
 	}

@@ -3,15 +3,17 @@ using E3Core.Processors;
 using E3Core.Utility;
 using IniParser;
 using IniParser.Model;
+using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using static System.Collections.Specialized.BitVector32;
-using MonoCore;
-using System.Drawing.Drawing2D;
 using System.Text.RegularExpressions;
+using static E3Core.UI.Windows.Hud.HudCastingWindow;
+using static E3Core.UI.Windows.Hud.HudHubWindow.TableRow_GroupInfo;
+using static System.Collections.Specialized.BitVector32;
 
 namespace E3Core.Settings
 {
@@ -181,6 +183,8 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_HotButtons_Detached = false;
 		[INI_Section("E3Hud_Hub_HotButtons", "SelectedFont")]
 		public string E3Hud_Hub_HotButtons_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_HotButtons_Dynamic", "")]
+		public List<Hotbutton_DynamicButton> E3Hud_Hub_HotButtons_DynamicButtons = new List<Hotbutton_DynamicButton>();
 
 		[INI_Section("E3Hud_Hub_Debuff", "SelectedFont")]
 		public string E3Hud_Hub_Debuff_SelectedFont = "robo";
@@ -785,6 +789,8 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeY", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeY);
 			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFont", ParsedData, ref E3Hud_Hub_HotButtons_SelectedFont);
 
+			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic", ParsedData, E3Hud_Hub_HotButtons_DynamicButtons);
+
 			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData, ref E3Hud_Hub_Debuff_Alpha);
 			LoadKeyData("E3Hud_Hub_Debuff", "Detached", ParsedData, ref E3Hud_Hub_Debuff_Detached);
 			LoadKeyData("E3Hud_Hub_Debuff", "IconSize", ParsedData, ref E3Hud_Hub_Debuff_IconSize);
@@ -1057,6 +1063,8 @@ namespace E3Core.Settings
 			//LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
 
 			LoadKeyData("Burn", ParsedData, BurnCollection);
+
+
 			LoadKeyData("CommandSets", ParsedData, CommandCollection);
 
 			LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
@@ -1217,6 +1225,10 @@ namespace E3Core.Settings
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 
+			newFile.Sections.AddSection("E3Hud_Hub_HotButtons_Dynamic");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons_Dynamic");
+		
+	
 			newFile.Sections.AddSection("E3Hud_Hub_HotButtons");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons");
 			section.Keys.AddKey("Alpha", "0.8");
@@ -1224,7 +1236,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ButtonSizeX", "50");
 			section.Keys.AddKey("ButtonSizeY", "30");
 			section.Keys.AddKey("SelectedFont", "arial-14");
-
+		
 
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");
@@ -1807,6 +1819,26 @@ namespace E3Core.Settings
 
 								}
 							}
+							//else if (reference is List<Hotbutton_DynamicButton>)
+							//{
+							//	IList<Hotbutton_DynamicButton> stringDict = (IList<Hotbutton_DynamicButton>)reference;
+							//	foreach (var tpair in stringDict)
+							//	{
+							//		if (tpair.Value.ItemsToBurn.Count > 0)
+							//		{
+							//			foreach (var burn in tpair.Value.ItemsToBurn)
+							//			{
+							//				section_keyCollection.AddKey(tpair.Key, burn.ToConfigEntry());
+							//			}
+							//		}
+							//		else
+							//		{
+							//			section_keyCollection.AddKey(tpair.Key, "");
+
+							//		}
+
+							//	}
+							//}
 							else if (reference is IDictionary<string, CommandSet>)
 							{
 								IDictionary<string, CommandSet> stringDict = (IDictionary<string, CommandSet>)reference;

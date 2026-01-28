@@ -230,7 +230,7 @@ namespace E3Core.UI.Windows.Hud
 						float[] newColors = imgui_ColorPicker_GetRGBA_Float("##CastingHudNameColorPicker");
 						_nameColors[0] = newColors[0];
 						_nameColors[1] = newColors[1];
-						_nameColors[3] = newColors[2];
+						_nameColors[2] = newColors[2];
 						_nameColors[3] = newColors[3];
 						
 					}
@@ -309,5 +309,6 @@ namespace E3Core.UI.Windows.Hud
 				SpellName = spell;
 			}
 		}
+	
 	}
 }
