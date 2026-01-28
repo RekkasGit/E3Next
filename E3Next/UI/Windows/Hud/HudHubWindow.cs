@@ -33,6 +33,7 @@ namespace E3Core.UI.Windows.Hud
 		private const string IMGUI_DETATCH_BUFFS_ID = FontAwesome.FAExternalLinkSquare + "##detach_buffs";
 		private const string IMGUI_DETATCH_SONGS_ID = FontAwesome.FAExternalLinkSquare + "##detach_songs";
 		private const string IMGUI_DETATCH_HOTBUTTON_ID = FontAwesome.FAExternalLinkSquare + "##detach_hotbuttons";
+		private static string IMGUI_TABLE_GROUP_ID = $"E3HubGroupTable-{E3.CurrentName}-{E3.CurrentClass}-{E3.ServerName}";
 
 		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _distanceSeverity = new[]
 		{
@@ -560,8 +561,7 @@ namespace E3Core.UI.Windows.Hud
 		
 			var state = _state.GetState<State_HubWindow>();
 			if (imgui_Begin_OpenFlagGet(state.WindowName))
-			{
-				TryReattachWindowsIfClosed();
+			{	TryReattachWindowsIfClosed();
 				RenderHub_MainWindow();
 
 				var buffState = _state.GetState<State_BuffWindow>();
@@ -1324,7 +1324,7 @@ namespace E3Core.UI.Windows.Hud
 				int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
 									  ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
 									  ImGuiTableFlags.ImGuiTableFlags_BordersInnerV |
-									  ImGuiTableFlags.ImGuiTableFlags_RowBg
+									  ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_Reorderable
 									  );
 
 				//float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
@@ -1341,7 +1341,7 @@ namespace E3Core.UI.Windows.Hud
 
 
 
-				if (table.BeginTable("E3HubGroupTable", columnCount, tableFlags, 0f, 0))
+				if (table.BeginTable(IMGUI_TABLE_GROUP_ID, columnCount, tableFlags, 0f, 0))
 				{
 
 					for (Int32 i = 0; i < columnCount; i++)

@@ -183,6 +183,10 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_HotButtons_Detached = false;
 		[INI_Section("E3Hud_Hub_HotButtons", "SelectedFont")]
 		public string E3Hud_Hub_HotButtons_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_HotButtons_UseDefaultDynamicButtons", "UseDefaultDynamicButtons")]
+		public bool E3Hud_Hub_HotButtons_UseDefaultDynamicButtons = true;
+
+
 		[INI_Section("E3Hud_Hub_HotButtons_Dynamic", "")]
 		public List<Hotbutton_DynamicButton> E3Hud_Hub_HotButtons_DynamicButtons = new List<Hotbutton_DynamicButton>();
 
@@ -788,7 +792,9 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeX", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeX);
 			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeY", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeY);
 			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFont", ParsedData, ref E3Hud_Hub_HotButtons_SelectedFont);
+			LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", ParsedData, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
 
+		
 			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic", ParsedData, E3Hud_Hub_HotButtons_DynamicButtons);
 
 			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData, ref E3Hud_Hub_Debuff_Alpha);
@@ -1227,8 +1233,15 @@ namespace E3Core.Settings
 
 			newFile.Sections.AddSection("E3Hud_Hub_HotButtons_Dynamic");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons_Dynamic");
-		
-	
+
+			if(E3Hud_Hub_HotButtons_UseDefaultDynamicButtons)
+			{
+				section.Keys.AddKey("Follow Me", "/followme");
+				section.Keys.AddKey("Follow off", "/follow off");
+				section.Keys.AddKey("Click It", "/clickit");
+				section.Keys.AddKey("Move to Me", "/mtm");
+			}
+
 			newFile.Sections.AddSection("E3Hud_Hub_HotButtons");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons");
 			section.Keys.AddKey("Alpha", "0.8");
@@ -1236,6 +1249,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ButtonSizeX", "50");
 			section.Keys.AddKey("ButtonSizeY", "30");
 			section.Keys.AddKey("SelectedFont", "arial-14");
+			section.Keys.AddKey("UseDefaultDynamicButtons", "True");
 		
 
 			newFile.Sections.AddSection("AutoMed");
@@ -1606,16 +1620,17 @@ namespace E3Core.Settings
 
 			FileIniDataParser parser = e3util.CreateIniParser();
 
-			IniData newFile = createNewINIData();
+			
 
 			if (!String.IsNullOrEmpty(CurrentSet))
 			{
 				fileName = fileName.Replace(".ini", "_" + CurrentSet + ".ini");
 			}
-
-
+			IniData newFile = createNewINIData();
 			if (!File.Exists(fileName))
 			{
+				
+
 				if (!Directory.Exists(_configFolder + _botFolder))
 				{
 					Directory.CreateDirectory(_configFolder + _botFolder);
@@ -1633,6 +1648,13 @@ namespace E3Core.Settings
 				//Create an instance of a ini file parser
 				FileIniDataParser fileIniData = e3util.CreateIniParser();
 				IniData tParsedData = fileIniData.ReadFile(fileName);
+
+
+				//before we merge, we need to check on hotkey dynamic to see if its set to true or false in the current ini data
+				//this is because there is a filter on createNewINI data
+				LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", tParsedData, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
+				newFile = createNewINIData();
+
 				if (_mergeUpdates)
 				{
 					//overwrite newfile with what was already there
@@ -1663,6 +1685,8 @@ namespace E3Core.Settings
 			List<string> transferedKeyComments = new List<string>();
 
 			IniData defaultFile = createNewINIData();
+
+
 
 			//lets save the normal stuff
 			foreach (var pair in charSettings)
@@ -1819,26 +1843,14 @@ namespace E3Core.Settings
 
 								}
 							}
-							//else if (reference is List<Hotbutton_DynamicButton>)
-							//{
-							//	IList<Hotbutton_DynamicButton> stringDict = (IList<Hotbutton_DynamicButton>)reference;
-							//	foreach (var tpair in stringDict)
-							//	{
-							//		if (tpair.Value.ItemsToBurn.Count > 0)
-							//		{
-							//			foreach (var burn in tpair.Value.ItemsToBurn)
-							//			{
-							//				section_keyCollection.AddKey(tpair.Key, burn.ToConfigEntry());
-							//			}
-							//		}
-							//		else
-							//		{
-							//			section_keyCollection.AddKey(tpair.Key, "");
-
-							//		}
-
-							//	}
-							//}
+							else if (reference is List<Hotbutton_DynamicButton>)
+							{
+								IList<Hotbutton_DynamicButton> hotbuttons = (IList<Hotbutton_DynamicButton>)reference;
+								foreach (var hb in hotbuttons)
+								{
+									section_keyCollection.AddKey(hb.Name,hb.Command);
+								}
+							}
 							else if (reference is IDictionary<string, CommandSet>)
 							{
 								IDictionary<string, CommandSet> stringDict = (IDictionary<string, CommandSet>)reference;

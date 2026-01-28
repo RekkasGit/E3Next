@@ -363,17 +363,21 @@ namespace E3Core.Settings
                         if (!String.IsNullOrWhiteSpace(data))
                         {
                             if (data.Equals("Off", StringComparison.OrdinalIgnoreCase) || data.Equals("False", StringComparison.OrdinalIgnoreCase))
-                            {
-                                valueToSet = false;
-                            }
+							{
+								
+								valueToSet = false;
+								_log.Write($"{sectionKey} {Key}: {valueToSet}");
+							}
                             else if (data.Equals("On", StringComparison.OrdinalIgnoreCase) || data.Equals("True", StringComparison.OrdinalIgnoreCase))
                             {
                                 valueToSet = true;
-                            }
+								_log.Write($"{sectionKey} {Key}: {valueToSet}");
+							}
                             else
                             {
                                 valueToSet = false;
-                            }
+								_log.Write($"{sectionKey} {Key}: {valueToSet}");
+							}
 
                         }
                     }
