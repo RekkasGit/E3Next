@@ -1638,6 +1638,27 @@ namespace E3Core.UI.Windows.Hud
 									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 									imgui_Text(stats.Name);
 									imgui_Separator();
+
+									///click left target
+									///
+									if (imgui_MenuItem("Trade Item on Cursor"))
+									{
+										if (_spawns.TryByName(stats.Name, out var spawns))
+										{
+											if(spawns.Distance3D > 19)
+											{
+												E3.Bots.Broadcast($"{spawns.CleanName} is too far away, get closer");
+											}
+											else
+											{
+												string command = $"/target id {spawns.ID}";
+												E3ImGUI.MQCommandQueue.Enqueue(command);
+												command = $"/click left target";
+												E3ImGUI.MQCommandQueue.Enqueue(command);
+											}
+
+										}
+									}
 									if (imgui_MenuItem("Toon buffs"))
 									{
 										state.SelectedToonForBuffs = stats.Name;
