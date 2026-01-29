@@ -1262,7 +1262,6 @@ namespace E3Core.UI.Windows.Hud
 						}
 						imgui_PopStyleColor(1);
 						imgui_Separator();
-						imgui_Separator();
 						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 						imgui_Text("Alpha");
 						imgui_PopStyleColor(1);
