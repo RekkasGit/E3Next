@@ -155,7 +155,10 @@ namespace E3Core.Settings
 		public float E3Hud_Hub_NameColorA = 1.0f;
 		[INI_Section("E3Hud_Hub", "SelectedFont")]
 		public string E3Hud_Hub_SelectedFont = "robo";
-		
+		[INI_Section("E3Hud_Hub", "Locked")]
+		public bool E3Hud_Hub_Locked = false;
+
+
 		[INI_Section("E3Hud_Hub_Buff", "SelectedFont")]
 		public string E3Hud_Hub_Buff_SelectedFont = "robo";
 		[INI_Section("E3Hud_Hub_Buff", "Detached")]
@@ -166,6 +169,8 @@ namespace E3Core.Settings
 		public Int32 E3Hud_Hub_Buff_FadeTimeInMS = 1000;
 		[INI_Section("E3Hud_Hub_Buff", "Alpha")]
 		public float E3Hud_Hub_Buff_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_Buff", "Locked")]
+		public bool E3Hud_Hub_Buff_Locked = false;
 
 		[INI_Section("E3Hud_Hub_Song", "SelectedFont")]
 		public string E3Hud_Hub_Song_SelectedFont = "robo";
@@ -177,7 +182,8 @@ namespace E3Core.Settings
 		public Int32 E3Hud_Hub_Song_FadeTimeInMS = 1000;
 		[INI_Section("E3Hud_Hub_Song", "Alpha")]
 		public float E3Hud_Hub_Song_Alpha = 0.8f;
-
+		[INI_Section("E3Hud_Hub_Song", "Locked")]
+		public bool E3Hud_Hub_Song_Locked = false;
 
 		[INI_Section("E3Hud_Hub_HotButtons", "Alpha")]
 		public float E3Hud_Hub_HotButtons_Alpha = 0.8f;
@@ -191,7 +197,8 @@ namespace E3Core.Settings
 		public string E3Hud_Hub_HotButtons_SelectedFont = "robo";
 		[INI_Section("E3Hud_Hub_HotButtons_UseDefaultDynamicButtons", "UseDefaultDynamicButtons")]
 		public bool E3Hud_Hub_HotButtons_UseDefaultDynamicButtons = true;
-
+		[INI_Section("E3Hud_Hub_HotButtons", "Locked")]
+		public bool E3Hud_Hub_HotButtons_Locked = false;
 
 		[INI_Section("E3Hud_Hub_HotButtons_Dynamic", "")]
 		public List<Hotbutton_DynamicButton> E3Hud_Hub_HotButtons_DynamicButtons = new List<Hotbutton_DynamicButton>();
@@ -206,6 +213,9 @@ namespace E3Core.Settings
 		public Int32 E3Hud_Hub_Debuff_FadeTimeInMS = 1000;
 		[INI_Section("E3Hud_Hub_Debuff", "Alpha")]
 		public float E3Hud_Hub_Debuff_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_Debuff", "Locked")]
+		public bool E3Hud_Hub_Debuff_Locked = false;
+
 
 		[INI_Section("AutoMed", "Override Old Settings and use This(On/Off)")]
 		public bool AutoMed_OverrideOldSettings;
@@ -785,17 +795,21 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub", "NameColorB", ParsedData, ref E3Hud_Hub_NameColorB);
 			LoadKeyData("E3Hud_Hub", "NameColorA", ParsedData, ref E3Hud_Hub_NameColorA);
 			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData, ref E3Hud_Hub_SelectedFont);
+			LoadKeyData("E3Hud_Hub", "Locked", ParsedData, ref E3Hud_Hub_Locked);
+
 
 
 			LoadKeyData("E3Hud_Hub_Buff", "Alpha", ParsedData, ref E3Hud_Hub_Buff_Alpha);
 			LoadKeyData("E3Hud_Hub_Buff", "Detached", ParsedData, ref E3Hud_Hub_Buff_Detached);
 			LoadKeyData("E3Hud_Hub_Buff", "IconSize", ParsedData, ref E3Hud_Hub_Buff_IconSize);
 			LoadKeyData("E3Hud_Hub_Buff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Buff_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_Buff", "Locked", ParsedData, ref E3Hud_Hub_Buff_Locked);
 
 			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData, ref E3Hud_Hub_Song_Alpha);
 			LoadKeyData("E3Hud_Hub_Song", "Detached", ParsedData, ref E3Hud_Hub_Song_Detached);
 			LoadKeyData("E3Hud_Hub_Song", "IconSize", ParsedData, ref E3Hud_Hub_Song_IconSize);
 			LoadKeyData("E3Hud_Hub_Song", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Song_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_Song", "Locked", ParsedData, ref E3Hud_Hub_Song_Locked);
 
 
 			LoadKeyData("E3Hud_Hub_HotButtons", "Alpha", ParsedData, ref E3Hud_Hub_HotButtons_Alpha);
@@ -804,14 +818,16 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeY", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeY);
 			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFont", ParsedData, ref E3Hud_Hub_HotButtons_SelectedFont);
 			LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", ParsedData, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
+			LoadKeyData("E3Hud_Hub_HotButtons", "Locked", ParsedData, ref E3Hud_Hub_HotButtons_Locked);
 
-		
+
 			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic", ParsedData, E3Hud_Hub_HotButtons_DynamicButtons);
 
 			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData, ref E3Hud_Hub_Debuff_Alpha);
 			LoadKeyData("E3Hud_Hub_Debuff", "Detached", ParsedData, ref E3Hud_Hub_Debuff_Detached);
 			LoadKeyData("E3Hud_Hub_Debuff", "IconSize", ParsedData, ref E3Hud_Hub_Debuff_IconSize);
 			LoadKeyData("E3Hud_Hub_Debuff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Debuff_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_Debuff", "Locked", ParsedData, ref E3Hud_Hub_Debuff_Locked);
 
 
 
@@ -1224,6 +1240,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("NameColorG", "0.85");
 			section.Keys.AddKey("NameColorB", "0.35");
 			section.Keys.AddKey("NameColorA", "1.00");
+			section.Keys.AddKey("Locked", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Buff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Buff");
@@ -1231,6 +1248,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("Locked", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Song");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Song");
@@ -1238,6 +1256,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("Locked", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Debuff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Debuff");
@@ -1245,6 +1264,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("Locked", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_HotButtons_Dynamic");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons_Dynamic");
@@ -1252,7 +1272,7 @@ namespace E3Core.Settings
 			if(E3Hud_Hub_HotButtons_UseDefaultDynamicButtons)
 			{
 				section.Keys.AddKey("Follow Me", "/followme");
-				section.Keys.AddKey("Follow off", "/follow off");
+				section.Keys.AddKey("Follow off", "/followoff");
 				section.Keys.AddKey("Click It", "/clickit");
 				section.Keys.AddKey("Move to Me", "/mtm");
 			}
@@ -1265,7 +1285,8 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ButtonSizeY", "30");
 			section.Keys.AddKey("SelectedFont", "arial-14");
 			section.Keys.AddKey("UseDefaultDynamicButtons", "True");
-		
+			section.Keys.AddKey("Locked", "False");
+
 
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");

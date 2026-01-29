@@ -11,6 +11,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.SessionState;
 using System.Xml.Linq;
@@ -522,7 +523,15 @@ namespace E3Core.UI.Windows.Hud
 					using (var window = ImGUIWindow.Aquire())
 					{
 						imgui_SetNextWindowBgAlpha(state.WindowAlpha);
-						if (window.Begin(state.WindowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar))
+
+						int flags = (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar;
+
+						if(state.Locked)
+						{
+							flags = flags | (int)ImGuiWindowFlags.ImGuiWindowFlags_NoMove;
+						}
+
+						if (window.Begin(state.WindowName, flags))
 						{
 							RefreshGroupInfo();
 							RefreshBuffInfo();
@@ -564,7 +573,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 		}
-		private static void RenderHub_TryDetached(string windowName, bool openFlag, Action ExecuteMethod, float alpha, bool noTitleBar = false)
+		private static void RenderHub_TryDetached(string windowName, bool openFlag, Action ExecuteMethod, float alpha, bool noTitleBar = false, bool locked = false)
 		{
 			if (openFlag && imgui_Begin_OpenFlagGet(windowName))
 			{
@@ -576,6 +585,9 @@ namespace E3Core.UI.Windows.Hud
 					{
 						imgui_SetNextWindowBgAlpha(alpha);
 						int windowFlags = (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse;
+
+						if (locked) windowFlags = windowFlags | (int)ImGuiWindowFlags.ImGuiWindowFlags_NoMove;
+
 						if (noTitleBar)
 						{
 							windowFlags |= (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar;
@@ -620,14 +632,15 @@ namespace E3Core.UI.Windows.Hud
 			var state = _state.GetState<State_HubWindow>();
 			if (imgui_Begin_OpenFlagGet(state.WindowName))
 			{	TryReattachWindowsIfClosed();
+				
 				RenderHub_MainWindow();
 
 				var buffState = _state.GetState<State_BuffWindow>();
-				RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true);
+				RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true, locked:buffState.Locked);
 				var songState = _state.GetState<State_SongWindow>();
-				RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true);
+				RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true, locked: songState.Locked);
 				var buttonState = _state.GetState<State_HotbuttonsWindow>();
-				RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true);
+				RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
 
 			}
 
@@ -666,6 +679,23 @@ namespace E3Core.UI.Windows.Hud
 				{
 					if (popup.BeginPopupContextItem($"##SongWindowSettingsPopup", 1))
 					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						if (state.Locked)
+						{
+							if (imgui_MenuItem("UnLock"))
+							{
+								state.Locked = false;
+							}
+						}
+						else
+						{
+							if (imgui_MenuItem("Lock"))
+							{
+								state.Locked = true;
+							}
+						}
+						imgui_PopStyleColor(1);
+
 						imgui_Separator();
 						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 						imgui_Text("Alpha");
@@ -839,6 +869,22 @@ namespace E3Core.UI.Windows.Hud
 				{
 					if (popup.BeginPopupContextItem($"##Hotbutton_WindowSettingsPopup", 1))
 					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						if (state.Locked)
+						{
+							if (imgui_MenuItem("UnLock"))
+							{
+								state.Locked = false;
+							}
+						}
+						else
+						{
+							if (imgui_MenuItem("Lock"))
+							{
+								state.Locked = true;
+							}
+						}
+						imgui_PopStyleColor(1);
 						imgui_Separator();
 						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 						imgui_Text("Font");
@@ -1199,6 +1245,23 @@ namespace E3Core.UI.Windows.Hud
 				{
 					if (popup.BeginPopupContextItem($"##BuffgWindowSettingsPopup", 1))
 					{
+						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						if (buffState.Locked)
+						{
+							if (imgui_MenuItem("UnLock"))
+							{
+								buffState.Locked = false;
+							}
+						}
+						else
+						{
+							if (imgui_MenuItem("Lock"))
+							{
+								buffState.Locked = true;
+							}
+						}
+						imgui_PopStyleColor(1);
+						imgui_Separator();
 						imgui_Separator();
 						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 						imgui_Text("Alpha");
@@ -1419,6 +1482,23 @@ namespace E3Core.UI.Windows.Hud
 						{
 							if (popup.BeginPopupContextItem($"##GroupTableHeaderContext-{i}", 1))
 							{
+								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								if (state.Locked)
+								{
+									if(imgui_MenuItem("UnLock"))
+									{
+										state.Locked = false;
+									}
+								}
+								else
+								{
+									if(imgui_MenuItem("Lock"))
+									{
+										state.Locked = true;
+									}
+								}
+								imgui_PopStyleColor(1);
+								imgui_Separator();
 								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 								imgui_Text("Show Columns");
 								imgui_PopStyleColor(1);

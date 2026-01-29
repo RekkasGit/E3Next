@@ -69,6 +69,8 @@ namespace E3Core.UI.Windows.Hud
 		public bool ShowColumnAggro { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggro; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggro = value; IsDirty = true; } }
 		public bool ShowColumnAggroXTarget { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroXTarget; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroXTarget = value;IsDirty = true; } }
 		public bool ShowColumnAggroMinXTarget { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget = value; IsDirty = true; } }
+		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Locked; set { E3.CharacterSettings.E3Hud_Hub_Locked = value; IsDirty = true; } }
+
 
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;
@@ -110,6 +112,7 @@ namespace E3Core.UI.Windows.Hud
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_Buff_Detached; set { E3.CharacterSettings.E3Hud_Hub_Buff_Detached = value; IsDirty = true; } }
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont = value; IsDirty = true; } }
 		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_Buff_IconSize; set { E3.CharacterSettings.E3Hud_Hub_Buff_IconSize = value; IsDirty = true; } }
+		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Buff_Locked; set { E3.CharacterSettings.E3Hud_Hub_Buff_Locked = value; IsDirty = true; } }
 
 		public int FadeTimeInMS
 		{
@@ -158,6 +161,7 @@ namespace E3Core.UI.Windows.Hud
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_Song_Detached; set { E3.CharacterSettings.E3Hud_Hub_Song_Detached = value; IsDirty = true; } }
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_Song_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_Song_SelectedFont = value; IsDirty = true; } }
 		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_Song_IconSize; set { E3.CharacterSettings.E3Hud_Hub_Song_IconSize = value; IsDirty = true; } }
+		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Song_Locked; set { E3.CharacterSettings.E3Hud_Hub_Song_Locked = value; IsDirty = true; } }
 
 		public int FadeTimeInMS
 		{
@@ -198,6 +202,7 @@ namespace E3Core.UI.Windows.Hud
 
 		public int ButtonSizeX { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeX; set {E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeX = value; IsDirty=true; } }
 		public int ButtonSizeY { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeY; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeY = value; IsDirty = true; } }
+		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_Locked; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_Locked = value; IsDirty = true; } }
 
 		public State_HotbuttonsWindow()
 		{
@@ -217,6 +222,7 @@ namespace E3Core.UI.Windows.Hud
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_Debuff_Detached; set { E3.CharacterSettings.E3Hud_Hub_Debuff_Detached = value; IsDirty = true; } }
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_Debuff_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_Debuff_SelectedFont = value; IsDirty = true; } }
 		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_Debuff_IconSize; set { E3.CharacterSettings.E3Hud_Hub_Debuff_IconSize = value; IsDirty = true; } }
+		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Debuff_Locked; set { E3.CharacterSettings.E3Hud_Hub_Debuff_Locked = value; IsDirty = true; } }
 
 		public int FadeTimeInMS
 		{
