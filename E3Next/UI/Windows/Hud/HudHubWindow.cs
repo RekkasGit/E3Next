@@ -30,6 +30,7 @@ namespace E3Core.UI.Windows.Hud
 		private static ISpawns _spawns = E3.Spawns;
 
 		public static HudHubWindowStates _state = new HudHubWindowStates();
+		public static Random rand = new Random();
 
 		private const string IMGUI_DETATCH_BUFFS_ID = FontAwesome.FAExternalLinkSquare + "##detach_buffs";
 		private const string IMGUI_DETATCH_SONGS_ID = FontAwesome.FAExternalLinkSquare + "##detach_songs";
@@ -83,7 +84,7 @@ namespace E3Core.UI.Windows.Hud
 			{
 				if (Core._MQ2MonoVersion < 0.37m)
 				{
-					MQ.Write("This requires MQ2Mono 0.37 or greater");
+					MQ.Write("This requires MQ2Mono 0.38 or greater");
 					return;
 				}
 				if (x.args.Count > 0)
@@ -468,7 +469,7 @@ namespace E3Core.UI.Windows.Hud
 
 				row.Endurance = endurance.ToString() + "%";
 				row.EndColor = GetResourceSeverityColor(endurance);
-
+				row.HPPercent = hp;
 				row.HP = hp.ToString() + "%";
 				row.HPColor = GetResourceSeverityColor(hp);
 
@@ -1429,22 +1430,18 @@ namespace E3Core.UI.Windows.Hud
 
 		}
 
-
-
-		// Column visibility settings for group table
-
+		
 		private static void RenderGroupTable()
 		{
 
 			var state = _state.GetState<State_HubWindow>();
 
-
 			using (var table = ImGUITable.Aquire())
 			{
-				int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
+				int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_Resizable |
 									  ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
 									  ImGuiTableFlags.ImGuiTableFlags_BordersInnerV |
-									  ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_Reorderable
+									  ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_Reorderable| ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX
 									  );
 
 				//float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
@@ -1462,7 +1459,8 @@ namespace E3Core.UI.Windows.Hud
 				if (state.ShowColumnAggroXTarget) { columnCount++; state.ColumNameBuffer.Add("AX"); }
 				if (state.ShowColumnAggroMinXTarget) { columnCount++; state.ColumNameBuffer.Add("AMX"); }
 
-
+				imgui_PushStyleVarVec2((int)ImGuiStyleVar.CellPadding, 0, 0);
+				imgui_PushStyleVarVec2((int)ImGuiStyleVar.FramePadding, 0, 0);
 
 				if (table.BeginTable(IMGUI_TABLE_GROUP_ID, columnCount, tableFlags, 0f, 0))
 				{
@@ -1507,6 +1505,10 @@ namespace E3Core.UI.Windows.Hud
 									state.ShowColumnHP = imgui_Checkbox_Get("##col_hp");
 								imgui_SameLine(0);
 								imgui_Text("HP");
+								if (imgui_Checkbox("##col_hp_bar", state.DisplayHPBar))
+									state.DisplayHPBar = imgui_Checkbox_Get("##col_hp_bar");
+								imgui_SameLine(0);
+								imgui_Text("Show HP Bar where Name is");
 
 								if (imgui_Checkbox("##col_end", state.ShowColumnEnd))
 									state.ShowColumnEnd = imgui_Checkbox_Get("##col_end");
@@ -1589,13 +1591,14 @@ namespace E3Core.UI.Windows.Hud
 								imgui_Text("Name Color:");
 								imgui_PopStyleColor(1);
 								imgui_Separator();
+								imgui_SetNextItemWidth(150.0f);
 								if (imgui_ColorPicker4_Float("##NameColorPicker", state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3], 0))
 								{
 
 									float[] newColors = imgui_ColorPicker_GetRGBA_Float("##NameColorPicker");
 									state.NameColors[0] = newColors[0];
 									state.NameColors[1] = newColors[1];
-									state.NameColors[3] = newColors[2];
+									state.NameColors[2] = newColors[2];
 									state.NameColors[3] = newColors[3];
 									state.IsDirty = true;
 								}
@@ -1689,10 +1692,44 @@ namespace E3Core.UI.Windows.Hud
 									imgui_PopStyleColor(1);
 								}
 							}
-							imgui_SameLine(0);
+						
+							//float sizeX = imgui_CalcTextSizeX(stats.DisplayName);
+
+
+						
+
+							//imgui_PushStyleColor((int)ImGuiCol.Text, state.NameColors[1], state.NameColors[2], state.NameColors[3], 1f);
+							if(state.DisplayHPBar)
+							{
+								imgui_SameLine(0, 0);
+
+								imgui_PushStyleColor((int)ImGuiCol.PlotHistogram, 1, 0, 0, 0.4f);
+								imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
+								float widthOfColumn = imgui_GetContentRegionAvailX();
+								imgui_ProgressBar(((float)stats.HPPercent/(float)100), 20, (int)widthOfColumn, "");
+								imgui_PopStyleColor(2);
+
+								float[] barPos = imgui_GetItemRectMin();
+								float[] barSize = imgui_GetItemRectSize();
+								float[] textSize = imgui_CalcTextSize(stats.DisplayName);
+
+								//this centers the text
+								//float textPosX = barPos[0] + (barSize[0] - textSize[0]) * 0.5f;
+								float textPosX = barPos[0];
+
+								float textPosY = barPos[1] + (barSize[1] - textSize[1]) * 0.5f;
+								imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3]), stats.DisplayName);
+
+							}
+							else
+							{
+								imgui_SameLine(0);
+
+								imgui_TextColored(state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3], stats.DisplayName);
+
+							}
 							var c = stats.DisplayNameColor;
-							imgui_TextColored(state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3], stats.DisplayName);
-					
+
 							if (state.ShowColumnAggro)
 							{
 								imgui_TableNextColumn();
@@ -1750,6 +1787,7 @@ namespace E3Core.UI.Windows.Hud
 					}
 				}
 			}
+			imgui_PopStyleVar(2);
 		}
 		public class TableRow_BuffInfo
 		{
@@ -1783,6 +1821,7 @@ namespace E3Core.UI.Windows.Hud
 			public string Name;
 			public string DisplayName { get; set; }
 			public (float r, float g, float b) DisplayNameColor;
+			public Int32 HPPercent = 0;
 			public string HP { get; set; }
 			public (float r, float g, float b) HPColor;
 

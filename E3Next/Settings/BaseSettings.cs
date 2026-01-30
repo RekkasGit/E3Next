@@ -150,8 +150,29 @@ namespace E3Core.Settings
                 }
             }
         }
-        
-        public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref float valueToSet)
+		public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref float valueToSet)
+		{
+			_log.Write($"{sectionKey} {Key}");
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+				var keyData = section.GetKeyData(Key);
+				if (keyData != null)
+				{
+					foreach (var data in keyData.ValueList)
+					{
+						if (!String.IsNullOrWhiteSpace(data))
+						{
+							if (float.TryParse(data, out float result))
+							{
+								valueToSet = result;
+							}
+						}
+					}
+				}
+			}
+		}
+        public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, float[] valueToSet)
         {
             _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
@@ -164,15 +185,24 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            if (float.TryParse(data, out float result))
+                            //first splace the value via comma
+                            string[] dataList = data.Split(',');
+                            for (Int32 i = 0; i < dataList.Length; i++)
                             {
-                                valueToSet = result;
+                                if (i < valueToSet.Length)
+                                {
+                                    if (float.TryParse(dataList[i], out var floatValue))
+                                    {
+                                        valueToSet[i] = floatValue;
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
+
 
         public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref DefaultBroadcast valueToSet)
         {

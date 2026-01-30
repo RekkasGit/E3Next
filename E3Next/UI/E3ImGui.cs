@@ -2089,7 +2089,14 @@ namespace MonoCore
 		{
 			return (a << 24) | (b << 16) | (g << 8) | r;
 		}
-
+		public static uint GetColor(float r, float g, float b, float a)
+		{
+			uint i_r = (uint)(r*255);
+			uint i_g = (uint)(g*255);
+			uint i_b = (uint)(b*255);
+			uint i_a = (uint)(a*255);
+			return (i_a << 24) | (i_b << 16) | (i_g << 8) | i_r;
+		}
 
 		public static UITheme _currentTheme = UITheme.DarkTeal;
 
@@ -2253,7 +2260,8 @@ namespace MonoCore
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_CalcTextSizeX(string text);
-
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float[] imgui_CalcTextSize(string text);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_PushStyleColor(int which, float r, float g, float b, float a);
@@ -2314,6 +2322,8 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_GetWindowDrawList_AddText(float x, float y, uint color, string text);
 		// Item rect + color helpers
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float[] imgui_GetItemRectMin();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetItemRectMinX();
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -2382,10 +2392,12 @@ namespace MonoCore
 		public extern static float[] imgui_ColorPicker_GetRGBA_Float(string label);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_ColorPicker_Clear(string label);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_ProgressBar(float fraction, int height, int width, string overlay);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float[] imgui_GetItemRectSize();
 	
-
-
-
 		#endregion
 
 		private static void PushCommonRounding()

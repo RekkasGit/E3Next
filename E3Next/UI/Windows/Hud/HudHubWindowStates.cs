@@ -71,6 +71,10 @@ namespace E3Core.UI.Windows.Hud
 		public bool ShowColumnAggroMinXTarget { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Locked; set { E3.CharacterSettings.E3Hud_Hub_Locked = value; IsDirty = true; } }
 
+		public bool DisplayHPBar { get => _displayHPBar; set => _displayHPBar = value; }
+		public float[] NameColors { get => E3.CharacterSettings.E3Hud_Hub_NameColorRGBA;  }
+
+		private bool _displayHPBar = true;
 
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;
@@ -78,7 +82,7 @@ namespace E3Core.UI.Windows.Hud
 		public List<TableRow_GroupInfo> GroupInfo = new List<TableRow_GroupInfo>();
 
 		public List<string> ColumNameBuffer = new List<string>();
-		public float[] NameColors = { 0.95f, 0.85f, 0.35f, 1.0f };
+		private float[] nameColors = { 0.95f, 0.85f, 0.35f, 1.0f };
 		public string SelectedToonForBuffs = String.Empty;
 		
 		public int SelectedRow = -1;
@@ -86,25 +90,14 @@ namespace E3Core.UI.Windows.Hud
 
 		public State_HubWindow()
 		{
-			NameColors[0] = E3.CharacterSettings.E3Hud_Hub_NameColorR;
-			NameColors[1] = E3.CharacterSettings.E3Hud_Hub_NameColorG;
-			NameColors[2] = E3.CharacterSettings.E3Hud_Hub_NameColorB;
-			NameColors[3] = E3.CharacterSettings.E3Hud_Hub_NameColorA;
-			IsDirty = false;
+				IsDirty = false;
 		}
 
 
 		public void UpdateSettings_WithoutSaving()
 		{
-			E3.CharacterSettings.E3Hud_Hub_NameColorR = NameColors[0];
-			E3.CharacterSettings.E3Hud_Hub_NameColorG = NameColors[1];
-			E3.CharacterSettings.E3Hud_Hub_NameColorB = NameColors[2];
-			E3.CharacterSettings.E3Hud_Hub_NameColorA = NameColors[3];
 			IsDirty = false;
-
 		}
-
-
 	}
 	public class State_BuffWindow
 	{

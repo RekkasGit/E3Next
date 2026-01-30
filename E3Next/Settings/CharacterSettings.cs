@@ -1,5 +1,6 @@
 ﻿using E3Core.Data;
 using E3Core.Processors;
+using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
 using IniParser;
 using IniParser.Model;
@@ -145,14 +146,9 @@ namespace E3Core.Settings
 		public Boolean E3Hud_Hub_ShowColumnAggroMinXTarget = true;
 		[INI_Section("E3Hud_Hub", "FadeTimeInMS")]
 		public int E3Hud_Hub_FadeTimeInMS = 1000;
-		[INI_Section("E3Hud_Hub", "NameColorR")]
-		public float E3Hud_Hub_NameColorR = 0.95f;
-		[INI_Section("E3Hud_Hub", "NameColorG")]
-		public float E3Hud_Hub_NameColorG = 0.85f;
-		[INI_Section("E3Hud_Hub", "NameColorB")]
-		public float E3Hud_Hub_NameColorB = 0.35f;
-		[INI_Section("E3Hud_Hub", "NameColorA")]
-		public float E3Hud_Hub_NameColorA = 1.0f;
+		[INI_Section("E3Hud_Hub", "NameColorRGBA")]
+		public float[] E3Hud_Hub_NameColorRGBA = { 0.95f, 0.85f, 0.35f, 1.0f };
+
 		[INI_Section("E3Hud_Hub", "SelectedFont")]
 		public string E3Hud_Hub_SelectedFont = "robo";
 		[INI_Section("E3Hud_Hub", "Locked")]
@@ -790,10 +786,9 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub", "ShowColumnAggroMinXTarget", ParsedData, ref E3Hud_Hub_ShowColumnAggroMinXTarget);
 
 			LoadKeyData("E3Hud_Hub", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_FadeTimeInMS);
-			LoadKeyData("E3Hud_Hub", "NameColorR", ParsedData, ref E3Hud_Hub_NameColorR);
-			LoadKeyData("E3Hud_Hub", "NameColorG", ParsedData, ref E3Hud_Hub_NameColorG);
-			LoadKeyData("E3Hud_Hub", "NameColorB", ParsedData, ref E3Hud_Hub_NameColorB);
-			LoadKeyData("E3Hud_Hub", "NameColorA", ParsedData, ref E3Hud_Hub_NameColorA);
+			LoadKeyData("E3Hud_Hub", "NameColorRGBA", ParsedData, E3Hud_Hub_NameColorRGBA);
+
+			
 			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData, ref E3Hud_Hub_SelectedFont);
 			LoadKeyData("E3Hud_Hub", "Locked", ParsedData, ref E3Hud_Hub_Locked);
 
@@ -1236,10 +1231,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ShowColumnAggroXTarget", "True");
 			section.Keys.AddKey("ShowColumnAggroMinXTarget", "False");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
-			section.Keys.AddKey("NameColorR", "0.95");
-			section.Keys.AddKey("NameColorG", "0.85");
-			section.Keys.AddKey("NameColorB", "0.35");
-			section.Keys.AddKey("NameColorA", "1.00");
+			section.Keys.AddKey("NameColorRGBA", "0.95,0.85,0.35,1.00");
 			section.Keys.AddKey("Locked", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Buff");
@@ -1812,6 +1804,11 @@ namespace E3Core.Settings
 									section_keyCollection.AddKey(keyName, spell.ToConfigEntry());
 								}
 							}
+							else if (reference is float[])
+							{
+								float[] floatList = (float[])reference;
+								section_keyCollection.AddKey(keyName, String.Join(",", floatList));
+							}
 							else if (reference is List<SpellRequest>)
 							{
 								List<SpellRequest> spellList = (List<SpellRequest>)reference;
@@ -1884,7 +1881,7 @@ namespace E3Core.Settings
 								IList<Hotbutton_DynamicButton> hotbuttons = (IList<Hotbutton_DynamicButton>)reference;
 								foreach (var hb in hotbuttons)
 								{
-									section_keyCollection.AddKey(hb.Name,hb.Command);
+									section_keyCollection.AddKey(hb.Name, hb.Command);
 								}
 							}
 							else if (reference is IDictionary<string, CommandSet>)
@@ -1913,7 +1910,7 @@ namespace E3Core.Settings
 								{
 									section_keyCollection.AddKey(keyName, (string)reference);
 								}
-								
+
 								else if (reference is bool)
 								{
 									string boolString = "On";
