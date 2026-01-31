@@ -70,11 +70,11 @@ namespace E3Core.UI.Windows.Hud
 		public bool ShowColumnAggroXTarget { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroXTarget; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroXTarget = value;IsDirty = true; } }
 		public bool ShowColumnAggroMinXTarget { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Locked; set { E3.CharacterSettings.E3Hud_Hub_Locked = value; IsDirty = true; } }
+		public bool DisplayHPBar { get => E3.CharacterSettings.E3Hud_Hub_DisplayHPBar; set { E3.CharacterSettings.E3Hud_Hub_DisplayHPBar = value; IsDirty = true; } }
+		public float[] NameColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_NameColor;  }
+		public float[] HealthBarColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_HealthBar; }
 
-		public bool DisplayHPBar { get => _displayHPBar; set => _displayHPBar = value; }
-		public float[] NameColors { get => E3.CharacterSettings.E3Hud_Hub_NameColorRGBA;  }
 
-		private bool _displayHPBar = true;
 
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;

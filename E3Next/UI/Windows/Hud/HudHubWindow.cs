@@ -1444,8 +1444,6 @@ namespace E3Core.UI.Windows.Hud
 									  ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_Reorderable| ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX
 									  );
 
-				//float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
-				float tableHeight = 200f;
 				state.ColumNameBuffer.Clear();
 				state.ColumNameBuffer.Add("Name");
 				// Calculate visible column count (Name is always visible)
@@ -1592,14 +1590,14 @@ namespace E3Core.UI.Windows.Hud
 								imgui_PopStyleColor(1);
 								imgui_Separator();
 								imgui_SetNextItemWidth(150.0f);
-								if (imgui_ColorPicker4_Float("##NameColorPicker", state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3], 0))
+								if (imgui_ColorPicker4_Float("##NameColorPicker", state.NameColor[0], state.NameColor[1], state.NameColor[2], state.NameColor[3], 0))
 								{
 
 									float[] newColors = imgui_ColorPicker_GetRGBA_Float("##NameColorPicker");
-									state.NameColors[0] = newColors[0];
-									state.NameColors[1] = newColors[1];
-									state.NameColors[2] = newColors[2];
-									state.NameColors[3] = newColors[3];
+									state.NameColor[0] = newColors[0];
+									state.NameColor[1] = newColors[1];
+									state.NameColor[2] = newColors[2];
+									state.NameColor[3] = newColors[3];
 									state.IsDirty = true;
 								}
 							}
@@ -1703,7 +1701,7 @@ namespace E3Core.UI.Windows.Hud
 							{
 								imgui_SameLine(0, 0);
 
-								imgui_PushStyleColor((int)ImGuiCol.PlotHistogram, 1, 0, 0, 0.4f);
+								imgui_PushStyleColor((int)ImGuiCol.PlotHistogram, state.HealthBarColor[0], state.HealthBarColor[1], state.HealthBarColor[2], state.HealthBarColor[3]);
 								imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
 								float widthOfColumn = imgui_GetContentRegionAvailX();
 								imgui_ProgressBar(((float)stats.HPPercent/(float)100), 20, (int)widthOfColumn, "");
@@ -1718,14 +1716,14 @@ namespace E3Core.UI.Windows.Hud
 								float textPosX = barPos[0];
 
 								float textPosY = barPos[1] + (barSize[1] - textSize[1]) * 0.5f;
-								imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3]), stats.DisplayName);
+								imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(state.NameColor[0], state.NameColor[1], state.NameColor[2], state.NameColor[3]), stats.DisplayName);
 
 							}
 							else
 							{
 								imgui_SameLine(0);
 
-								imgui_TextColored(state.NameColors[0], state.NameColors[1], state.NameColors[2], state.NameColors[3], stats.DisplayName);
+								imgui_TextColored(state.NameColor[0], state.NameColor[1], state.NameColor[2], state.NameColor[3], stats.DisplayName);
 
 							}
 							var c = stats.DisplayNameColor;

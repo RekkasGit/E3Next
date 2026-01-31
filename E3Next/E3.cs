@@ -386,6 +386,21 @@ namespace E3Core.Processors
 			Int32 xtargetMinAggro = e3util.GetXtargetMinAggro();
 			if (xtargetMinAggro < 0) xtargetMinAggro = 0;
 			PubServer.AddTopicMessage("${Me.XTargetMinAggro}", xtargetMinAggro.ToString());
+
+			string activeDisc = MQ.Query<string>("${Me.ActiveDisc}");
+
+			Int32 timeInTicksForDisc = 0;
+			if(activeDisc!="NULL")
+			{
+				timeInTicksForDisc = MQ.Query<Int32>("${Me.ActiveDisc.Duration}");
+			}
+			else
+			{
+				activeDisc = "";
+			}
+			PubServer.AddTopicMessage("${Me.ActiveDisc}", activeDisc);
+			PubServer.AddTopicMessage("${Me.ActiveDiscTimeLeft}", (timeInTicksForDisc*6).ToString());
+
 		}
 		public static void StateUpdates_BuffInformation()
 		{

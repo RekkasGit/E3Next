@@ -1237,6 +1237,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 				Render_MainWindow_ConfigEditor_SelectedKeyValues_String(parts, selectedSection);
 
 			}
+			else if (mainWindowState.SelectedKey.StartsWith("RGBA_"))
+			{
+
+				Render_MainWindow_ConfigEdtor_RGBA(parts, selectedSection);
+
+			}
 			else if (data._stringCollectionSections.ContainsKey(mainWindowState.SelectedSection) && (data._stringCollectionSections[mainWindowState.SelectedSection].Count == 0 || data._stringCollectionSections[mainWindowState.SelectedSection].Contains(mainWindowState.SelectedKey)))
 			{
 				Render_MainWindow_ConfigEditor_String_Collections(parts, selectedSection);
@@ -1561,6 +1567,39 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_SameLine();
 
 			}
+		}
+		static string RGBEditorCurrentValue = String.Empty;
+		static float[] RGBEditorCurrentFloats = { 0, 0, 0, 0 }; 
+		private static void Render_MainWindow_ConfigEdtor_RGBA(List<string> parts,SectionData selectedSection)
+		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			float availWidth = imgui_GetContentRegionAvailX();
+			float inputWidth = availWidth > 0f ? Math.Min(availWidth, 800f) : 800f;
+			imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "RGBA Editor");
+
+		
+			if (RGBEditorCurrentValue != parts[0] || RGBEditorCurrentValue==String.Empty)
+			{
+				RGBEditorCurrentValue = parts[0];
+				string[] dataList = RGBEditorCurrentValue.Split(',');
+				for (Int32 i = 0; i < dataList.Length; i++)
+				{
+
+						if (float.TryParse(dataList[i], out var floatValue))
+						{
+							RGBEditorCurrentFloats[i] = floatValue;
+						}
+				}
+			}
+			imgui_SetNextItemWidth(200);
+
+			if (imgui_ColorPicker4_Float("##E3ConfigNameColorPicker", RGBEditorCurrentFloats[0], RGBEditorCurrentFloats[1], RGBEditorCurrentFloats[2], RGBEditorCurrentFloats[3], 0))
+			{
+				float[] newColors = imgui_ColorPicker_GetRGBA_Float("##E3ConfigNameColorPicker");
+				parts[0] =String.Join(",", newColors);
+				mainWindowState.ConfigIsDirty = true;
+			}
+			imgui_Separator();
 		}
 		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
 		{

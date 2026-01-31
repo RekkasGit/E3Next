@@ -4,6 +4,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -74,6 +75,8 @@ namespace E3Core.UI.Windows.Hud
 			}
 		}
 
+		private static ConcurrentDictionary<string, string> PreviousDiscs = new ConcurrentDictionary<string, string>();
+		private static ConcurrentDictionary<string, Int64> PreviousDiscTimeStamp = new ConcurrentDictionary<string, long>();
 		private static void CheckRefresh()
 		{
 			if (!e3util.ShouldCheck(ref _lastUpdate, _lastUpdateInterval)) return;
@@ -91,8 +94,14 @@ namespace E3Core.UI.Windows.Hud
 				string casting = E3.Bots.Query(user, "${Me.Casting}");
 				string targetidString = E3.Bots.Query(user, "${Me.CurrentTargetID}");
 				string aaTotal = E3.Bots.Query(user, "${Me.AAPoints}");
-				Int32 targetid;
+
+				string activeDisc = E3.Bots.Query(user, "${Me.ActiveDisc}");
+				string activeDiscDurationInTicks = E3.Bots.Query(user, "${Me.ActiveDiscTimeLeft}");
+
+				Int32 targetid = 0;
 				Int32.TryParse(targetidString, out targetid);
+				Int32 durationOfDiscInSeconds = 0;
+				Int32.TryParse(activeDiscDurationInTicks, out durationOfDiscInSeconds);
 				string targetName = "none";
 				if(targetid >0 && _spawns.TryByID(targetid, out var s,false))
 				{
@@ -101,6 +110,34 @@ namespace E3Core.UI.Windows.Hud
 				var row = new TableRow(user, targetName,casting);
 				if(row.Name==E3.CurrentName) row.IsSelf = true;
 				row.AATotal = aaTotal;
+
+				if (!PreviousDiscs.ContainsKey(user))
+				{
+					PreviousDiscs.TryAdd(user, String.Empty);
+				}
+
+				if(String.IsNullOrWhiteSpace(activeDisc))
+				{
+					PreviousDiscs[user] = string.Empty;
+
+				}
+				else
+				{
+					string PreviousDisc = PreviousDiscs[user];
+					if(PreviousDisc!=activeDisc)
+					{
+						PreviousDiscs[user] = activeDisc;
+						PreviousDiscTimeStamp.AddOrUpdate(user, Core.StopWatch.ElapsedMilliseconds,
+							(key, existingValue) => Core.StopWatch.ElapsedMilliseconds);
+					}
+				}
+
+				row.ActiveDisc = activeDisc;
+				if (!String.IsNullOrEmpty(PreviousDiscs[user]))
+				{
+					row.ActiveDiscTimeleft = ((((durationOfDiscInSeconds * 1000) + PreviousDiscTimeStamp[user]) - Core.StopWatch.ElapsedMilliseconds)/1000).ToString()+"s";
+
+				}
 				_tableRows.Add(row);
 			}
 		}
@@ -275,17 +312,26 @@ namespace E3Core.UI.Windows.Hud
 				imgui_SameLine();
 				imgui_TextColored(0.536f, 1f, 0.333f, 1f, targetDisplay);
 
-				if (string.IsNullOrWhiteSpace(entry.SpellName) || entry.SpellName == "NULL")
+				if (!string.IsNullOrWhiteSpace(entry.SpellName) && entry.SpellName != "NULL")
 				{
-					imgui_Text(String.Empty);
-					return;
+					imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, "    Spell:");
+					imgui_SameLine();
+					string stateText;
+					float sr = 0.95f, sg = 0.9f, sb = 0.55f;
+					stateText = $"{entry.SpellName}";
+					imgui_TextColored(sr, sg, sb, 1.0f, stateText);
 				}
-				imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, "    Spell:");
-				imgui_SameLine();
-				string stateText;
-				float sr = 0.95f, sg = 0.9f, sb = 0.55f;
-				stateText = $"{entry.SpellName}";
-				imgui_TextColored(sr, sg, sb, 1.0f, stateText);
+				if(!string.IsNullOrEmpty(entry.ActiveDisc))
+				{
+					imgui_TextColored(0.65f, 0.85f, 1.0f, 1.0f, "    Disc:");
+					imgui_SameLine();
+					string stateText;
+					float sr = 0.95f, sg = 0.9f, sb = 0.55f;
+					stateText = $"{entry.ActiveDisc} ({entry.ActiveDiscTimeleft.ToString()})";
+					imgui_TextColored(sr, sg, sb, 1.0f, stateText);
+
+				}
+				
 			}
 		}
 
@@ -297,6 +343,8 @@ namespace E3Core.UI.Windows.Hud
 			public string SpellName { get; set; }
 			public bool IsSelf { get; set; }
 			public string AATotal { get; set; }
+			public string ActiveDisc { get; set; }
+			public string ActiveDiscTimeleft { get; set; }
 			public TableRow()
 			{
 				

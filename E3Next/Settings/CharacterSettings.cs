@@ -146,13 +146,19 @@ namespace E3Core.Settings
 		public Boolean E3Hud_Hub_ShowColumnAggroMinXTarget = true;
 		[INI_Section("E3Hud_Hub", "FadeTimeInMS")]
 		public int E3Hud_Hub_FadeTimeInMS = 1000;
-		[INI_Section("E3Hud_Hub", "NameColorRGBA")]
-		public float[] E3Hud_Hub_NameColorRGBA = { 0.95f, 0.85f, 0.35f, 1.0f };
+		[INI_Section("E3Hud_Hub", "RGBA_NameColor")]
+		public float[] E3Hud_Hub_RGBA_NameColor = { 0.95f, 0.85f, 0.35f, 1.0f };
+		[INI_Section("E3Hud_Hub", "RGBA_HealthBar")]
+		public float[] E3Hud_Hub_RGBA_HealthBar = { 1, 0f, 0f, 0.4f };
 
 		[INI_Section("E3Hud_Hub", "SelectedFont")]
 		public string E3Hud_Hub_SelectedFont = "robo";
 		[INI_Section("E3Hud_Hub", "Locked")]
 		public bool E3Hud_Hub_Locked = false;
+		[INI_Section("E3Hud_Hub", "DisplayHPBar")]
+		public bool E3Hud_Hub_DisplayHPBar = false;
+
+
 
 
 		[INI_Section("E3Hud_Hub_Buff", "SelectedFont")]
@@ -786,11 +792,13 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub", "ShowColumnAggroMinXTarget", ParsedData, ref E3Hud_Hub_ShowColumnAggroMinXTarget);
 
 			LoadKeyData("E3Hud_Hub", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_FadeTimeInMS);
-			LoadKeyData("E3Hud_Hub", "NameColorRGBA", ParsedData, E3Hud_Hub_NameColorRGBA);
+			LoadKeyData("E3Hud_Hub", "RGBA_NameColor", ParsedData, E3Hud_Hub_RGBA_NameColor);
+			LoadKeyData("E3Hud_Hub", "RGBA_HealthBar", ParsedData, E3Hud_Hub_RGBA_HealthBar);
 
-			
+
 			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData, ref E3Hud_Hub_SelectedFont);
 			LoadKeyData("E3Hud_Hub", "Locked", ParsedData, ref E3Hud_Hub_Locked);
+			LoadKeyData("E3Hud_Hub", "DisplayHPBar", ParsedData, ref E3Hud_Hub_DisplayHPBar);
 
 
 
@@ -1231,8 +1239,10 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ShowColumnAggroXTarget", "True");
 			section.Keys.AddKey("ShowColumnAggroMinXTarget", "False");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
-			section.Keys.AddKey("NameColorRGBA", "0.95,0.85,0.35,1.00");
+			section.Keys.AddKey("RGBA_NameColor", "0.95,0.85,0.35,1.00");
+			section.Keys.AddKey("RGBA_HealthBar", "1,0,0,0.4");
 			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("DisplayHPBar", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Buff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Buff");
