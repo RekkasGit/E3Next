@@ -517,7 +517,7 @@ namespace E3Core.UI.Windows.Hud
 			var buttonstate = _state.GetState<State_HotbuttonsWindow>();
 			if (imgui_Begin_OpenFlagGet(state.WindowName))
 			{
-				E3ImGUI.PushCurrentTheme();
+				//E3ImGUI.PushCurrentTheme();
 				try
 				{
 					imgui_SetNextWindowSizeWithCond(400, 300, (int)ImGuiCond.FirstUseEver);
@@ -570,7 +570,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				finally
 				{
-					E3ImGUI.PopCurrentTheme();
+					//E3ImGUI.PopCurrentTheme();
 				}
 			}
 		}
@@ -1436,10 +1436,10 @@ namespace E3Core.UI.Windows.Hud
 
 			var state = _state.GetState<State_HubWindow>();
 
-			float widthOfWindow = imgui_GetContentRegionAvailX();
-			Int64 metronome = Core.StopWatch.ElapsedMilliseconds - Alerts.LastTickSeen;
+			//float widthOfWindow = imgui_GetContentRegionAvailX();
+			//Int64 metronome = Core.StopWatch.ElapsedMilliseconds - Alerts.LastTickSeen;
 
-			imgui_ProgressBar(((float)(metronome%6000)/(float)6000), 20, (int)widthOfWindow, String.Empty);
+			//imgui_ProgressBar(((float)(metronome%6000)/(float)6000), 20, (int)widthOfWindow, String.Empty);
 
 			using (var table = ImGUITable.Aquire())
 			{
@@ -1627,7 +1627,7 @@ namespace E3Core.UI.Windows.Hud
 								state.SelectedRow = rowCount;
 
 
-								if (_spawns.TryByName(stats.Name, out var spawns))
+								if (_spawns.TryByName(stats.Name, out var spawns,true))
 								{
 									string command = $"/target id {spawns.ID}";
 									E3ImGUI.MQCommandQueue.Enqueue(command);
@@ -1649,7 +1649,7 @@ namespace E3Core.UI.Windows.Hud
 									///
 									if (imgui_MenuItem("Trade Item on Cursor"))
 									{
-										if (_spawns.TryByName(stats.Name, out var spawns))
+										if (_spawns.TryByName(stats.Name, out var spawns,true))
 										{
 											if(spawns.Distance3D > 19)
 											{
@@ -1672,7 +1672,7 @@ namespace E3Core.UI.Windows.Hud
 									}
 									if (imgui_MenuItem("Nav to Toon"))
 									{
-										if (_spawns.TryByName(stats.Name, out var spawns))
+										if (_spawns.TryByName(stats.Name, out var spawns,true))
 										{
 											string command = $"/nav id {spawns.ID}";
 											E3ImGUI.MQCommandQueue.Enqueue(command);
@@ -1680,7 +1680,7 @@ namespace E3Core.UI.Windows.Hud
 									}
 									if (imgui_MenuItem("Nav Toon to us"))
 									{
-										if (_spawns.TryByName(E3.CurrentName, out var spawns))
+										if (_spawns.TryByName(E3.CurrentName, out var spawns,true))
 										{
 											string command = $"/e3bct {stats.Name} /nav id {spawns.ID}";
 											E3ImGUI.MQCommandQueue.Enqueue(command);

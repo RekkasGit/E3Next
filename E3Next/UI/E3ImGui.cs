@@ -2102,7 +2102,7 @@ namespace MonoCore
 
 		private static readonly int _themePushCount = 27;
 		// Rounding settings
-		public static float _rounding = 6.0f;
+		public static float GlobalRoundingValue = 6.0f;
 		public static string _roundingBuf = string.Empty; // UI buffer for editing rounding
 		public static int _roundingVersion = 0; // bump to force InputText to refresh its content
 		public static readonly int _roundingPushCount = 7; // Window, Child, Popup, Frame, Grab, Tab, Scrollbar
@@ -2403,13 +2403,13 @@ namespace MonoCore
 		private static void PushCommonRounding()
 		{
 			// Apply consistent rounding across key style vars
-			imgui_PushStyleVarFloat((int)ImGuiStyleVar.WindowRounding, _rounding);
-			imgui_PushStyleVarFloat((int)ImGuiStyleVar.ChildRounding, _rounding);
-			imgui_PushStyleVarFloat((int)ImGuiStyleVar.PopupRounding, _rounding);
-			imgui_PushStyleVarFloat((int)ImGuiStyleVar.FrameRounding, _rounding);
-			imgui_PushStyleVarFloat((int)ImGuiStyleVar.GrabRounding, Math.Max(3.0f, _rounding - 2.0f));
-			imgui_PushStyleVarFloat((int)ImGuiStyleVar.TabRounding, _rounding);
-			imgui_PushStyleVarFloat((int)ImGuiStyleVar.ScrollbarRounding, _rounding);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.WindowRounding, GlobalRoundingValue);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.ChildRounding, GlobalRoundingValue);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.PopupRounding, GlobalRoundingValue);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.FrameRounding, GlobalRoundingValue);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.GrabRounding, Math.Max(3.0f, GlobalRoundingValue - 2.0f));
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.TabRounding, GlobalRoundingValue);
+			imgui_PushStyleVarFloat((int)ImGuiStyleVar.ScrollbarRounding, GlobalRoundingValue);
 		}
 
 		public static void PushCurrentTheme()

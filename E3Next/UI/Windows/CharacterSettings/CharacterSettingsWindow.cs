@@ -83,8 +83,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 						_currentTheme = theme;
 					}
 					// Apply rounding setting
-					_rounding = E3.CharacterSettings.UITheme_Rounding;
-					_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+					GlobalRoundingValue = E3.CharacterSettings.UITheme_Rounding;
+					_roundingBuf = GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture);
 				}
 			}
 			catch (Exception ex)
@@ -3478,7 +3478,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_SameLine();
 					if (string.IsNullOrEmpty(_roundingBuf))
 					{
-						_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+						_roundingBuf = GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture);
 					}
 					imgui_SetNextItemWidth(100f);
 					string roundingInputId = $"##rounding_value_{_roundingVersion}";
@@ -3487,45 +3487,45 @@ namespace E3Core.UI.Windows.CharacterSettings
 						_roundingBuf = imgui_InputText_Get(roundingInputId) ?? string.Empty;
 						if (float.TryParse(_roundingBuf, NumberStyles.Float, CultureInfo.InvariantCulture, out var rv))
 						{
-							_rounding = Math.Max(0f, Math.Min(12f, rv));
+							GlobalRoundingValue = Math.Max(0f, Math.Min(12f, rv));
 							// Save rounding to character INI
 							if (E3.CharacterSettings != null)
 							{
-								E3.CharacterSettings.UITheme_Rounding = _rounding;
+								E3.CharacterSettings.UITheme_Rounding = GlobalRoundingValue;
 								E3.CharacterSettings.SaveData();
 							}
 						}
 					}
 					imgui_SameLine();
-					imgui_Text($"({_rounding.ToString("0.0", CultureInfo.InvariantCulture)})");
+					imgui_Text($"({GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture)})");
 					imgui_SameLine();
 					if (imgui_Button("-"))
 					{
-						_rounding = Math.Max(0f, _rounding - 1f);
-						_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+						GlobalRoundingValue = Math.Max(0f, GlobalRoundingValue - 1f);
+						_roundingBuf = GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture);
 						_roundingVersion++;
 						SaveRoundingToSettings();
 					}
 					imgui_SameLine();
 					if (imgui_Button("+"))
 					{
-						_rounding = Math.Min(12f, _rounding + 1f);
-						_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+						GlobalRoundingValue = Math.Min(12f, GlobalRoundingValue + 1f);
+						_roundingBuf = GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture);
 						_roundingVersion++;
 						SaveRoundingToSettings();
 					}
-					string roundingString = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+					string roundingString = GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture);
 					// Presets
 					imgui_Text("Presets:");
-					if (imgui_Button("0")) { _rounding = 0f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					if (imgui_Button("0")) { GlobalRoundingValue = 0f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
 					imgui_SameLine();
-					if (imgui_Button("3")) { _rounding = 3f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					if (imgui_Button("3")) { GlobalRoundingValue = 3f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
 					imgui_SameLine();
-					if (imgui_Button("6")) { _rounding = 6f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					if (imgui_Button("6")) { GlobalRoundingValue = 6f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
 					imgui_SameLine();
-					if (imgui_Button("9")) { _rounding = 9f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					if (imgui_Button("9")) { GlobalRoundingValue = 9f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
 					imgui_SameLine();
-					if (imgui_Button("12")) { _rounding = 12f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					if (imgui_Button("12")) { GlobalRoundingValue = 12f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
 
 					imgui_Separator();
 					// Preview the accent color
@@ -3545,7 +3545,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			if (E3.CharacterSettings != null)
 			{
-				E3.CharacterSettings.UITheme_Rounding = _rounding;
+				E3.CharacterSettings.UITheme_Rounding = GlobalRoundingValue;
 				E3.CharacterSettings.SaveData();
 			}
 		}
