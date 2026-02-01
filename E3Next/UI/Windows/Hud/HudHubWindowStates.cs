@@ -20,6 +20,8 @@ namespace E3Core.UI.Windows.Hud
 		private State_DebuffWindow _debuffWindowState = new State_DebuffWindow();
 		private State_SongWindow _songWindowState = new State_SongWindow();
 		private State_HotbuttonsWindow _hotbuttonWindowState = new State_HotbuttonsWindow();
+		private State_PlayerInfoWindow _playerInfoWindowState = new State_PlayerInfoWindow();
+		private State_TargetInfoWindow _targetInfoWindowState = new State_TargetInfoWindow();
 
 		public T GetState<T>()
 		{
@@ -44,7 +46,14 @@ namespace E3Core.UI.Windows.Hud
 			{
 				return (T)(object)_hotbuttonWindowState;
 			}
-			//State_HotbuttonsWindow
+			if (type == typeof(State_PlayerInfoWindow))
+			{
+				return (T)(object)_playerInfoWindowState;
+			}
+			if (type == typeof(State_TargetInfoWindow))
+			{
+				return (T)(object)_targetInfoWindowState;
+			}
 			return default(T);
 		}
 		public void ClearWindows()
@@ -71,6 +80,11 @@ namespace E3Core.UI.Windows.Hud
 		public bool ShowColumnAggroMinXTarget { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Locked; set { E3.CharacterSettings.E3Hud_Hub_Locked = value; IsDirty = true; } }
 		public bool DisplayHPBar { get => E3.CharacterSettings.E3Hud_Hub_DisplayHPBar; set { E3.CharacterSettings.E3Hud_Hub_DisplayHPBar = value; IsDirty = true; } }
+		public string LeftClickAction { get => E3.CharacterSettings.E3Hud_Hub_LeftClickAction; set { E3.CharacterSettings.E3Hud_Hub_LeftClickAction = value; IsDirty = true; } }
+		public bool ShowTickTimer { get => E3.CharacterSettings.E3Hud_Hub_ShowTickTimer; set { E3.CharacterSettings.E3Hud_Hub_ShowTickTimer = value; IsDirty = true; } }
+		public bool ShowHotButtons { get => E3.CharacterSettings.E3Hud_Hub_ShowHotButtons; set { E3.CharacterSettings.E3Hud_Hub_ShowHotButtons = value; IsDirty = true; } }
+		public bool ShowPlayerInfo { get => E3.CharacterSettings.E3Hud_Hub_ShowPlayerInfo; set { E3.CharacterSettings.E3Hud_Hub_ShowPlayerInfo = value; IsDirty = true; } }
+		public bool ShowTargetInfo { get => E3.CharacterSettings.E3Hud_Hub_ShowTargetInfo; set { E3.CharacterSettings.E3Hud_Hub_ShowTargetInfo = value; IsDirty = true; } }
 		public float[] NameColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_NameColor;  }
 		public float[] HealthBarColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_HealthBar; }
 
@@ -84,9 +98,41 @@ namespace E3Core.UI.Windows.Hud
 		public List<string> ColumNameBuffer = new List<string>();
 		private float[] nameColors = { 0.95f, 0.85f, 0.35f, 1.0f };
 		public string SelectedToonForBuffs = String.Empty;
-		
+
 		public int SelectedRow = -1;
 		public bool IsDirty = false;
+
+		// Player Info cached display data
+		public Int64 PlayerInfoLastUpdated = 0;
+		public Int64 PlayerInfoUpdateInterval = 500;
+		public int PlayerLevel = 0;
+		public int PlayerHP = 0;
+		public int PlayerMana = 0;
+		public int PlayerEnd = 0;
+		public float PlayerExp = 0f;
+		public int PlayerAAPoints = 0;
+		public (float r, float g, float b) PlayerHPColor;
+		public (float r, float g, float b) PlayerManaColor;
+		public (float r, float g, float b) PlayerEndColor;
+
+		// Target Info cached display data
+		public Int64 TargetInfoLastUpdated = 0;
+		public Int64 TargetInfoUpdateInterval = 500;
+		public bool HasTarget = false;
+		public string TargetName = string.Empty;
+		public int TargetHP = 0;
+		public int TargetLevel = 0;
+		public string TargetClassName = string.Empty;
+		public double TargetDistance = 0;
+		public (float r, float g, float b) TargetNameColor;
+		public (float r, float g, float b) TargetDistanceColor;
+
+		// Target Buffs (slower refresh)
+		public List<int> TargetBuffSpellIDs = new List<int>();
+		public List<string> TargetBuffNames = new List<string>();
+		public Int64 TargetBuffLastUpdated = 0;
+		public Int64 TargetBuffUpdateInterval = 2000;
+		public int PreviousTargetID = 0;
 
 		public State_HubWindow()
 		{
@@ -106,6 +152,7 @@ namespace E3Core.UI.Windows.Hud
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont = value; IsDirty = true; } }
 		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_Buff_IconSize; set { E3.CharacterSettings.E3Hud_Hub_Buff_IconSize = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Buff_Locked; set { E3.CharacterSettings.E3Hud_Hub_Buff_Locked = value; IsDirty = true; } }
+		public bool ListView { get => E3.CharacterSettings.E3Hud_Hub_Buff_ListView; set { E3.CharacterSettings.E3Hud_Hub_Buff_ListView = value; IsDirty = true; } }
 
 		public int FadeTimeInMS
 		{
@@ -155,6 +202,7 @@ namespace E3Core.UI.Windows.Hud
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_Song_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_Song_SelectedFont = value; IsDirty = true; } }
 		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_Song_IconSize; set { E3.CharacterSettings.E3Hud_Hub_Song_IconSize = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Song_Locked; set { E3.CharacterSettings.E3Hud_Hub_Song_Locked = value; IsDirty = true; } }
+		public bool ListView { get => E3.CharacterSettings.E3Hud_Hub_Song_ListView; set { E3.CharacterSettings.E3Hud_Hub_Song_ListView = value; IsDirty = true; } }
 
 		public int FadeTimeInMS
 		{
@@ -216,6 +264,7 @@ namespace E3Core.UI.Windows.Hud
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_Debuff_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_Debuff_SelectedFont = value; IsDirty = true; } }
 		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_Debuff_IconSize; set { E3.CharacterSettings.E3Hud_Hub_Debuff_IconSize = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Debuff_Locked; set { E3.CharacterSettings.E3Hud_Hub_Debuff_Locked = value; IsDirty = true; } }
+		public bool ListView { get => E3.CharacterSettings.E3Hud_Hub_Debuff_ListView; set { E3.CharacterSettings.E3Hud_Hub_Debuff_ListView = value; IsDirty = true; } }
 
 		public int FadeTimeInMS
 		{
@@ -248,5 +297,39 @@ namespace E3Core.UI.Windows.Hud
 
 		}
 
+	}
+	public class State_PlayerInfoWindow
+	{
+		public string WindowName = $"E3 PlayerInfo Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha = value; IsDirty = true; } }
+		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Detached = value; IsDirty = true; } }
+		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Locked; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Locked = value; IsDirty = true; } }
+		public bool IsDirty = false;
+
+		public State_PlayerInfoWindow()
+		{
+			IsDirty = false;
+		}
+		public void UpdateSettings_WithoutSaving()
+		{
+			IsDirty = false;
+		}
+	}
+	public class State_TargetInfoWindow
+	{
+		public string WindowName = $"E3 TargetInfo Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Alpha = value; IsDirty = true; } }
+		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached = value; IsDirty = true; } }
+		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Locked; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Locked = value; IsDirty = true; } }
+		public bool IsDirty = false;
+
+		public State_TargetInfoWindow()
+		{
+			IsDirty = false;
+		}
+		public void UpdateSettings_WithoutSaving()
+		{
+			IsDirty = false;
+		}
 	}
 }
