@@ -3,10 +3,12 @@ using E3Core.Processors;
 using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using MonoCore;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.PerformanceData;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -584,21 +586,68 @@ namespace E3Core.UI.Windows.Hud
 
 			if (!e3util.ShouldCheck(ref state.TargetBuffLastUpdated, state.TargetBuffUpdateInterval)) return;
 
-			state.TargetBuffSpellIDs.Clear();
-			state.TargetBuffNames.Clear();
-
+			state.TargetBuffs.Clear();
+		
 			Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}", false);
 			int maxBuffs = Math.Min(buffCount, 30);
 
 			for (int i = 1; i <= maxBuffs; i++)
 			{
-				Int32 spellID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}", false);
-				if (spellID <= 0) continue;
+				Int32 spellid = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}", false);
+				if (spellid <= 0) continue;
+				Int32 duration = MQ.Query<Int32>($"${{Target.Buff[{i}].Duration}}", false);
+				Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
+				string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
+				var buffRow = new TableRow_BuffInfo(buffName);
+				buffRow.iconID = spellIcon;
+				var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+				buffRow.Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+				buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
+				string spellType = MQ.Query<string>($"${{Spell[{spellid}].SpellType}}", false);
 
-				string buffName = MQ.Query<string>($"${{Spell[{spellID}].Name}}", false);
+				Int32 spellTypeID = 0;
+				if (spellType == "Detrimental") spellTypeID = 0;
+				if (spellType == "Beneficial") spellTypeID = 1;
+				if (spellType == "Beneficial(Group)") spellTypeID = 2;
+				buffRow.SpellType = (Int32)spellTypeID;
+				buffRow.SpellID = spellid;
+
+				if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
+				{
+					buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
+				}
+				else
+				{
+					buffRow.Spell = null;
+				}
+
+				if (duration < 0)
+				{
+					buffRow.SimpleDuration = "(p)";
+				}
+				else if (buffTimeSpan.TotalHours >= 1)
+				{
+					buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
+				}
+				else if (buffTimeSpan.TotalMinutes >= 1)
+				{
+					buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
+				}
+				else
+				{
+					buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
+				}
+				if (duration < 160000d)
+				{
+					buffRow.DisplayName = buffName + $" ( {buffRow.Duration} )";
+				}
+				else
+				{
+					buffRow.DisplayName = buffName;
+				}
 				if (buffName == "NULL") buffName = "Unknown";
-				state.TargetBuffSpellIDs.Add(spellID);
-				state.TargetBuffNames.Add(buffName);
+				state.TargetBuffs.Add(buffRow);
+			
 			}
 		}
 		private static void RenderPlayerInfo()
@@ -880,25 +929,25 @@ namespace E3Core.UI.Windows.Hud
 			}
 
 			// Target Buff Icons
-			if (state.TargetBuffSpellIDs.Count > 0)
+			if (state.TargetBuffs.Count > 0)
 			{
 				int iconSize = 24;
 				int iconsPerRow = Math.Max(1, (int)widthAvail / (iconSize + 2));
 
-				for (int i = 0; i < state.TargetBuffSpellIDs.Count; i++)
+				for (int i = 0; i < state.TargetBuffs.Count; i++)
 				{
 					if (i > 0 && (i % iconsPerRow) != 0)
 					{
 						imgui_SameLine(0, 2);
 					}
 
-					imgui_DrawSpellIconBySpellID(state.TargetBuffSpellIDs[i], iconSize);
+					imgui_DrawSpellIconBySpellID(state.TargetBuffs[i].SpellID, iconSize);
 
 					if (imgui_IsItemHovered())
 					{
 						using (var tooltip = ImGUIToolTip.Aquire())
 						{
-							imgui_Text(state.TargetBuffNames[i]);
+							imgui_Text(state.TargetBuffs[i].Name);
 						}
 					}
 				}

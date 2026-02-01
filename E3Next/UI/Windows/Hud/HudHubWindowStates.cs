@@ -316,8 +316,7 @@ namespace E3Core.UI.Windows.Hud
 		public string TargetDistanceString;
 		public (float r, float g, float b) TargetNameColor;
 		public (float r, float g, float b) TargetDistanceColor;
-		public List<int> TargetBuffSpellIDs = new List<int>();
-		public List<string> TargetBuffNames = new List<string>();
+		public List<TableRow_BuffInfo> TargetBuffs = new List<TableRow_BuffInfo>();
 		public Int64 TargetBuffLastUpdated = 0;
 		public Int64 TargetBuffUpdateInterval = 2000;
 		public int PreviousTargetID = 0;

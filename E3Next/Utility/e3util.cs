@@ -382,6 +382,16 @@ namespace E3Core.Utility
 
 			return false;
 		}
+		public static bool InMyRaid(string person)
+		{
+			//check for guildlist.txt if it exists
+			if (Basics.RaidMemberNames.Count > 0 && Basics.RaidMemberNames.Contains(person, StringComparer.OrdinalIgnoreCase))
+			{
+				return true;
+			}
+
+			return false;
+		}
 		public static bool FilterMe(CommandMatch x)
 		{
 			////Stop /Only|Soandoso

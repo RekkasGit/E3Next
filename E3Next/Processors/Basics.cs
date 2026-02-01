@@ -281,20 +281,21 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterEvent("InviteToGroup", "(.+) invites you to join a group.", (x) =>
             {
-                if(e3util.IsEQLive())
+				//temp fix to deal with a person being an ass
+                if(true)
                 {
                     //don't just blindly accept group invites if not from your bot network
 					if (x.match.Groups.Count > 1)
 					{
                         string person = x.match.Groups[1].Value;
-                        if(E3.Bots.IsMyBot(person))
+                        if(E3.Bots.IsMyBot(person) || e3util.InMyGuild(person) || e3util.InMyRaid(person))
                         {
 							MQ.Cmd("/invite");
 							MQ.Delay(300);
 						}
                         else
                         {
-                            E3.Bots.Broadcast($"{person} tried to invite me to group, but not in my bot network, ignoring");
+                            E3.Bots.Broadcast($"{person} tried to invite me to group, but not in my bot network/guild/raid, ignoring");
                         }
 					}
 				}
@@ -316,20 +317,21 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterEvent("InviteToRaid", "(.+) invites you to join a raid.", (x) =>
             {
-				if (e3util.IsEQLive())
+				//quick fix to deal with a person being an arse
+				if (true)
 				{     
                     //don't just blindly accept raid invites if not from your guild
 					if (x.match.Groups.Count > 1)
 					{
 						string person = x.match.Groups[1].Value;
-						if (e3util.InMyGuild(person))
+						if (e3util.InMyGuild(person) || E3.Bots.IsMyBot(person))
 						{
 							MQ.Delay(500);
 							MQ.Cmd("/raidaccept");
 						}
 						else
 						{
-							E3.Bots.Broadcast($"{person} tried to invite me to raid, but not in my guild, ignoring");
+							E3.Bots.Broadcast($"{person} tried to invite me to raid, but not in my guild/bot network, ignoring");
 						}
 					}
 				}
