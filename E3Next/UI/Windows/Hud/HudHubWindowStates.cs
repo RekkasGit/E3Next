@@ -88,8 +88,6 @@ namespace E3Core.UI.Windows.Hud
 		public float[] NameColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_NameColor;  }
 		public float[] HealthBarColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_HealthBar; }
 
-
-
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;
 
@@ -101,38 +99,6 @@ namespace E3Core.UI.Windows.Hud
 
 		public int SelectedRow = -1;
 		public bool IsDirty = false;
-
-		// Player Info cached display data
-		public Int64 PlayerInfoLastUpdated = 0;
-		public Int64 PlayerInfoUpdateInterval = 500;
-		public int PlayerLevel = 0;
-		public int PlayerHP = 0;
-		public int PlayerMana = 0;
-		public int PlayerEnd = 0;
-		public float PlayerExp = 0f;
-		public int PlayerAAPoints = 0;
-		public (float r, float g, float b) PlayerHPColor;
-		public (float r, float g, float b) PlayerManaColor;
-		public (float r, float g, float b) PlayerEndColor;
-
-		// Target Info cached display data
-		public Int64 TargetInfoLastUpdated = 0;
-		public Int64 TargetInfoUpdateInterval = 500;
-		public bool HasTarget = false;
-		public string TargetName = string.Empty;
-		public int TargetHP = 0;
-		public int TargetLevel = 0;
-		public string TargetClassName = string.Empty;
-		public double TargetDistance = 0;
-		public (float r, float g, float b) TargetNameColor;
-		public (float r, float g, float b) TargetDistanceColor;
-
-		// Target Buffs (slower refresh)
-		public List<int> TargetBuffSpellIDs = new List<int>();
-		public List<string> TargetBuffNames = new List<string>();
-		public Int64 TargetBuffLastUpdated = 0;
-		public Int64 TargetBuffUpdateInterval = 2000;
-		public int PreviousTargetID = 0;
 
 		public State_HubWindow()
 		{
@@ -300,12 +266,29 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_PlayerInfoWindow
 	{
+		static string _playerInfoDisplay = String.Empty;
+		static Int32 _playerInfoDispleyLevel = 0;
+
 		public string WindowName = $"E3 PlayerInfo Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Detached = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Locked; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Locked = value; IsDirty = true; } }
-		public bool IsDirty = false;
 
+		public string PlayerInfoDisplay { get => _playerInfoDisplay; set => _playerInfoDisplay = value; }
+		public int PlayerInfoDispleyLevel { get => _playerInfoDispleyLevel; set => _playerInfoDispleyLevel = value; }
+		public Int64 PlayerInfoLastUpdated = 0;
+		public Int64 PlayerInfoUpdateInterval = 500;
+		public int PlayerLevel = 0;
+		public int PlayerHP = 0;
+		public int PlayerMana = 0;
+		public int PlayerEnd = 0;
+		public float PlayerExp = 0f;
+		public int PlayerAAPoints = 0;
+		public (float r, float g, float b) PlayerHPColor;
+		public (float r, float g, float b) PlayerManaColor;
+		public (float r, float g, float b) PlayerEndColor;
+		public bool IsDirty = false;
+		public string Display = "";
 		public State_PlayerInfoWindow()
 		{
 			IsDirty = false;
@@ -322,6 +305,22 @@ namespace E3Core.UI.Windows.Hud
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Locked; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Locked = value; IsDirty = true; } }
 		public bool IsDirty = false;
+		public Int64 TargetInfoLastUpdated = 0;
+		public Int64 TargetInfoUpdateInterval = 500;
+		public bool HasTarget = false;
+		public string TargetName = string.Empty;
+		public int TargetHP = 0;
+		public int TargetLevel = 0;
+		public string TargetClassName = string.Empty;
+		public double TargetDistance = 0;
+		public string TargetDistanceString;
+		public (float r, float g, float b) TargetNameColor;
+		public (float r, float g, float b) TargetDistanceColor;
+		public List<int> TargetBuffSpellIDs = new List<int>();
+		public List<string> TargetBuffNames = new List<string>();
+		public Int64 TargetBuffLastUpdated = 0;
+		public Int64 TargetBuffUpdateInterval = 2000;
+		public int PreviousTargetID = 0;
 
 		public State_TargetInfoWindow()
 		{

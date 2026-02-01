@@ -1285,7 +1285,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("DisplayHPBar", "False");
 			section.Keys.AddKey("LeftClickAction", "Target");
-			section.Keys.AddKey("ShowTickTimer", "True");
+			section.Keys.AddKey("ShowTickTimer", "False");
 			section.Keys.AddKey("ShowHotButtons", "True");
 			section.Keys.AddKey("ShowPlayerInfo", "True");
 			section.Keys.AddKey("ShowTargetInfo", "True");

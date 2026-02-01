@@ -37,6 +37,9 @@ namespace E3Core.UI.Windows.Hud
 		private const string IMGUI_DETATCH_HOTBUTTON_ID = FontAwesome.FAExternalLinkSquare + "##detach_hotbuttons";
 		private const string IMGUI_DETATCH_PLAYERINFO_ID = FontAwesome.FAExternalLinkSquare + "##detach_playerinfo";
 		private const string IMGUI_DETATCH_TARGETINFO_ID = FontAwesome.FAExternalLinkSquare + "##detach_targetinfo";
+		private const string IMGUI_SETTINGS_PLAYERINFO_ID = MaterialFont.settings + "##playerinfo_settings";
+		private const string IMGUI_SETTINGS_TARGETINFO_ID = MaterialFont.settings +"##targetinfo_settings";
+
 		private static string IMGUI_TABLE_GROUP_ID = $"E3HubGroupTable-{E3.CurrentName}-{E3.CurrentClass}-{E3.ServerName}";
 
 		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _distanceSeverity = new[]
@@ -525,8 +528,9 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private static void RefreshPlayerInfo()
 		{
-			var state = _state.GetState<State_HubWindow>();
-			if (!state.ShowPlayerInfo) return;
+			var state = _state.GetState<State_PlayerInfoWindow>();
+			var hub_state = _state.GetState<State_HubWindow>();
+			if (!hub_state.ShowPlayerInfo) return;
 			if (!e3util.ShouldCheck(ref state.PlayerInfoLastUpdated, state.PlayerInfoUpdateInterval)) return;
 
 			state.PlayerLevel = MQ.Query<int>("${Me.Level}", false);
@@ -542,8 +546,10 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private static void RefreshTargetInfo()
 		{
-			var state = _state.GetState<State_HubWindow>();
-			if (!state.ShowTargetInfo) return;
+			var state = _state.GetState<State_TargetInfoWindow>();
+			var hub_state = _state.GetState<State_HubWindow>();
+
+			if (!hub_state.ShowTargetInfo) return;
 			if (!e3util.ShouldCheck(ref state.TargetInfoLastUpdated, state.TargetInfoUpdateInterval)) return;
 
 			Int32 targetID = MQ.Query<Int32>("${Target.ID}", false);
@@ -556,13 +562,14 @@ namespace E3Core.UI.Windows.Hud
 
 			state.HasTarget = true;
 
-			if (_spawns.TryByID(targetID, out var spawn))
+			if (_spawns.TryByID(targetID, out var spawn,true))
 			{
 				state.TargetName = spawn.CleanName;
 				state.TargetHP = (int)spawn.PctHps;
 				state.TargetLevel = spawn.Level;
 				state.TargetClassName = spawn.ClassShortName;
 				state.TargetDistance = spawn.Distance3D;
+				state.TargetDistanceString = spawn.Distance3D.ToString("N0");
 				state.TargetNameColor = GetConColorRGB(spawn.ConColorID);
 				state.TargetDistanceColor = GetDistanceSeverityColor(spawn.Distance3D);
 			}
@@ -589,37 +596,45 @@ namespace E3Core.UI.Windows.Hud
 				if (spellID <= 0) continue;
 
 				string buffName = MQ.Query<string>($"${{Spell[{spellID}].Name}}", false);
+				if (buffName == "NULL") buffName = "Unknown";
 				state.TargetBuffSpellIDs.Add(spellID);
-				state.TargetBuffNames.Add(buffName ?? "Unknown");
+				state.TargetBuffNames.Add(buffName);
 			}
 		}
 		private static void RenderPlayerInfo()
 		{
-			var state = _state.GetState<State_HubWindow>();
-			var piState = _state.GetState<State_PlayerInfoWindow>();
-			if (!state.ShowPlayerInfo) return;
+			var hub_state = _state.GetState<State_HubWindow>();
+			var state = _state.GetState<State_PlayerInfoWindow>();
+
+			if (!hub_state.ShowPlayerInfo) return;
 			if (state.PlayerLevel == 0) return;
+
+			if (String.IsNullOrEmpty(state.PlayerInfoDisplay) || state.PlayerInfoDispleyLevel!= state.PlayerLevel)
+			{
+				state.PlayerInfoDisplay = $"{E3.CurrentName} (Lvl {state.PlayerLevel}) - {E3.CurrentShortClassString}";
+				state.PlayerInfoDispleyLevel = state.PlayerLevel;
+			}
 
 			float widthAvail = imgui_GetContentRegionAvailX();
 
 			// Detach/Reattach buttons
-			if (!piState.Detached)
+			if (!state.Detached)
 			{
-				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, $"{E3.CurrentName} (Lvl {state.PlayerLevel}) - {E3.CurrentShortClassString}");
+				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.PlayerInfoDisplay);
 				imgui_SameLine(widthAvail - 20);
 				if (imgui_Button(IMGUI_DETATCH_PLAYERINFO_ID))
 				{
-					piState.Detached = true;
-					imgui_Begin_OpenFlagSet(piState.WindowName, true);
+					state.Detached = true;
+					imgui_Begin_OpenFlagSet(state.WindowName, true);
 				}
 			}
 			else
 			{
-				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, $"{E3.CurrentName} (Lvl {state.PlayerLevel}) - {E3.CurrentShortClassString}");
+				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.PlayerInfoDisplay);
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(0);
 				imgui_SetCursorPosX(windowWidth - 70);
-				if (imgui_Button($"{MaterialFont.settings}##playerinfo_settings"))
+				if (imgui_Button(IMGUI_SETTINGS_PLAYERINFO_ID))
 				{
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
@@ -627,13 +642,13 @@ namespace E3Core.UI.Windows.Hud
 					if (popup.BeginPopupContextItem($"##PlayerInfoSettingsPopup", 1))
 					{
 						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						if (piState.Locked)
+						if (state.Locked)
 						{
-							if (imgui_MenuItem("UnLock")) piState.Locked = false;
+							if (imgui_MenuItem("UnLock")) state.Locked = false;
 						}
 						else
 						{
-							if (imgui_MenuItem("Lock")) piState.Locked = true;
+							if (imgui_MenuItem("Lock")) state.Locked = true;
 						}
 						imgui_PopStyleColor(1);
 						imgui_Separator();
@@ -642,53 +657,46 @@ namespace E3Core.UI.Windows.Hud
 						imgui_PopStyleColor(1);
 						string keyForInput = "##PlayerInfoWindow_alpha_set";
 						imgui_SetNextItemWidth(100);
-						if (imgui_InputInt(keyForInput, (int)(piState.WindowAlpha * 255), 1, 20))
+						if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
 						{
 							int updated = imgui_InputInt_Get(keyForInput);
 							if (updated > 255) updated = 255;
 							if (updated < 0) updated = 0;
-							piState.WindowAlpha = ((float)updated) / 255f;
+							state.WindowAlpha = ((float)updated) / 255f;
 						}
 					}
 				}
 				imgui_SameLine(windowWidth - 35);
 				if (imgui_Button("<<##reattach_playerinfo"))
 				{
-					piState.Detached = false;
-					imgui_Begin_OpenFlagSet(piState.WindowName, false);
+					state.Detached = false;
+					imgui_Begin_OpenFlagSet(state.WindowName, false);
 				}
 			}
 
 			var hp = state.PlayerHPColor;
-			imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, $"HP: {state.PlayerHP}%");
-			imgui_SameLine(0);
-			imgui_Text("  ");
+			imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, $"HP: {state.PlayerHP}%  ");
 			imgui_SameLine(0);
 
 			if (state.PlayerMana > 0)
 			{
 				var mana = state.PlayerManaColor;
-				imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, $"Mana: {state.PlayerMana}%");
-				imgui_SameLine(0);
-				imgui_Text("  ");
+				imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, $"Mana: {state.PlayerMana}%  ");
 				imgui_SameLine(0);
 			}
-
 			var end = state.PlayerEndColor;
 			imgui_TextColored(end.r, end.g, end.b, 1.0f, $"End: {state.PlayerEnd}%");
-
-			imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, $"Exp: {state.PlayerExp:F2}%");
-			imgui_SameLine(0);
-			imgui_Text("  ");
+			imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, $"Exp: {state.PlayerExp:F2}%  ");
 			imgui_SameLine(0);
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"AA: {state.PlayerAAPoints}");
 
 		}
 		private static void RenderTargetInfo()
 		{
-			var state = _state.GetState<State_HubWindow>();
+			var main_state = _state.GetState<State_HubWindow>();
+			var state = _state.GetState<State_TargetInfoWindow>();
 			var tiState = _state.GetState<State_TargetInfoWindow>();
-			if (!state.ShowTargetInfo) return;
+			if (!main_state.ShowTargetInfo) return;
 
 			// Target Name (con-colored) + detach/reattach
 			float widthAvail = imgui_GetContentRegionAvailX();
@@ -802,12 +810,12 @@ namespace E3Core.UI.Windows.Hud
 				imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.TargetName);
 				imgui_SameLine(0);
 				imgui_SetCursorPosX(windowWidth - 70);
-				if (imgui_Button($"{MaterialFont.settings}##targetinfo_settings"))
+				if (imgui_Button(IMGUI_SETTINGS_TARGETINFO_ID))
 				{
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem($"##TargetInfoSettingsPopup", 1))
+					if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", 1))
 					{
 						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 						if (tiState.Locked)
@@ -854,7 +862,7 @@ namespace E3Core.UI.Windows.Hud
 
 			if (state.TargetDistance > 0)
 			{
-				string distText = $"{state.TargetDistance:N0}";
+				string distText = state.TargetDistanceString;
 				float distTextWidth = imgui_CalcTextSizeX(distText);
 				float rightAlignX = widthAvail - distTextWidth;
 				if (rightAlignX > imgui_CalcTextSizeX(leftText) + 10)
@@ -1055,7 +1063,7 @@ namespace E3Core.UI.Windows.Hud
 				var buttonState = _state.GetState<State_HotbuttonsWindow>();
 				if (state.ShowHotButtons)
 				{
-				RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
+					RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
 				}
 				var playerInfoState = _state.GetState<State_PlayerInfoWindow>();
 				if (state.ShowPlayerInfo)
@@ -2018,8 +2026,8 @@ namespace E3Core.UI.Windows.Hud
 
 			if (state.ShowTickTimer)
 			{
-				Int64 metronome = Core.StopWatch.ElapsedMilliseconds - Alerts.LastTickSeen;
-			//imgui_ProgressBar(((float)(metronome%6000)/(float)6000), 20, (int)widthOfWindow, String.Empty);
+				//Int64 metronome = Core.StopWatch.ElapsedMilliseconds - Alerts.LastTickSeen;
+				//imgui_ProgressBar(((float)(metronome%6000)/(float)6000), 20, (int)widthOfWindow, String.Empty);
 			}
 
 			using (var table = ImGUITable.Aquire())
