@@ -157,9 +157,30 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_Locked = false;
 		[INI_Section("E3Hud_Hub", "DisplayHPBar")]
 		public bool E3Hud_Hub_DisplayHPBar = false;
+		[INI_Section("E3Hud_Hub", "LeftClickAction")]
+		public string E3Hud_Hub_LeftClickAction = "Target";
+		[INI_Section("E3Hud_Hub", "ShowTickTimer")]
+		public bool E3Hud_Hub_ShowTickTimer = true;
+		[INI_Section("E3Hud_Hub", "ShowHotButtons")]
+		public bool E3Hud_Hub_ShowHotButtons = true;
+		[INI_Section("E3Hud_Hub", "ShowPlayerInfo")]
+		public bool E3Hud_Hub_ShowPlayerInfo = true;
+		[INI_Section("E3Hud_Hub", "ShowTargetInfo")]
+		public bool E3Hud_Hub_ShowTargetInfo = true;
 
+		[INI_Section("E3Hud_Hub_PlayerInfo", "Alpha")]
+		public float E3Hud_Hub_PlayerInfo_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "Detached")]
+		public bool E3Hud_Hub_PlayerInfo_Detached = false;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "Locked")]
+		public bool E3Hud_Hub_PlayerInfo_Locked = false;
 
-
+		[INI_Section("E3Hud_Hub_TargetInfo", "Alpha")]
+		public float E3Hud_Hub_TargetInfo_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_TargetInfo", "Detached")]
+		public bool E3Hud_Hub_TargetInfo_Detached = false;
+		[INI_Section("E3Hud_Hub_TargetInfo", "Locked")]
+		public bool E3Hud_Hub_TargetInfo_Locked = false;
 
 		[INI_Section("E3Hud_Hub_Buff", "SelectedFont")]
 		public string E3Hud_Hub_Buff_SelectedFont = "robo";
@@ -173,6 +194,8 @@ namespace E3Core.Settings
 		public float E3Hud_Hub_Buff_Alpha = 0.8f;
 		[INI_Section("E3Hud_Hub_Buff", "Locked")]
 		public bool E3Hud_Hub_Buff_Locked = false;
+		[INI_Section("E3Hud_Hub_Buff", "ListView")]
+		public bool E3Hud_Hub_Buff_ListView = false;
 
 		[INI_Section("E3Hud_Hub_Song", "SelectedFont")]
 		public string E3Hud_Hub_Song_SelectedFont = "robo";
@@ -186,6 +209,8 @@ namespace E3Core.Settings
 		public float E3Hud_Hub_Song_Alpha = 0.8f;
 		[INI_Section("E3Hud_Hub_Song", "Locked")]
 		public bool E3Hud_Hub_Song_Locked = false;
+		[INI_Section("E3Hud_Hub_Song", "ListView")]
+		public bool E3Hud_Hub_Song_ListView = false;
 
 		[INI_Section("E3Hud_Hub_HotButtons", "Alpha")]
 		public float E3Hud_Hub_HotButtons_Alpha = 0.8f;
@@ -217,6 +242,8 @@ namespace E3Core.Settings
 		public float E3Hud_Hub_Debuff_Alpha = 0.8f;
 		[INI_Section("E3Hud_Hub_Debuff", "Locked")]
 		public bool E3Hud_Hub_Debuff_Locked = false;
+		[INI_Section("E3Hud_Hub_Debuff", "ListView")]
+		public bool E3Hud_Hub_Debuff_ListView = false;
 
 
 		[INI_Section("AutoMed", "Override Old Settings and use This(On/Off)")]
@@ -799,20 +826,33 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData, ref E3Hud_Hub_SelectedFont);
 			LoadKeyData("E3Hud_Hub", "Locked", ParsedData, ref E3Hud_Hub_Locked);
 			LoadKeyData("E3Hud_Hub", "DisplayHPBar", ParsedData, ref E3Hud_Hub_DisplayHPBar);
+			LoadKeyData("E3Hud_Hub", "LeftClickAction", ParsedData, ref E3Hud_Hub_LeftClickAction);
+			LoadKeyData("E3Hud_Hub", "ShowTickTimer", ParsedData, ref E3Hud_Hub_ShowTickTimer);
+			LoadKeyData("E3Hud_Hub", "ShowHotButtons", ParsedData, ref E3Hud_Hub_ShowHotButtons);
+			LoadKeyData("E3Hud_Hub", "ShowPlayerInfo", ParsedData, ref E3Hud_Hub_ShowPlayerInfo);
+			LoadKeyData("E3Hud_Hub", "ShowTargetInfo", ParsedData, ref E3Hud_Hub_ShowTargetInfo);
 
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "Alpha", ParsedData, ref E3Hud_Hub_PlayerInfo_Alpha);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "Detached", ParsedData, ref E3Hud_Hub_PlayerInfo_Detached);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "Locked", ParsedData, ref E3Hud_Hub_PlayerInfo_Locked);
 
+			LoadKeyData("E3Hud_Hub_TargetInfo", "Alpha", ParsedData, ref E3Hud_Hub_TargetInfo_Alpha);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "Detached", ParsedData, ref E3Hud_Hub_TargetInfo_Detached);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "Locked", ParsedData, ref E3Hud_Hub_TargetInfo_Locked);
 
 			LoadKeyData("E3Hud_Hub_Buff", "Alpha", ParsedData, ref E3Hud_Hub_Buff_Alpha);
 			LoadKeyData("E3Hud_Hub_Buff", "Detached", ParsedData, ref E3Hud_Hub_Buff_Detached);
 			LoadKeyData("E3Hud_Hub_Buff", "IconSize", ParsedData, ref E3Hud_Hub_Buff_IconSize);
 			LoadKeyData("E3Hud_Hub_Buff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Buff_FadeTimeInMS);
 			LoadKeyData("E3Hud_Hub_Buff", "Locked", ParsedData, ref E3Hud_Hub_Buff_Locked);
+			LoadKeyData("E3Hud_Hub_Buff", "ListView", ParsedData, ref E3Hud_Hub_Buff_ListView);
 
 			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData, ref E3Hud_Hub_Song_Alpha);
 			LoadKeyData("E3Hud_Hub_Song", "Detached", ParsedData, ref E3Hud_Hub_Song_Detached);
 			LoadKeyData("E3Hud_Hub_Song", "IconSize", ParsedData, ref E3Hud_Hub_Song_IconSize);
 			LoadKeyData("E3Hud_Hub_Song", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Song_FadeTimeInMS);
 			LoadKeyData("E3Hud_Hub_Song", "Locked", ParsedData, ref E3Hud_Hub_Song_Locked);
+			LoadKeyData("E3Hud_Hub_Song", "ListView", ParsedData, ref E3Hud_Hub_Song_ListView);
 
 
 			LoadKeyData("E3Hud_Hub_HotButtons", "Alpha", ParsedData, ref E3Hud_Hub_HotButtons_Alpha);
@@ -831,6 +871,7 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Debuff", "IconSize", ParsedData, ref E3Hud_Hub_Debuff_IconSize);
 			LoadKeyData("E3Hud_Hub_Debuff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Debuff_FadeTimeInMS);
 			LoadKeyData("E3Hud_Hub_Debuff", "Locked", ParsedData, ref E3Hud_Hub_Debuff_Locked);
+			LoadKeyData("E3Hud_Hub_Debuff", "ListView", ParsedData, ref E3Hud_Hub_Debuff_ListView);
 
 
 
@@ -1243,6 +1284,23 @@ namespace E3Core.Settings
 			section.Keys.AddKey("RGBA_HealthBar", "1,0,0,0.4");
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("DisplayHPBar", "False");
+			section.Keys.AddKey("LeftClickAction", "Target");
+			section.Keys.AddKey("ShowTickTimer", "True");
+			section.Keys.AddKey("ShowHotButtons", "True");
+			section.Keys.AddKey("ShowPlayerInfo", "True");
+			section.Keys.AddKey("ShowTargetInfo", "True");
+
+			newFile.Sections.AddSection("E3Hud_Hub_PlayerInfo");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_PlayerInfo");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("Locked", "False");
+
+			newFile.Sections.AddSection("E3Hud_Hub_TargetInfo");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_TargetInfo");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("Locked", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Buff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Buff");
@@ -1251,6 +1309,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ListView", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Song");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Song");
@@ -1259,6 +1318,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ListView", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Debuff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Debuff");
@@ -1267,6 +1327,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ListView", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_HotButtons_Dynamic");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons_Dynamic");
