@@ -17,11 +17,12 @@ namespace E3Core.Processors
     {
         private static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
-	
-        /// <summary>
-        /// Initializes this instance.
-        /// </summary>
-        [SubSystemInit]
+		[ExposedData("Alert", "LastDotSeen")]
+		public static Int64 LastTickSeen = 0;
+		/// <summary>
+		/// Initializes this instance.
+		/// </summary>
+		[SubSystemInit]
         public static void Alerts_Init()
         {
             RegisterEvents();
@@ -183,10 +184,35 @@ namespace E3Core.Processors
 
             });
 
-            #endregion
+			#endregion
+		
+			pattern = $@"(.+) has taken ([0-9]+) damage from your (.+)\.";
+			EventProcessor.RegisterEvent("DotTick", pattern, (x) => {
 
-			
-            pattern = $@"(.+) YOU for ([0-9]+) points of damage. \(Rampage\)";
+				if((Core.StopWatch.ElapsedMilliseconds - LastTickSeen)>1000)
+				{
+					LastTickSeen = Core.StopWatch.ElapsedMilliseconds;
+				}
+			});
+
+			pattern = $@"(.+) has taken ([0-9]+) damage from (.+) by (.+)\.";
+			EventProcessor.RegisterEvent("DotTickOthers", pattern, (x) => {
+
+				if ((Core.StopWatch.ElapsedMilliseconds - LastTickSeen) > 1000)
+				{
+					LastTickSeen = Core.StopWatch.ElapsedMilliseconds;
+				}
+			});
+			pattern = $@"Your .+ Spell has worn off";
+			EventProcessor.RegisterEvent("MyBuffWornOff", pattern, (x) => {
+
+				if ((Core.StopWatch.ElapsedMilliseconds - LastTickSeen) > 1000)
+				{
+					LastTickSeen = Core.StopWatch.ElapsedMilliseconds;
+				}
+			});
+
+			pattern = $@"(.+) YOU for ([0-9]+) points of damage. \(Rampage\)";
             EventProcessor.RegisterEvent("RampageDamage", pattern, (x) => {
 				
 				if (E3.CharacterSettings.Alerts_RampageMessages)

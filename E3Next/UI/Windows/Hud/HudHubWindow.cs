@@ -656,7 +656,7 @@ namespace E3Core.UI.Windows.Hud
 			Int32 numberOfBuffsPerRow = (int)widthAvail / state.IconSize;
 
 			if (numberOfBuffsPerRow < 1) numberOfBuffsPerRow = 1;
-			imgui_Text("Songs:");
+			imgui_Text($"Songs:({state.SongInfo.Count})");
 
 			if (!state.Detached)
 			{
@@ -1217,7 +1217,7 @@ namespace E3Core.UI.Windows.Hud
 				imgui_Separator();
 			}
 
-			imgui_Text("Buffs:");
+			imgui_Text($"Buffs: ({buffState.BuffInfo.Count + debuffState.DebuffInfo.Count})");
 			if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
 			{
 				imgui_SameLine(0);
@@ -1435,6 +1435,11 @@ namespace E3Core.UI.Windows.Hud
 		{
 
 			var state = _state.GetState<State_HubWindow>();
+
+			float widthOfWindow = imgui_GetContentRegionAvailX();
+			Int64 metronome = Core.StopWatch.ElapsedMilliseconds - Alerts.LastTickSeen;
+
+			imgui_ProgressBar(((float)(metronome%6000)/(float)6000), 20, (int)widthOfWindow, String.Empty);
 
 			using (var table = ImGUITable.Aquire())
 			{
