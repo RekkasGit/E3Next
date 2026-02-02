@@ -599,17 +599,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addIfs = imgui_MenuItem("Add New Ifs");
-						imgui_PopStyleColor(1);
-
-						if (addIfs)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "Ifs";
-							state.SelectedSection = "Ifs";
-							state.SelectedValueIndex = -1;
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addIfs = imgui_MenuItem("Add New Ifs");
+							if (addIfs)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "Ifs";
+								state.SelectedSection = "Ifs";
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -620,18 +621,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New Command Set");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "CommandSets";
-							state.SelectedSection = "CommandSets";
-							state.SelectedValueIndex = -1;
-
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New Command Set");
+					
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "CommandSets";
+								state.SelectedSection = "CommandSets";
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -642,18 +644,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New Burn");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "Burn";
-							state.SelectedSection = "Burn";
-							state.SelectedValueIndex = -1;
-
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New Burn");
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "Burn";
+								state.SelectedSection = "Burn";
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -664,18 +666,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New Event");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "Events";
-							state.SelectedSection = "Events";
-							state.SelectedValueIndex = -1;
-
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New Event");
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "Events";
+								state.SelectedSection = "Events";
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -686,18 +688,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New EventLoop");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "EventLoop";
-							state.SelectedSection = "EventLoop";
-							state.SelectedValueIndex = -1;
-
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New EventLoop");
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "EventLoop";
+								state.SelectedSection = "EventLoop";
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -708,19 +710,22 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New EventLoopTiming");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "EventLoopTiming";
-							state.SelectedSection = "EventLoopTiming";
-							state.SelectedValueIndex = -1;
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New EventLoopTiming");
+						
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "EventLoopTiming";
+								state.SelectedSection = "EventLoopTiming";
+								state.SelectedValueIndex = -1;
 
+							}
 						}
+						
 					}
 				}
 			}
@@ -730,18 +735,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New EventRegMatche");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "EventRegMatches";
-							state.SelectedSection = "EventRegMatches";
-							state.SelectedValueIndex = -1;
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New EventRegMatche");
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "EventRegMatches";
+								state.SelectedSection = "EventRegMatches";
+								state.SelectedValueIndex = -1;
 
+							}
 						}
 					}
 				}
@@ -753,18 +759,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addKey = imgui_MenuItem("Add New Key Value");
-						imgui_PopStyleColor(1);
-
-						if (addKey)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = sectionName;
-							state.SelectedSection = sectionName;
-							state.SelectedValueIndex = -1;
-
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addKey = imgui_MenuItem("Add New Key Value");
+							if (addKey)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = sectionName;
+								state.SelectedSection = sectionName;
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -1801,36 +1807,37 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Value Actions");
 
 						// Delete Value button (red)
-						imgui_PushStyleColor((int)ImGuiCol.Button, 0.85f, 0.30f, 0.30f, 1.0f);
-						imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.95f, 0.40f, 0.40f, 1.0f);
-						imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.75f, 0.20f, 0.20f, 1.0f);
-						if (imgui_Button("Delete Value"))
+						using (var style = PushStyle.Aquire())
 						{
-							// Delete the currently selected value
-							var pdAct = data.GetActiveCharacterIniData();
-							var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
-							var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
-							if (key != null)
+							style.PushStyleColor((int)ImGuiCol.Button, 0.85f, 0.30f, 0.30f, 1.0f);
+							style.PushStyleColor((int)ImGuiCol.ButtonHovered, 0.95f, 0.40f, 0.40f, 1.0f);
+							style.PushStyleColor((int)ImGuiCol.ButtonActive, 0.75f, 0.20f, 0.20f, 1.0f);
+							if (imgui_Button("Delete Value"))
 							{
-								var vals = GetValues(key);
-								if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < vals.Count)
+								// Delete the currently selected value
+								var pdAct = data.GetActiveCharacterIniData();
+								var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+								var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
+								if (key != null)
 								{
-									if (vals.Count == 1)
+									var vals = GetValues(key);
+									if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < vals.Count)
 									{
-										vals[0] = String.Empty;
+										if (vals.Count == 1)
+										{
+											vals[0] = String.Empty;
+										}
+										else
+										{
+											vals.RemoveAt(mainWindowState.SelectedValueIndex);
+										}
+										mainWindowState.SelectedValueIndex = -1; // Clear selection after delete
+										data.RefreshEditableSpellState(force: true);
 									}
-									else
-									{
-										vals.RemoveAt(mainWindowState.SelectedValueIndex);
-									}
-									mainWindowState.SelectedValueIndex = -1; // Clear selection after delete
-									data.RefreshEditableSpellState(force: true);
-
-
 								}
 							}
 						}
-						imgui_PopStyleColor(3);
+							
 						imgui_SameLine();
 
 						// Show/Hide Editor button with pulsing highlight
@@ -1838,28 +1845,30 @@ namespace E3Core.UI.Windows.CharacterSettings
 						float highlightR = 0.95f + (pulse * 0.05f);
 						float highlightG = 0.75f + (pulse * 0.25f);
 						float highlightB = 0.35f + (pulse * 0.15f);
-						imgui_PushStyleColor((int)ImGuiCol.Button, highlightR, highlightG, highlightB, 1.0f);
-						imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 1.0f, 0.85f, 0.45f, 1.0f);
-						imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.85f, 0.65f, 0.25f, 1.0f);
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.1f, 0.1f, 0.1f, 1.0f); // Dark text for readability
-
-						string btnLabel = mainWindowState.Show_ShowIntegratedEditor ? "Hide Editor" : "Show Editor";
-						if (imgui_Button(btnLabel))
+						using (var style = PushStyle.Aquire())
 						{
-							mainWindowState.Show_ShowIntegratedEditor = !mainWindowState.Show_ShowIntegratedEditor;
-							if (mainWindowState.Show_ShowIntegratedEditor)
+							style.PushStyleColor((int)ImGuiCol.Button, highlightR, highlightG, highlightB, 1.0f);
+							style.PushStyleColor((int)ImGuiCol.ButtonHovered, 1.0f, 0.85f, 0.45f, 1.0f);
+							style.PushStyleColor((int)ImGuiCol.ButtonActive, 0.85f, 0.65f, 0.25f, 1.0f);
+							style.PushStyleColor((int)ImGuiCol.Text, 0.1f, 0.1f, 0.1f, 1.0f); // Dark text for readability
+
+							string btnLabel = mainWindowState.Show_ShowIntegratedEditor ? "Hide Editor" : "Show Editor";
+							if (imgui_Button(btnLabel))
 							{
-								// Initialize manual edit buffer when opening
-								var keyData = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
-								var valuesList = GetValues(keyData);
-								if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < valuesList.Count)
+								mainWindowState.Show_ShowIntegratedEditor = !mainWindowState.Show_ShowIntegratedEditor;
+								if (mainWindowState.Show_ShowIntegratedEditor)
 								{
-									_cfgManualEditBuffer = valuesList[mainWindowState.SelectedValueIndex] ?? string.Empty;
+									// Initialize manual edit buffer when opening
+									var keyData = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
+									var valuesList = GetValues(keyData);
+									if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < valuesList.Count)
+									{
+										_cfgManualEditBuffer = valuesList[mainWindowState.SelectedValueIndex] ?? string.Empty;
+									}
 								}
 							}
 						}
-
-						imgui_PopStyleColor(4);
+							
 						string editorHint = mainWindowState.Show_ShowIntegratedEditor ? "Editor panel is open below." : "Click to show the advanced editor.";
 						imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, editorHint);
 						imgui_Separator();

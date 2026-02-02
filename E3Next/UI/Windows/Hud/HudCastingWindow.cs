@@ -210,9 +210,12 @@ namespace E3Core.UI.Windows.Hud
 					
 
 					imgui_Separator();
-					imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-					imgui_Text("Font");
-					imgui_PopStyleColor(1);
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Font");
+					}
+						
 
 					using (var combo = ImGUICombo.Aquire())
 					{
@@ -231,9 +234,13 @@ namespace E3Core.UI.Windows.Hud
 					}
 					imgui_Separator();
 					imgui_Separator();
-					imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-					imgui_Text("Alpha");
-					imgui_PopStyleColor(1);
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Alpha");
+						
+					}
+						
 
 					string keyForInput = $"##CastingHud_alpha_set";
 					imgui_SetNextItemWidth(100);
@@ -257,9 +264,12 @@ namespace E3Core.UI.Windows.Hud
 
 
 					imgui_Separator();
-					imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-					imgui_Text("Name Color:");
-					imgui_PopStyleColor(1);
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Name Color:");
+					}
+						
 					imgui_Separator();
 					if (imgui_ColorPicker4_Float("##CastingHudNameColorPicker", _nameColors[0], _nameColors[1], _nameColors[2], _nameColors[3], 0))
 					{

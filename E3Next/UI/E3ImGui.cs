@@ -2283,9 +2283,9 @@ namespace MonoCore
 		public extern static float[] imgui_CalcTextSize(string text);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_PushStyleColor(int which, float r, float g, float b, float a);
+		private extern static void imgui_PushStyleColor(int which, float r, float g, float b, float a);
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_PopStyleColor(int count);
+		private extern static void imgui_PopStyleColor(int count);
 		// Style vars (rounding, padding, etc.)
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_PushStyleVarFloat(int which, float value);
@@ -3129,10 +3129,11 @@ namespace MonoCore
 		}
 		public class PushStyle : IDisposable
 		{
-
+			Int32 styleColorsPushed = 0;
 			public void PushStyleColor(int type, float r, float g, float b, float a)
 			{
 				imgui_PushStyleColor(type, r, g, b, a);
+				styleColorsPushed++;
 			}
 			#region objectPoolingStuff
 			//private constructor, needs to be created so that you are forced to use the pool.
@@ -3152,7 +3153,13 @@ namespace MonoCore
 			}
 			public void Dispose()
 			{
-				imgui_PopStyleColor(1);
+				if(styleColorsPushed>0)
+				{
+					imgui_PopStyleColor(styleColorsPushed);
+				}
+
+				styleColorsPushed = 0;
+				
 				StaticObjectPool.Push(this);
 			}
 			~PushStyle()
@@ -3195,10 +3202,11 @@ namespace MonoCore
 			}
 			public void Dispose()
 			{
-				if(fontChanged)
+				if (fontChanged)
 				{
 					imgui_PopFont();
 				}
+				fontChanged = false;
 				StaticObjectPool.Push(this);
 			}
 			~IMGUI_Fonts()
@@ -3211,6 +3219,7 @@ namespace MonoCore
 
 			#endregion
 		}
+		
 
 	}
 }

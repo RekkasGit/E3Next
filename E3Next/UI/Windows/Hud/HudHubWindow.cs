@@ -738,20 +738,26 @@ namespace E3Core.UI.Windows.Hud
 				{
 					if (popup.BeginPopupContextItem($"##PlayerInfoSettingsPopup", 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						if (state.Locked)
+						using (var style = PushStyle.Aquire())
 						{
-							if (imgui_MenuItem("UnLock")) state.Locked = false;
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							if (state.Locked)
+							{
+								if (imgui_MenuItem("UnLock")) state.Locked = false;
+							}
+							else
+							{
+								if (imgui_MenuItem("Lock")) state.Locked = true;
+							}
 						}
-						else
-						{
-							if (imgui_MenuItem("Lock")) state.Locked = true;
-						}
-						imgui_PopStyleColor(1);
+							
 						imgui_Separator();
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						imgui_Text("Alpha");
-						imgui_PopStyleColor(1);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Alpha");
+						}
+							
 						string keyForInput = "##PlayerInfoWindow_alpha_set";
 						imgui_SetNextItemWidth(100);
 						if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
@@ -835,20 +841,27 @@ namespace E3Core.UI.Windows.Hud
 					{
 						if (popup.BeginPopupContextItem($"##TargetInfoSettingsPopup", 1))
 						{
-							imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							if (tiState.Locked)
+							using (var style = PushStyle.Aquire())
 							{
-								if (imgui_MenuItem("UnLock")) tiState.Locked = false;
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								if (tiState.Locked)
+								{
+									if (imgui_MenuItem("UnLock")) tiState.Locked = false;
+								}
+								else
+								{
+									if (imgui_MenuItem("Lock")) tiState.Locked = true;
+								}
+				
 							}
-							else
-							{
-								if (imgui_MenuItem("Lock")) tiState.Locked = true;
-							}
-							imgui_PopStyleColor(1);
+								
 							imgui_Separator();
-							imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							imgui_Text("Alpha");
-							imgui_PopStyleColor(1);
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Alpha");
+							}
+								
 							string keyForInput = "##TargetInfoWindow_alpha_set";
 							imgui_SetNextItemWidth(100);
 							if (imgui_InputInt(keyForInput, (int)(tiState.WindowAlpha * 255), 1, 20))
@@ -869,10 +882,13 @@ namespace E3Core.UI.Windows.Hud
 				}
 
 				// Empty HP bar placeholder
-				imgui_PushStyleColor((int)ImGuiCol.PlotHistogram, 0.3f, 0.3f, 0.3f, 0.5f);
-				imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-				imgui_ProgressBar(0f, 18, (int)widthAvail, "--%");
-				imgui_PopStyleColor(2);
+				using (var style = PushStyle.Aquire())
+				{
+					style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.3f, 0.3f, 0.3f, 0.5f);
+					style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
+					imgui_ProgressBar(0f, 18, (int)widthAvail, "--%");
+				}
+			
 
 				// Reserve space for level/class + distance line and buff row to prevent layout shifting
 				// Use invisible text to create spacing
@@ -914,20 +930,27 @@ namespace E3Core.UI.Windows.Hud
 				{
 					if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						if (tiState.Locked)
+						using (var style = PushStyle.Aquire())
 						{
-							if (imgui_MenuItem("UnLock")) tiState.Locked = false;
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							if (tiState.Locked)
+							{
+								if (imgui_MenuItem("UnLock")) tiState.Locked = false;
+							}
+							else
+							{
+								if (imgui_MenuItem("Lock")) tiState.Locked = true;
+							}
+				
 						}
-						else
-						{
-							if (imgui_MenuItem("Lock")) tiState.Locked = true;
-						}
-						imgui_PopStyleColor(1);
+							
 						imgui_Separator();
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						imgui_Text("Alpha");
-						imgui_PopStyleColor(1);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Alpha");
+						}
+							
 						string keyForInput = "##TargetInfoWindow_alpha_set";
 						imgui_SetNextItemWidth(100);
 						if (imgui_InputInt(keyForInput, (int)(tiState.WindowAlpha * 255), 1, 20))
@@ -948,11 +971,14 @@ namespace E3Core.UI.Windows.Hud
 			}
 
 			// Target HP% progress bar
-			imgui_PushStyleColor((int)ImGuiCol.PlotHistogram, 0.8f, 0.15f, 0.15f, 0.9f);
-			imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-			imgui_ProgressBar((float)state.TargetHP / 100f, 18, (int)widthAvail, $"{state.TargetHP}%");
-			imgui_PopStyleColor(2);
 
+
+			using(var style = PushStyle.Aquire())
+			{
+				style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.8f, 0.15f, 0.15f, 0.9f);
+				style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
+				imgui_ProgressBar((float)state.TargetHP / 100f, 18, (int)widthAvail, $"{state.TargetHP}%");
+			}
 			// Level & Class (left) + Distance (right)
 			string leftText = state.DisplayLevelAndClassString;
 			imgui_Text(leftText);
@@ -1227,27 +1253,32 @@ namespace E3Core.UI.Windows.Hud
 				{
 					if (popup.BeginPopupContextItem($"##SongWindowSettingsPopup", 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						if (state.Locked)
+						using (var style = PushStyle.Aquire())
 						{
-							if (imgui_MenuItem("UnLock"))
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							if (state.Locked)
 							{
-								state.Locked = false;
+								if (imgui_MenuItem("UnLock"))
+								{
+									state.Locked = false;
+								}
+							}
+							else
+							{
+								if (imgui_MenuItem("Lock"))
+								{
+									state.Locked = true;
+								}
 							}
 						}
-						else
-						{
-							if (imgui_MenuItem("Lock"))
-							{
-								state.Locked = true;
-							}
-						}
-						imgui_PopStyleColor(1);
-
+				
 						imgui_Separator();
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						imgui_Text("Alpha");
-						imgui_PopStyleColor(1);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Alpha");
+						}
+							
 
 						string keyForInput = $"##songWindow_alpha_set";
 						imgui_SetNextItemWidth(100);
@@ -1270,9 +1301,12 @@ namespace E3Core.UI.Windows.Hud
 						}
 
 						imgui_Separator();
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						imgui_Text("View Mode");
-						imgui_PopStyleColor(1);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("View Mode");
+						}
+							
 						if (imgui_Checkbox("##song_listview", state.ListView))
 						{
 							state.ListView = imgui_Checkbox_Get("##song_listview");
@@ -1340,33 +1374,34 @@ namespace E3Core.UI.Windows.Hud
 							{
 								if (popup.BeginPopupContextItem($"SongTableIconContext-{counter}", 1))
 								{
-									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-									imgui_Text(stats.Name);
-									imgui_Separator();
-									if (imgui_MenuItem("Drop buff"))
+									using (var style = PushStyle.Aquire())
 									{
-										string command = $"/removebuff {stats.Name}";
-										if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+										imgui_Text(stats.Name);
+										imgui_Separator();
+										if (imgui_MenuItem("Drop buff"))
 										{
-											E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+											string command = $"/removebuff {stats.Name}";
+											if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+											{
+												E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+											}
+											else
+											{
+												E3ImGUI.MQCommandQueue.Enqueue(command);
+											}
 										}
-										else
+										if (imgui_MenuItem("Drop buff from group"))
 										{
-											E3ImGUI.MQCommandQueue.Enqueue(command);
+											E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+											E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
+										}
+										if (imgui_MenuItem("Drop buff from everyone"))
+										{
+											E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+											E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
 										}
 									}
-									if (imgui_MenuItem("Drop buff from group"))
-									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
-										E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
-									}
-									if (imgui_MenuItem("Drop buff from everyone"))
-									{
-										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
-										E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
-									}
-									imgui_PopStyleColor(1);
-
 								}
 							}
 							if (stats.SpellType == 0)
@@ -1435,26 +1470,34 @@ namespace E3Core.UI.Windows.Hud
 				{
 					if (popup.BeginPopupContextItem($"##Hotbutton_WindowSettingsPopup", 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						if (state.Locked)
+						using (var style = PushStyle.Aquire())
 						{
-							if (imgui_MenuItem("UnLock"))
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							if (state.Locked)
 							{
-								state.Locked = false;
+								if (imgui_MenuItem("UnLock"))
+								{
+									state.Locked = false;
+								}
 							}
-						}
-						else
-						{
-							if (imgui_MenuItem("Lock"))
+							else
 							{
-								state.Locked = true;
+								if (imgui_MenuItem("Lock"))
+								{
+									state.Locked = true;
+								}
 							}
+			
 						}
-						imgui_PopStyleColor(1);
+					
+							
 						imgui_Separator();
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						imgui_Text("Font");
-						imgui_PopStyleColor(1);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Font");
+						}
+							
 
 						using (var combo = ImGUICombo.Aquire())
 						{
@@ -1472,10 +1515,12 @@ namespace E3Core.UI.Windows.Hud
 							}
 						}
 						imgui_Separator();
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						}
+							
 						imgui_Text("Alpha");
-						imgui_PopStyleColor(1);
-
 						string keyForInput = "##Hotbutton_Window_alpha_set";
 						imgui_SetNextItemWidth(100);
 						if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
@@ -1494,10 +1539,12 @@ namespace E3Core.UI.Windows.Hud
 							}
 							state.WindowAlpha = ((float)updated) / 255f;
 						}
-
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						imgui_Text("Button Width");
-						imgui_PopStyleColor(1);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Button Width");
+						}
+							
 
 						keyForInput = "##Hotbutton_Window_buttonX_set";
 						imgui_SetNextItemWidth(100);
@@ -1517,10 +1564,13 @@ namespace E3Core.UI.Windows.Hud
 							}
 							state.ButtonSizeX = updated;
 						}
-
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						imgui_Text("Button Height");
-						imgui_PopStyleColor(1);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Button Height");
+							
+						}
+						
 
 						keyForInput = "##Hotbutton_Window_buttonY_set";
 						imgui_SetNextItemWidth(100);
@@ -1591,37 +1641,46 @@ namespace E3Core.UI.Windows.Hud
 						{
 							if (popup.BeginPopupContextItem($"##Hotbutton_detach-{counter}", 1))
 							{
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								if (imgui_MenuItem("Pop Out"))
+								using (var style = PushStyle.Aquire())
 								{
-									state.Detached = true;
-									imgui_Begin_OpenFlagSet(state.WindowName, true);
-								}
-								imgui_Separator();
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Font");
-								imgui_PopStyleColor(1);
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 
-								using (var combo = ImGUICombo.Aquire())
-								{
-									if (combo.BeginCombo("##Select Font for GroupTable", state.SelectedFont))
+									if (imgui_MenuItem("Pop Out"))
 									{
-										foreach (var pair in E3ImGUI.FontList)
+										state.Detached = true;
+										imgui_Begin_OpenFlagSet(state.WindowName, true);
+									}
+									imgui_Separator();
+									using(var style2 = PushStyle.Aquire())
+									{
+										style2.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+										imgui_Text("Font");
+									}
+									using (var combo = ImGUICombo.Aquire())
+									{
+										if (combo.BeginCombo("##Select Font for GroupTable", state.SelectedFont))
 										{
-											bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
-
-											if (imgui_Selectable($"{pair.Key}", sel))
+											foreach (var pair in E3ImGUI.FontList)
 											{
-												state.SelectedFont = pair.Key;
+												bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+												if (imgui_Selectable($"{pair.Key}", sel))
+												{
+													state.SelectedFont = pair.Key;
+												}
 											}
 										}
 									}
 								}
-								imgui_PopStyleColor(1);
+
 								imgui_Separator();
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Button Width");
-								imgui_PopStyleColor(1);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Button Width");
+
+								}
+
 
 								string keyForInput = "##Hotbutton_Window_buttonX_set";
 								imgui_SetNextItemWidth(100);
@@ -1643,9 +1702,13 @@ namespace E3Core.UI.Windows.Hud
 									imgui_InputInt_Clear(keyForInput);
 								}
 								imgui_Separator();
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Button Height");
-								imgui_PopStyleColor(1);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Button Height");
+						
+								}
+									
 
 								keyForInput = "##Hotbutton_Window_buttonY_set";
 								imgui_SetNextItemWidth(100);
@@ -1726,15 +1789,15 @@ namespace E3Core.UI.Windows.Hud
 						bool expiringSoon = totalSeconds > 0 && totalSeconds < 300;
 
 
-						
-						imgui_PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressColor[0], BuffListView_ProgressColor[1], BuffListView_ProgressColor[2], BuffListView_ProgressColor[3]);
-						imgui_PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBGColor[0], BuffListView_ProgressBGColor[1], BuffListView_ProgressBGColor[2], buffState.WindowAlpha);
-						
-					
-						float widthOfColumn = imgui_GetContentRegionAvailX();
-						imgui_ProgressBar(((float)stats.Duration_Value / (float)stats.MaxDuration_Value), 20, (int)widthOfColumn, "");
-					
-						imgui_PopStyleColor(2);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressColor[0], BuffListView_ProgressColor[1], BuffListView_ProgressColor[2], BuffListView_ProgressColor[3]);
+							style.PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBGColor[0], BuffListView_ProgressBGColor[1], BuffListView_ProgressBGColor[2], buffState.WindowAlpha);
+
+							float widthOfColumn = imgui_GetContentRegionAvailX();
+							imgui_ProgressBar(((float)stats.Duration_Value / (float)stats.MaxDuration_Value), 20, (int)widthOfColumn, "");
+						}
+							
 
 						float[] barPos = imgui_GetItemRectMin();
 						float[] barSize = imgui_GetItemRectSize();
@@ -1746,27 +1809,52 @@ namespace E3Core.UI.Windows.Hud
 
 						float textPosY = barPos[1] + (barSize[1] - textSize[1]) * 0.5f;
 						imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(BuffListView_NameColor[0], BuffListView_NameColor[1], BuffListView_NameColor[2], BuffListView_NameColor[3]), stats.DisplayName);
-						
-						if (expiringSoon) imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-					
-						// Draw small inline icon + name (MQ2Switcher style)
-						imgui_SameLine(0, 4);
-						bool selected = false;
-						if (imgui_Selectable_WithFlags($"##RemoveSpell_{stats.SpellID}", selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns))
+
+						if (expiringSoon)
 						{
-							// Left-click: remove buff
-							string command = $"/removebuff {stats.Name}";
-							if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+							using (var style = PushStyle.Aquire())
 							{
-								E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								// Draw small inline icon + name (MQ2Switcher style)
+								imgui_SameLine(0, 4);
+								bool selected = false;
+								if (imgui_Selectable_WithFlags($"##RemoveSpell_{stats.SpellID}", selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns))
+								{
+									// Left-click: remove buff
+									string command = $"/removebuff {stats.Name}";
+									if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+									{
+										E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+									}
+									else
+									{
+										E3ImGUI.MQCommandQueue.Enqueue(command);
+									}
+								}
+
+
 							}
-							else
+								
+						}
+						else
+						{
+							imgui_SameLine(0, 4);
+							bool selected = false;
+							if (imgui_Selectable_WithFlags($"##RemoveSpell_{stats.SpellID}", selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns))
 							{
-								E3ImGUI.MQCommandQueue.Enqueue(command);
+								// Left-click: remove buff
+								string command = $"/removebuff {stats.Name}";
+								if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+								{
+									E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+								}
+								else
+								{
+									E3ImGUI.MQCommandQueue.Enqueue(command);
+								}
 							}
 						}
 
-						if (expiringSoon) imgui_PopStyleColor(1);
 
 						// Hover tooltip with duration
 						if (imgui_IsItemHovered())
@@ -1798,32 +1886,35 @@ namespace E3Core.UI.Windows.Hud
 						{
 							if (popup.BeginPopupContextItem($"{tableName}_Context_{stats.SpellID}", 1))
 							{
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text(stats.Name);
-								imgui_Separator();
-								if (imgui_MenuItem("Drop buff"))
+								using (var style = PushStyle.Aquire())
 								{
-									string command = $"/removebuff {stats.Name}";
-									if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text(stats.Name);
+									imgui_Separator();
+									if (imgui_MenuItem("Drop buff"))
 									{
-										E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+										string command = $"/removebuff {stats.Name}";
+										if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+										{
+											E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+										}
+										else
+										{
+											E3ImGUI.MQCommandQueue.Enqueue(command);
+										}
 									}
-									else
+									if (imgui_MenuItem("Drop buff from group"))
 									{
-										E3ImGUI.MQCommandQueue.Enqueue(command);
+										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+										E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
+									}
+									if (imgui_MenuItem("Drop buff from everyone"))
+									{
+										E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+										E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
 									}
 								}
-								if (imgui_MenuItem("Drop buff from group"))
-								{
-									E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
-									E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
-								}
-								if (imgui_MenuItem("Drop buff from everyone"))
-								{
-									E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
-									E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
-								}
-								imgui_PopStyleColor(1);
+									
 								imgui_Separator();
 								imgui_Text("Name color picker");
 								imgui_SetNextItemWidth(150.0f);
@@ -1990,26 +2081,32 @@ namespace E3Core.UI.Windows.Hud
 				{
 					if (popup.BeginPopupContextItem($"##BuffgWindowSettingsPopup", 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						if (buffState.Locked)
+						using (var style = PushStyle.Aquire())
 						{
-							if (imgui_MenuItem("UnLock"))
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							if (buffState.Locked)
 							{
-								buffState.Locked = false;
+								if (imgui_MenuItem("UnLock"))
+								{
+									buffState.Locked = false;
+								}
+							}
+							else
+							{
+								if (imgui_MenuItem("Lock"))
+								{
+									buffState.Locked = true;
+								}
 							}
 						}
-						else
-						{
-							if (imgui_MenuItem("Lock"))
-							{
-								buffState.Locked = true;
-							}
-						}
-						imgui_PopStyleColor(1);
+							
 						imgui_Separator();
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						imgui_Text("Alpha");
-						imgui_PopStyleColor(1);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Alpha");
+		
+						}
 
 						string keyForInput = "##BuffWindow_alpha_set";
 						imgui_SetNextItemWidth(100);
@@ -2031,15 +2128,19 @@ namespace E3Core.UI.Windows.Hud
 						}
 
 						imgui_Separator();
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						imgui_Text("View Mode");
-						imgui_PopStyleColor(1);
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("View Mode");
+						}
+							
 						if (imgui_Checkbox("##buff_listview", buffState.ListView))
 						{
 							buffState.ListView = imgui_Checkbox_Get("##buff_listview");
 						}
 						imgui_SameLine(0);
 						imgui_Text("List View");
+						
 
 					}
 				}
@@ -2103,37 +2204,39 @@ namespace E3Core.UI.Windows.Hud
 								{
 									if (popup.BeginPopupContextItem($"BuffTableIconContext-{counter}", 1))
 									{
-										imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-										imgui_Text(stats.Name);
-										imgui_Separator();
-										if (imgui_MenuItem("Drop buff"))
+										using (var style = PushStyle.Aquire())
 										{
-											string command = $"/removebuff {stats.Name}";
-											if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+											style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+											imgui_Text(stats.Name);
+											imgui_Separator();
+											if (imgui_MenuItem("Drop buff"))
 											{
-												E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+												string command = $"/removebuff {stats.Name}";
+												if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+												{
+													E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+												}
+												else
+												{
+													E3ImGUI.MQCommandQueue.Enqueue(command);
+												}
 											}
-											else
+											if (imgui_MenuItem("Drop buff from group"))
 											{
+
+												string command = $"/removebuff {stats.Name}";
+
 												E3ImGUI.MQCommandQueue.Enqueue(command);
+												E3.Bots.BroadcastCommandToGroup(command);
+											}
+											if (imgui_MenuItem("Drop buff from everyone"))
+											{
+												string command = $"/removebuff {stats.Name}";
+												E3ImGUI.MQCommandQueue.Enqueue(command);
+												E3.Bots.BroadcastCommand(command);
 											}
 										}
-										if (imgui_MenuItem("Drop buff from group"))
-										{
-
-											string command = $"/removebuff {stats.Name}";
-
-											E3ImGUI.MQCommandQueue.Enqueue(command);
-											E3.Bots.BroadcastCommandToGroup(command);
-										}
-										if (imgui_MenuItem("Drop buff from everyone"))
-										{
-											string command = $"/removebuff {stats.Name}";
-											E3ImGUI.MQCommandQueue.Enqueue(command);
-											E3.Bots.BroadcastCommand(command);
-										}
-										imgui_PopStyleColor(1);
-
+		
 									}
 								}
 								if (stats.SpellType == 0)
@@ -2247,26 +2350,34 @@ namespace E3Core.UI.Windows.Hud
 						{
 							if (popup.BeginPopupContextItem($"##GroupTableHeaderContext-{i}", 1))
 							{
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								if (state.Locked)
+								using (var style = PushStyle.Aquire())
 								{
-									if (imgui_MenuItem("UnLock"))
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									if (state.Locked)
 									{
-										state.Locked = false;
+										if (imgui_MenuItem("UnLock"))
+										{
+											state.Locked = false;
+										}
 									}
-								}
-								else
-								{
-									if (imgui_MenuItem("Lock"))
+									else
 									{
-										state.Locked = true;
+										if (imgui_MenuItem("Lock"))
+										{
+											state.Locked = true;
+										}
 									}
+									
 								}
-								imgui_PopStyleColor(1);
+									
 								imgui_Separator();
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Show Columns");
-								imgui_PopStyleColor(1);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Show Columns");
+						
+								}
+									
 								imgui_Separator();
 
 								if (imgui_Checkbox("##col_hp", state.ShowColumnHP))
@@ -2308,9 +2419,12 @@ namespace E3Core.UI.Windows.Hud
 								imgui_Text("AggroXTar Min");
 
 								imgui_Separator();
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Show/Hide");
-								imgui_PopStyleColor(1);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Show/Hide");
+								}
+									
 								imgui_Separator();
 
 								if (imgui_Checkbox("##show_tick_timer", state.ShowTickTimer))
@@ -2334,9 +2448,12 @@ namespace E3Core.UI.Windows.Hud
 								imgui_Text("Target Info");
 
 								imgui_Separator();
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Font");
-								imgui_PopStyleColor(1);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Font");
+								}
+									
 
 								using (var combo = ImGUICombo.Aquire())
 								{
@@ -2354,9 +2471,12 @@ namespace E3Core.UI.Windows.Hud
 									}
 								}
 								imgui_Separator();
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Left Click Action");
-								imgui_PopStyleColor(1);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Left Click Action");
+								}
+									
 
 								using (var combo = ImGUICombo.Aquire())
 								{
@@ -2375,9 +2495,12 @@ namespace E3Core.UI.Windows.Hud
 								}
 								imgui_Separator();
 								imgui_Separator();
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Alpha");
-								imgui_PopStyleColor(1);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Alpha");
+								}
+									
 
 								string keyForInput = $"##E3Hud_Hub_alpha_set-{i}";
 								imgui_SetNextItemWidth(100);
@@ -2401,9 +2524,12 @@ namespace E3Core.UI.Windows.Hud
 
 
 								imgui_Separator();
-								imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Name Color:");
-								imgui_PopStyleColor(1);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Name Color:");
+								}
+									
 								imgui_Separator();
 								imgui_SetNextItemWidth(150.0f);
 								if (imgui_ColorPicker4_Float("##NameColorPicker", state.NameColor[0], state.NameColor[1], state.NameColor[2], state.NameColor[3], 0))
@@ -2475,76 +2601,74 @@ namespace E3Core.UI.Windows.Hud
 								{
 									state.SelectedToonForBuffs = String.Empty;
 									state.SelectedRow = -1;
-									imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-									imgui_Text(stats.Name);
-									imgui_Separator();
-
-									///click left target
-									///
-									if (imgui_MenuItem("Trade Item on Cursor"))
+									using (var style = PushStyle.Aquire())
 									{
-										if (_spawns.TryByName(stats.Name, out var spawns, true))
-										{
-											if (spawns.Distance3D > 19)
-											{
-												E3.Bots.Broadcast($"{spawns.CleanName} is too far away, get closer");
-											}
-											else
-											{
-												string command = $"/target id {spawns.ID}";
-												E3ImGUI.MQCommandQueue.Enqueue(command);
-												command = $"/click left target";
-												E3ImGUI.MQCommandQueue.Enqueue(command);
-											}
+										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+										imgui_Text(stats.Name);
+										imgui_Separator();
 
+										///click left target
+										///
+										if (imgui_MenuItem("Trade Item on Cursor"))
+										{
+											if (_spawns.TryByName(stats.Name, out var spawns, true))
+											{
+												if (spawns.Distance3D > 19)
+												{
+													E3.Bots.Broadcast($"{spawns.CleanName} is too far away, get closer");
+												}
+												else
+												{
+													string command = $"/target id {spawns.ID}";
+													E3ImGUI.MQCommandQueue.Enqueue(command);
+													command = $"/click left target";
+													E3ImGUI.MQCommandQueue.Enqueue(command);
+												}
+
+											}
 										}
-									}
-									if (imgui_MenuItem("Toon buffs"))
-									{
-										state.SelectedToonForBuffs = stats.Name;
-										if (state.SelectedToonForBuffs == E3.CurrentName) state.SelectedToonForBuffs = String.Empty;
-									}
-									if (imgui_MenuItem("Nav to Toon"))
-									{
-										if (_spawns.TryByName(stats.Name, out var spawns, true))
+										if (imgui_MenuItem("Toon buffs"))
 										{
-											string command = $"/nav id {spawns.ID}";
+											state.SelectedToonForBuffs = stats.Name;
+											if (state.SelectedToonForBuffs == E3.CurrentName) state.SelectedToonForBuffs = String.Empty;
+										}
+										if (imgui_MenuItem("Nav to Toon"))
+										{
+											if (_spawns.TryByName(stats.Name, out var spawns, true))
+											{
+												string command = $"/nav id {spawns.ID}";
+												E3ImGUI.MQCommandQueue.Enqueue(command);
+											}
+										}
+										if (imgui_MenuItem("Nav Toon to us"))
+										{
+											if (_spawns.TryByName(E3.CurrentName, out var spawns, true))
+											{
+												string command = $"/e3bct {stats.Name} /nav id {spawns.ID}";
+												E3ImGUI.MQCommandQueue.Enqueue(command);
+											}
+										}
+										if (imgui_MenuItem("Foreground Toon"))
+										{
+											string command = $"/e3bct {stats.Name} /foreground";
 											E3ImGUI.MQCommandQueue.Enqueue(command);
 										}
 									}
-									if (imgui_MenuItem("Nav Toon to us"))
-									{
-										if (_spawns.TryByName(E3.CurrentName, out var spawns, true))
-										{
-											string command = $"/e3bct {stats.Name} /nav id {spawns.ID}";
-											E3ImGUI.MQCommandQueue.Enqueue(command);
-										}
-									}
-									if (imgui_MenuItem("Foreground Toon"))
-									{
-										string command = $"/e3bct {stats.Name} /foreground";
-										E3ImGUI.MQCommandQueue.Enqueue(command);
-									}
-
-									imgui_PopStyleColor(1);
 								}
 							}
 
 							//float sizeX = imgui_CalcTextSizeX(stats.DisplayName);
 
-
-
-
-							//imgui_PushStyleColor((int)ImGuiCol.Text, state.NameColors[1], state.NameColors[2], state.NameColors[3], 1f);
 							if (state.DisplayHPBar)
 							{
 								imgui_SameLine(0, 0);
-
-								imgui_PushStyleColor((int)ImGuiCol.PlotHistogram, state.HealthBarColor[0], state.HealthBarColor[1], state.HealthBarColor[2], state.HealthBarColor[3]);
-								imgui_PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
-								float widthOfColumn = imgui_GetContentRegionAvailX();
-								imgui_ProgressBar(((float)stats.HPPercent / (float)100), 20, (int)widthOfColumn, "");
-								imgui_PopStyleColor(2);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.HealthBarColor[0], state.HealthBarColor[1], state.HealthBarColor[2], state.HealthBarColor[3]);
+									style.PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
+									float widthOfColumn = imgui_GetContentRegionAvailX();
+									imgui_ProgressBar(((float)stats.HPPercent / (float)100), 20, (int)widthOfColumn, "");
+								}
 
 								float[] barPos = imgui_GetItemRectMin();
 								float[] barSize = imgui_GetItemRectSize();
