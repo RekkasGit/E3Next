@@ -1,3 +1,4 @@
+using E3Core.Data;
 using E3Core.Processors;
 using System;
 using System.Collections.Concurrent;
@@ -2288,11 +2289,11 @@ namespace MonoCore
 		private extern static void imgui_PopStyleColor(int count);
 		// Style vars (rounding, padding, etc.)
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_PushStyleVarFloat(int which, float value);
+		private extern static void imgui_PushStyleVarFloat(int which, float value);
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_PushStyleVarVec2(int which, float x, float y);
+		private extern static void imgui_PushStyleVarVec2(int which, float x, float y);
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_PopStyleVar(int count);
+		private extern static void imgui_PopStyleVar(int count);
 		// Tree nodes
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_TreeNode(string label);
@@ -3130,10 +3131,21 @@ namespace MonoCore
 		public class PushStyle : IDisposable
 		{
 			Int32 styleColorsPushed = 0;
+			Int32 styleVarPushed = 0;
 			public void PushStyleColor(int type, float r, float g, float b, float a)
 			{
 				imgui_PushStyleColor(type, r, g, b, a);
 				styleColorsPushed++;
+			}
+			public void PushStyleVarVec2(int flags, float x, float y)
+			{
+				imgui_PushStyleVarVec2(flags, 0, 0);
+				styleVarPushed++;
+			}
+			public void PushStyleVarFloat(int flags, float value)
+			{
+				imgui_PushStyleVarFloat(flags, value);
+				styleVarPushed++;
 			}
 			#region objectPoolingStuff
 			//private constructor, needs to be created so that you are forced to use the pool.
@@ -3157,9 +3169,13 @@ namespace MonoCore
 				{
 					imgui_PopStyleColor(styleColorsPushed);
 				}
-
 				styleColorsPushed = 0;
-				
+
+				if(styleVarPushed>0)
+				{
+					imgui_PopStyleVar(styleVarPushed);
+				}
+				styleVarPushed = 0;
 				StaticObjectPool.Push(this);
 			}
 			~PushStyle()

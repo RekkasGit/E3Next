@@ -367,9 +367,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 			else
 			{
 				// Show disabled button when there are no changes
-				imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
-				imgui_Button("Clear Changes");
-				imgui_PopStyleVar(1);
+				using(var stylevar = PushStyle.Aquire())
+				{
+					stylevar.PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+					imgui_Button("Clear Changes");
+				
+				}
+				
 				imgui_SameLine();
 			}
 
@@ -1409,17 +1413,25 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			if (!enabled)
 			{
-				imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+				using (var stylevar = PushStyle.Aquire())
+				{
+					stylevar.PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+					bool pressed = imgui_Button(label);
+					if (pressed && enabled)
+					{
+						onClick?.Invoke();
+					}
+				}
 			}
-			bool pressed = imgui_Button(label);
-			if (!enabled)
+			else
 			{
-				imgui_PopStyleVar(1);
-			}
-			if (pressed && enabled)
-			{
-				onClick?.Invoke();
-			}
+				bool pressed = imgui_Button(label);
+				if (pressed && enabled)
+				{
+					onClick?.Invoke();
+				}
+
+			}	
 		}
 		private static void SwapAndMark(int fromIndex, int toIndex, out bool listChanged)
 		{
