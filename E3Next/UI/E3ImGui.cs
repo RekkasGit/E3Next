@@ -2097,6 +2097,25 @@ namespace MonoCore
 			uint i_a = (uint)(a*255);
 			return (i_a << 24) | (i_b << 16) | (i_g << 8) | i_r;
 		}
+		public static float[] GetRGBAFloatsFromColor(UInt32 packedColor)
+		{
+			float[] r = new float[4];
+			r[0] = ((float)((packedColor >> 0) & 0xFF))/ (float)255;
+			r[1] = (float)((packedColor >> 8) & 0xFF) /  (float) 255;
+			r[2] = (float)((packedColor >> 16) & 0xFF)/ (float)255;
+			r[3] = (float)((packedColor >> 24) & 0xFF)/ (float)255;
+
+			return r;
+		}
+		public static Int32[] GetRGBAIntsFromColor(UInt32 packedColor)
+		{
+			Int32[] r = new Int32[4];
+			r[0] = (byte)((packedColor >> 0) & 0xFF);
+			r[1] = (byte)((packedColor >> 8) & 0xFF);
+			r[2] = (byte)((packedColor >> 16) & 0xFF);
+			r[3] = (byte)((packedColor >> 24) & 0xFF);
+			return r;
+		}
 
 		public static UITheme _currentTheme = UITheme.DarkTeal;
 
