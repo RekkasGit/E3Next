@@ -1503,10 +1503,11 @@ namespace E3Core.Data
 			string t_StackRequestTargets = (StackRequestTargets.Count==0) ? String.Empty : $"/StackRequestTargets|{String.Join(",",StackRequestTargets)}";
 			string t_StackCheckInterval = StackIntervalCheck == _stackIntervalCheckDefault ? String.Empty : $"/StackCheckInterval|{StackIntervalCheck/10000}";
 			string t_StackRecastDelay = StackRecastDelay == 0 ? String.Empty : $"/StackRecastDelay|{StackRecastDelay/1000}";
+            string t_MinHPTotal = MinHPTotal==0?String.Empty : $"/MinHPTotal|{MinHPTotal}";
+            string t_MinHP = MinHP == 0 ? String.Empty : $"/MinHP|{MinHP}";
 
 
-
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_MinAggro}{t_MaxAggro}{t_Delay}{t_RecastDelay}{t_NoTarget}{t_NoAggro}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_excludeClasses}{t_excludeNames}{t_GOM}{t_NoMidSongCast}{t_Debug}{t_Enabled}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_MinAggro}{t_MaxAggro}{t_Delay}{t_RecastDelay}{t_NoTarget}{t_NoAggro}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_excludeClasses}{t_excludeNames}{t_GOM}{t_NoMidSongCast}{t_Debug}{t_MinHPTotal}{t_MinHP}{t_Enabled}";
 			return returnValue;
 
 		}
