@@ -318,7 +318,7 @@ namespace E3Core.UI.Windows.Hud
 		public (float r, float g, float b) TargetDistanceColor;
 		public List<TableRow_BuffInfo> TargetBuffs = new List<TableRow_BuffInfo>();
 		public Int64 TargetBuffLastUpdated = 0;
-		public Int64 TargetBuffUpdateInterval = 2000;
+		public Int64 TargetBuffUpdateInterval = 500;
 		public int PreviousTargetID = 0;
 
 		public State_TargetInfoWindow()

@@ -646,8 +646,19 @@ namespace E3Core.UI.Windows.Hud
 					buffRow.DisplayName = buffName;
 				}
 				if (buffName == "NULL") buffName = "Unknown";
+
+
+				if (BuffCheck.BuffInfoCache.TryGetValue(spellid,out var spell))
+				{
+					buffRow.Spell = spell;
+				}
+				else
+				{
+					BuffCheck.BuffCacheLookupQueue.TryAdd(spellid, spellid);
+				}
 				state.TargetBuffs.Add(buffRow);
 			
+
 			}
 		}
 		private static void RenderPlayerInfo()
@@ -947,7 +958,23 @@ namespace E3Core.UI.Windows.Hud
 					{
 						using (var tooltip = ImGUIToolTip.Aquire())
 						{
-							imgui_Text(state.TargetBuffs[i].Name);
+							
+							imgui_Text($"Spell: {state.TargetBuffs[i].Name}");
+							imgui_Text($"SpellID: {state.TargetBuffs[i].SpellID}");
+							imgui_Text($"Duration: {state.TargetBuffs[i].Duration}");
+
+							if (state.TargetBuffs[i].Spell != null && state.TargetBuffs[i].Spell.SpellEffects.Count > 0)
+							{
+								imgui_Separator();
+								foreach (var effect in state.TargetBuffs[i].Spell.SpellEffects)
+								{
+									if (!string.IsNullOrWhiteSpace(effect))
+									{
+										imgui_Text(effect);
+
+									}
+								}
+							}
 						}
 					}
 				}

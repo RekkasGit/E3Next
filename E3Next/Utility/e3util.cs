@@ -926,22 +926,9 @@ namespace E3Core.Utility
 						Int32 spell_id = 0;
 						if (Int32.TryParse(spellID, out spell_id))
 						{
-
-							if (!BuffCheck.BuffInfoCache.ContainsKey(spell_id))
+							if (!BuffCheck.BuffInfoCache.TryGetValue(spell_id, out var spell))
 							{
-								var spell = new Data.Spell(spellID);
-								if (spell.CastType == CastingType.Spell || spell.CastType == CastingType.AA)
-								{
-									for (Int32 inc = 0; inc < 12; inc++)
-									{
-										string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), inc);
-										if(!String.IsNullOrEmpty(teffect))
-										{
-											spell.SpellEffects.Add(teffect);
-										}
-									}
-								}
-								BuffCheck.BuffInfoCache.TryAdd(spell_id, spell);
+								BuffCheck.BuffCacheLookupQueue.TryAdd(spell_id, spell_id);
 							}
 						}
 

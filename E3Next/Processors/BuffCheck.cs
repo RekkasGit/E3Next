@@ -35,6 +35,7 @@ namespace E3Core.Processors
 		private static Int64 _nextBandoBuffCheckInterval = 1000;
 
 		public static ConcurrentDictionary<Int32, Spell> BuffInfoCache = new ConcurrentDictionary<int, Spell>();
+		public static ConcurrentDictionary<Int32, Int32> BuffCacheLookupQueue = new ConcurrentDictionary<int, int>();
 
 		private static Int64 _nextBotCacheCheckTime = 0;
 		private static Int64 _nextBotCacheCheckTimeInterval = 1000;
@@ -520,6 +521,36 @@ namespace E3Core.Processors
 				}
 			}
 
+		}
+
+		[ClassInvoke(Class.All)]
+		public static void CheckBuffCacheLookup()
+		{
+			if (BuffCacheLookupQueue.Count > 0)
+			{
+				List<Int32> keysToLookup = BuffCacheLookupQueue.Keys.ToList();
+				foreach (var key in keysToLookup)
+				{
+					if (!BuffInfoCache.ContainsKey(key))
+					{
+						//add it
+						var spell = new Data.Spell(key.ToString());
+						if (spell.CastType == CastingType.Spell || spell.CastType == CastingType.AA)
+						{
+							for (Int32 inc = 0; inc < 12; inc++)
+							{
+								string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), inc);
+								if (!String.IsNullOrEmpty(teffect))
+								{
+									spell.SpellEffects.Add(teffect);
+								}
+							}
+						}
+						BuffCheck.BuffInfoCache.TryAdd(key, spell);
+					}
+					BuffCacheLookupQueue.TryRemove(key, out _);
+				}
+			}
 		}
 		[AdvSettingInvoke]
 		public static void Check_Buffs()
