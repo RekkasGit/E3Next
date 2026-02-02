@@ -1,10 +1,12 @@
 ﻿using E3Core.Processors;
 using Google.Protobuf.WellKnownTypes;
+using Microsoft.SqlServer.Server;
 using MonoCore;
 using System;
 using System.Collections.Generic;
 using static E3Core.UI.Windows.Hud.HudHubWindow;
 using static E3Core.UI.Windows.Hud.State_SongWindow;
+using static System.Windows.Forms.AxHost;
 
 namespace E3Core.UI.Windows.Hud
 {
@@ -273,16 +275,25 @@ namespace E3Core.UI.Windows.Hud
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Detached = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Locked; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Locked = value; IsDirty = true; } }
-
-		public string PlayerInfoDisplay { get => _playerInfoDisplay; set => _playerInfoDisplay = value; }
-		public int PlayerInfoDispleyLevel { get => _playerInfoDispleyLevel; set => _playerInfoDispleyLevel = value; }
+		public string DisplayHP;
+		public int DisplayHP_Value;
+		public string DisplayMana;
+		public int DisplayMana_Value;
+		public string DisplayEnd;
+		public int DisplayEnd_Value;
+		public string DisplayExp;
+		public Decimal DisplayExp_Value;
+		public string DisplayAA;
+		public int DisplayAA_Value;
+		public string DisplayPlayerInfo { get => _playerInfoDisplay; set => _playerInfoDisplay = value; }
+		public int DisplayPlayerInfo_Level { get => _playerInfoDispleyLevel; set => _playerInfoDispleyLevel = value; }
 		public Int64 PlayerInfoLastUpdated = 0;
 		public Int64 PlayerInfoUpdateInterval = 500;
 		public int PlayerLevel = 0;
 		public int PlayerHP = 0;
 		public int PlayerMana = 0;
 		public int PlayerEnd = 0;
-		public float PlayerExp = 0f;
+		public Decimal PlayerExp = 0m;
 		public int PlayerAAPoints = 0;
 		public (float r, float g, float b) PlayerHPColor;
 		public (float r, float g, float b) PlayerManaColor;
@@ -314,6 +325,7 @@ namespace E3Core.UI.Windows.Hud
 		public string TargetClassName = string.Empty;
 		public double TargetDistance = 0;
 		public string TargetDistanceString;
+		public string DisplayLevelAndClassString = String.Empty;
 		public (float r, float g, float b) TargetNameColor;
 		public (float r, float g, float b) TargetDistanceColor;
 		public List<TableRow_BuffInfo> TargetBuffs = new List<TableRow_BuffInfo>();

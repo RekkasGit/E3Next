@@ -539,12 +539,46 @@ namespace E3Core.UI.Windows.Hud
 			state.PlayerHP = E3.PctHPs;
 			state.PlayerMana = MQ.Query<int>("${Me.PctMana}", false);
 			state.PlayerEnd = MQ.Query<int>("${Me.PctEndurance}", false);
-			state.PlayerExp = MQ.Query<float>("${Me.PctExp}", false);
+			state.PlayerExp = MQ.Query<Decimal>("${Me.PctExp}", false);
 			state.PlayerAAPoints = MQ.Query<int>("${Me.AAPoints}", false);
 
 			state.PlayerHPColor = GetResourceSeverityColor(state.PlayerHP);
 			state.PlayerManaColor = GetResourceSeverityColor(state.PlayerMana);
 			state.PlayerEndColor = GetResourceSeverityColor(state.PlayerEnd);
+
+
+			if (String.IsNullOrEmpty(state.DisplayPlayerInfo) || state.DisplayPlayerInfo_Level != state.PlayerLevel)
+			{
+				state.DisplayPlayerInfo = $"{E3.CurrentName} (Lvl {state.PlayerLevel}) - {E3.CurrentShortClassString}";
+				state.DisplayPlayerInfo_Level = state.PlayerLevel;
+			}
+
+			if (String.IsNullOrEmpty(state.DisplayHP) || state.DisplayHP_Value != state.PlayerHP)
+			{
+				state.DisplayHP = $"HP: {state.PlayerHP}%  ";
+				state.DisplayHP_Value = state.PlayerHP;
+			}
+			if (String.IsNullOrEmpty(state.DisplayMana) || state.DisplayMana_Value != state.PlayerMana)
+			{
+				state.DisplayMana = $"Mana: {state.PlayerMana}%  ";
+				state.DisplayMana_Value = state.PlayerMana;
+			}
+			if (String.IsNullOrEmpty(state.DisplayEnd) || state.DisplayEnd_Value != state.PlayerEnd)
+			{
+				state.DisplayEnd = $"End: {state.PlayerEnd}%";
+				state.DisplayEnd_Value = state.PlayerEnd;
+			}
+			if (String.IsNullOrEmpty(state.DisplayExp) || state.DisplayExp_Value != state.PlayerExp)
+			{
+				state.DisplayExp = $"Exp: {state.PlayerExp:F2}%  ";
+				state.DisplayExp_Value = state.PlayerExp;
+			}
+			if (String.IsNullOrEmpty(state.DisplayAA) || state.DisplayAA_Value != state.PlayerAAPoints)
+			{
+				state.DisplayAA = $"AA: {state.PlayerAAPoints}";
+				state.DisplayAA_Value = state.PlayerAAPoints;
+			}
+
 		}
 		private static void RefreshTargetInfo()
 		{
@@ -572,8 +606,10 @@ namespace E3Core.UI.Windows.Hud
 				state.TargetClassName = spawn.ClassShortName;
 				state.TargetDistance = spawn.Distance3D;
 				state.TargetDistanceString = spawn.Distance3D.ToString("N0");
-				state.TargetNameColor = GetConColorRGB(spawn.ConColorID);
+			 	state.TargetNameColor = GetConColorRGB(spawn.ConColorID);
 				state.TargetDistanceColor = GetDistanceSeverityColor(spawn.Distance3D);
+				state.DisplayLevelAndClassString = $"Lvl {spawn.Level} {spawn.ClassShortName}";
+
 			}
 
 			// Refresh target buffs on a slower cadence, or immediately on target change
@@ -669,18 +705,13 @@ namespace E3Core.UI.Windows.Hud
 			if (!hub_state.ShowPlayerInfo) return;
 			if (state.PlayerLevel == 0) return;
 
-			if (String.IsNullOrEmpty(state.PlayerInfoDisplay) || state.PlayerInfoDispleyLevel!= state.PlayerLevel)
-			{
-				state.PlayerInfoDisplay = $"{E3.CurrentName} (Lvl {state.PlayerLevel}) - {E3.CurrentShortClassString}";
-				state.PlayerInfoDispleyLevel = state.PlayerLevel;
-			}
 
 			float widthAvail = imgui_GetContentRegionAvailX();
 
 			// Detach/Reattach buttons
 			if (!state.Detached)
 			{
-				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.PlayerInfoDisplay);
+				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.DisplayPlayerInfo);
 				imgui_SameLine(widthAvail - 20);
 				if (imgui_Button(IMGUI_DETATCH_PLAYERINFO_ID))
 				{
@@ -690,7 +721,7 @@ namespace E3Core.UI.Windows.Hud
 			}
 			else
 			{
-				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.PlayerInfoDisplay);
+				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.DisplayPlayerInfo);
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(0);
 				imgui_SetCursorPosX(windowWidth - 70);
@@ -735,20 +766,20 @@ namespace E3Core.UI.Windows.Hud
 			}
 
 			var hp = state.PlayerHPColor;
-			imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, $"HP: {state.PlayerHP}%  ");
+			imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, state.DisplayHP);
 			imgui_SameLine(0);
 
 			if (state.PlayerMana > 0)
 			{
 				var mana = state.PlayerManaColor;
-				imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, $"Mana: {state.PlayerMana}%  ");
+				imgui_TextColored(mana.r, mana.g, mana.b, 1.0f,state.DisplayMana);
 				imgui_SameLine(0);
 			}
 			var end = state.PlayerEndColor;
-			imgui_TextColored(end.r, end.g, end.b, 1.0f, $"End: {state.PlayerEnd}%");
-			imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, $"Exp: {state.PlayerExp:F2}%  ");
+			imgui_TextColored(end.r, end.g, end.b, 1.0f, state.DisplayEnd);
+			imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, state.DisplayExp);
 			imgui_SameLine(0);
-			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"AA: {state.PlayerAAPoints}");
+			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f,state.DisplayAA);
 
 		}
 		private static void RenderTargetInfo()
@@ -791,7 +822,7 @@ namespace E3Core.UI.Windows.Hud
 					imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, noTargetText);
 					imgui_SameLine(0);
 					imgui_SetCursorPosX(windowWidth - 70);
-					if (imgui_Button($"{MaterialFont.settings}##targetinfo_settings"))
+					if (imgui_Button(IMGUI_SETTINGS_TARGETINFO_ID))
 					{
 					}
 					using (var popup = ImGUIPopUpContext.Aquire())
@@ -917,7 +948,7 @@ namespace E3Core.UI.Windows.Hud
 			imgui_PopStyleColor(2);
 
 			// Level & Class (left) + Distance (right)
-			string leftText = $"Lvl {state.TargetLevel} {state.TargetClassName}";
+			string leftText = state.DisplayLevelAndClassString;
 			imgui_Text(leftText);
 
 			if (state.TargetDistance > 0)
