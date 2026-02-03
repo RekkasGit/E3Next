@@ -124,7 +124,9 @@ namespace E3Core.Processors
 					}
 				
 					MQ.Cmd($"/alt activate {spell.CastID}");
-					MQ.Delay(300); //necessary to keep things... in order
+
+					if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
+					//MQ.Delay(300); //necessary to keep things... in order
 					AfterSpellCheck(spell, targetID);
 					AfterEventCheck(spell);
 					UpdateAAInCooldown(spell);
@@ -174,7 +176,7 @@ namespace E3Core.Processors
 							MQ.Cmd($"/doability \"{spell.CastName}\"");
 							spell.LastCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 							spell.LastAssistTimeStampForCast = Assist.LastAssistStartedTimeStamp;
-							if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+							if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 							if (spell.AfterCastCompletedDelay > 0)
 							{
 								MQ.Delay(spell.AfterCastCompletedDelay);
@@ -189,7 +191,7 @@ namespace E3Core.Processors
 							MQ.Cmd($"/alt activate {spell.CastID}");
 							spell.LastCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 							spell.LastAssistTimeStampForCast = Assist.LastAssistStartedTimeStamp;
-							if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+							if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 							UpdateAAInCooldown(spell);
 							if (spell.AfterCastCompletedDelay > 0)
 							{
@@ -630,7 +632,7 @@ namespace E3Core.Processors
 									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									MQ.Cmd($"/cast \"{spell.CastName}\"");
-									if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+									if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 									//give time for the casting bar to actulaly appear
 									if (spell.MyCastTime > 500)
 									{
@@ -650,7 +652,7 @@ namespace E3Core.Processors
 										MQ.Cmd($"/alt activate {spell.AAID}");
 										UpdateAAInCooldown(spell);
 
-										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
 										{
@@ -667,7 +669,7 @@ namespace E3Core.Processors
 										//MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
 										MQ.Cmd($"/useitem \"{spell.CastName}\"");
 										UpdateItemInCooldown(spell);
-										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
 										{
@@ -685,7 +687,7 @@ namespace E3Core.Processors
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
 									MQ.Cmd($"/cast \"{spell.CastName}\"");
-									if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+									if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 									//give time for the casting bar to actulaly appear
 									if (spell.MyCastTime > 500)
 									{
@@ -701,7 +703,7 @@ namespace E3Core.Processors
 									{
 										//MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
 										MQ.Cmd($"/alt activate {spell.AAID}");
-										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 										UpdateAAInCooldown(spell);
 										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
@@ -716,7 +718,7 @@ namespace E3Core.Processors
 										//MQ.Cmd($"/casting \"{spell.CastName}|item\" \"-targetid|{targetID}\"");
 										MQ.Cmd($"/useitem \"{spell.CastName}\"");
 										UpdateItemInCooldown(spell);
-										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
 										{

@@ -2284,16 +2284,16 @@ namespace MonoCore
 		public extern static float[] imgui_CalcTextSize(string text);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern static void imgui_PushStyleColor(int which, float r, float g, float b, float a);
+		public extern static void imgui_PushStyleColor(int which, float r, float g, float b, float a);
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern static void imgui_PopStyleColor(int count);
+		public extern static void imgui_PopStyleColor(int count);
 		// Style vars (rounding, padding, etc.)
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern static void imgui_PushStyleVarFloat(int which, float value);
+		public extern static void imgui_PushStyleVarFloat(int which, float value);
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern static void imgui_PushStyleVarVec2(int which, float x, float y);
+		public extern static void imgui_PushStyleVarVec2(int which, float x, float y);
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern static void imgui_PopStyleVar(int count);
+		public extern static void imgui_PopStyleVar(int count);
 		// Tree nodes
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_TreeNode(string label);

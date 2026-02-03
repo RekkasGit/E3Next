@@ -1047,6 +1047,7 @@ namespace E3Core.Data
                 }
             }
         }
+        public bool IsNukeSection = false;
 		public Int32 AAID = 0;
         public decimal MyCastTimeInSeconds = 0;
         public Double MyRange;

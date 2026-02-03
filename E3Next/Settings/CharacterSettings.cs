@@ -105,7 +105,7 @@ namespace E3Core.Settings
 		[INI_Section("Misc", "Debuffs/Dots are visible")]
 		public bool Misc_VisibleDebuffsDots = true;
 		[INI_Section("Misc", "Enhanced rotation speed")]
-		public bool Misc_EnchancedRotationSpeed = false;
+		public bool Misc_EnhancedRotationSpeed = false;
 
 		[INI_Section("Misc", "Echo Command Received")]
 		public bool Misc_EchoCommandReceived = true;
@@ -802,7 +802,7 @@ namespace E3Core.Settings
 			LoadKeyData("Misc", "Delay in MS After CastWindow Drops For Spell Completion", ParsedData, ref Misc_DelayAfterCastWindowDropsForSpellCompletion);
 			LoadKeyData("Misc", "If FD stay down (true/false)", ParsedData, ref IfFDStayDown);
 			LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
-			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnchancedRotationSpeed);
+			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnhancedRotationSpeed);
 			LoadKeyData("Misc", "Echo Command Received", ParsedData, ref Misc_EchoCommandReceived);
 
 			LoadKeyData("UI Theme", "E3 Config", ParsedData, ref UITheme_E3Config);
@@ -1121,6 +1121,10 @@ namespace E3Core.Settings
 			LoadKeyData("Cursor Delete", "Delete", ParsedData, Cursor_Delete);
 
 			LoadKeyData("Nukes", "Main", ParsedData, Nukes);
+			foreach(var nuke in Nukes)
+			{
+				nuke.IsNukeSection = true;
+			}
 			LoadKeyData("Stuns", "Main", ParsedData, Stuns);
 
 			LoadKeyData("Dispel", "Main", ParsedData, Dispels);
