@@ -584,7 +584,29 @@ namespace E3Core.UI.Windows.Hud
 				state.DisplayAA = $"AA: {state.PlayerAAPoints}";
 				state.DisplayAA_Value = state.PlayerAAPoints;
 			}
+			string activeDisc = E3.Bots.Query(E3.CurrentName, "${Me.ActiveDisc}");
+			string activeDiscDurationInTicks = E3.Bots.Query(E3.CurrentName, "${Me.ActiveDiscTimeLeft}");
+			Int32 durationOfDiscInSeconds = 0;
+			Int32.TryParse(activeDiscDurationInTicks, out durationOfDiscInSeconds);
+			if (String.IsNullOrWhiteSpace(activeDisc))
+			{
+				state.PreviousDisc = string.Empty;
+			}
+			else
+			{
+				string PreviousDisc = state.PreviousDisc;
+				if (PreviousDisc != activeDisc)
+				{
+					state.PreviousDisc = activeDisc;
+					state.PreviousDiscTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+				}
+			}
+			state.ActiveDisc = activeDisc;
+			if (!String.IsNullOrEmpty(state.PreviousDisc))
+			{
+				state.Display_ActiveDiscTimeleft = ((((durationOfDiscInSeconds * 1000) + state.PreviousDiscTimeStamp) - Core.StopWatch.ElapsedMilliseconds) / 1000).ToString() + "s";
 
+			}
 		}
 		private static void RefreshTargetInfo()
 		{
@@ -595,7 +617,9 @@ namespace E3Core.UI.Windows.Hud
 			if (!e3util.ShouldCheck(ref state.TargetInfoLastUpdated, state.TargetInfoUpdateInterval)) return;
 
 			Int32 targetID = MQ.Query<Int32>("${Target.ID}", false);
+			
 
+			
 			if (targetID == 0)
 			{
 				state.HasTarget = false;
@@ -792,6 +816,13 @@ namespace E3Core.UI.Windows.Hud
 			imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, state.DisplayExp);
 			imgui_SameLine(0);
 			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.DisplayAA);
+
+			if (!String.IsNullOrWhiteSpace(state.ActiveDisc))
+			{
+				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
+
+			}
+
 
 		}
 		private static void RenderTargetInfo()

@@ -95,13 +95,9 @@ namespace E3Core.UI.Windows.Hud
 				string targetidString = E3.Bots.Query(user, "${Me.CurrentTargetID}");
 				string aaTotal = E3.Bots.Query(user, "${Me.AAPoints}");
 
-				string activeDisc = E3.Bots.Query(user, "${Me.ActiveDisc}");
-				string activeDiscDurationInTicks = E3.Bots.Query(user, "${Me.ActiveDiscTimeLeft}");
-
 				Int32 targetid = 0;
 				Int32.TryParse(targetidString, out targetid);
-				Int32 durationOfDiscInSeconds = 0;
-				Int32.TryParse(activeDiscDurationInTicks, out durationOfDiscInSeconds);
+			
 				string targetName = "none";
 				if(targetid >0 && _spawns.TryByID(targetid, out var s,false))
 				{
@@ -115,8 +111,12 @@ namespace E3Core.UI.Windows.Hud
 				{
 					PreviousDiscs.TryAdd(user, String.Empty);
 				}
+				string activeDisc = E3.Bots.Query(user, "${Me.ActiveDisc}");
+				string activeDiscDurationInTicks = E3.Bots.Query(user, "${Me.ActiveDiscTimeLeft}");
+				Int32 durationOfDiscInSeconds = 0;
+				Int32.TryParse(activeDiscDurationInTicks, out durationOfDiscInSeconds);
 
-				if(String.IsNullOrWhiteSpace(activeDisc))
+				if (String.IsNullOrWhiteSpace(activeDisc))
 				{
 					PreviousDiscs[user] = string.Empty;
 

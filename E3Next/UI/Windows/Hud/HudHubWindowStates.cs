@@ -3,6 +3,7 @@ using Google.Protobuf.WellKnownTypes;
 using Microsoft.SqlServer.Server;
 using MonoCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using static E3Core.UI.Windows.Hud.HudHubWindow;
 using static E3Core.UI.Windows.Hud.State_SongWindow;
@@ -286,6 +287,10 @@ namespace E3Core.UI.Windows.Hud
 		public Decimal DisplayExp_Value;
 		public string DisplayAA;
 		public int DisplayAA_Value;
+		public string PreviousDisc = String.Empty;
+		public string ActiveDisc = String.Empty;
+		public Int64 PreviousDiscTimeStamp = 0;
+		public String Display_ActiveDiscTimeleft = String.Empty;
 		public string DisplayPlayerInfo { get => _playerInfoDisplay; set => _playerInfoDisplay = value; }
 		public int DisplayPlayerInfo_Level { get => _playerInfoDispleyLevel; set => _playerInfoDispleyLevel = value; }
 		public Int64 PlayerInfoLastUpdated = 0;
@@ -312,6 +317,7 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_TargetInfoWindow
 	{
+	
 		public string WindowName = $"E3 TargetInfo Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached = value; IsDirty = true; } }
