@@ -1544,10 +1544,10 @@ namespace E3Core.Processors
 			{
 				return false;
 			}
-			if (_lastSpellCastTimeStamp + 1500 > Core.StopWatch.ElapsedMilliseconds)
-			{
-				return true;
-			}
+			//if (_lastSpellCastTimeStamp + 1500 > Core.StopWatch.ElapsedMilliseconds)
+			//{
+			//	return true;
+			//}
 
 			if(!AnySpellMemorized())
 			{
