@@ -19,6 +19,7 @@ namespace E3Core.Processors
 	{
 
 		public static string _lastSuccesfulCast = String.Empty;
+		public static Decimal _lastSuccesfulCast_RecoveryTime = 0;
 		public static Logging _log = E3.Log;
 		private static IMQ MQ = E3.MQ;
 		public static Dictionary<Int32, Int64> _gemRecastLockForMem = new Dictionary<int, long>();
@@ -954,8 +955,13 @@ namespace E3Core.Processors
 						if (spell.CastType == Data.CastingType.Spell)
 						{
 							_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+							_lastSuccesfulCast_RecoveryTime = spell.RecoveryTime;
 						}
-						E3.ActionTaken = true;
+						else
+						{
+							_lastSuccesfulCast_RecoveryTime = 0;
+						}
+							E3.ActionTaken = true;
 						//clear out the queues for the resist counters as they may have a few that lagged behind.
 						ClearResistChecks();
 						return returnValue;
@@ -1544,12 +1550,12 @@ namespace E3Core.Processors
 			{
 				return false;
 			}
-			//if (_lastSpellCastTimeStamp + 1500 > Core.StopWatch.ElapsedMilliseconds)
-			//{
-			//	return true;
-			//}
+			if (_lastSpellCastTimeStamp + _lastSuccesfulCast_RecoveryTime > Core.StopWatch.ElapsedMilliseconds)
+			{
+				return true;
+			}
 
-			if(!AnySpellMemorized())
+			if (!AnySpellMemorized())
 			{
 				return false;
 			}
