@@ -325,9 +325,11 @@ namespace E3Core.UI.Windows.Hud
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Locked; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Locked = value; IsDirty = true; } }
 		public bool IsDirty = false;
 		public Int64 TargetInfoLastUpdated = 0;
-		public Int64 TargetInfoUpdateInterval = 500;
+		public Int64 TargetInfoUpdateInterval = 100;
 		public bool HasTarget = false;
 		public string TargetName = string.Empty;
+		public string PreviousTargetName = String.Empty;
+		public float TargetNameSize = 0;
 		public int TargetHP = 0;
 		public int TargetLevel = 0;
 		public string TargetClassName = string.Empty;
@@ -340,6 +342,8 @@ namespace E3Core.UI.Windows.Hud
 		public Int64 TargetBuffLastUpdated = 0;
 		public Int64 TargetBuffUpdateInterval = 500;
 		public int PreviousTargetID = 0;
+		public string NoTargetText = "No Target";
+		public float NoTargetTextWidth = 0;
 
 		public State_TargetInfoWindow()
 		{

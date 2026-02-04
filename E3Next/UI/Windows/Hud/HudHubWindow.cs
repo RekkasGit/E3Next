@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics.PerformanceData;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -621,13 +622,11 @@ namespace E3Core.UI.Windows.Hud
 		{
 			var state = _state.GetState<State_TargetInfoWindow>();
 			var hub_state = _state.GetState<State_HubWindow>();
-
+			
 			if (!hub_state.ShowTargetInfo) return;
 			if (!e3util.ShouldCheck(ref state.TargetInfoLastUpdated, state.TargetInfoUpdateInterval)) return;
 
 			Int32 targetID = MQ.Query<Int32>("${Target.ID}", false);
-			
-
 			
 			if (targetID == 0)
 			{
@@ -637,9 +636,22 @@ namespace E3Core.UI.Windows.Hud
 
 			state.HasTarget = true;
 
-			if (_spawns.TryByID(targetID, out var spawn, true))
+			if (state.NoTargetTextWidth == 0)
 			{
-				state.TargetName = spawn.CleanName;
+				state.NoTargetTextWidth = imgui_CalcTextSizeX(state.NoTargetText);
+			}
+			
+			if (_spawns.TryByID(targetID, out var spawn, false))
+			{
+			
+				if(spawn.CleanName!=state.TargetName)
+				{
+					state.PreviousTargetName = state.TargetName;
+					state.TargetName = spawn.CleanName;
+					state.TargetNameSize = imgui_CalcTextSizeX(state.TargetName);
+				}
+	
+
 				state.TargetHP = (int)spawn.PctHps;
 				state.TargetLevel = spawn.Level;
 				state.TargetClassName = spawn.ClassShortName;
@@ -650,7 +662,7 @@ namespace E3Core.UI.Windows.Hud
 				state.DisplayLevelAndClassString = $"Lvl {spawn.Level} {spawn.ClassShortName}";
 
 			}
-
+			
 			// Refresh target buffs on a slower cadence, or immediately on target change
 			bool targetChanged = (targetID != state.PreviousTargetID);
 			if (targetChanged)
@@ -836,6 +848,7 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private static void RenderTargetInfo()
 		{
+			
 			var main_state = _state.GetState<State_HubWindow>();
 			var state = _state.GetState<State_TargetInfoWindow>();
 			var tiState = _state.GetState<State_TargetInfoWindow>();
@@ -849,15 +862,18 @@ namespace E3Core.UI.Windows.Hud
 			{
 				// No target - render placeholder
 				// Center "No Target" text
-				string noTargetText = "No Target";
-				float noTargetWidth = imgui_CalcTextSizeX(noTargetText);
+				float noTargetWidth;
+				
+
+				noTargetWidth = tiState.NoTargetTextWidth;
+
 				float noTargetCenterX = (widthAvail - noTargetWidth) / 2f;
 				if (noTargetCenterX < 0) noTargetCenterX = 0;
 
 				if (!tiState.Detached)
 				{
 					imgui_SetCursorPosX(noTargetCenterX);
-					imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, noTargetText);
+					imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, tiState.NoTargetText);
 					imgui_SameLine(widthAvail - 20);
 					if (imgui_Button(IMGUI_DETATCH_TARGETINFO_ID))
 					{
@@ -871,7 +887,7 @@ namespace E3Core.UI.Windows.Hud
 					float contentCenterX = (windowWidth - noTargetWidth) / 2f;
 					if (contentCenterX < 0) contentCenterX = 0;
 					imgui_SetCursorPosX(contentCenterX);
-					imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, noTargetText);
+					imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, tiState.NoTargetText);
 					imgui_SameLine(0);
 					imgui_SetCursorPosX(windowWidth - 70);
 					if (imgui_Button(IMGUI_SETTINGS_TARGETINFO_ID))
@@ -936,9 +952,9 @@ namespace E3Core.UI.Windows.Hud
 				imgui_Text(" ");
 				return;
 			}
-
+			
 			// Center the target name over the HP bar
-			float nameWidth = imgui_CalcTextSizeX(state.TargetName);
+			float nameWidth = state.TargetNameSize;
 			float centerX = (widthAvail - nameWidth) / 2f;
 			if (centerX < 0) centerX = 0;
 
@@ -2621,7 +2637,7 @@ namespace E3Core.UI.Windows.Hud
 											}
 											break;
 										case "NavToToon":
-											if (_spawns.TryByName(stats.Name, out var spawnsNav))
+											if (_spawns.TryByName(stats.Name, out var spawnsNav,true))
 											{
 												string command = $"/nav id {spawnsNav.ID}";
 												E3ImGUI.MQCommandQueue.Enqueue(command);
