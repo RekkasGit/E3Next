@@ -83,6 +83,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		// Store the width of the right panel's values pane (left column of right panel)
 		public float RightPaneValuesWidth = -1f; // -1 means not yet initialized
 
+		// Tools pane tab selection (0 = Info, 1 = Basics)
+		public int ToolsPaneSelectedTab = 0;
+
 
 	}
 	public class State_AllPlayers
@@ -366,6 +369,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 			set { imgui_Begin_OpenFlagSet(WinName_SpellModifier, value); }
 		}
 
+		public string WinName_PopOutSpellModifier = "E3PopOutSpellModifiers";
+		public bool Show_PopOut_SpellModifier
+		{
+			get { return imgui_Begin_OpenFlagGet(WinName_PopOutSpellModifier); }
+			set { imgui_Begin_OpenFlagSet(WinName_PopOutSpellModifier, value); }
+		}
+
 		public string WinName_IfAppendModal = "E3AppendIf";
 		public bool Show_IfAppendModal
 		{
@@ -401,6 +411,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			Show_IfSampleModal = false;
 			Show_SpellInfoModal = false;
 			Show_SpellModifier = false;
+			Show_PopOut_SpellModifier = false;
 			Show_ThemeSettings = false;
 			Show_ToonPickerModal = false;
 		}

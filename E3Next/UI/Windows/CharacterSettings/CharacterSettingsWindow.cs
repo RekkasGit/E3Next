@@ -190,10 +190,29 @@ namespace E3Core.UI.Windows.CharacterSettings
 							if (_state.Show_Donate) RenderDonateModal();
 						}
 					}
+					Render_PopOut_SpellEditor_Window();
 				}
 				finally
 				{
 					PopCurrentTheme();
+				}
+			}
+		}
+
+		private static void Render_PopOut_SpellEditor_Window()
+		{
+			if (!_state.Show_PopOut_SpellModifier) return;
+
+			using (var window = ImGUIWindow.Aquire())
+			{
+				if (window.Begin(_state.WinName_PopOutSpellModifier, (int)(ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
+				{
+					if (imgui_Button("Close"))
+					{
+						_state.Show_PopOut_SpellModifier = false;
+					}
+					imgui_SameLine();
+					Render_MainWindow_SpellEditor(true);
 				}
 			}
 		}
@@ -465,9 +484,6 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private static void Render_MainWindow_ConfigEditor_RightPane(IniData pd)
 		{
 			var state = _state.GetState<State_MainWindow>();
-			float paneAvailY = imgui_GetContentRegionAvailY();
-			float reservedSpellEditorSpace = (state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0) ? 380f : 0f;
-			float contentHeight = Math.Max(160f, paneAvailY - reservedSpellEditorSpace);
 			bool showSpellEditor = state.Show_ShowIntegratedEditor && state.SelectedValueIndex >= 0;
 
 
@@ -476,9 +492,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_SetNextWindowSizeWithCond(1200, 1000, (int)ImGuiCond.FirstUseEver);
 				if (child.BeginChild("E3Config_EditorPane_Content", 1200, 800, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
-					Render_MainWindow_ConfigEditor_RightPaneContent(pd, showSpellEditor);
+					float topPaneHeight = (showSpellEditor && !_state.Show_PopOut_SpellModifier) ? 400f : imgui_GetContentRegionAvailY();
+					Render_MainWindow_ConfigEditor_RightPaneContent(pd, topPaneHeight);
 
-					if (showSpellEditor)
+					if (showSpellEditor && !_state.Show_PopOut_SpellModifier)
 					{
 
 						using (var child2 = ImGUIChild.Aquire())
@@ -500,11 +517,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 		}
 
-		private static void Render_MainWindow_ConfigEditor_RightPaneContent(IniData pd, bool spellEditorShown)
+		private static void Render_MainWindow_ConfigEditor_RightPaneContent(IniData pd, float height)
 		{
 			var state = _state.GetState<State_MainWindow>();
 			float availX = imgui_GetContentRegionAvailX();
-			float availY = imgui_GetContentRegionAvailY();
+			float availY = height > 0 ? height : imgui_GetContentRegionAvailY();
 			//float spacing = 6f;
 			//float minValuesWidth = 320f;
 			//float minToolsWidth = 240f;
@@ -562,10 +579,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				//if(parent.BeginChild("E3Config_Values_UpperContainer",valuesWidth,400f, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 				{
-					imgui_SetNextWindowSizeWithCond(600, 400, (int)ImGuiCond.FirstUseEver);
+					imgui_SetNextWindowSizeWithCond(600, height, (int)ImGuiCond.FirstUseEver);
 					using (var child = ImGUIChild.Aquire())
 					{
-						if (child.BeginChild("E3Config_ValuesPane", 600, 400, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
+						if (child.BeginChild("E3Config_ValuesPane", 600, height, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX | ImGuiChildFlags.ResizeY), 0))
 						{
 							Render_MainWindow_ConfigEditor_Values(pd);
 						}
@@ -580,10 +597,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 					}
 
 					imgui_SameLine();
-					imgui_SetNextWindowSizeWithCond(600, 400, (int)ImGuiCond.FirstUseEver);
+					imgui_SetNextWindowSizeWithCond(600, height, (int)ImGuiCond.FirstUseEver);
 					using (var child = ImGUIChild.Aquire())
 					{
-						if (child.BeginChild("E3Config_ToolsPane", 600, 400, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY | ImGuiChildFlags.ResizeX), 0))
+						if (child.BeginChild("E3Config_ToolsPane", 600, height, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeY | ImGuiChildFlags.ResizeX), 0))
 						{
 							Render_MainWindow_ConfigEditor_Tools(pd);
 						}
@@ -1019,21 +1036,110 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var state = _state.GetState<State_MainWindow>();
 			var activeSection = pd.Sections.GetSectionData(state.SelectedSection ?? string.Empty);
 
+			// Check if we should show tabs (any section with a selected spell entry)
+			bool hasSelectedValue = state.SelectedValueIndex >= 0 && state.Currently_EditableSpell != null;
+			bool showTabs = hasSelectedValue;
+
 			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY);
-			using (var table = ImGUITable.Aquire())
+			if (showTabs)
 			{
-				if (table.BeginTable("ToolsInfoTable", 1, tableFlags, 0, 0))
+				// Render tabs for sections with a selected spell
+				using (var tabbar = ImGUITabBar.Aquire())
 				{
-					imgui_TableSetupColumn("Tools & Info", 0, 0.35f);
-					imgui_TableNextRow();
-					imgui_TableNextColumn();
-					Render_MainWindow_ConfigEditor_ConfigurationTools(activeSection);
+					if (tabbar.BeginTabBar("ToolsPaneTabs"))
+					{
+						using (var tabitem = ImGUITabItem.Aquire())
+						{
+							if (tabitem.BeginTabItem("Info##tools_tab_info"))
+							{
+								state.ToolsPaneSelectedTab = 0;
+								using (var table = ImGUITable.Aquire())
+								{
+									if (table.BeginTable("ToolsInfoTable", 1, tableFlags, 0, 0))
+									{
+										imgui_TableSetupColumn("Tools & Info", 0, 0.35f);
+										imgui_TableNextRow();
+										imgui_TableNextColumn();
+										Render_MainWindow_ConfigEditor_ConfigurationTools(activeSection);
+									}
+								}
+							}
+						}
+						using (var tabitem = ImGUITabItem.Aquire())
+						{
+							if (tabitem.BeginTabItem("Basics##tools_tab_general"))
+							{
+								state.ToolsPaneSelectedTab = 1;
+								Render_ToolsPane_GeneralTab();
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				// Standard layout without tabs
+				using (var table = ImGUITable.Aquire())
+				{
+					if (table.BeginTable("ToolsInfoTable", 1, tableFlags, 0, 0))
+					{
+						imgui_TableSetupColumn("Tools & Info", 0, 0.35f);
+						imgui_TableNextRow();
+						imgui_TableNextColumn();
+						Render_MainWindow_ConfigEditor_ConfigurationTools(activeSection);
+					}
 				}
 			}
 		}
+
+		// Renders the Basics tab content for the Tools pane (based on spell editor General tab)
+		private static void Render_ToolsPane_GeneralTab()
+		{
+			var spellEditorState = _state.GetState<State_SpellEditor>();
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			var currentSpell = mainWindowState.Currently_EditableSpell;
+
+			if (currentSpell == null)
+			{
+				imgui_TextColored(0.9f, 0.9f, 0.9f, 1.0f, "Select a spell entry to edit.");
+				return;
+			}
+
+			// Apply/Reset buttons at the top
+			var kd = data.GetCurrentEditedSpellKeyData();
+			if (kd != null)
+			{
+				string idForApply = spellEditorState.IsDirty ? "Apply*##tools_general_apply" : "Apply##tools_general_apply";
+				if (imgui_Button(idForApply))
+				{
+					if (spellEditorState.ManualInputBufferInUse && !String.IsNullOrWhiteSpace(spellEditorState.ManualEditBuffer))
+					{
+						try
+						{
+							var tspell = new Spell(spellEditorState.ManualEditBuffer, mainWindowState.CurrentINIData, false);
+							mainWindowState.Currently_EditableSpell = tspell;
+						}
+						catch { }
+					}
+					kd.ValueList[mainWindowState.SelectedValueIndex] = mainWindowState.Currently_EditableSpell.ToConfigEntry();
+					spellEditorState.Reset();
+					mainWindowState.ConfigIsDirty = true;
+				}
+				imgui_SameLine();
+				if (imgui_Button("Reset##tools_general_reset"))
+				{
+					data.RefreshEditableSpellState(force: true);
+					spellEditorState.Reset();
+				}
+				imgui_Separator();
+			}
+
+			// Render the General tab content (same as spell editor)
+			Render_MainWindow_SpellEditor_Tab_General();
+		}
 		#endregion
 		// Integrated editor panel - renders after the main table and spans full width
-		private static void Render_MainWindow_SpellEditor()
+		private static void Render_MainWindow_SpellEditor(bool isPopout = false)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
@@ -1879,6 +1985,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 									}
 								}
 							}
+						}
+							
+						imgui_SameLine();
+						// Pop Out button
+						string popLabel = _state.Show_PopOut_SpellModifier ? "Pop In" : "Pop Out";
+						if (imgui_Button(popLabel))
+						{
+							_state.Show_PopOut_SpellModifier = !_state.Show_PopOut_SpellModifier;
 						}
 							
 						string editorHint = mainWindowState.Show_ShowIntegratedEditor ? "Editor panel is open below." : "Click to show the advanced editor.";
