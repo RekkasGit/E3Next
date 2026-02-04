@@ -291,6 +291,7 @@ namespace E3Core.UI.Windows.Hud
 		public string ActiveDisc = String.Empty;
 		public Int64 PreviousDiscTimeStamp = 0;
 		public String Display_ActiveDiscTimeleft = String.Empty;
+		public Decimal ActiveDiscPercentLeft = 0;
 		public string DisplayPlayerInfo { get => _playerInfoDisplay; set => _playerInfoDisplay = value; }
 		public int DisplayPlayerInfo_Level { get => _playerInfoDispleyLevel; set => _playerInfoDispleyLevel = value; }
 		public Int64 PlayerInfoLastUpdated = 0;

@@ -400,6 +400,8 @@ namespace E3Core.Processors
 			}
 			PubServer.AddTopicMessage("${Me.ActiveDisc}", activeDisc);
 			PubServer.AddTopicMessage("${Me.ActiveDiscTimeLeft}", (timeInTicksForDisc*6).ToString());
+			Decimal discPercentage = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}");
+			PubServer.AddTopicMessage("${Me.ActiveDiscPerentTimeLeft}", discPercentage.ToString());
 
 		}
 		public static void StateUpdates_BuffInformation()

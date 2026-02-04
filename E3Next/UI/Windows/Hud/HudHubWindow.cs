@@ -548,6 +548,7 @@ namespace E3Core.UI.Windows.Hud
 			state.PlayerExp = MQ.Query<Decimal>("${Me.PctExp}", false);
 			state.PlayerAAPoints = MQ.Query<int>("${Me.AAPoints}", false);
 
+
 			state.PlayerHPColor = GetResourceSeverityColor(state.PlayerHP);
 			state.PlayerManaColor = GetResourceSeverityColor(state.PlayerMana);
 			state.PlayerEndColor = GetResourceSeverityColor(state.PlayerEnd);
@@ -586,6 +587,12 @@ namespace E3Core.UI.Windows.Hud
 			}
 			string activeDisc = E3.Bots.Query(E3.CurrentName, "${Me.ActiveDisc}");
 			string activeDiscDurationInTicks = E3.Bots.Query(E3.CurrentName, "${Me.ActiveDiscTimeLeft}");
+
+			if (!String.IsNullOrWhiteSpace(activeDisc))
+			{
+				state.ActiveDiscPercentLeft= MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}",false)/10;
+			}
+			
 			Int32 durationOfDiscInSeconds = 0;
 			Int32.TryParse(activeDiscDurationInTicks, out durationOfDiscInSeconds);
 			if (String.IsNullOrWhiteSpace(activeDisc))
@@ -607,6 +614,8 @@ namespace E3Core.UI.Windows.Hud
 				state.Display_ActiveDiscTimeleft = ((((durationOfDiscInSeconds * 1000) + state.PreviousDiscTimeStamp) - Core.StopWatch.ElapsedMilliseconds) / 1000).ToString() + "s";
 
 			}
+			
+
 		}
 		private static void RefreshTargetInfo()
 		{
@@ -820,7 +829,7 @@ namespace E3Core.UI.Windows.Hud
 			if (!String.IsNullOrWhiteSpace(state.ActiveDisc))
 			{
 				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
-
+				imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 15, 200, $"{state.ActiveDiscPercentLeft.ToString("N0")}%");
 			}
 
 
