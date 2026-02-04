@@ -1,4 +1,5 @@
 ﻿using E3Core.Classes;
+using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
@@ -306,6 +307,8 @@ namespace E3Core.Processors
 		private static Int64 _nextMemoryUpdateCheckTime = 0;
 		private static Int64 _nextMemoryUpdateCheckRate = 2000;
 		private static Int64 _MiscUpdateCheckRate = 100;
+		private static Int64 _nextTaskInfoUpdateCheckTime = 0;
+		private static readonly Int64 _taskInfoUpdateInterval = 2000;
 
 	
 		//qick hack to prevent calling state update... while in state updates. 
@@ -416,6 +419,12 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.AAPointsSpent}", MQ.Query<string>("${Me.AAPointsSpent}"));
 			PubServer.AddTopicMessage("${Me.AAPointsTotal}", MQ.Query<string>("${Me.AAPointsTotal}"));
 		}
+		public static void StateUpdates_TaskInformation()
+		{
+			var tasks = TaskDataCollector.Capture(MQ, allowDelays: false);
+			string payload = TaskDataCollector.SerializeForWire(tasks);
+			PubServer.AddTopicMessage("E3Tasks", payload);
+		}
 		public static void ProcessExternalCommands()
 		{
 			NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
@@ -510,6 +519,10 @@ namespace E3Core.Processors
 						}
 						Bots.Broadcast("GM Safe kicked in, on live issue /stick imsafe.  you may need to reissue /followme or /assiston");
 					}
+				}
+				if (e3util.ShouldCheck(ref _nextTaskInfoUpdateCheckTime, _taskInfoUpdateInterval))
+				{
+					StateUpdates_TaskInformation();
 				}
 
 			
