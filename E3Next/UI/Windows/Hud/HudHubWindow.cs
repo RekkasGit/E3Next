@@ -13,6 +13,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Net.NetworkInformation;
 using System.Reflection;
+using System.Resources;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -659,8 +660,29 @@ namespace E3Core.UI.Windows.Hud
 				state.TargetDistanceString = spawn.Distance3D.ToString("N0");
 				state.TargetNameColor = GetConColorRGB(spawn.ConColorID);
 				state.TargetDistanceColor = GetDistanceSeverityColor(spawn.Distance3D);
-				state.DisplayLevelAndClassString = $"Lvl {spawn.Level} {spawn.ClassShortName}";
+				state.Display_LevelAndClassString = $"Lvl {spawn.Level} {spawn.ClassShortName}";
 
+				//get my aggro on target
+				Decimal percentAggro = MQ.Query<Decimal>("${Target.PctAggro}", false);
+
+				if (percentAggro > 0){state.Display_MyAggroPercent = $"{percentAggro}%";}
+				else{state.Display_MyAggroPercent = String.Empty;}
+
+				state.MyAggroPercent = percentAggro;
+
+				string AggroHolder = MQ.Query<String>("${Target.AggroHolder}", false);
+				if (AggroHolder == "NULL") AggroHolder = String.Empty;
+				state.Display_TargetsCurrentTarget = AggroHolder;
+				string PersonOn2ndAggro = MQ.Query<String>("${Target.SecondaryAggroPlayer}", false);
+				if (PersonOn2ndAggro == "NULL") PersonOn2ndAggro = String.Empty;
+				state.Display_SecondAggroName = PersonOn2ndAggro;
+				Decimal percentAggro2nd = MQ.Query<Decimal>("${Target.SecondaryPctAggro}",false);
+				state.SecondAggroPercent = percentAggro2nd;
+
+				if (percentAggro2nd > 0) { state.Display_SecondAggroPercent = $"{percentAggro2nd}%"; }
+				else { state.Display_SecondAggroPercent = String.Empty; }
+
+				
 			}
 			
 			// Refresh target buffs on a slower cadence, or immediately on target change
@@ -775,14 +797,20 @@ namespace E3Core.UI.Windows.Hud
 				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.DisplayPlayerInfo);
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(0);
-				imgui_SetCursorPosX(windowWidth - 70);
-				if (imgui_Button(IMGUI_SETTINGS_PLAYERINFO_ID))
+				float availSpace = imgui_GetContentRegionAvailX();
+				if (imgui_InvisibleButton("##PlayerInfoSettingsInvisButton", availSpace, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
 				{
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
 					if (popup.BeginPopupContextItem($"##PlayerInfoSettingsPopup", 1))
 					{
+						if(imgui_MenuItem("Dock"))
+						{
+							state.Detached = false;
+							imgui_Begin_OpenFlagSet(state.WindowName, false);
+						}
+
 						using (var style = PushStyle.Aquire())
 						{
 							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -814,12 +842,7 @@ namespace E3Core.UI.Windows.Hud
 						}
 					}
 				}
-				imgui_SameLine(windowWidth - 35);
-				if (imgui_Button("<<##reattach_playerinfo"))
-				{
-					state.Detached = false;
-					imgui_Begin_OpenFlagSet(state.WindowName, false);
-				}
+				
 			}
 
 			var hp = state.PlayerHPColor;
@@ -889,14 +912,21 @@ namespace E3Core.UI.Windows.Hud
 					imgui_SetCursorPosX(contentCenterX);
 					imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, tiState.NoTargetText);
 					imgui_SameLine(0);
-					imgui_SetCursorPosX(windowWidth - 70);
-					if (imgui_Button(IMGUI_SETTINGS_TARGETINFO_ID))
+					float availSpace = imgui_GetContentRegionAvailX();
+					//imgui_SetCursorPosX(windowWidth - 70);
+					if (imgui_InvisibleButton("##TargetInfoSettingsInvisButton", availSpace, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
 					{
 					}
 					using (var popup = ImGUIPopUpContext.Aquire())
 					{
-						if (popup.BeginPopupContextItem($"##TargetInfoSettingsPopup", 1))
+						if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", 1))
 						{
+							if (imgui_MenuItem("Dock"))
+							{
+								tiState.Detached = false;
+								imgui_Begin_OpenFlagSet(tiState.WindowName, false);
+							}
+							imgui_Separator();
 							using (var style = PushStyle.Aquire())
 							{
 								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -908,16 +938,16 @@ namespace E3Core.UI.Windows.Hud
 								{
 									if (imgui_MenuItem("Lock")) tiState.Locked = true;
 								}
-				
+
 							}
-								
+
 							imgui_Separator();
 							using (var style = PushStyle.Aquire())
 							{
 								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 								imgui_Text("Alpha");
 							}
-								
+
 							string keyForInput = "##TargetInfoWindow_alpha_set";
 							imgui_SetNextItemWidth(100);
 							if (imgui_InputInt(keyForInput, (int)(tiState.WindowAlpha * 255), 1, 20))
@@ -929,12 +959,6 @@ namespace E3Core.UI.Windows.Hud
 							}
 						}
 					}
-					imgui_SameLine(windowWidth - 35);
-					if (imgui_Button("<<##reattach_targetinfo"))
-					{
-						tiState.Detached = false;
-						imgui_Begin_OpenFlagSet(tiState.WindowName, false);
-					}
 				}
 
 				// Empty HP bar placeholder
@@ -942,7 +966,7 @@ namespace E3Core.UI.Windows.Hud
 				{
 					style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.3f, 0.3f, 0.3f, 0.5f);
 					style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-					imgui_ProgressBar(0f, 18, (int)widthAvail, "--%");
+					imgui_ProgressBar(0f, 18, (int)widthAvail, String.Empty);
 				}
 			
 
@@ -972,20 +996,68 @@ namespace E3Core.UI.Windows.Hud
 			}
 			else
 			{
+				if(!String.IsNullOrEmpty(state.Display_MyAggroPercent))
+				{
+					imgui_TextColored(0, 1, 1, 1.0f, "Me:");
+					imgui_SameLine(0, 5);
+					imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
+
+					if (!string.IsNullOrWhiteSpace(state.Display_SecondAggroName))
+					{
+						imgui_SameLine(0, 10);
+						imgui_TextColored(0, 1, 1, 1.0f, state.Display_SecondAggroName);
+						imgui_SameLine(0, 0);
+						imgui_Text(": ");
+						imgui_SameLine(0, 0);
+						imgui_TextColored(1, 0, 0, 1.0f, state.Display_SecondAggroPercent);
+
+					}
+					
+				}
+				
+
+				imgui_SameLine(0, 5);
 				float windowWidth = imgui_GetWindowWidth();
 				float contentCenterX = (windowWidth - nameWidth) / 2f;
 				if (contentCenterX < 0) contentCenterX = 0;
 				imgui_SetCursorPosX(contentCenterX);
 				imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.TargetName);
+			
+				if(!String.IsNullOrEmpty(state.Display_TargetsCurrentTarget))
+				{
+					imgui_SameLine(0,10);
+					imgui_Text("-->");
+					imgui_SameLine(0, 5);
+					if(state.SecondAggroPercent>state.MyAggroPercent)
+					{
+						imgui_TextColored(1, 0, 0, 1.0f, state.Display_TargetsCurrentTarget);
+
+					}
+					else
+					{
+						imgui_TextColored(1, 0, 0, 1.0f, E3.CurrentName);
+
+					}
+
+				}
+
 				imgui_SameLine(0);
-				imgui_SetCursorPosX(windowWidth - 70);
-				if (imgui_Button(IMGUI_SETTINGS_TARGETINFO_ID))
+
+				float availSpace = imgui_GetContentRegionAvailX();
+				//imgui_SetCursorPosX(windowWidth - 70);
+				if (imgui_InvisibleButton("##TargetInfoSettingsInvisButton", availSpace, 20,(int)ImGuiMouseButton.Right| (int) ImGuiMouseButton.Left))
 				{
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
 					if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", 1))
 					{
+						if (imgui_MenuItem("Dock"))
+						{
+							tiState.Detached = false;
+							imgui_Begin_OpenFlagSet(tiState.WindowName, false);
+						}
+						imgui_Separator();
 						using (var style = PushStyle.Aquire())
 						{
 							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -1018,12 +1090,6 @@ namespace E3Core.UI.Windows.Hud
 						}
 					}
 				}
-				imgui_SameLine(windowWidth - 35);
-				if (imgui_Button("<<##reattach_targetinfo"))
-				{
-					tiState.Detached = false;
-					imgui_Begin_OpenFlagSet(tiState.WindowName, false);
-				}
 			}
 
 			// Target HP% progress bar
@@ -1036,9 +1102,10 @@ namespace E3Core.UI.Windows.Hud
 				imgui_ProgressBar((float)state.TargetHP / 100f, 18, (int)widthAvail, $"{state.TargetHP}%");
 			}
 			// Level & Class (left) + Distance (right)
-			string leftText = state.DisplayLevelAndClassString;
+			string leftText = state.Display_LevelAndClassString;
 			imgui_Text(leftText);
 
+			
 			if (state.TargetDistance > 0)
 			{
 				string distText = state.TargetDistanceString;
@@ -2129,16 +2196,23 @@ namespace E3Core.UI.Windows.Hud
 			}
 			if (buffState.Detached)
 			{
+				imgui_SameLine(0);
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(0);
-				imgui_SetCursorPosX(windowWidth - 70);
-				if (imgui_Button($"{MaterialFont.settings}##buff_window_settings"))
+				float availSpace = imgui_GetContentRegionAvailX();
+				if (imgui_InvisibleButton("##BuffInfoSettingsInvisButton", availSpace, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
 				{
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
 					if (popup.BeginPopupContextItem($"##BuffgWindowSettingsPopup", 1))
 					{
+						if(imgui_MenuItem("Dock"))
+						{
+							buffState.Detached = false;
+							imgui_Begin_OpenFlagSet(buffState.WindowName, false);
+						}
+
 						using (var style = PushStyle.Aquire())
 						{
 							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -2202,12 +2276,7 @@ namespace E3Core.UI.Windows.Hud
 
 					}
 				}
-				imgui_SameLine(windowWidth - 35);
-				if (imgui_Button("<<##reattach_buffs"))
-				{
-					buffState.Detached = false;
-					imgui_Begin_OpenFlagSet(buffState.WindowName, false);
-				}
+				
 			}
 			// Use List View if enabled, otherwise use icon grid
 			if (buffState.ListView)

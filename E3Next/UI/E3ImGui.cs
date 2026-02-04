@@ -1813,6 +1813,22 @@ namespace MonoCore
 			// override them in most of your calls. Let the user choose via the option menu and/or call SetColorEditOptions() once during startup.
 			DefaultOptions_ = Uint8 | DisplayRGB | InputRGB | PickerHueBar
 		}
+		public enum ImGuiPopupFlags
+		{
+			None = 0,
+			MouseButtonLeft = 0,        // For BeginPopupContext*(): open on Left Mouse release. Guaranteed to always be == 0 (same as ImGuiMouseButton_Left)
+			MouseButtonRight = 1,        // For BeginPopupContext*(): open on Right Mouse release. Guaranteed to always be == 1 (same as ImGuiMouseButton_Right)
+			MouseButtonMiddle = 2,        // For BeginPopupContext*(): open on Middle Mouse release. Guaranteed to always be == 2 (same as ImGuiMouseButton_Middle)
+			MouseButtonMask_ = 0x1F,
+			MouseButtonDefault_ = 1,
+			NoReopen = 1 << 5,   // For OpenPopup*(), BeginPopupContext*(): don't reopen same popup if already open (won't reposition, won't reinitialize navigation)
+												 //NoReopenAlwaysNavInit = 1 << 6,   // For OpenPopup*(), BeginPopupContext*(): focus and initialize navigation even when not reopening.
+			NoOpenOverExistingPopup = 1 << 7,   // For OpenPopup*(), BeginPopupContext*(): don't open if there's already a popup at the same level of the popup stack
+			NoOpenOverItems = 1 << 8,   // For BeginPopupContextWindow(): don't return true when hovering items, only when hovering empty space
+			AnyPopupId = 1 << 10,  // For IsPopupOpen(): ignore the ImGuiID parameter and test for any popup.
+			AnyPopupLevel = 1 << 11,  // For IsPopupOpen(): search/test at any level of the popup stack (default test in the current level)
+			AnyPopup = AnyPopupId | AnyPopupLevel,
+		};
 		// Theme system with multiple themes
 		public enum UITheme
 		{
@@ -2140,6 +2156,10 @@ namespace MonoCore
 		public extern static bool imgui_Button(string name);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_ButtonEx(string name, float width, float height);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_InvisibleButton(string name, float width, float height,int flags);
+				
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_Text(string text);
 		[MethodImpl(MethodImplOptions.InternalCall)]

@@ -335,7 +335,7 @@ namespace E3Core.UI.Windows.Hud
 		public string TargetClassName = string.Empty;
 		public double TargetDistance = 0;
 		public string TargetDistanceString;
-		public string DisplayLevelAndClassString = String.Empty;
+		public string Display_LevelAndClassString = String.Empty;
 		public (float r, float g, float b) TargetNameColor;
 		public (float r, float g, float b) TargetDistanceColor;
 		public List<TableRow_BuffInfo> TargetBuffs = new List<TableRow_BuffInfo>();
@@ -344,6 +344,12 @@ namespace E3Core.UI.Windows.Hud
 		public int PreviousTargetID = 0;
 		public string NoTargetText = "No Target";
 		public float NoTargetTextWidth = 0;
+		public String Display_MyAggroPercent = String.Empty;
+		public Decimal SecondAggroPercent = Decimal.Zero;
+		public Decimal MyAggroPercent = Decimal.Zero;
+		public String Display_SecondAggroPercent =String.Empty;
+		public string Display_SecondAggroName = String.Empty;
+		public string Display_TargetsCurrentTarget = String.Empty;
 
 		public State_TargetInfoWindow()
 		{
