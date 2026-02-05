@@ -1454,6 +1454,40 @@ namespace E3Core.UI.Windows.Hud
 						imgui_SameLine(0);
 						imgui_Text("List View");
 
+						if (state.ListView)
+						{
+							imgui_Separator();
+							if (imgui_Checkbox("##song_showprogressbars", state.ShowProgressBars))
+							{
+								state.ShowProgressBars = imgui_Checkbox_Get("##song_showprogressbars");
+							}
+							imgui_SameLine(0);
+							imgui_Text("Show Progress Bars");
+
+							imgui_Separator();
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Font");
+							}
+
+							using (var combo = ImGUICombo.Aquire())
+							{
+								if (combo.BeginCombo("##Select Font for SongList", state.SelectedFont))
+								{
+									foreach (var pair in E3ImGUI.FontList)
+									{
+										bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+										if (imgui_Selectable($"{pair.Key}", sel))
+										{
+											state.SelectedFont = pair.Key;
+										}
+									}
+								}
+							}
+						}
+
 					}
 				}
 			}
@@ -1461,7 +1495,7 @@ namespace E3Core.UI.Windows.Hud
 			// Use List View if enabled, otherwise use icon grid
 			if (state.ListView)
 			{
-				RenderBuffListView(state.SongInfo, "E3HubSongTableListView", state.IconSize, state.FadeRatio, state.FadeTimeInMS, buffState.NewBuffsTimeStamps);
+				RenderBuffListView(state.SongInfo, "E3HubSongTableListView", state.IconSize, state.FadeRatio, state.FadeTimeInMS, buffState.NewBuffsTimeStamps, state.SelectedFont, state.ShowProgressBars, state.WindowAlpha);
 			}
 			else
 			{
@@ -1875,10 +1909,9 @@ namespace E3Core.UI.Windows.Hud
 		static float[] BuffListView_NameColor= { 1,1,1,1};
 		static float[] BuffListView_ProgressColor = { 0, 0, 1, 0.4f };
 		static float[] BuffListView_ProgressBGColor = null;
-		private static void RenderBuffListView(List<TableRow_BuffInfo> buffList, string tableName, int iconSize, double fadeRatio, Int32 fadeTimeInMS, Dictionary<Int32, Int64> newBuffsTimeStamps)
+		private static void RenderBuffListView(List<TableRow_BuffInfo> buffList, string tableName, int iconSize, double fadeRatio, Int32 fadeTimeInMS, Dictionary<Int32, Int64> newBuffsTimeStamps, string selectedFont, bool showProgressBars, float windowAlpha)
 		{
 			var hubState = _state.GetState<State_HubWindow>();
-			var buffState = _state.GetState<State_BuffWindow>();
 			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders  | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp);
 			
 
@@ -1898,6 +1931,10 @@ namespace E3Core.UI.Windows.Hud
 					{
 						imgui_TableSetupColumn("Icon", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 22);
 						imgui_TableSetupColumn_Default("Name");
+
+							using (var igFont = IMGUI_Fonts.Aquire())
+							{
+								igFont.PushFont(selectedFont);
 
 						foreach (var stats in buffList)
 						{
@@ -1926,12 +1963,12 @@ namespace E3Core.UI.Windows.Hud
 
 							float textPosX, textPosY;
 							
-							if (buffState.ShowProgressBars)
+							if (showProgressBars)
 							{
 								using (var style = PushStyle.Aquire())
 								{
 									style.PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressColor[0], BuffListView_ProgressColor[1], BuffListView_ProgressColor[2], BuffListView_ProgressColor[3]);
-									style.PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBGColor[0], BuffListView_ProgressBGColor[1], BuffListView_ProgressBGColor[2], buffState.WindowAlpha);
+									style.PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBGColor[0], BuffListView_ProgressBGColor[1], BuffListView_ProgressBGColor[2], windowAlpha);
 
 									float widthOfColumn = imgui_GetContentRegionAvailX();
 									imgui_ProgressBar(((float)stats.Duration_Value / (float)stats.MaxDuration_Value), 20, (int)widthOfColumn, "");
@@ -2083,6 +2120,7 @@ namespace E3Core.UI.Windows.Hud
 
 									}
 								}
+							}
 							}
 						}
 					}
@@ -2299,6 +2337,29 @@ namespace E3Core.UI.Windows.Hud
 							}
 							imgui_SameLine(0);
 							imgui_Text("Show Progress Bars");
+
+							imgui_Separator();
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Font");
+							}
+
+							using (var combo = ImGUICombo.Aquire())
+							{
+								if (combo.BeginCombo("##Select Font for BuffList", buffState.SelectedFont))
+								{
+									foreach (var pair in E3ImGUI.FontList)
+									{
+										bool sel = string.Equals(buffState.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+										if (imgui_Selectable($"{pair.Key}", sel))
+										{
+											buffState.SelectedFont = pair.Key;
+										}
+									}
+								}
+							}
 						}
 
 					}
@@ -2308,7 +2369,7 @@ namespace E3Core.UI.Windows.Hud
 			// Use List View if enabled, otherwise use icon grid
 			if (buffState.ListView)
 			{
-				RenderBuffListView(buffState.BuffInfo, "E3HubBuffTableListView", buffState.IconSize, buffState.FadeRatio, buffState.FadeTimeInMS, buffState.NewBuffsTimeStamps);
+				RenderBuffListView(buffState.BuffInfo, "E3HubBuffTableListView", buffState.IconSize, buffState.FadeRatio, buffState.FadeTimeInMS, buffState.NewBuffsTimeStamps, buffState.SelectedFont, buffState.ShowProgressBars, buffState.WindowAlpha);
 			}
 			else
 			{

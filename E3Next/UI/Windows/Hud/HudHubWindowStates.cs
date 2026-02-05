@@ -175,6 +175,7 @@ namespace E3Core.UI.Windows.Hud
 		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_Song_IconSize; set { E3.CharacterSettings.E3Hud_Hub_Song_IconSize = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_Song_Locked; set { E3.CharacterSettings.E3Hud_Hub_Song_Locked = value; IsDirty = true; } }
 		public bool ListView { get => E3.CharacterSettings.E3Hud_Hub_Song_ListView; set { E3.CharacterSettings.E3Hud_Hub_Song_ListView = value; IsDirty = true; } }
+		public bool ShowProgressBars { get => E3.CharacterSettings.E3Hud_Hub_Song_ShowProgressBars; set { E3.CharacterSettings.E3Hud_Hub_Song_ShowProgressBars = value; IsDirty = true; } }
 
 		public int FadeTimeInMS
 		{
