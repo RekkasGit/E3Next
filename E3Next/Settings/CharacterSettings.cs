@@ -150,6 +150,8 @@ namespace E3Core.Settings
 		public float[] E3Hud_Hub_RGBA_NameColor = { 0.95f, 0.85f, 0.35f, 1.0f };
 		[INI_Section("E3Hud_Hub", "RGBA_HealthBar")]
 		public float[] E3Hud_Hub_RGBA_HealthBar = { 1, 0f, 0f, 0.4f };
+		[INI_Section("E3Hud_Hub", "RGBA_PetHealthBar")]
+		public float[] E3Hud_Hub_RGBA_PetHealthBar = { 0, 1f, 0f, 0.4f };
 
 		[INI_Section("E3Hud_Hub", "SelectedFont")]
 		public string E3Hud_Hub_SelectedFont = "robo";
@@ -821,6 +823,7 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_FadeTimeInMS);
 			LoadKeyData("E3Hud_Hub", "RGBA_NameColor", ParsedData, E3Hud_Hub_RGBA_NameColor);
 			LoadKeyData("E3Hud_Hub", "RGBA_HealthBar", ParsedData, E3Hud_Hub_RGBA_HealthBar);
+			LoadKeyData("E3Hud_Hub", "RGBA_PetHealthBar", ParsedData, E3Hud_Hub_RGBA_PetHealthBar);
 
 
 			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData, ref E3Hud_Hub_SelectedFont);
@@ -1286,6 +1289,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("RGBA_NameColor", "0.95,0.85,0.35,1.00");
 			section.Keys.AddKey("RGBA_HealthBar", "1,0,0,0.4");
+			section.Keys.AddKey("RGBA_PetHealthBar", "0,1,0,0.4");
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("DisplayHPBar", "False");
 			section.Keys.AddKey("LeftClickAction", "Target");

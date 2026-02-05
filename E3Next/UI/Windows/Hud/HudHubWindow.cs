@@ -2822,7 +2822,7 @@ namespace E3Core.UI.Windows.Hud
 										imgui_SetCursorPosY(progressBarStartPosY + barSize[1]-5);
 										using (var style = PushStyle.Aquire())
 										{
-											style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0,1, 0, state.HealthBarColor[3]);
+											style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.PetHealthBarColor[0], state.PetHealthBarColor[1], state.PetHealthBarColor[2], state.PetHealthBarColor[3]);
 											style.PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
 											float widthOfColumn = imgui_GetContentRegionAvailX();
 											imgui_ProgressBar(((float)stats.PetHPPercent / (float)100), 5, (int)widthOfColumn, "");

@@ -90,6 +90,7 @@ namespace E3Core.UI.Windows.Hud
 		public bool ShowTargetInfo { get => E3.CharacterSettings.E3Hud_Hub_ShowTargetInfo; set { E3.CharacterSettings.E3Hud_Hub_ShowTargetInfo = value; IsDirty = true; } }
 		public float[] NameColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_NameColor;  }
 		public float[] HealthBarColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_HealthBar; }
+		public float[] PetHealthBarColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_PetHealthBar; }
 
 		public string[] LeftClickActions = { "Target", "Foreground", "ViewBuffs", "NavToToon" };
 		public Int64 LastUpdated = 0;
