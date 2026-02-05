@@ -369,6 +369,9 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
 			PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
 
+			Int32 pet_hps = MQ.Query<Int32>("${Me.Pet.CurrentHPs}");
+			PubServer.AddTopicMessage("${Me.Pet.CurrentHPs}", pet_hps.ToString());
+
 			Loc_X = MQ.Query<double>("${Me.X}");
 			Loc_Y = MQ.Query<double>("${Me.Y}");
 			Loc_Z = MQ.Query<double>("${Me.Z}");

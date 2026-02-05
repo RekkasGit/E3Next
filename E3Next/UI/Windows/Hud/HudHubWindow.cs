@@ -427,13 +427,14 @@ namespace E3Core.UI.Windows.Hud
 				double x, y, z = 0;
 
 
-				Int32 mana, endurance, hp, aggroPct, aggroPctXtarget, aggroPctMinXtarget;
+				Int32 mana, endurance, hp, aggroPct, aggroPctXtarget, aggroPctMinXtarget, pet_pctHealth;
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctHPs}"), out hp);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctMana}"), out mana);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctEndurance}"), out endurance);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctAggro}"), out aggroPct);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMaxAggro}"), out aggroPctXtarget);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMinAggro}"), out aggroPctMinXtarget);
+				Int32.TryParse(E3.Bots.Query(user, "${Me.Pet.CurrentHPs}"), out pet_pctHealth);
 
 				double.TryParse(E3.Bots.Query(user, "${Me.X}"), out x);
 				double.TryParse(E3.Bots.Query(user, "${Me.Y}"), out y);
@@ -458,6 +459,9 @@ namespace E3Core.UI.Windows.Hud
 
 				}
 				var row = new TableRow_GroupInfo(user);
+
+				row.PetHPPercent = pet_pctHealth;
+
 				if (distance == 0)
 				{
 					row.Distance = zonename;
@@ -2790,6 +2794,8 @@ namespace E3Core.UI.Windows.Hud
 								if (state.DisplayHPBar)
 								{
 									imgui_SameLine(0, 0);
+									float progressBarStartPosX = imgui_GetCursorPosX();
+									float progressBarStartPosY = imgui_GetCursorPosY();
 									using (var style = PushStyle.Aquire())
 									{
 										style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.HealthBarColor[0], state.HealthBarColor[1], state.HealthBarColor[2], state.HealthBarColor[3]);
@@ -2808,7 +2814,21 @@ namespace E3Core.UI.Windows.Hud
 
 									float textPosY = barPos[1] + (barSize[1] - textSize[1]) * 0.5f;
 									imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(state.NameColor[0], state.NameColor[1], state.NameColor[2], state.NameColor[3]), stats.DisplayName);
-
+								
+									if (stats.PetHPPercent > 0)
+									{
+										imgui_SameLine(0, 0);
+										imgui_SetCursorPosX(progressBarStartPosX);
+										imgui_SetCursorPosY(progressBarStartPosY + barSize[1]-5);
+										using (var style = PushStyle.Aquire())
+										{
+											style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0,1, 0, state.HealthBarColor[3]);
+											style.PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
+											float widthOfColumn = imgui_GetContentRegionAvailX();
+											imgui_ProgressBar(((float)stats.PetHPPercent / (float)100), 5, (int)widthOfColumn, "");
+										}
+									}
+									
 								}
 								else
 								{
@@ -2915,6 +2935,7 @@ namespace E3Core.UI.Windows.Hud
 			public string DisplayName { get; set; }
 			public (float r, float g, float b) DisplayNameColor;
 			public Int32 HPPercent = 0;
+			public Int32 PetHPPercent = 0;
 			public string HP { get; set; }
 			public (float r, float g, float b) HPColor;
 
