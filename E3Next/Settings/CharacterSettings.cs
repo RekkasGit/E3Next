@@ -200,6 +200,8 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_Buff_Locked = false;
 		[INI_Section("E3Hud_Hub_Buff", "ListView")]
 		public bool E3Hud_Hub_Buff_ListView = false;
+		[INI_Section("E3Hud_Hub_Buff", "ShowProgressBars")]
+		public bool E3Hud_Hub_Buff_ShowProgressBars = true;
 
 		[INI_Section("E3Hud_Hub_Song", "SelectedFont")]
 		public string E3Hud_Hub_Song_SelectedFont = "robo";
@@ -854,6 +856,7 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Buff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Buff_FadeTimeInMS);
 			LoadKeyData("E3Hud_Hub_Buff", "Locked", ParsedData, ref E3Hud_Hub_Buff_Locked);
 			LoadKeyData("E3Hud_Hub_Buff", "ListView", ParsedData, ref E3Hud_Hub_Buff_ListView);
+			LoadKeyData("E3Hud_Hub_Buff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Buff_ShowProgressBars);
 
 			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData, ref E3Hud_Hub_Song_Alpha);
 			LoadKeyData("E3Hud_Hub_Song", "Detached", ParsedData, ref E3Hud_Hub_Song_Detached);
@@ -1324,6 +1327,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("ListView", "False");
+			section.Keys.AddKey("ShowProgressBars", "True");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Song");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Song");
