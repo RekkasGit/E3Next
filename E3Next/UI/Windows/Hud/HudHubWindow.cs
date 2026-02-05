@@ -1007,55 +1007,14 @@ namespace E3Core.UI.Windows.Hud
 			}
 			else
 			{
-				if(!String.IsNullOrEmpty(state.Display_MyAggroPercent))
-				{
-					imgui_TextColored(0, 1, 1, 1.0f, "Me:");
-					imgui_SameLine(0, 5);
-					imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
-
-					if (!string.IsNullOrWhiteSpace(state.Display_SecondAggroName))
-					{
-						imgui_SameLine(0, 10);
-						imgui_TextColored(0, 1, 1, 1.0f, state.Display_SecondAggroName);
-						imgui_SameLine(0, 0);
-						imgui_Text(": ");
-						imgui_SameLine(0, 0);
-						imgui_TextColored(1, 0, 0, 1.0f, state.Display_SecondAggroPercent);
-
-					}
-					
-				}
-				
-
-				imgui_SameLine(0, 5);
 				float windowWidth = imgui_GetWindowWidth();
 				float contentCenterX = (windowWidth - nameWidth) / 2f;
 				if (contentCenterX < 0) contentCenterX = 0;
 				imgui_SetCursorPosX(contentCenterX);
 				imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.TargetName);
-			
-				if(!String.IsNullOrEmpty(state.Display_TargetsCurrentTarget))
-				{
-					imgui_SameLine(0,10);
-					imgui_Text("-->");
-					imgui_SameLine(0, 5);
-					if(state.SecondAggroPercent>state.MyAggroPercent)
-					{
-						imgui_TextColored(1, 0, 0, 1.0f, state.Display_TargetsCurrentTarget);
-
-					}
-					else
-					{
-						imgui_TextColored(1, 0, 0, 1.0f, E3.CurrentName);
-
-					}
-
-				}
 
 				imgui_SameLine(0);
-
 				float availSpace = imgui_GetContentRegionAvailX();
-				//imgui_SetCursorPosX(windowWidth - 70);
 				if (imgui_InvisibleButton("##TargetInfoSettingsInvisButton", availSpace, 20,(int)ImGuiMouseButton.Right| (int) ImGuiMouseButton.Left))
 				{
 				}
@@ -1112,6 +1071,40 @@ namespace E3Core.UI.Windows.Hud
 				style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
 				imgui_ProgressBar((float)state.TargetHP / 100f, 18, (int)widthAvail, $"{state.TargetHP}%");
 			}
+
+			// Aggro info line (underneath HP bar)
+			if(!String.IsNullOrEmpty(state.Display_MyAggroPercent))
+			{
+				imgui_TextColored(0, 1, 1, 1.0f, "Me:");
+				imgui_SameLine(0, 5);
+				imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
+
+				if (!string.IsNullOrWhiteSpace(state.Display_SecondAggroName))
+				{
+					imgui_SameLine(0, 10);
+					imgui_TextColored(0, 1, 1, 1.0f, state.Display_SecondAggroName);
+					imgui_SameLine(0, 0);
+					imgui_Text(": ");
+					imgui_SameLine(0, 0);
+					imgui_TextColored(1, 0, 0, 1.0f, state.Display_SecondAggroPercent);
+				}
+				
+				if(!String.IsNullOrEmpty(state.Display_TargetsCurrentTarget))
+				{
+					imgui_SameLine(0,10);
+					imgui_Text("-->");
+					imgui_SameLine(0, 5);
+					if(state.SecondAggroPercent>state.MyAggroPercent)
+					{
+						imgui_TextColored(1, 0, 0, 1.0f, state.Display_TargetsCurrentTarget);
+					}
+					else
+					{
+						imgui_TextColored(1, 0, 0, 1.0f, E3.CurrentName);
+					}
+				}
+			}
+
 			// Level & Class (left) + Distance (right)
 			string leftText = state.Display_LevelAndClassString;
 			imgui_Text(leftText);

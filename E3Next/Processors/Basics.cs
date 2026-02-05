@@ -1329,11 +1329,16 @@ namespace E3Core.Processors
 				//refresh raid members.
 				for (int i = 1; i < raidCount; i++)
 				{
-					int id = MQ.Query<int>($"${{Raid.Member[{i}].ID}}");
-					if (id > 0)
+					// Query name first - this works for out-of-zone raid members too
+					string name = MQ.Query<string>($"${{Raid.Member[{i}].Name}}");
+					if (name != "NULL" && !string.IsNullOrWhiteSpace(name))
 					{
-						string name = MQ.Query<string>($"${{Raid.Member[{i}].Name}}");
-						RaidMembers.Add(id);
+						int id = MQ.Query<int>($"${{Raid.Member[{i}].ID}}");
+						if (id > 0)
+						{
+							RaidMembers.Add(id);
+						}
+						// Add name regardless of whether they're in zone (id > 0) or not
 						RaidMemberNames.Add(name);
 					}
 				}
