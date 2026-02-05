@@ -91,9 +91,9 @@ namespace E3Core.UI.Windows.Hud
 
 			EventProcessor.RegisterCommand("/e3hud_hub", (x) =>
 			{
-				if (Core._MQ2MonoVersion < 0.37m)
+				if (Core._MQ2MonoVersion < 0.39m)
 				{
-					MQ.Write("This requires MQ2Mono 0.38 or greater");
+					MQ.Write("This requires MQ2Mono 0.39 or greater");
 					return;
 				}
 				if (x.args.Count > 0)
