@@ -1649,30 +1649,32 @@ namespace E3Core.UI.Windows.Hud
 							}
 						}
 						imgui_Separator();
+						string keyForInput = "##Hotbutton_Window_alpha_set";
+
 						using (var style = PushStyle.Aquire())
 						{
 							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Alpha");
+							imgui_SetNextItemWidth(100);
+							if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
+							{
+								int updated = imgui_InputInt_Get(keyForInput);
+
+								if (updated > 255)
+								{
+									updated = 255;
+
+								}
+								if (updated < 0)
+								{
+									updated = 0;
+
+								}
+								state.WindowAlpha = ((float)updated) / 255f;
+							}
 						}
 							
-						imgui_Text("Alpha");
-						string keyForInput = "##Hotbutton_Window_alpha_set";
-						imgui_SetNextItemWidth(100);
-						if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
-						{
-							int updated = imgui_InputInt_Get(keyForInput);
-
-							if (updated > 255)
-							{
-								updated = 255;
-
-							}
-							if (updated < 0)
-							{
-								updated = 0;
-
-							}
-							state.WindowAlpha = ((float)updated) / 255f;
-						}
+						
 						using (var style = PushStyle.Aquire())
 						{
 							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
