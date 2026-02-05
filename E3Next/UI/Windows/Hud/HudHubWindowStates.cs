@@ -352,12 +352,11 @@ namespace E3Core.UI.Windows.Hud
 		public float NoTargetTextWidth = 0;
 		public String Display_MyAggroPercent = String.Empty;
 		public Decimal SecondAggroPercent = Decimal.Zero;
+		public string SecondAggroName = String.Empty;
 		public Decimal MyAggroPercent = Decimal.Zero;
-		public String Display_SecondAggroPercent =String.Empty;
+		public string SecondaryAggroOrTopAggroNotUs = String.Empty;
 		public string Display_SecondAggroName = String.Empty;
 		public float Display_SecondAggroNameSize = 0;
-		public string Display_TargetsCurrentTarget = String.Empty;
-		public float Display_TargetsCurrentTargetSize = 0;
 		public float Display_CurrentNameSize = 0;
 
 		public State_TargetInfoWindow()

@@ -747,32 +747,28 @@ namespace E3Core.UI.Windows.Hud
 
 				state.MyAggroPercent = percentAggro;
 
-				string AggroHolder = MQ.Query<String>("${Target.AggroHolder}", false);
-				if (AggroHolder == "NULL") AggroHolder = String.Empty;
 
-				if (AggroHolder != state.Display_TargetsCurrentTarget)
-				{
-					state.Display_TargetsCurrentTargetSize = imgui_CalcTextSizeX(AggroHolder);
-				}
-
-				state.Display_TargetsCurrentTarget = AggroHolder;
-
-
+				Decimal percentAggro2nd = MQ.Query<Decimal>("${Target.SecondaryPctAggro}", false);
+				
 				string PersonOn2ndAggro = MQ.Query<String>("${Target.SecondaryAggroPlayer}", false);
 				if (PersonOn2ndAggro == "NULL") PersonOn2ndAggro = String.Empty;
 				
-				if(PersonOn2ndAggro != state.Display_SecondAggroName)
+				
+				if(state.SecondAggroName!=PersonOn2ndAggro || state.SecondAggroPercent!=percentAggro2nd)
 				{
-					state.Display_SecondAggroNameSize = imgui_CalcTextSizeX(PersonOn2ndAggro);
+					state.SecondAggroPercent = percentAggro2nd;
+					state.SecondAggroName = PersonOn2ndAggro;
+					if (percentAggro2nd > 0 && !String.IsNullOrWhiteSpace(PersonOn2ndAggro))
+					{
+						state.Display_SecondAggroName = $"{PersonOn2ndAggro} : {percentAggro2nd}%";
+						state.Display_SecondAggroNameSize = imgui_CalcTextSizeX(state.Display_SecondAggroName);
+					}
+					else
+					{
+						state.Display_SecondAggroName = String.Empty;
+						state.Display_SecondAggroNameSize = 0;
+					}
 				}
-				state.Display_SecondAggroName = PersonOn2ndAggro;
-
-
-				Decimal percentAggro2nd = MQ.Query<Decimal>("${Target.SecondaryPctAggro}",false);
-				state.SecondAggroPercent = percentAggro2nd;
-
-				if (percentAggro2nd > 0) { state.Display_SecondAggroPercent = $"{percentAggro2nd}%"; }
-				else { state.Display_SecondAggroPercent = String.Empty; }
 				state.Display_CurrentNameSize = imgui_CalcTextSizeX(E3.CurrentName);
 			}
 			
@@ -1074,7 +1070,9 @@ namespace E3Core.UI.Windows.Hud
 				imgui_Text(" ");
 				return;
 			}
-			
+
+			imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
+			imgui_SameLine(0, 0);
 			// Center the target name over the HP bar
 			float nameWidth = state.TargetNameSize;
 			float centerX = (widthAvail - nameWidth) / 2f;
@@ -1164,27 +1162,15 @@ namespace E3Core.UI.Windows.Hud
 			string leftText = state.Display_LevelAndClassString;
 			imgui_Text(leftText);
 
-			if (!String.IsNullOrEmpty(state.Display_TargetsCurrentTarget))
+			if (!String.IsNullOrEmpty(state.Display_SecondAggroName))
 			{
-				
-			
 				imgui_SameLine(0,0);
-				if (state.SecondAggroPercent > state.MyAggroPercent)
-				{
-					float windowWidth = imgui_GetWindowWidth();
-					float contentCenterX = (windowWidth - state.Display_TargetsCurrentTargetSize) / 2f;
-					if (contentCenterX < 0) contentCenterX = 0;
-					imgui_SetCursorPosX(contentCenterX);
-					imgui_TextColored(1, 0, 0, 1.0f, state.Display_TargetsCurrentTarget);
-				}
-				else
-				{
-					float windowWidth = imgui_GetWindowWidth();
-					float contentCenterX = (windowWidth - state.Display_CurrentNameSize) / 2f;
-					if (contentCenterX < 0) contentCenterX = 0;
-					imgui_SetCursorPosX(contentCenterX);
-					imgui_TextColored(1, 0, 0, 1.0f, E3.CurrentName);
-				}
+				float windowWidth = imgui_GetWindowWidth();
+				float contentCenterX = (windowWidth - state.Display_SecondAggroNameSize) / 2f;
+				if (contentCenterX < 0) contentCenterX = 0;
+				imgui_SetCursorPosX(contentCenterX);
+				imgui_TextColored(1, 0, 0, 1.0f, state.Display_SecondAggroName);
+				
 			}
 
 			if (state.TargetDistance > 0)
@@ -1205,25 +1191,7 @@ namespace E3Core.UI.Windows.Hud
 				var dc = state.TargetDistanceColor;
 				imgui_TextColored(dc.r, dc.g, dc.b, 1.0f, distText);
 			}
-			// Aggro info line (underneath HP bar)
-			if (!String.IsNullOrEmpty(state.Display_MyAggroPercent))
-			{
-				imgui_TextColored(0, 1, 1, 1.0f, "Me:");
-				imgui_SameLine(0, 5);
-				imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
-
-				if (!string.IsNullOrWhiteSpace(state.Display_SecondAggroName))
-				{
-					imgui_SameLine(0, 10);
-					imgui_TextColored(0, 1, 1, 1.0f, state.Display_SecondAggroName);
-					imgui_SameLine(0, 0);
-					imgui_Text(": ");
-					imgui_SameLine(0, 0);
-					imgui_TextColored(1, 0, 0, 1.0f, state.Display_SecondAggroPercent);
-				}
-
-				
-			}
+			
 			// Target Buff Icons
 			if (state.TargetBuffs.Count > 0)
 			{
