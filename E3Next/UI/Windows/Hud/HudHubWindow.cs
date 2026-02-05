@@ -1254,7 +1254,7 @@ namespace E3Core.UI.Windows.Hud
 		{
 			if (openFlag && imgui_Begin_OpenFlagGet(windowName))
 			{
-				E3ImGUI.PushCurrentTheme();
+				//E3ImGUI.PushCurrentTheme();
 				try
 				{
 					imgui_SetNextWindowSizeWithCond(400, 300, (int)ImGuiCond.FirstUseEver);
@@ -1277,7 +1277,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				finally
 				{
-					E3ImGUI.PopCurrentTheme();
+					//E3ImGUI.PopCurrentTheme();
 				}
 
 			}
@@ -1320,18 +1320,15 @@ namespace E3Core.UI.Windows.Hud
 			if (imgui_Begin_OpenFlagGet(state.WindowName))
 			{
 				TryReattachWindowsIfClosed();
-
+				var buttonState = _state.GetState<State_HotbuttonsWindow>();
+				
 				RenderHub_MainWindow();
-
+				
 				var buffState = _state.GetState<State_BuffWindow>();
 				RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true, locked: buffState.Locked);
 				var songState = _state.GetState<State_SongWindow>();
 				RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true, locked: songState.Locked);
-				var buttonState = _state.GetState<State_HotbuttonsWindow>();
-				if (state.ShowHotButtons)
-				{
-					RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
-				}
+				
 				var playerInfoState = _state.GetState<State_PlayerInfoWindow>();
 				if (state.ShowPlayerInfo)
 				{
@@ -1342,7 +1339,10 @@ namespace E3Core.UI.Windows.Hud
 				{
 					RenderHub_TryDetached(targetInfoState.WindowName, targetInfoState.Detached, RenderTargetInfo, targetInfoState.WindowAlpha, noTitleBar: true, locked: targetInfoState.Locked);
 				}
-
+				if (state.ShowHotButtons)
+				{
+					RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
+				}
 			}
 
 		}
@@ -1623,14 +1623,20 @@ namespace E3Core.UI.Windows.Hud
 			{
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(0);
-				imgui_SetCursorPosX(windowWidth - 70);
-				if (imgui_Button($"{MaterialFont.settings}##hotbutton_window_settings"))
+				float availSpace = imgui_GetContentRegionAvailX();
+				if (imgui_InvisibleButton("##hotbutton_window_settings", availSpace, 10, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
 				{
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
 					if (popup.BeginPopupContextItem($"##Hotbutton_WindowSettingsPopup", 1))
 					{
+
+						if (imgui_MenuItem("Dock"))
+						{
+							state.Detached = false;
+							imgui_Begin_OpenFlagSet(state.WindowName, false);
+						}
 						using (var style = PushStyle.Aquire())
 						{
 							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -1756,12 +1762,7 @@ namespace E3Core.UI.Windows.Hud
 
 					}
 				}
-				imgui_SameLine(windowWidth - 35);
-				if (imgui_Button("<<##reattach_hotbutton"))
-				{
-					state.Detached = false;
-					imgui_Begin_OpenFlagSet(state.WindowName, false);
-				}
+				
 			}
 			widthAvail = imgui_GetContentRegionAvailX();
 
