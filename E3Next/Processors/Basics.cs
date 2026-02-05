@@ -36,9 +36,9 @@ namespace E3Core.Processors
         public static List<int> RaidMembers = new List<int>();
         public static List<string> RaidMemberNames = new List<string>();
         private static long _nextGroupCheck = 0;
-        private static long _nextGroupCheckInterval = 1000;
+        private static long _nextGroupCheckInterval = 500;
 		private static long _nextRaidCheck = 0;
-		private static long _nextRaidCheckInterval = 3000;
+		private static long _nextRaidCheckInterval = 1000;
 		private static long _nextAutoHaterFixCheck = 0;
 		private static long _nextAutoHaterFixCheckInterval = 1000;
 		[ExposedData("Basics","AllowManual")]
