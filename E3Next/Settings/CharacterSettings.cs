@@ -200,6 +200,8 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_Buff_Locked = false;
 		[INI_Section("E3Hud_Hub_Buff", "ListView")]
 		public bool E3Hud_Hub_Buff_ListView = false;
+		[INI_Section("E3Hud_Hub_Buff", "ShowProgressBars")]
+		public bool E3Hud_Hub_Buff_ShowProgressBars = true;
 
 		[INI_Section("E3Hud_Hub_Song", "SelectedFont")]
 		public string E3Hud_Hub_Song_SelectedFont = "robo";
@@ -215,6 +217,8 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_Song_Locked = false;
 		[INI_Section("E3Hud_Hub_Song", "ListView")]
 		public bool E3Hud_Hub_Song_ListView = false;
+		[INI_Section("E3Hud_Hub_Song", "ShowProgressBars")]
+		public bool E3Hud_Hub_Song_ShowProgressBars = true;
 
 		[INI_Section("E3Hud_Hub_HotButtons", "Alpha")]
 		public float E3Hud_Hub_HotButtons_Alpha = 0.8f;
@@ -854,6 +858,7 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Buff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Buff_FadeTimeInMS);
 			LoadKeyData("E3Hud_Hub_Buff", "Locked", ParsedData, ref E3Hud_Hub_Buff_Locked);
 			LoadKeyData("E3Hud_Hub_Buff", "ListView", ParsedData, ref E3Hud_Hub_Buff_ListView);
+			LoadKeyData("E3Hud_Hub_Buff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Buff_ShowProgressBars);
 
 			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData, ref E3Hud_Hub_Song_Alpha);
 			LoadKeyData("E3Hud_Hub_Song", "Detached", ParsedData, ref E3Hud_Hub_Song_Detached);
@@ -861,7 +866,7 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Song", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Song_FadeTimeInMS);
 			LoadKeyData("E3Hud_Hub_Song", "Locked", ParsedData, ref E3Hud_Hub_Song_Locked);
 			LoadKeyData("E3Hud_Hub_Song", "ListView", ParsedData, ref E3Hud_Hub_Song_ListView);
-
+			LoadKeyData("E3Hud_Hub_Song", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Song_ShowProgressBars);
 
 			LoadKeyData("E3Hud_Hub_HotButtons", "Alpha", ParsedData, ref E3Hud_Hub_HotButtons_Alpha);
 			LoadKeyData("E3Hud_Hub_HotButtons", "Detached", ParsedData, ref E3Hud_Hub_HotButtons_Detached);
@@ -1324,6 +1329,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("ListView", "False");
+			section.Keys.AddKey("ShowProgressBars", "True");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Song");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Song");
@@ -1333,6 +1339,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("ListView", "False");
+			section.Keys.AddKey("ShowProgressBars", "True");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Debuff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Debuff");
