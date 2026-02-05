@@ -306,6 +306,8 @@ namespace E3Core.UI.Windows.Hud
 		public (float r, float g, float b) PlayerHPColor;
 		public (float r, float g, float b) PlayerManaColor;
 		public (float r, float g, float b) PlayerEndColor;
+		public float[] DiscProgressBarColor { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar; }
+
 		public bool IsDirty = false;
 		public string Display = "";
 		public State_PlayerInfoWindow()

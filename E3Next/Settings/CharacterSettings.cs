@@ -176,6 +176,8 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_PlayerInfo_Detached = false;
 		[INI_Section("E3Hud_Hub_PlayerInfo", "Locked")]
 		public bool E3Hud_Hub_PlayerInfo_Locked = false;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "RGBA_DiscProgressBar")]
+		public float[] E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar = { 0, 1f, 1f, 0.4f };
 
 		[INI_Section("E3Hud_Hub_TargetInfo", "Alpha")]
 		public float E3Hud_Hub_TargetInfo_Alpha = 0.8f;
@@ -838,7 +840,10 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Alpha", ParsedData, ref E3Hud_Hub_PlayerInfo_Alpha);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Detached", ParsedData, ref E3Hud_Hub_PlayerInfo_Detached);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Locked", ParsedData, ref E3Hud_Hub_PlayerInfo_Locked);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "RGBA_DiscProgressBar", ParsedData, E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar);
 
+
+		
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Alpha", ParsedData, ref E3Hud_Hub_TargetInfo_Alpha);
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Detached", ParsedData, ref E3Hud_Hub_TargetInfo_Detached);
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Locked", ParsedData, ref E3Hud_Hub_TargetInfo_Locked);
@@ -1303,6 +1308,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Alpha", "0.8");
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("RGBA_DiscProgressBar", "0,1,1,0.4");
 
 			newFile.Sections.AddSection("E3Hud_Hub_TargetInfo");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_TargetInfo");

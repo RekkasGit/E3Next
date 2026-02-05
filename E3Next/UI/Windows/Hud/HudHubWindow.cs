@@ -867,8 +867,15 @@ namespace E3Core.UI.Windows.Hud
 
 			if (!String.IsNullOrWhiteSpace(state.ActiveDisc))
 			{
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
-				imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 15, 200, $"{state.ActiveDiscPercentLeft.ToString("N0")}%");
+				//DiscProgressBar
+				using (var style = PushStyle.Aquire())
+				{
+					style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
+					//style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
+					imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 15, 200, $"{state.ActiveDiscPercentLeft.ToString("N0")}%");
+				}
+			
 			}
 
 
