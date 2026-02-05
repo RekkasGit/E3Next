@@ -411,6 +411,7 @@ namespace E3Core.UI.Windows.Hud
 
 			if (!e3util.ShouldCheck(ref state.LastUpdated, state.LastUpdateInterval)) return;
 			state.GroupInfo.Clear();
+			state.GroupMembersAdded.Clear();
 
 			//get the connected bots.
 			List<string> users = E3.Bots.BotsConnected().ToList(); //make a copy as this returns a direct copy of cache
@@ -538,7 +539,78 @@ namespace E3Core.UI.Windows.Hud
 				row.AggroMinXTargetColor = GetAggroSeverityColor(aggroPctMinXtarget);
 
 				state.GroupInfo.Add(row);
+				
+				if(!state.GroupMembersAdded.Contains(user)) state.GroupMembersAdded.Add(user);
+
 			}
+
+
+			foreach(var user in Basics.GroupMemberNames)
+			{
+				if (state.GroupMembersAdded.Contains(user)) continue;
+
+				var row = new TableRow_GroupInfo(user);
+				//MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.Pet.CurrentHPs}}"); //pets
+				//MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}"); //user
+
+				int hp = MQ.Query<Int32>($"${{Group.Member[{user}].PctHPs}}", false);
+
+				row.PetHPPercent = MQ.Query<Int32>($"${{Group.Member[{user}].Spawn.Pet.CurrentHPs}}",false); //user;
+				decimal distance= MQ.Query<Decimal>($"${{Group.Member[{user}].Spawn.Distance3D}}", false);
+				row.Distance = distance.ToString("N0");
+				
+				
+				if (distance == 0)
+				{
+					row.Distance = "--";
+
+				}
+				else
+				{
+					row.Distance = distance.ToString("N0");
+					row.DistanceColor = GetDistanceSeverityColor((double)distance);
+				}
+
+			
+				row.DisplayName = user;
+				row.DisplayNameColor = (0.275f, 0.860f, 0.85f);
+				Int32 mana = MQ.Query<Int32>($"${{Group.Member[{user}].PctMana}}", false); 
+				if (mana == 0)
+				{
+					row.Mana = "-";
+				}
+				else
+				{
+					row.Mana = mana.ToString() + "%";
+
+				}
+				row.ManaColor = GetResourceSeverityColor(mana);
+
+				Int32 endurance = MQ.Query<Int32>($"${{Group.Member[{user}].PctEndurance}}", false);
+				row.Endurance = endurance.ToString() + "%";
+				row.EndColor = GetResourceSeverityColor(endurance);
+				row.HPPercent = hp;
+				row.HP = hp.ToString() + "%";
+				row.HPColor = GetResourceSeverityColor(hp);
+				Int32 aggroPct = MQ.Query<Int32>($"${{Group.Member[{user}].PctAggro}}", false);
+
+				if (aggroPct > 0)
+				{
+					row.AggroPct = aggroPct.ToString();
+
+				}
+				else
+				{
+					row.AggroPct = "-";
+				}
+				row.AggroColor = GetAggroSeverityColor(aggroPct);
+				row.XtargetAggroPct = "-";
+				row.XtargetMinAggroPct = "-";
+				state.GroupInfo.Add(row);
+			}
+
+
+
 		}
 		private static void RefreshPlayerInfo()
 		{
@@ -655,6 +727,7 @@ namespace E3Core.UI.Windows.Hud
 					state.TargetName = spawn.CleanName;
 					state.TargetNameSize = imgui_CalcTextSizeX(state.TargetName);
 				}
+				
 	
 
 				state.TargetHP = (int)spawn.PctHps;
@@ -676,17 +749,31 @@ namespace E3Core.UI.Windows.Hud
 
 				string AggroHolder = MQ.Query<String>("${Target.AggroHolder}", false);
 				if (AggroHolder == "NULL") AggroHolder = String.Empty;
+
+				if (AggroHolder != state.Display_TargetsCurrentTarget)
+				{
+					state.Display_TargetsCurrentTargetSize = imgui_CalcTextSizeX(AggroHolder);
+				}
+
 				state.Display_TargetsCurrentTarget = AggroHolder;
+
+
 				string PersonOn2ndAggro = MQ.Query<String>("${Target.SecondaryAggroPlayer}", false);
 				if (PersonOn2ndAggro == "NULL") PersonOn2ndAggro = String.Empty;
+				
+				if(PersonOn2ndAggro != state.Display_SecondAggroName)
+				{
+					state.Display_SecondAggroNameSize = imgui_CalcTextSizeX(PersonOn2ndAggro);
+				}
 				state.Display_SecondAggroName = PersonOn2ndAggro;
+
+
 				Decimal percentAggro2nd = MQ.Query<Decimal>("${Target.SecondaryPctAggro}",false);
 				state.SecondAggroPercent = percentAggro2nd;
 
 				if (percentAggro2nd > 0) { state.Display_SecondAggroPercent = $"{percentAggro2nd}%"; }
 				else { state.Display_SecondAggroPercent = String.Empty; }
-
-				
+				state.Display_CurrentNameSize = imgui_CalcTextSizeX(E3.CurrentName);
 			}
 			
 			// Refresh target buffs on a slower cadence, or immediately on target change
@@ -1072,44 +1159,34 @@ namespace E3Core.UI.Windows.Hud
 				imgui_ProgressBar((float)state.TargetHP / 100f, 18, (int)widthAvail, $"{state.TargetHP}%");
 			}
 
-			// Aggro info line (underneath HP bar)
-			if(!String.IsNullOrEmpty(state.Display_MyAggroPercent))
-			{
-				imgui_TextColored(0, 1, 1, 1.0f, "Me:");
-				imgui_SameLine(0, 5);
-				imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
-
-				if (!string.IsNullOrWhiteSpace(state.Display_SecondAggroName))
-				{
-					imgui_SameLine(0, 10);
-					imgui_TextColored(0, 1, 1, 1.0f, state.Display_SecondAggroName);
-					imgui_SameLine(0, 0);
-					imgui_Text(": ");
-					imgui_SameLine(0, 0);
-					imgui_TextColored(1, 0, 0, 1.0f, state.Display_SecondAggroPercent);
-				}
-				
-				if(!String.IsNullOrEmpty(state.Display_TargetsCurrentTarget))
-				{
-					imgui_SameLine(0,10);
-					imgui_Text("-->");
-					imgui_SameLine(0, 5);
-					if(state.SecondAggroPercent>state.MyAggroPercent)
-					{
-						imgui_TextColored(1, 0, 0, 1.0f, state.Display_TargetsCurrentTarget);
-					}
-					else
-					{
-						imgui_TextColored(1, 0, 0, 1.0f, E3.CurrentName);
-					}
-				}
-			}
-
+		
 			// Level & Class (left) + Distance (right)
 			string leftText = state.Display_LevelAndClassString;
 			imgui_Text(leftText);
 
+			if (!String.IsNullOrEmpty(state.Display_TargetsCurrentTarget))
+			{
+				
 			
+				imgui_SameLine(0,0);
+				if (state.SecondAggroPercent > state.MyAggroPercent)
+				{
+					float windowWidth = imgui_GetWindowWidth();
+					float contentCenterX = (windowWidth - state.Display_TargetsCurrentTargetSize) / 2f;
+					if (contentCenterX < 0) contentCenterX = 0;
+					imgui_SetCursorPosX(contentCenterX);
+					imgui_TextColored(1, 0, 0, 1.0f, state.Display_TargetsCurrentTarget);
+				}
+				else
+				{
+					float windowWidth = imgui_GetWindowWidth();
+					float contentCenterX = (windowWidth - state.Display_CurrentNameSize) / 2f;
+					if (contentCenterX < 0) contentCenterX = 0;
+					imgui_SetCursorPosX(contentCenterX);
+					imgui_TextColored(1, 0, 0, 1.0f, E3.CurrentName);
+				}
+			}
+
 			if (state.TargetDistance > 0)
 			{
 				string distText = state.TargetDistanceString;
@@ -1128,7 +1205,25 @@ namespace E3Core.UI.Windows.Hud
 				var dc = state.TargetDistanceColor;
 				imgui_TextColored(dc.r, dc.g, dc.b, 1.0f, distText);
 			}
+			// Aggro info line (underneath HP bar)
+			if (!String.IsNullOrEmpty(state.Display_MyAggroPercent))
+			{
+				imgui_TextColored(0, 1, 1, 1.0f, "Me:");
+				imgui_SameLine(0, 5);
+				imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
 
+				if (!string.IsNullOrWhiteSpace(state.Display_SecondAggroName))
+				{
+					imgui_SameLine(0, 10);
+					imgui_TextColored(0, 1, 1, 1.0f, state.Display_SecondAggroName);
+					imgui_SameLine(0, 0);
+					imgui_Text(": ");
+					imgui_SameLine(0, 0);
+					imgui_TextColored(1, 0, 0, 1.0f, state.Display_SecondAggroPercent);
+				}
+
+				
+			}
 			// Target Buff Icons
 			if (state.TargetBuffs.Count > 0)
 			{

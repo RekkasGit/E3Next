@@ -70,6 +70,7 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_HubWindow
 	{
+		public HashSet<String> GroupMembersAdded = new HashSet<string>();
 		public string WindowName = $"E3 Main Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		private float _windowAlpha = 0.8f;
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_Alpha; set { E3.CharacterSettings.E3Hud_Hub_Alpha = value; IsDirty = true; } }
@@ -354,7 +355,10 @@ namespace E3Core.UI.Windows.Hud
 		public Decimal MyAggroPercent = Decimal.Zero;
 		public String Display_SecondAggroPercent =String.Empty;
 		public string Display_SecondAggroName = String.Empty;
+		public float Display_SecondAggroNameSize = 0;
 		public string Display_TargetsCurrentTarget = String.Empty;
+		public float Display_TargetsCurrentTargetSize = 0;
+		public float Display_CurrentNameSize = 0;
 
 		public State_TargetInfoWindow()
 		{
