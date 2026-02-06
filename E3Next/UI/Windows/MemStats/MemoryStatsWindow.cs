@@ -170,48 +170,52 @@ namespace E3Core.UI.Windows.MemStats
 					// Header with refresh button
 					imgui_Text("E3 Memory Statistics by Rekka/Linamas");
 					imgui_Separator();
-
-					// Memory Stats Table
-					using (var table = ImGUITable.Aquire())
+					using(var child =ImGUIChild.Aquire())
 					{
-						int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
-											  ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
-											  ImGuiTableFlags.ImGuiTableFlags_BordersInner |
-											  ImGuiTableFlags.ImGuiTableFlags_ScrollY| ImGuiTableFlags.ImGuiTableFlags_Resizable);
-
-						const float summaryLegendHeight = 190f; // Enough room for summary metrics plus multi-line legend
-						float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY() - summaryLegendHeight);
-
-						if (table.BeginTable("MemoryStatsTable", 4, tableFlags, 0f, tableHeight))
+						child.BeginChild("E3 Memory Table child", 0, 0, (int)ImGuiChildFlags.ResizeY, 0);
+						// Memory Stats Table
+						using (var table = ImGUITable.Aquire())
 						{
-							imgui_TableSetupColumn("Character", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 150);
-							imgui_TableSetupColumn("C# Memory (MB)", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120);
-							imgui_TableSetupColumn("EQ Commit (MB)", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120);
-							imgui_TableSetupColumn("Hours Running", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 150);
-							imgui_TableHeadersRow();
+							int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
+												  ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
+												  ImGuiTableFlags.ImGuiTableFlags_BordersInner |
+												   ImGuiTableFlags.ImGuiTableFlags_Resizable);
 
-							List<MemoryStats> currentStats = _memoryStats;
-						
-							foreach (var stats in currentStats)
+							const float summaryLegendHeight = 190f; // Enough room for summary metrics plus multi-line legend
+							float tableHeight = Math.Max(500f, imgui_GetContentRegionAvailY() - summaryLegendHeight);
+
+							if (table.BeginTable("MemoryStatsTable", 4, tableFlags, 0f, 0f))
 							{
-								imgui_TableNextRow();
+								imgui_TableSetupColumn("Character", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 150);
+								imgui_TableSetupColumn("C# Memory (MB)", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120);
+								imgui_TableSetupColumn("EQ Commit (MB)", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120);
+								imgui_TableSetupColumn("Hours Running", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 150);
+								imgui_TableHeadersRow();
 
-								imgui_TableNextColumn();
-								imgui_Text(stats.CharacterName);
+								List<MemoryStats> currentStats = _memoryStats;
 
-								imgui_TableNextColumn();
-								imgui_Text(stats.CSharpMemoryMB.ToString("N2"));
+								foreach (var stats in currentStats)
+								{
+									imgui_TableNextRow();
 
-								imgui_TableNextColumn();
-								DrawEqCommitValue(stats.EQCommitSizeMB);
+									imgui_TableNextColumn();
+									imgui_Text(stats.CharacterName);
 
-								imgui_TableNextColumn();
-								imgui_Text(stats.TimeRunning);
+									imgui_TableNextColumn();
+									imgui_Text(stats.CSharpMemoryMB.ToString("N2"));
 
-								
+									imgui_TableNextColumn();
+									DrawEqCommitValue(stats.EQCommitSizeMB);
+
+									imgui_TableNextColumn();
+									imgui_Text(stats.TimeRunning);
+
+
+								}
 							}
 						}
 					}
+					
 					// Summary at the bottom
 					imgui_Separator();
 					List<MemoryStats> summaryStats= _memoryStats;
