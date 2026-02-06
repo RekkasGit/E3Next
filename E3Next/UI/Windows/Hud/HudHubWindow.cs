@@ -620,49 +620,46 @@ namespace E3Core.UI.Windows.Hud
 			if (!e3util.ShouldCheck(ref state.PlayerInfoLastUpdated, state.PlayerInfoUpdateInterval)) return;
 
 			state.PlayerLevel = MQ.Query<int>("${Me.Level}", false);
-			state.PlayerHP = E3.PctHPs;
-			state.PlayerMana = MQ.Query<int>("${Me.PctMana}", false);
-			state.PlayerEnd = MQ.Query<int>("${Me.PctEndurance}", false);
+			state.PlayerHPPercent = E3.PctHPs;
+			state.PlayerManaPercent = MQ.Query<int>("${Me.PctMana}", false);
+			state.PlayerEndPercent = MQ.Query<int>("${Me.PctEndurance}", false);
 			state.PlayerExp = MQ.Query<Decimal>("${Me.PctExp}", false);
 			state.PlayerAAPoints = MQ.Query<int>("${Me.AAPoints}", false);
+			state.PlayerHPCurrent = MQ.Query<int>("${Me.CurrentHPs}", false);
+			state.PlayerHPMax = MQ.Query<int>("${Me.MaxHPs}", false);
+			state.PlayerManaCurrent = MQ.Query<int>("${Me.CurrentMana}", false);
+			state.PlayerManaMax = MQ.Query<int>("${Me.MaxMana}", false);
 
 
-			state.PlayerHPColor = GetResourceSeverityColor(state.PlayerHP);
-			state.PlayerManaColor = GetResourceSeverityColor(state.PlayerMana);
-			state.PlayerEndColor = GetResourceSeverityColor(state.PlayerEnd);
+
+			state.PlayerHPColor = GetResourceSeverityColor(state.PlayerHPCurrent);
+			state.PlayerManaColor = GetResourceSeverityColor(state.PlayerManaCurrent);
+			state.PlayerEndColor = GetResourceSeverityColor(state.PlayerEndCurrent);
+
 
 
 			if (String.IsNullOrEmpty(state.DisplayPlayerInfo) || state.DisplayPlayerInfo_Level != state.PlayerLevel)
 			{
-				state.DisplayPlayerInfo = $"{E3.CurrentName} (Lvl {state.PlayerLevel}) - {E3.CurrentShortClassString}";
+				state.DisplayPlayerInfo = $"{E3.CurrentName} - Lvl:{state.PlayerLevel}";
 				state.DisplayPlayerInfo_Level = state.PlayerLevel;
 			}
 
-			if (String.IsNullOrEmpty(state.DisplayHP) || state.DisplayHP_Value != state.PlayerHP)
+			
+			state.DisplayHPCurrent = $"{state.PlayerHPCurrent:N0}";
+			state.DisplayHPMax = $"{state.PlayerHPMax:N0}";
+
+			if (state.PlayerManaCurrent>0)
 			{
-				state.DisplayHP = $"HP: {state.PlayerHP}%  ";
-				state.DisplayHP_Value = state.PlayerHP;
+				state.DisplayManaCurrent = $"{state.PlayerManaCurrent:N0}";
+				state.DisplayManaMax = $"{state.PlayerManaMax:N0}";
 			}
-			if (String.IsNullOrEmpty(state.DisplayMana) || state.DisplayMana_Value != state.PlayerMana)
-			{
-				state.DisplayMana = $"Mana: {state.PlayerMana}%  ";
-				state.DisplayMana_Value = state.PlayerMana;
-			}
-			if (String.IsNullOrEmpty(state.DisplayEnd) || state.DisplayEnd_Value != state.PlayerEnd)
-			{
-				state.DisplayEnd = $"End: {state.PlayerEnd}%";
-				state.DisplayEnd_Value = state.PlayerEnd;
-			}
-			if (String.IsNullOrEmpty(state.DisplayExp) || state.DisplayExp_Value != state.PlayerExp)
-			{
-				state.DisplayExp = $"Exp: {state.PlayerExp:F2}%  ";
-				state.DisplayExp_Value = state.PlayerExp;
-			}
-			if (String.IsNullOrEmpty(state.DisplayAA) || state.DisplayAA_Value != state.PlayerAAPoints)
-			{
-				state.DisplayAA = $"AA: {state.PlayerAAPoints}";
-				state.DisplayAA_Value = state.PlayerAAPoints;
-			}
+			state.DisplayEndCurrent = $"{state.PlayerEndCurrent:N0}";
+			state.DisplayEndMax = $"{state.PlayerEndMax:N0}";
+
+
+			state.DisplayExp = $"{state.PlayerExp:F2}%";
+			state.DisplayAA = $"({state.PlayerAAPoints})";
+
 			string activeDisc = E3.Bots.Query(E3.CurrentName, "${Me.ActiveDisc}");
 			string activeDiscDurationInTicks = E3.Bots.Query(E3.CurrentName, "${Me.ActiveDiscTimeLeft}");
 
@@ -882,6 +879,12 @@ namespace E3Core.UI.Windows.Hud
 			else
 			{
 				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.DisplayPlayerInfo);
+				imgui_SameLine(0, 10);
+				imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, "XP:");
+				imgui_SameLine(0, 0);
+				imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, state.DisplayExp);
+				imgui_SameLine(0,10);
+				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.DisplayAA);
 				float windowWidth = imgui_GetWindowWidth();
 				imgui_SameLine(0);
 				float availSpace = imgui_GetContentRegionAvailX();
@@ -933,20 +936,73 @@ namespace E3Core.UI.Windows.Hud
 			}
 
 			var hp = state.PlayerHPColor;
-			imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, state.DisplayHP);
-			imgui_SameLine(0);
+			imgui_Text("HP:");
+			imgui_SameLine(0, 2);
+			imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, state.DisplayHPCurrent);
+			imgui_SameLine(0, 0);imgui_Text("/");
+			imgui_SameLine(0, 0);
+			imgui_TextColored(0, 1, 0, 1.0f, state.DisplayHPMax);
 
-			if (state.PlayerMana > 0)
+			float ending2ndLocation = 0;
+
+			imgui_SameLine(0, 0);
+			float endingHPLocation = imgui_GetCursorPosX();
+			imgui_SameLine(0, 10);
+
+			if (state.PlayerManaMax > 0)
 			{
+				
 				var mana = state.PlayerManaColor;
-				imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, state.DisplayMana);
-				imgui_SameLine(0);
+				imgui_Text("MP:");
+				imgui_SameLine(0, 2);
+				imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, state.DisplayManaCurrent);
+				imgui_SameLine(0, 0); imgui_Text("/");
+				imgui_SameLine(0, 0);
+				imgui_TextColored(0, 1, 0, 1.0f, state.DisplayManaMax);
+				imgui_SameLine(0, 0);
+				ending2ndLocation = imgui_GetCursorPosX();
 			}
-			var end = state.PlayerEndColor;
-			imgui_TextColored(end.r, end.g, end.b, 1.0f, state.DisplayEnd);
-			imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, state.DisplayExp);
-			imgui_SameLine(0);
-			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.DisplayAA);
+			else
+			{
+				
+				var end = state.PlayerEndColor;
+				imgui_Text("EN:");
+				imgui_SameLine(0, 2);
+				imgui_TextColored(end.r, end.g, end.b, 1.0f, state.DisplayEndCurrent);
+				imgui_SameLine(0, 0); imgui_Text("/");
+				imgui_SameLine(0, 0);
+				imgui_TextColored(0, 1, 0, 1.0f, state.DisplayEndMax);
+				imgui_SameLine(0, 0);
+				ending2ndLocation = imgui_GetCursorPosX();
+			}
+			imgui_Text("");
+			//now display progress bars
+			using (var style = PushStyle.Aquire())
+			{
+				style.PushStyleColor((int)ImGuiCol.PlotHistogram, 1, 0, 0, 1); //red
+				imgui_ProgressBar((float)state.PlayerHPPercent / 100f, 15, (int)endingHPLocation, state.PlayerHPPercent.ToString());
+			}
+				imgui_SameLine(0, 0);
+			if (state.PlayerManaMax > 0)
+			{
+				imgui_SetCursorPosX(endingHPLocation+10);
+				using (var style = PushStyle.Aquire())
+				{
+					style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0,0,1,1); //blue
+					imgui_ProgressBar((float)state.PlayerManaPercent / 100f, 15, (int)(ending2ndLocation - endingHPLocation), state.PlayerManaPercent.ToString());
+				}
+
+			}
+			else
+			{
+				imgui_SetCursorPosX(endingHPLocation+10);
+				imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 15, (int)(ending2ndLocation - endingHPLocation), state.PlayerEndPercent.ToString());
+
+			}
+
+		
+
+
 
 			if (!String.IsNullOrWhiteSpace(state.ActiveDisc))
 			{

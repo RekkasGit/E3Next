@@ -5,6 +5,7 @@ using MonoCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using static E3Core.UI.Windows.Hud.HudHubWindow;
 using static E3Core.UI.Windows.Hud.State_SongWindow;
 using static System.Windows.Forms.AxHost;
@@ -281,16 +282,14 @@ namespace E3Core.UI.Windows.Hud
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Detached = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Locked; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Locked = value; IsDirty = true; } }
-		public string DisplayHP;
-		public int DisplayHP_Value;
-		public string DisplayMana;
-		public int DisplayMana_Value;
-		public string DisplayEnd;
-		public int DisplayEnd_Value;
-		public string DisplayExp;
-		public Decimal DisplayExp_Value;
-		public string DisplayAA;
-		public int DisplayAA_Value;
+		public string DisplayHPCurrent = String.Empty;
+		public string DisplayHPMax = String.Empty;
+		public string DisplayManaCurrent = String.Empty;
+		public string DisplayManaMax = String.Empty;
+		public string DisplayEndCurrent = String.Empty;
+		public string DisplayEndMax = String.Empty;
+		public string DisplayExp = String.Empty;
+		public string DisplayAA = String.Empty;
 		public string PreviousDisc = String.Empty;
 		public string ActiveDisc = String.Empty;
 		public Int64 PreviousDiscTimeStamp = 0;
@@ -301,9 +300,16 @@ namespace E3Core.UI.Windows.Hud
 		public Int64 PlayerInfoLastUpdated = 0;
 		public Int64 PlayerInfoUpdateInterval = 500;
 		public int PlayerLevel = 0;
-		public int PlayerHP = 0;
-		public int PlayerMana = 0;
-		public int PlayerEnd = 0;
+		public int PlayerHPPercent = 0;
+		public int PlayerHPCurrent = 0;
+		public int PlayerHPMax = 0;
+		public int PlayerManaPercent = 0;
+		public int PlayerManaCurrent = 0;
+		public int PlayerManaMax = 0;
+		public int PlayerEndPercent = 0;
+		public int PlayerEndCurrent = 0;
+		public int PlayerEndMax = 0;
+
 		public Decimal PlayerExp = 0m;
 		public int PlayerAAPoints = 0;
 		public (float r, float g, float b) PlayerHPColor;
