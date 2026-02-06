@@ -350,6 +350,9 @@ namespace E3Core.Settings
 		[INI_Section("Rampage Actions", "Action")]
 		public List<Spell> RampageSpells = new List<Spell>();
 
+		[INI_Section("Brace Actions", "Action")]
+		public List<Spell> BraceSpells = new List<Spell>();
+
 		[INI_Section("Buffs", "Instant Buff")]
 		public List<Spell> InstantBuffs = new List<Spell>();
 		[INI_Section("Buffs", "Self Buff")]
@@ -924,6 +927,7 @@ namespace E3Core.Settings
 
 			LoadKeyData("Rampage Actions", "Action", ParsedData, RampageSpells);
 
+			LoadKeyData("Brace Actions", "Action", ParsedData, BraceSpells);
 
 			LoadKeyData("Report", "ReportEntry", ParsedData, Report_Entries);
 
@@ -1652,6 +1656,10 @@ namespace E3Core.Settings
 
 			newFile.Sections.AddSection("Rampage Actions");
 			section = newFile.Sections.GetSectionData("Rampage Actions");
+			section.Keys.AddKey("Action", "");
+
+			newFile.Sections.AddSection("Brace Actions");
+			section = newFile.Sections.GetSectionData("Brace Actions");
 			section.Keys.AddKey("Action", "");
 
 			newFile.Sections.AddSection("Blocked Buffs");
