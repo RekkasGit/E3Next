@@ -1495,7 +1495,30 @@ namespace E3Core.UI.Windows.Hud
 							}
 							state.WindowAlpha = ((float)updated) / 255f;
 						}
+						imgui_Separator();
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Icon Size");
 
+						}
+						imgui_SetNextItemWidth(100);
+						if (imgui_InputInt("##SongWindow_icon_set", state.IconSize, 1, 20))
+						{
+							int updated = imgui_InputInt_Get("##SongWindow_icon_set");
+
+							if (updated > 100)
+							{
+								updated = 100;
+
+							}
+							if (updated < 25)
+							{
+								updated = 25;
+
+							}
+							state.IconSize = updated;
+						}
 						imgui_Separator();
 						using (var style = PushStyle.Aquire())
 						{
@@ -2372,7 +2395,30 @@ namespace E3Core.UI.Windows.Hud
 							}
 							buffState.WindowAlpha = ((float)updated) / 255f;
 						}
+						imgui_Separator();
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Icon Size");
 
+						}
+						imgui_SetNextItemWidth(100);
+						if (imgui_InputInt("##BuffWindow_icon_set", buffState.IconSize, 1, 20))
+						{
+							int updated = imgui_InputInt_Get("##BuffWindow_icon_set");
+
+							if (updated > 100)
+							{
+								updated = 100;
+
+							}
+							if (updated < 25)
+							{
+								updated = 25;
+
+							}
+							buffState.IconSize = updated;
+						}
 						imgui_Separator();
 						using (var style = PushStyle.Aquire())
 						{
