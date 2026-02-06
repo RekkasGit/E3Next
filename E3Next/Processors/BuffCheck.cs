@@ -744,6 +744,7 @@ namespace E3Core.Processors
 		{
 			foreach (var spell in buffs)
 			{
+				if (E3.ActionTaken) return;
 				try
 				{
 					BuffTargetID = -1; //reset the current buff target, this is mainly used for IF conditions
