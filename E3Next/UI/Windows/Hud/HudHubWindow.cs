@@ -936,110 +936,122 @@ namespace E3Core.UI.Windows.Hud
 				}
 				
 			}
-		
-			var hp = state.PlayerHPColor;
-			imgui_Text("HP:");
-			imgui_SameLine(0, 2);
-			imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, state.DisplayHPCurrent);
-			imgui_SameLine(0, 0);imgui_Text("/");
-			imgui_SameLine(0, 0);
-			imgui_TextColored(0, 1, 0, 1.0f, state.DisplayHPMax);
 
-			float ending2ndLocation = 0;
-			int paddingBetweenSections = 20;
-			imgui_SameLine(0, 0);
-			float endingHPLocation = imgui_GetCursorPosX();
-			imgui_SameLine(0, paddingBetweenSections);
-			float startDiscLocation = 0;
-			if (state.PlayerManaMax > 0)
-			{
-				
-				var mana = state.PlayerManaColor;
-				imgui_Text("MP:");
-				imgui_SameLine(0, 2);
-				imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, state.DisplayManaCurrent);
-				imgui_SameLine(0, 0); imgui_Text("/");
-				imgui_SameLine(0, 0);
-				imgui_TextColored(0, 1, 0, 1.0f, state.DisplayManaMax);
-				imgui_SameLine(0, 0);
-				ending2ndLocation = imgui_GetCursorPosX();
-			}
-			else
-			{
-				
-				var end = state.PlayerEndColor;
-				imgui_Text("EN:");
-				imgui_SameLine(0, 2);
-				imgui_TextColored(end.r, end.g, end.b, 1.0f, state.DisplayEndCurrent);
-				imgui_SameLine(0, 0); imgui_Text("/");
-				imgui_SameLine(0, 0);
-				imgui_TextColored(0, 1, 0, 1.0f, state.DisplayEndMax);
-				imgui_SameLine(0, 0);
-				ending2ndLocation = imgui_GetCursorPosX();
-			}
-			if (widthAvail>400 && !String.IsNullOrWhiteSpace(state.ActiveDisc))
-			{
-				imgui_SameLine(0, paddingBetweenSections);
-				startDiscLocation = imgui_GetCursorPosX();
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
-				imgui_SameLine(0, 0);
-			}
-
-
-			imgui_Text("");
-			//now display progress bars
-			using (var style = PushStyle.Aquire())
-			{
-				style.PushStyleColor((int)ImGuiCol.PlotHistogram, 1, 0, 0, 1); //red
-				imgui_ProgressBar((float)state.PlayerHPPercent / 100f, 15, (int)endingHPLocation, state.PlayerHPPercent.ToString());
-			}
-			imgui_SameLine(0, 0);
-			if (state.PlayerManaMax > 0)
-			{
-				imgui_SetCursorPosX(endingHPLocation+ paddingBetweenSections);
-				using (var style = PushStyle.Aquire())
-				{
-					style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0,0,1,1); //blue
-					imgui_ProgressBar((float)state.PlayerManaPercent / 100f, 15, (int)(ending2ndLocation - endingHPLocation -paddingBetweenSections), state.PlayerManaPercent.ToString());
-				}
-
-			}
-			else
-			{
-				imgui_SetCursorPosX(endingHPLocation+ paddingBetweenSections);
-				imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 15, (int)(ending2ndLocation - endingHPLocation - paddingBetweenSections), state.PlayerEndPercent.ToString());
-
-			}
-
-		
-			if(widthAvail> 400)
-			{
-				if (!String.IsNullOrWhiteSpace(state.ActiveDisc))
-				{
-					imgui_SameLine(0, 0);
-					imgui_SetCursorPosX(startDiscLocation);
-					imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 15, 150, $"{state.ActiveDiscPercentLeft.ToString("N0")}%");
-				}
-			}
-			else
-			{
-				if (!String.IsNullOrWhiteSpace(state.ActiveDisc))
-				{
-					//DiscProgressBar
-					using (var style = PushStyle.Aquire())
-					{
-						style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
-						//style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
-						imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 15, 150, $"{state.ActiveDiscPercentLeft.ToString("N0")}%");
-					}
-
-				}
-
-			}
 			
+			float wdithOfWindow = imgui_GetWindowWidth();
+
+			using (var stylevar = PushStyle.Aquire())
+			{
+				stylevar.PushStyleVarVec2((int)ImGuiStyleVar.CellPadding, 0, 0);
+				stylevar.PushStyleVarVec2((int)ImGuiStyleVar.ItemSpacing, 0, 0);
 
 
+				List<string> columnSections = new List<string>() { "hp", "resource" };
+
+				if(!String.IsNullOrWhiteSpace(state.ActiveDisc))
+				{
+					columnSections.Add("disc");
+				}
+
+				using (var table = ImGUITable.Aquire())
+				{
+
+					Int32 numOfColumns =(int)wdithOfWindow/150;
+
+					if (numOfColumns < 1) numOfColumns = 1;
+					if (numOfColumns > columnSections.Count) numOfColumns = columnSections.Count;
+
+
+
+					table.BeginTable("PlayerInfoTable", numOfColumns, (int)ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX| (int)ImGuiTableFlags.ImGuiTableFlags_NoPadOuterX, 0, 0);
+					imgui_TableSetupColumn("",(int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
+					
+					if(numOfColumns>1) imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
+
+					for (Int32 i = 0; i < columnSections.Count; i++)
+					{
+						if (i % numOfColumns == 0)
+						{
+							//need to jump the row
+							imgui_TableNextRow();
+						}
+						imgui_TableNextColumn();
+						if (columnSections[i] == "hp")
+						{	
+							var hp = state.PlayerHPColor;
+							float startHPLocationX = imgui_GetCursorPosX();
+							imgui_Text("HP:");
+							imgui_SameLine(0, 2);
+							imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, state.DisplayHPCurrent);
+							imgui_SameLine(0, 0); imgui_Text("/");
+							imgui_SameLine(0, 0);
+							imgui_TextColored(0, 1, 0, 1.0f, state.DisplayHPMax);
+							float endHPLocationX = imgui_GetCursorPosX();
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.PlotHistogram, 1, 0, 0, 1); //red
+								imgui_ProgressBar((float)state.PlayerHPPercent / 100f,0, 125, state.PlayerHPPercent.ToString());
+							}
+						}
+						if (columnSections[i] == "resource")
+						{
+							if (numOfColumns > 1)
+							{
+								imgui_SetCursorPosY(imgui_GetCursorPosY() - 3);//to deal with a bug in the table with padding on the 2nd clumn
+							}
+							if (state.PlayerManaMax > 0)
+							{
+								var mana = state.PlayerManaColor;
+								imgui_Text("MP:");
+								imgui_SameLine(0, 2);
+								imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, state.DisplayManaCurrent);
+								imgui_SameLine(0, 0); imgui_Text("/");
+								imgui_SameLine(0, 0);
+								imgui_TextColored(0, 1, 0, 1.0f, state.DisplayManaMax);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0, 0, 1, 1); //blue
+									imgui_ProgressBar((float)state.PlayerManaPercent / 100f, 0, 125, state.PlayerManaPercent.ToString());
+								}
+							}
+							else
+							{
+
+								var end = state.PlayerEndColor;
+								imgui_Text("EN:");
+								imgui_SameLine(0, 2);
+								imgui_TextColored(end.r, end.g, end.b, 1.0f, state.DisplayEndCurrent);
+								imgui_SameLine(0, 0); imgui_Text("/");
+								imgui_SameLine(0, 0);
+								imgui_TextColored(0, 1, 0, 1.0f, state.DisplayEndMax);
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0, 0, 1, 1); //blue
+									imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 0, 125, state.PlayerEndPercent.ToString());
+								}
+							}
+
+						}
+						if (columnSections[i]=="disc")
+						{
+							//if (numOfColumns > 1)
+							//{
+							//	imgui_SetCursorPosY(imgui_GetCursorPosY() - 3);//to deal with a bug in the table with padding on the 2nd clumn
+							//}
+							imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
+							imgui_SameLine(0, 0);
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
+								//style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
+								imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
+								imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 15, 150, $"{state.ActiveDiscPercentLeft.ToString("N0")}%");
+							}
+						}
+
+					}
+				}
+			}
 		}
 		private static void RenderTargetInfo()
 		{
