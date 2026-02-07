@@ -277,6 +277,7 @@ namespace E3Core.UI.Windows.Hud
 	{
 		static string _playerInfoDisplay = String.Empty;
 		static Int32 _playerInfoDispleyLevel = 0;
+		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_SelectedFont = value; IsDirty = true; } }
 
 		public string WindowName = $"E3 PlayerInfo Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha = value; IsDirty = true; } }

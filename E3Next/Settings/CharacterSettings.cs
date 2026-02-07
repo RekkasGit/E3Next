@@ -169,7 +169,9 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_ShowPlayerInfo = true;
 		[INI_Section("E3Hud_Hub", "ShowTargetInfo")]
 		public bool E3Hud_Hub_ShowTargetInfo = true;
-
+		
+		[INI_Section("E3Hud_Hub_PlayerInfo", "SelectedFont")]
+		public string E3Hud_Hub_PlayerInfo_SelectedFont = "robo";
 		[INI_Section("E3Hud_Hub_PlayerInfo", "Alpha")]
 		public float E3Hud_Hub_PlayerInfo_Alpha = 0.8f;
 		[INI_Section("E3Hud_Hub_PlayerInfo", "Detached")]
@@ -844,6 +846,9 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub", "ShowPlayerInfo", ParsedData, ref E3Hud_Hub_ShowPlayerInfo);
 			LoadKeyData("E3Hud_Hub", "ShowTargetInfo", ParsedData, ref E3Hud_Hub_ShowTargetInfo);
 
+		
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFont", ParsedData, ref E3Hud_Hub_PlayerInfo_SelectedFont);
+
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Alpha", ParsedData, ref E3Hud_Hub_PlayerInfo_Alpha);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Detached", ParsedData, ref E3Hud_Hub_PlayerInfo_Detached);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Locked", ParsedData, ref E3Hud_Hub_PlayerInfo_Locked);
@@ -1314,6 +1319,7 @@ namespace E3Core.Settings
 
 			newFile.Sections.AddSection("E3Hud_Hub_PlayerInfo");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_PlayerInfo");
+			section.Keys.AddKey("SelectedFont", "robo");
 			section.Keys.AddKey("Alpha", "0.8");
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("Locked", "False");

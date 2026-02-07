@@ -2280,6 +2280,14 @@ namespace MonoCore
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_PushID(int id);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_PopID();
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_PushItemWidth(float width);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_PopItemWidth();
+
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_PushFont(string name);
@@ -2289,8 +2297,7 @@ namespace MonoCore
 		public extern static void imgui_PopFont();
 
 
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static bool imgui_PopID();
+	
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_TextColored(float r, float g, float b, float a, string text);
@@ -3199,6 +3206,51 @@ namespace MonoCore
 				StaticObjectPool.Push(this);
 			}
 			~PushStyle()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
+		public class Push : IDisposable
+		{
+			
+			Int32 ItemWidthCount = 0;
+			public void PushItemWidth(float width)
+			{
+				imgui_PushItemWidth(width);
+				ItemWidthCount++;
+			}
+		
+			#region objectPoolingStuff
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private Push()
+			{
+
+			}
+			public static Push Aquire()
+			{
+				Push obj;
+				if (!StaticObjectPool.TryPop<Push>(out obj))
+				{
+					obj = new Push();
+				}
+
+				return obj;
+			}
+			public void Dispose()
+			{
+				for(Int32 i = 0; i < ItemWidthCount; i++)
+				{
+					imgui_PopItemWidth();
+				}
+				ItemWidthCount = 0;
+				StaticObjectPool.Push(this);
+			}
+			~Push()
 			{
 				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
 				//if this is called, it will cause the domain to hang in the GC when shuttind down

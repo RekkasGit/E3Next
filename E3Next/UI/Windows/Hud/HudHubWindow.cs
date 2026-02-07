@@ -77,9 +77,9 @@ namespace E3Core.UI.Windows.Hud
 
 			EventProcessor.RegisterCommand("/e3hud_hub", (x) =>
 			{
-				if (Core._MQ2MonoVersion < 0.39m)
+				if (Core._MQ2MonoVersion < 0.40m)
 				{
-					MQ.Write("This requires MQ2Mono 0.39 or greater");
+					MQ.Write("This requires MQ2Mono 0.40 or greater");
 					return;
 				}
 				if (x.args.Count > 0)
@@ -125,11 +125,11 @@ namespace E3Core.UI.Windows.Hud
 			{
 				if (distance >= band.MinDist && distance < band.MaxDist)
 				{
-					return (band.R, band.G, band.B,1);
+					return (band.R, band.G, band.B, 1);
 				}
 			}
 
-			return (0.9f, 0.9f, 0.9f,1);
+			return (0.9f, 0.9f, 0.9f, 1);
 		}
 		private static (float r, float g, float b, float a) GetDistanceSeverityColor(double distance)
 		{
@@ -138,11 +138,11 @@ namespace E3Core.UI.Windows.Hud
 			{
 				if (distance >= band.MinDist && distance < band.MaxDist)
 				{
-					return (band.R, band.G, band.B,1);
+					return (band.R, band.G, band.B, 1);
 				}
 			}
 
-			return (0.9f, 0.9f, 0.9f,1);
+			return (0.9f, 0.9f, 0.9f, 1);
 		}
 		private static (float r, float g, float b, float a) GetResourceSeverityColor(double resourceValue)
 		{
@@ -151,11 +151,11 @@ namespace E3Core.UI.Windows.Hud
 			{
 				if (resourceValue <= band.MaxValue && resourceValue > band.MinValue)
 				{
-					return (band.R, band.G, band.B,1);
+					return (band.R, band.G, band.B, 1);
 				}
 			}
 
-			return (0.9f, 0.9f, 0.9f,1);
+			return (0.9f, 0.9f, 0.9f, 1);
 		}
 		private static (float r, float g, float b, float a) GetBuffDurationSeverityColor(double duration)
 		{
@@ -164,17 +164,17 @@ namespace E3Core.UI.Windows.Hud
 			{
 				if (duration <= band.MaxValue && duration > band.MinValue)
 				{
-					return (band.R, band.G, band.B,1);
+					return (band.R, band.G, band.B, 1);
 				}
 			}
 
-			return (0.9f, 0.9f, 0.9f,1);
+			return (0.9f, 0.9f, 0.9f, 1);
 		}
 		private static (float r, float g, float b, float a) GetConColorRGB(int conColorID)
 		{
 			switch (conColorID)
 			{
-				case 0x06: return (0.50f, 0.50f, 0.50f,1); // GREY
+				case 0x06: return (0.50f, 0.50f, 0.50f, 1); // GREY
 				case 0x02: return (0.10f, 0.85f, 0.10f, 1); // GREEN
 				case 0x12: return (0.40f, 0.70f, 1.00f, 1); // LIGHT BLUE
 				case 0x04: return (0.20f, 0.40f, 1.00f, 1); // BLUE
@@ -529,7 +529,7 @@ namespace E3Core.UI.Windows.Hud
 					row.InZone = true;
 
 				}
-			
+
 				row.PetHPPercent = pet_pctHealth;
 
 				if (distance == 0)
@@ -543,20 +543,20 @@ namespace E3Core.UI.Windows.Hud
 					row.DistanceColor = GetDistanceSeverityColor(distance);
 				}
 
-				if(!row.InZone)
+				if (!row.InZone)
 				{
 					row.DisplayName = "<" + user + ">";
-					row.DisplayNameColor = (0.427f, 0.595f, 0.610f,1); //grayish
+					row.DisplayNameColor = (0.427f, 0.595f, 0.610f, 1); //grayish
 				}
 				else if (isInvis)
 				{
 					row.DisplayName = "(" + user + ")";
-					row.DisplayNameColor = (0.427f, 0.595f, 0.610f,1); //grayish
+					row.DisplayNameColor = (0.427f, 0.595f, 0.610f, 1); //grayish
 				}
 				else if (isInvul)
 				{
 					row.DisplayName = "[" + user + "]";
-					row.DisplayNameColor = (0.950f, 0.910f, 0.143f,1 ); //GOLD
+					row.DisplayNameColor = (0.950f, 0.910f, 0.143f, 1); //GOLD
 				}
 				else
 				{
@@ -646,7 +646,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 
 				row.DisplayName = user;
-				row.DisplayNameColor = (0.275f, 0.860f, 0.85f,1);
+				row.DisplayNameColor = (0.275f, 0.860f, 0.85f, 1);
 				Int32 mana = MQ.Query<Int32>($"${{Group.Member[{user}].PctMana}}", false);
 				if (mana == 0)
 				{
@@ -935,225 +935,281 @@ namespace E3Core.UI.Windows.Hud
 		{
 			var hub_state = _state.GetState<State_HubWindow>();
 			var state = _state.GetState<State_PlayerInfoWindow>();
-
-			if (!hub_state.ShowPlayerInfo) return;
-			if (state.PlayerLevel == 0) return;
-
-
-			float widthAvail = imgui_GetContentRegionAvailX();
-
-			// Detach/Reattach buttons
-			if (!state.Detached)
+			using (var font = IMGUI_Fonts.Aquire())
 			{
-				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.DisplayPlayerInfo);
-				imgui_SameLine(widthAvail - 20);
-				if (imgui_Button(IMGUI_DETATCH_PLAYERINFO_ID))
+				font.PushFont(state.SelectedFont);
+				if (!hub_state.ShowPlayerInfo) return;
+				if (state.PlayerLevel == 0) return;
+
+
+				float widthAvail = imgui_GetContentRegionAvailX();
+
+				// Detach/Reattach buttons
+				if (!state.Detached)
 				{
-					state.Detached = true;
-					imgui_Begin_OpenFlagSet(state.WindowName, true);
-				}
-			}
-			else
-			{
-				imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.DisplayPlayerInfo);
-				imgui_SameLine(0, 10);
-				imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, "XP:");
-				imgui_SameLine(0, 0);
-				imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, state.DisplayExp);
-				imgui_SameLine(0, 10);
-				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.DisplayAA);
-				float windowWidth = imgui_GetWindowWidth();
-				imgui_SameLine(0);
-				float availSpace = imgui_GetContentRegionAvailX();
-				if (imgui_InvisibleButton("##PlayerInfoSettingsInvisButton", availSpace, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
-				{
-				}
-				using (var popup = ImGUIPopUpContext.Aquire())
-				{
-					if (popup.BeginPopupContextItem($"##PlayerInfoSettingsPopup", 1))
+					imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.DisplayPlayerInfo);
+					imgui_SameLine(widthAvail - 20);
+					if (imgui_Button(IMGUI_DETATCH_PLAYERINFO_ID))
 					{
-						if (imgui_MenuItem("Dock"))
-						{
-							state.Detached = false;
-							imgui_Begin_OpenFlagSet(state.WindowName, false);
-						}
-
-						using (var style = PushStyle.Aquire())
-						{
-							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							if (state.Locked)
-							{
-								if (imgui_MenuItem("UnLock")) state.Locked = false;
-							}
-							else
-							{
-								if (imgui_MenuItem("Lock")) state.Locked = true;
-							}
-						}
-
-						imgui_Separator();
-						using (var style = PushStyle.Aquire())
-						{
-							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							imgui_Text("Alpha");
-						}
-
-						string keyForInput = "##PlayerInfoWindow_alpha_set";
-						imgui_SetNextItemWidth(100);
-						if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
-						{
-							int updated = imgui_InputInt_Get(keyForInput);
-							if (updated > 255) updated = 255;
-							if (updated < 0) updated = 0;
-							state.WindowAlpha = ((float)updated) / 255f;
-						}
+						state.Detached = true;
+						imgui_Begin_OpenFlagSet(state.WindowName, true);
 					}
 				}
-
-			}
-
-
-			float wdithOfWindow = imgui_GetWindowWidth();
-
-			using (var stylevar = PushStyle.Aquire())
-			{
-				stylevar.PushStyleVarVec2((int)ImGuiStyleVar.CellPadding, 0, 0);
-				stylevar.PushStyleVarVec2((int)ImGuiStyleVar.ItemSpacing, 0, 0);
-
-
-				List<string> columnSections = state.DefaultColumns;
-				if (!String.IsNullOrWhiteSpace(state.ActiveDisc))
+				else
 				{
-					columnSections = state.DefaultColumnsWithDisc;
-				}
-
-				using (var table = ImGUITable.Aquire())
-				{
-
-					Int32 numOfColumns = (int)wdithOfWindow / 135;
-
-					if (numOfColumns < 1) numOfColumns = 1;
-					if (numOfColumns > columnSections.Count) numOfColumns = columnSections.Count;
-
-
-
-					table.BeginTable("PlayerInfoTable", numOfColumns, (int)ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX | (int)ImGuiTableFlags.ImGuiTableFlags_NoPadOuterX, 0, 0);
-
-					for (Int32 i = 0; i < numOfColumns; i++)
+					imgui_TextColored(0.275f, 0.860f, 0.85f, 1.0f, state.DisplayPlayerInfo);
+					imgui_SameLine(0, 10);
+					imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, "XP:");
+					imgui_SameLine(0, 0);
+					imgui_TextColored(0.95f, 0.70f, 0.50f, 1.0f, state.DisplayExp);
+					imgui_SameLine(0, 10);
+					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.DisplayAA);
+					float windowWidth = imgui_GetWindowWidth();
+					imgui_SameLine(0);
+					float availSpace = imgui_GetContentRegionAvailX();
+					if (imgui_InvisibleButton("##PlayerInfoSettingsInvisButton", availSpace, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
 					{
-						imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
 					}
-
-					//if (numOfColumns>1) imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
-
-					for (Int32 i = 0; i < columnSections.Count; i++)
+					using (var font2 = IMGUI_Fonts.Aquire())
 					{
-						if (i % numOfColumns == 0)
+						font2.PushFont("robo");
+						using (var popup = ImGUIPopUpContext.Aquire())
 						{
-							//need to jump the row
-							imgui_TableNextRow();
-						}
-						imgui_TableNextColumn();
-						if (columnSections[i] == "hp")
-						{
-							var hp = state.PlayerHPColor;
-							float startHPLocationX = imgui_GetCursorPosX();
-							imgui_Text("HP:");
-							imgui_SameLine(0, 2);
-							imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, state.DisplayHPCurrent);
-							imgui_SameLine(0, 0); imgui_Text("/");
-							imgui_SameLine(0, 0);
-							imgui_TextColored(0, 1, 0, 1.0f, state.DisplayHPMax);
-							float endHPLocationX = imgui_GetCursorPosX();
-							using (var style = PushStyle.Aquire())
+							if (popup.BeginPopupContextItem($"##PlayerInfoSettingsPopup", 1))
 							{
-								style.PushStyleColor((int)ImGuiCol.PlotHistogram, 1, 0, 0, 1); //red
-								imgui_ProgressBar((float)state.PlayerHPPercent / 100f, 0, 125, state.PlayerHPPercent.ToString());
-							}
-						}
-						if (columnSections[i] == "resource")
-						{
-							if (numOfColumns > 1)
-							{
-								imgui_SetCursorPosY(imgui_GetCursorPosY() - 3);//to deal with a bug in the table with padding on the 2nd clumn
-							}
-							else
-							{
-								imgui_SetCursorPosY(imgui_GetCursorPosY() + 5);
-							}
-							if (state.PlayerManaMax > 0)
-							{
-								var mana = state.PlayerManaColor;
-								imgui_Text("MP:");
-								imgui_SameLine(0, 2);
-								imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, state.DisplayManaCurrent);
-								imgui_SameLine(0, 0); imgui_Text("/");
-								imgui_SameLine(0, 0);
-								imgui_TextColored(0, 1, 0, 1.0f, state.DisplayManaMax);
-								float progressBarStartPosX = imgui_GetCursorPosX();
-								float progressBarStartPosY = imgui_GetCursorPosY();
+								if (imgui_MenuItem("Dock"))
+								{
+									state.Detached = false;
+									imgui_Begin_OpenFlagSet(state.WindowName, false);
+								}
+
 								using (var style = PushStyle.Aquire())
 								{
-									style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0, 0, 1, 1); //blue
-									imgui_ProgressBar((float)state.PlayerManaPercent / 100f, 0, 125, state.PlayerManaPercent.ToString());
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									if (state.Locked)
+									{
+										if (imgui_MenuItem("UnLock")) state.Locked = false;
+									}
+									else
+									{
+										if (imgui_MenuItem("Lock")) state.Locked = true;
+									}
 								}
-								float[] barPos = imgui_GetItemRectMin();
-								float[] barSize = imgui_GetItemRectSize();
 
-								if (state.PlayerEndPercent > 0)
+								imgui_Separator();
+								using (var style = PushStyle.Aquire())
 								{
-									var end = state.PlayerEndColor;
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Alpha");
+								}
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Font");
+								}
+
+
+								using (var combo = ImGUICombo.Aquire())
+								{
+									if (combo.BeginCombo("##Select Font for Playerinfo", state.SelectedFont))
+									{
+										foreach (var pair in E3ImGUI.FontList)
+										{
+											bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+											if (imgui_Selectable($"{pair.Key}", sel))
+											{
+												state.SelectedFont = pair.Key;
+											}
+										}
+									}
+								}
+								imgui_Separator();
+								string keyForInput = "##PlayerInfoWindow_alpha_set";
+								imgui_SetNextItemWidth(100);
+								if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
+								{
+									int updated = imgui_InputInt_Get(keyForInput);
+									if (updated > 255) updated = 255;
+									if (updated < 0) updated = 0;
+									state.WindowAlpha = ((float)updated) / 255f;
+								}
+							}
+						}
+
+					}
+				}
+
+
+
+
+				float wdithOfWindow = imgui_GetWindowWidth();
+
+				using (var stylevar = PushStyle.Aquire())
+				{
+					//stylevar.PushStyleVarVec2((int)ImGuiStyleVar.CellPadding, 0, 0);
+					//stylevar.PushStyleVarVec2((int)ImGuiStyleVar.ItemSpacing, 0, 0);
+
+
+					List<string> columnSections = state.DefaultColumns;
+					if (!String.IsNullOrWhiteSpace(state.ActiveDisc))
+					{
+						columnSections = state.DefaultColumnsWithDisc;
+					}
+
+					using (var table = ImGUITable.Aquire())
+					{
+
+						Int32 numOfColumns = (int)wdithOfWindow / (int)(imgui_CalcTextSizeX(state.DisplayHPCurrent) + imgui_CalcTextSizeX(state.DisplayHPMax) + imgui_CalcTextSizeX("HP:/"));
+
+						if (numOfColumns < 1) numOfColumns = 1;
+						if (numOfColumns > columnSections.Count) numOfColumns = columnSections.Count;
+
+						int flags = (int)ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit;
+
+
+						table.BeginTable("PlayerInfoTable", numOfColumns, flags, 0, 0);
+
+						for (Int32 i = 0; i < numOfColumns; i++)
+						{
+							//imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
+						}
+
+						//if (numOfColumns>1) imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
+
+						for (Int32 i = 0; i < columnSections.Count; i++)
+						{
+							if (i % numOfColumns == 0)
+							{
+								//need to jump the row
+								imgui_TableNextRow();
+							}
+							imgui_TableNextColumn();
+							if (columnSections[i] == "hp")
+							{
+								var hp = state.PlayerHPColor;
+								float startHPLocationX = imgui_GetCursorPosX();
+								imgui_Text("HP:");
+								imgui_SameLine(0, 2);
+								imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, state.DisplayHPCurrent);
+								imgui_SameLine(0, 0); imgui_Text("/");
+								imgui_SameLine(0, 0);
+								imgui_TextColored(0, 1, 0, 1.0f, state.DisplayHPMax);
+								float endHPLocationX = imgui_GetCursorPosX();
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.PlotHistogram, 1, 0, 0, 1); //red
+
+									using (var push = Push.Aquire())
+									{
+										push.PushItemWidth(-1);
+										imgui_ProgressBar((float)state.PlayerHPPercent / 100f, 0, 0, state.PlayerHPPercent.ToString());
+									}
+										
+								}
+							}
+							if (columnSections[i] == "resource")
+							{
+								if (numOfColumns > 1)
+								{
+									imgui_SetCursorPosY(imgui_GetCursorPosY() - 3);//to deal with a bug in the table with padding on the 2nd clumn
+								}
+								else
+								{
+									imgui_SetCursorPosY(imgui_GetCursorPosY() + 5);
+								}
+								if (state.PlayerManaMax > 0)
+								{
+									var mana = state.PlayerManaColor;
+									imgui_Text("MP:");
+									imgui_SameLine(0, 2);
+									imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, state.DisplayManaCurrent);
+									imgui_SameLine(0, 0); imgui_Text("/");
 									imgui_SameLine(0, 0);
-									imgui_SetCursorPosX(progressBarStartPosX);
-									imgui_SetCursorPosY(progressBarStartPosY + barSize[1] - 5);
+									imgui_TextColored(0, 1, 0, 1.0f, state.DisplayManaMax);
+									float progressBarStartPosX = imgui_GetCursorPosX();
+									float progressBarStartPosY = imgui_GetCursorPosY();
 									using (var style = PushStyle.Aquire())
 									{
-										style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], 1);
-										//style.PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
-										float widthOfColumn = imgui_GetContentRegionAvailX();
-										imgui_ProgressBar(((float)state.PlayerEndPercent / (float)100), 5, 125, "");
+										style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0, 0, 1, 1); //blue
+										using (var push = Push.Aquire())
+										{
+											push.PushItemWidth(-1);
+
+											imgui_ProgressBar((float)state.PlayerManaPercent / 100f, 0, 0, state.PlayerManaPercent.ToString());
+										}
+									}
+									float[] barPos = imgui_GetItemRectMin();
+									float[] barSize = imgui_GetItemRectSize();
+
+									if (state.PlayerEndPercent > 0)
+									{
+										var end = state.PlayerEndColor;
+										imgui_SameLine(0, 0);
+										imgui_SetCursorPosX(progressBarStartPosX);
+										imgui_SetCursorPosY(progressBarStartPosY + barSize[1] - 5);
+										using (var style = PushStyle.Aquire())
+										{
+											style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], 1);
+											//style.PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
+											float widthOfColumn = imgui_GetContentRegionAvailX();
+											using (var push = Push.Aquire())
+											{
+												push.PushItemWidth(-1);
+
+												imgui_ProgressBar(((float)state.PlayerEndPercent / (float)100), 5, 0, "");
+											}
+											}
+										}
+
+								}
+								else
+								{
+
+									var end = state.PlayerEndColor;
+									imgui_Text("EN:");
+									imgui_SameLine(0, 2);
+									imgui_TextColored(end.r, end.g, end.b, 1.0f, state.DisplayEndCurrent);
+									imgui_SameLine(0, 0); imgui_Text("/");
+									imgui_SameLine(0, 0);
+									imgui_TextColored(0, 1, 0, 1.0f, state.DisplayEndMax);
+									using (var style = PushStyle.Aquire())
+									{
+										style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]); //Yellow?
+										using (var push = Push.Aquire())
+										{
+											push.PushItemWidth(-1);
+											imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 0, 0, state.PlayerEndPercent.ToString());
+										}
 									}
 								}
 
 							}
-							else
+							if (columnSections[i] == "disc")
 							{
+								if (numOfColumns == 3)
+								{
+									imgui_SetCursorPosY(imgui_GetCursorPosY() - 5);
 
-								var end = state.PlayerEndColor;
-								imgui_Text("EN:");
-								imgui_SameLine(0, 2);
-								imgui_TextColored(end.r, end.g, end.b, 1.0f, state.DisplayEndCurrent);
-								imgui_SameLine(0, 0); imgui_Text("/");
-								imgui_SameLine(0, 0);
-								imgui_TextColored(0, 1, 0, 1.0f, state.DisplayEndMax);
+								}
+								else
+								{
+									imgui_SetCursorPosY(imgui_GetCursorPosY() + 5);
+								}
 								using (var style = PushStyle.Aquire())
 								{
-									style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]); //Yellow?
-									imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 0, 125, state.PlayerEndPercent.ToString());
+									style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
+									//style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
+									imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"{state.ActiveDisc}");
+									using (var push = Push.Aquire())
+									{
+										push.PushItemWidth(-1);
+										imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 0, 0, $"({state.Display_ActiveDiscTimeleft}) {state.ActiveDiscPercentLeft.ToString("N0")}%");
+									}
 								}
 							}
 
 						}
-						if (columnSections[i] == "disc")
-						{
-							if (numOfColumns == 3)
-							{
-								imgui_SetCursorPosY(imgui_GetCursorPosY() - 5);
-
-							}
-							else
-							{
-								imgui_SetCursorPosY(imgui_GetCursorPosY() + 5);
-							}
-							using (var style = PushStyle.Aquire())
-							{
-								style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
-								//style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-								imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"{state.ActiveDisc}");
-								imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 0, 125, $"({state.Display_ActiveDiscTimeleft}) {state.ActiveDiscPercentLeft.ToString("N0")}%");
-							}
-						}
-
 					}
 				}
 			}
@@ -3227,7 +3283,7 @@ namespace E3Core.UI.Windows.Hud
 								{
 									imgui_SameLine(0);
 
-									if(stats.DisplayNameColor.r!=0 && stats.DisplayNameColor.g!=0 && stats.DisplayNameColor.b!=0 &&  stats.DisplayNameColor.a != 0)
+									if (stats.DisplayNameColor.r != 0 && stats.DisplayNameColor.g != 0 && stats.DisplayNameColor.b != 0 && stats.DisplayNameColor.a != 0)
 									{
 
 										imgui_TextColored(stats.DisplayNameColor.r, stats.DisplayNameColor.g, stats.DisplayNameColor.b, state.NameColor[3], stats.DisplayName);
