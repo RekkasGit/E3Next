@@ -999,6 +999,10 @@ namespace E3Core.UI.Windows.Hud
 							{
 								imgui_SetCursorPosY(imgui_GetCursorPosY() - 3);//to deal with a bug in the table with padding on the 2nd clumn
 							}
+							else
+							{
+								imgui_SetCursorPosY(imgui_GetCursorPosY() + 5);
+							}
 							if (state.PlayerManaMax > 0)
 							{
 								var mana = state.PlayerManaColor;
@@ -1008,15 +1012,35 @@ namespace E3Core.UI.Windows.Hud
 								imgui_SameLine(0, 0); imgui_Text("/");
 								imgui_SameLine(0, 0);
 								imgui_TextColored(0, 1, 0, 1.0f, state.DisplayManaMax);
+								float progressBarStartPosX = imgui_GetCursorPosX();
+								float progressBarStartPosY = imgui_GetCursorPosY();
 								using (var style = PushStyle.Aquire())
 								{
 									style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0, 0, 1, 1); //blue
 									imgui_ProgressBar((float)state.PlayerManaPercent / 100f, 0, 125, state.PlayerManaPercent.ToString());
 								}
+								float[] barPos = imgui_GetItemRectMin();
+								float[] barSize = imgui_GetItemRectSize();
+
+								if (state.PlayerEndPercent > 0)
+								{
+									var end = state.PlayerEndColor;
+									imgui_SameLine(0, 0);
+									imgui_SetCursorPosX(progressBarStartPosX);
+									imgui_SetCursorPosY(progressBarStartPosY + barSize[1] - 5);
+									using (var style = PushStyle.Aquire())
+									{
+										style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], 1);
+										//style.PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
+										float widthOfColumn = imgui_GetContentRegionAvailX();
+										imgui_ProgressBar(((float)state.PlayerEndPercent / (float)100), 5, 125, "");
+									}
+								}
+
 							}
 							else
 							{
-
+								
 								var end = state.PlayerEndColor;
 								imgui_Text("EN:");
 								imgui_SameLine(0, 2);
@@ -1026,7 +1050,7 @@ namespace E3Core.UI.Windows.Hud
 								imgui_TextColored(0, 1, 0, 1.0f, state.DisplayEndMax);
 								using (var style = PushStyle.Aquire())
 								{
-									style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0, 0, 1, 1); //blue
+									style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0, 1, 1, 1); //Yellow?
 									imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 0, 125, state.PlayerEndPercent.ToString());
 								}
 							}
@@ -1034,19 +1058,22 @@ namespace E3Core.UI.Windows.Hud
 						}
 						if (columnSections[i]=="disc")
 						{
-							//if (numOfColumns > 1)
-							//{
-							//	imgui_SetCursorPosY(imgui_GetCursorPosY() - 3);//to deal with a bug in the table with padding on the 2nd clumn
-							//}
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
-							imgui_SameLine(0, 0);
-							using (var style = PushStyle.Aquire())
+							if(numOfColumns==3)
 							{
-								style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
-								//style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-								imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
-								imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 15, 150, $"{state.ActiveDiscPercentLeft.ToString("N0")}%");
+								imgui_SetCursorPosY(imgui_GetCursorPosY() - 5);
+
 							}
+							else
+							{
+								imgui_SetCursorPosY(imgui_GetCursorPosY() + 5);
+							}
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
+									//style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
+									imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"Disc: {state.ActiveDisc} - {state.Display_ActiveDiscTimeleft}");
+									imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 0, 125, $"{state.ActiveDiscPercentLeft.ToString("N0")}%");
+								}
 						}
 
 					}
