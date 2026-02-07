@@ -729,7 +729,7 @@ namespace E3Core.UI.Windows.Hud
 				
 	
 
-				state.TargetHP = (int)spawn.PctHps;
+				state.TargetHP = MQ.Query<Int32>("${Target.PctHPs}", false);
 				state.TargetLevel = spawn.Level;
 				state.TargetClassName = spawn.ClassShortName;
 				state.TargetDistance = spawn.Distance3D;
