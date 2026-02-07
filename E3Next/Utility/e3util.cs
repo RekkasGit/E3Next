@@ -30,7 +30,7 @@ namespace E3Core.Utility
 		public static Logging _log = E3.Log;
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
-
+		public static bool UseProtoBufForBuffs = false;
 		public static Int32 MaxBuffSlots = 42;
 		public static Int32 MaxSongSlots = 30;
 		public static Int32 MaxPetBuffSlots = 30;
@@ -659,31 +659,36 @@ namespace E3Core.Utility
 		{
 			list.Clear();
 			Dictionary<Int32, Int64> result = list;
-			BuffDataList bufflist = new BuffDataList();
-			bufflist.MergeFrom(ByteString.FromBase64(s));
-			foreach(var buff in bufflist.Data)
-			{
-				result[buff.SpellID] = buff.Duration;
-			}
-	
-			//int start = 0;
-			//int end = 0;
-			//foreach (char x in s)
-			//{
-			//	if (x == delim || end == s.Length - 1)
-			//	{
-			//		if (end == s.Length - 1 && x != delim)
-			//			end++;
-			//		//number,number
-			//		_buffInfoTempList.Clear();
-			//		string tstring = s.Substring(start, end - start);
-			//		StringsToNumbers(tstring, ',', _buffInfoTempList);
-			//		result[(int)_buffInfoTempList[0]] = _buffInfoTempList[1];
-			//		start = end + 1;
-			//	}
-			//	end++;
-			//}
 
+			if(UseProtoBufForBuffs)
+			{
+				BuffDataList bufflist = new BuffDataList();
+				bufflist.MergeFrom(ByteString.FromBase64(s));
+				foreach (var buff in bufflist.Data)
+				{
+					result[buff.SpellID] = buff.Duration;
+				}
+			}
+			else
+			{
+				int start = 0;
+				int end = 0;
+				foreach (char x in s)
+				{
+					if (x == delim || end == s.Length - 1)
+					{
+						if (end == s.Length - 1 && x != delim)
+							end++;
+						//number,number
+						_buffInfoTempList.Clear();
+						string tstring = s.Substring(start, end - start);
+						StringsToNumbers(tstring, ',', _buffInfoTempList);
+						result[(int)_buffInfoTempList[0]] = _buffInfoTempList[1];
+						start = end + 1;
+					}
+					end++;
+				}
+			}
 		}
 		public static List<string> StringsToList(string s, char delim)
 		{
@@ -915,8 +920,9 @@ namespace E3Core.Utility
 				buffInfoStringBuilder.Clear();
 				//lets look for a partial match.
 
-				BuffDataList buffDataList = new BuffDataList();
-		
+				BuffDataList buffDataList = null;
+				if(UseProtoBufForBuffs)  buffDataList= new BuffDataList();
+
 				for (Int32 i = 1; i <= MaxBuffSlots; i++)
 				{
 				
@@ -953,33 +959,40 @@ namespace E3Core.Utility
 						if (spellType == "Beneficial") spellTypeID = 1;
 						if (spellType == "Beneficial(Group)") spellTypeID = 2;
 
+						if(UseProtoBufForBuffs)
+						{
+							BuffData buffData = new BuffData();
 
-						BuffData buffData = new BuffData();
+							buffData.SpellID = spell_id;
+							buffData.Duration = duration;
+							buffData.Hitcount = hitcount;
+							buffData.CounterType = counterTypeID;
+							buffData.BuffType = 0;//buff
+							buffData.CounterNumber = counterNumber;
+							buffData.SpellTypeID = spellTypeID;
+							buffDataList.Data.Add(buffData);
 
-						buffData.SpellID = spell_id;
-						buffData.Duration = duration;
-						buffData.Hitcount = hitcount;
-						buffData.CounterType = counterTypeID;
-						buffData.BuffType = 0;//buff
-						buffData.CounterNumber = counterNumber;
-						buffData.SpellTypeID = spellTypeID;
-						buffDataList.Data.Add(buffData);
+						}
+						else
+						{
+							buffInfoStringBuilder.Append(spellID.ToString());
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(duration.ToString());
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(hitcount.ToString());
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(spellTypeID);
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(0); //0 for buff
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(counterTypeID);
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(counterNumber.ToString());
+							buffInfoStringBuilder.Append(":");
+
+						}
 
 
-						//buffInfoStringBuilder.Append(spellID);
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(duration);
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(hitcount);
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(spellTypeID);
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(0); //0 for buff
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(counterTypeID);
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(counterNumber);
-						//buffInfoStringBuilder.Append(":");
 					}
 				}
 				for (Int32 i = 1; i <= MaxSongSlots; i++)
@@ -1020,40 +1033,51 @@ namespace E3Core.Utility
 						if (spellType == "Beneficial") spellTypeID = 1;
 						if (spellType == "Beneficial(Group)") spellTypeID = 2;
 
+						if (UseProtoBufForBuffs)
+						{
+							BuffData buffData = new BuffData();
 
-
-						BuffData buffData = new BuffData();
-
-						buffData.SpellID = spell_id;
-						buffData.Duration = duration;
-						buffData.Hitcount = hitcount;
-						buffData.CounterType = -1;
-						buffData.BuffType = 1 ;//song
-						buffData.CounterNumber = -1;
-						buffData.SpellTypeID = spellTypeID;
-						buffDataList.Data.Add(buffData);
-
-						//buffInfoStringBuilder.Append(spellID);
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(duration);
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(hitcount);
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(spellTypeID);
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(1); //1 for song
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(-1);
-						//buffInfoStringBuilder.Append(",");
-						//buffInfoStringBuilder.Append(-1);
-						//buffInfoStringBuilder.Append(":");
+							buffData.SpellID = spell_id;
+							buffData.Duration = duration;
+							buffData.Hitcount = hitcount;
+							buffData.CounterType = -1;
+							buffData.BuffType = 1;//song
+							buffData.CounterNumber = -1;
+							buffData.SpellTypeID = spellTypeID;
+							buffDataList.Data.Add(buffData);
+						}
+						else
+						{
+							buffInfoStringBuilder.Append(spellID.ToString());
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(duration.ToString());
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(hitcount.ToString());
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(spellTypeID.ToString());
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(1); //1 for song
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(-1);
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(-1);
+							buffInfoStringBuilder.Append(":");
+						}
 					}
 				}
 
-				string base64EncodedString = Convert.ToBase64String(buffDataList.ToByteArray());
-				return base64EncodedString;
+				if(UseProtoBufForBuffs)
+				{
+					string base64EncodedString = Convert.ToBase64String(buffDataList.ToByteArray());
+					return base64EncodedString;
 
-				//return buffInfoStringBuilder.ToString();
+				}
+				else
+				{
+					return buffInfoStringBuilder.ToString();
+				}
+
+
 
 			}
 
@@ -1065,7 +1089,8 @@ namespace E3Core.Utility
 				buffInfoStringBuilder.Clear();
 				//lets look for a partial match.
 
-				BuffDataList buffDataList = new BuffDataList();
+				BuffDataList buffDataList = null;
+				if (UseProtoBufForBuffs) buffDataList = new BuffDataList();
 
 				if (MQ.Query<bool>("${Me.Pet.ID}"))
 				{
@@ -1092,30 +1117,58 @@ namespace E3Core.Utility
 							if (spellType == "Detrimental") spellTypeID = 0;
 							if (spellType == "Beneficial") spellTypeID = 1;
 							if (spellType == "Beneficial(Group)") spellTypeID = 2;
-							//buffInfoStringBuilder.Append(spellID);
-							//buffInfoStringBuilder.Append(",");
-							//buffInfoStringBuilder.Append(duration);
-							//buffInfoStringBuilder.Append(":");
+						
+							
+							if(UseProtoBufForBuffs)
+							{
+								BuffData buffData = new BuffData();
+
+								buffData.SpellID = Int32.Parse(spellID);
+								buffData.Duration = duration;
+								buffData.CounterType = counterTypeID;
+								buffData.BuffType = 0;//buff
+								buffData.CounterNumber = counterNumber;
+								buffData.SpellTypeID = spellTypeID;
+								buffDataList.Data.Add(buffData);
+							}
+							else
+							{
+								buffInfoStringBuilder.Append(spellID.ToString());
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(duration.ToString());
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(-1);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(spellTypeID);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(0); //0 for buff
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(counterTypeID);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(counterNumber.ToString());
+								buffInfoStringBuilder.Append(":");
+
+							}
 
 
-							BuffData buffData = new BuffData();
 
-							buffData.SpellID = Int32.Parse(spellID);
-							buffData.Duration = duration;
-							buffData.CounterType = counterTypeID;
-							buffData.BuffType = 0;//buff
-							buffData.CounterNumber = counterNumber;
-							buffData.SpellTypeID = spellTypeID;
-							buffDataList.Data.Add(buffData);
+
+
 
 						}
 					}
 				}
 
-				string base64EncodedString = Convert.ToBase64String(buffDataList.ToByteArray());
-				return base64EncodedString;
+				if(UseProtoBufForBuffs)
+				{
+					string base64EncodedString = Convert.ToBase64String(buffDataList.ToByteArray());
+					return base64EncodedString;
 
-			//	return buffInfoStringBuilder.ToString();
+				}
+				else
+				{
+					return buffInfoStringBuilder.ToString();
+				}
 			}
 
 		}

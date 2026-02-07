@@ -309,7 +309,8 @@ namespace E3Core.UI.Windows.Hud
 		public int PlayerEndPercent = 0;
 		public int PlayerEndCurrent = 0;
 		public int PlayerEndMax = 0;
-
+		public List<string> DefaultColumns = new List<string>() { "hp", "resource" };
+		public List<string> DefaultColumnsWithDisc = new List<string>() { "hp", "resource", "disc" };
 		public Decimal PlayerExp = 0m;
 		public int PlayerAAPoints = 0;
 		public (float r, float g, float b) PlayerHPColor;
