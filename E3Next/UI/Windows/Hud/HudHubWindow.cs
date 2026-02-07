@@ -722,6 +722,8 @@ namespace E3Core.UI.Windows.Hud
 				{
 					state.PreviousTargetName = state.TargetName;
 					state.TargetName = spawn.CleanName;
+					state.Display_TargetName = $"{state.TargetName} ({targetID})";
+					state.Display_TargetNameSize = imgui_CalcTextSizeX(state.Display_TargetName);
 					state.TargetNameSize = imgui_CalcTextSizeX(state.TargetName);
 				}
 				
@@ -1150,14 +1152,14 @@ namespace E3Core.UI.Windows.Hud
 			imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
 			imgui_SameLine(0, 0);
 			// Center the target name over the HP bar
-			float nameWidth = state.TargetNameSize;
+			float nameWidth = state.Display_TargetNameSize;
 			float centerX = (widthAvail - nameWidth) / 2f;
 			if (centerX < 0) centerX = 0;
 
 			if (!tiState.Detached)
 			{
 				imgui_SetCursorPosX(centerX);
-				imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.TargetName);
+				imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.Display_TargetName);
 				// Reset cursor and draw detach button at the right edge
 				imgui_SameLine(widthAvail - 20);
 				if (imgui_Button(IMGUI_DETATCH_TARGETINFO_ID))
@@ -1172,8 +1174,7 @@ namespace E3Core.UI.Windows.Hud
 				float contentCenterX = (windowWidth - nameWidth) / 2f;
 				if (contentCenterX < 0) contentCenterX = 0;
 				imgui_SetCursorPosX(contentCenterX);
-				imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.TargetName);
-
+				imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.Display_TargetName);
 				imgui_SameLine(0);
 				float availSpace = imgui_GetContentRegionAvailX();
 				if (imgui_InvisibleButton("##TargetInfoSettingsInvisButton", availSpace, 20,(int)ImGuiMouseButton.Right| (int) ImGuiMouseButton.Left))
