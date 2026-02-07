@@ -958,7 +958,7 @@ namespace E3Core.UI.Windows.Hud
 				using (var table = ImGUITable.Aquire())
 				{
 
-					Int32 numOfColumns =(int)wdithOfWindow/150;
+					Int32 numOfColumns =(int)wdithOfWindow/135;
 
 					if (numOfColumns < 1) numOfColumns = 1;
 					if (numOfColumns > columnSections.Count) numOfColumns = columnSections.Count;
@@ -966,9 +966,13 @@ namespace E3Core.UI.Windows.Hud
 
 
 					table.BeginTable("PlayerInfoTable", numOfColumns, (int)ImGuiTableFlags.ImGuiTableFlags_NoPadInnerX| (int)ImGuiTableFlags.ImGuiTableFlags_NoPadOuterX, 0, 0);
-					imgui_TableSetupColumn("",(int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
 					
-					if(numOfColumns>1) imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
+					for(Int32 i = 0;i< numOfColumns; i++)
+					{
+						imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
+					}
+
+					//if (numOfColumns>1) imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
 
 					for (Int32 i = 0; i < columnSections.Count; i++)
 					{
