@@ -118,70 +118,70 @@ namespace E3Core.UI.Windows.Hud
 				_imguiContextReady = false;
 			}
 		}
-		private static (float r, float g, float b) GetAggroSeverityColor(double distance)
+		private static (float r, float g, float b, float a) GetAggroSeverityColor(double distance)
 		{
 
 			foreach (var band in _aggroSeverity)
 			{
 				if (distance >= band.MinDist && distance < band.MaxDist)
 				{
-					return (band.R, band.G, band.B);
+					return (band.R, band.G, band.B,1);
 				}
 			}
 
-			return (0.9f, 0.9f, 0.9f);
+			return (0.9f, 0.9f, 0.9f,1);
 		}
-		private static (float r, float g, float b) GetDistanceSeverityColor(double distance)
+		private static (float r, float g, float b, float a) GetDistanceSeverityColor(double distance)
 		{
 
 			foreach (var band in _distanceSeverity)
 			{
 				if (distance >= band.MinDist && distance < band.MaxDist)
 				{
-					return (band.R, band.G, band.B);
+					return (band.R, band.G, band.B,1);
 				}
 			}
 
-			return (0.9f, 0.9f, 0.9f);
+			return (0.9f, 0.9f, 0.9f,1);
 		}
-		private static (float r, float g, float b) GetResourceSeverityColor(double resourceValue)
+		private static (float r, float g, float b, float a) GetResourceSeverityColor(double resourceValue)
 		{
 
 			foreach (var band in _resourceSeverity)
 			{
 				if (resourceValue <= band.MaxValue && resourceValue > band.MinValue)
 				{
-					return (band.R, band.G, band.B);
+					return (band.R, band.G, band.B,1);
 				}
 			}
 
-			return (0.9f, 0.9f, 0.9f);
+			return (0.9f, 0.9f, 0.9f,1);
 		}
-		private static (float r, float g, float b) GetBuffDurationSeverityColor(double duration)
+		private static (float r, float g, float b, float a) GetBuffDurationSeverityColor(double duration)
 		{
 
 			foreach (var band in _buffDurationSeverity)
 			{
 				if (duration <= band.MaxValue && duration > band.MinValue)
 				{
-					return (band.R, band.G, band.B);
+					return (band.R, band.G, band.B,1);
 				}
 			}
 
-			return (0.9f, 0.9f, 0.9f);
+			return (0.9f, 0.9f, 0.9f,1);
 		}
-		private static (float r, float g, float b) GetConColorRGB(int conColorID)
+		private static (float r, float g, float b, float a) GetConColorRGB(int conColorID)
 		{
 			switch (conColorID)
 			{
-				case 0x06: return (0.50f, 0.50f, 0.50f); // GREY
-				case 0x02: return (0.10f, 0.85f, 0.10f); // GREEN
-				case 0x12: return (0.40f, 0.70f, 1.00f); // LIGHT BLUE
-				case 0x04: return (0.20f, 0.40f, 1.00f); // BLUE
-				case 0x0a: return (0.95f, 0.95f, 0.95f); // WHITE
-				case 0x0f: return (0.95f, 0.85f, 0.10f); // YELLOW
-				case 0x0d: return (1.00f, 0.15f, 0.15f); // RED
-				default: return (0.90f, 0.90f, 0.90f);
+				case 0x06: return (0.50f, 0.50f, 0.50f,1); // GREY
+				case 0x02: return (0.10f, 0.85f, 0.10f, 1); // GREEN
+				case 0x12: return (0.40f, 0.70f, 1.00f, 1); // LIGHT BLUE
+				case 0x04: return (0.20f, 0.40f, 1.00f, 1); // BLUE
+				case 0x0a: return (0.95f, 0.95f, 0.95f, 1); // WHITE
+				case 0x0f: return (0.95f, 0.85f, 0.10f, 1); // YELLOW
+				case 0x0d: return (1.00f, 0.15f, 0.15f, 1); // RED
+				default: return (0.90f, 0.90f, 0.90f, 1);
 			}
 		}
 
@@ -517,6 +517,7 @@ namespace E3Core.UI.Windows.Hud
 				bool.TryParse(E3.Bots.Query(user, "${Me.IsInvis}"), out isInvis);
 				bool isInvul = false;
 				bool.TryParse(E3.Bots.Query(user, "${Me.Invulnerable}"), out isInvul);
+				var row = new TableRow_GroupInfo(user);
 
 				if (_spawns.TryByName(user, out var spawn, true))
 				{
@@ -525,11 +526,10 @@ namespace E3Core.UI.Windows.Hud
 					z = E3.Loc_Z - z;
 					//we can calculate distance
 					distance = Math.Sqrt(x * x + y * y + z * z);
-
+					row.InZone = true;
 
 				}
-				var row = new TableRow_GroupInfo(user);
-
+			
 				row.PetHPPercent = pet_pctHealth;
 
 				if (distance == 0)
@@ -543,20 +543,25 @@ namespace E3Core.UI.Windows.Hud
 					row.DistanceColor = GetDistanceSeverityColor(distance);
 				}
 
-				if (isInvis)
+				if(!row.InZone)
+				{
+					row.DisplayName = "<" + user + ">";
+					row.DisplayNameColor = (0.427f, 0.595f, 0.610f,1); //grayish
+				}
+				else if (isInvis)
 				{
 					row.DisplayName = "(" + user + ")";
-					row.DisplayNameColor = (0.427f, 0.595f, 0.610f); //grayish
+					row.DisplayNameColor = (0.427f, 0.595f, 0.610f,1); //grayish
 				}
 				else if (isInvul)
 				{
 					row.DisplayName = "[" + user + "]";
-					row.DisplayNameColor = (0.950f, 0.910f, 0.143f); //GOLD
+					row.DisplayNameColor = (0.950f, 0.910f, 0.143f,1 ); //GOLD
 				}
 				else
 				{
 					row.DisplayName = user;
-					row.DisplayNameColor = (0.275f, 0.860f, 0.85f);
+					//row.DisplayNameColor = (0.275f, 0.860f, 0.85f,1);
 				}
 				if (mana == 0)
 				{
@@ -640,9 +645,8 @@ namespace E3Core.UI.Windows.Hud
 					row.DistanceColor = GetDistanceSeverityColor((double)distance);
 				}
 
-
 				row.DisplayName = user;
-				row.DisplayNameColor = (0.275f, 0.860f, 0.85f);
+				row.DisplayNameColor = (0.275f, 0.860f, 0.85f,1);
 				Int32 mana = MQ.Query<Int32>($"${{Group.Member[{user}].PctMana}}", false);
 				if (mana == 0)
 				{
@@ -3192,7 +3196,17 @@ namespace E3Core.UI.Windows.Hud
 									float textPosX = barPos[0];
 
 									float textPosY = barPos[1] + (barSize[1] - textSize[1]) * 0.5f;
-									imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(state.NameColor[0], state.NameColor[1], state.NameColor[2], state.NameColor[3]), stats.DisplayName);
+
+									if (stats.DisplayNameColor.r != 0f && stats.DisplayNameColor.g != 0f && stats.DisplayNameColor.b != 0f && stats.DisplayNameColor.a != 0f)
+									{
+
+										imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(stats.DisplayNameColor.r, stats.DisplayNameColor.g, stats.DisplayNameColor.b, state.NameColor[3]), stats.DisplayName);
+									}
+									else
+									{
+										imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(state.NameColor[0], state.NameColor[1], state.NameColor[2], state.NameColor[3]), stats.DisplayName);
+
+									}
 
 									if (stats.PetHPPercent > 0)
 									{
@@ -3213,7 +3227,17 @@ namespace E3Core.UI.Windows.Hud
 								{
 									imgui_SameLine(0);
 
-									imgui_TextColored(state.NameColor[0], state.NameColor[1], state.NameColor[2], state.NameColor[3], stats.DisplayName);
+									if(stats.DisplayNameColor.r!=0 && stats.DisplayNameColor.g!=0 && stats.DisplayNameColor.b!=0 &&  stats.DisplayNameColor.a != 0)
+									{
+
+										imgui_TextColored(stats.DisplayNameColor.r, stats.DisplayNameColor.g, stats.DisplayNameColor.b, state.NameColor[3], stats.DisplayName);
+									}
+									else
+									{
+
+										imgui_TextColored(state.NameColor[0], state.NameColor[1], state.NameColor[2], state.NameColor[3], stats.DisplayName);
+
+									}
 
 								}
 								var c = stats.DisplayNameColor;
@@ -3288,13 +3312,13 @@ namespace E3Core.UI.Windows.Hud
 			public Int32 SpellID = 0;
 			public string Name;
 			public string DisplayName { get; set; }
-			public (float r, float g, float b) DisplayNameColor;
+			public (float r, float g, float b, float a) DisplayNameColor;
 			public Int32 iconID;
 			public string Display_Duration { get; set; }
 			public Int32 Duration { get; set; }
 			public Int32 MaxDuration_Value { get; set; }
 			public string SimpleDuration { get; set; }
-			public (float r, float g, float b) DurationColor;
+			public (float r, float g, float b, float a) DurationColor;
 
 			public string HitCount = String.Empty;
 			public (float r, float g, float b) HitCountColor;
@@ -3312,36 +3336,36 @@ namespace E3Core.UI.Windows.Hud
 		public class TableRow_GroupInfo
 		{
 
-
+			public bool InZone = false;
 			public string Name;
 			public string DisplayName { get; set; }
-			public (float r, float g, float b) DisplayNameColor;
+			public (float r, float g, float b, float a) DisplayNameColor;
 			public Int32 HPPercent = 0;
 			public Int32 PetHPPercent = 0;
 			public string HP { get; set; }
-			public (float r, float g, float b) HPColor;
+			public (float r, float g, float b, float a) HPColor;
 
 			public string Mana { get; set; }
-			public (float r, float g, float b) ManaColor;
+			public (float r, float g, float b, float a) ManaColor;
 
 			public string Endurance { get; set; }
-			public (float r, float g, float b) EndColor;
+			public (float r, float g, float b, float a) EndColor;
 
 			public string Distance { get; set; }
 
-			public (float r, float g, float b) DistanceColor;
+			public (float r, float g, float b, float a) DistanceColor;
 
 
 			public string AggroPct { get; set; }
 
-			public (float r, float g, float b) AggroColor;
+			public (float r, float g, float b, float a) AggroColor;
 
 			public string XtargetAggroPct { get; set; }
 
-			public (float r, float g, float b) AggroXTargetColor;
+			public (float r, float g, float b, float a) AggroXTargetColor;
 			public string XtargetMinAggroPct { get; set; }
 
-			public (float r, float g, float b) AggroMinXTargetColor;
+			public (float r, float g, float b, float a) AggroMinXTargetColor;
 
 			public TableRow_GroupInfo()
 			{

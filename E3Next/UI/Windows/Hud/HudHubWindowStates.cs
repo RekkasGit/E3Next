@@ -313,9 +313,9 @@ namespace E3Core.UI.Windows.Hud
 		public List<string> DefaultColumnsWithDisc = new List<string>() { "hp", "resource", "disc" };
 		public Decimal PlayerExp = 0m;
 		public int PlayerAAPoints = 0;
-		public (float r, float g, float b) PlayerHPColor;
-		public (float r, float g, float b) PlayerManaColor;
-		public (float r, float g, float b) PlayerEndColor;
+		public (float r, float g, float b, float a) PlayerHPColor;
+		public (float r, float g, float b, float a) PlayerManaColor;
+		public (float r, float g, float b, float a) PlayerEndColor;
 		public float[] DiscProgressBarColor { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar; }
 
 		public bool IsDirty = false;
@@ -351,8 +351,8 @@ namespace E3Core.UI.Windows.Hud
 		public double TargetDistance = 0;
 		public string TargetDistanceString;
 		public string Display_LevelAndClassString = String.Empty;
-		public (float r, float g, float b) TargetNameColor;
-		public (float r, float g, float b) TargetDistanceColor;
+		public (float r, float g, float b, float a) TargetNameColor;
+		public (float r, float g, float b, float a) TargetDistanceColor;
 		public List<TableRow_BuffInfo> TargetBuffs = new List<TableRow_BuffInfo>();
 		public Int64 TargetBuffLastUpdated = 0;
 		public Int64 TargetBuffUpdateInterval = 500;
