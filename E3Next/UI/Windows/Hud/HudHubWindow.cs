@@ -629,6 +629,8 @@ namespace E3Core.UI.Windows.Hud
 			state.PlayerHPMax = MQ.Query<int>("${Me.MaxHPs}", false);
 			state.PlayerManaCurrent = MQ.Query<int>("${Me.CurrentMana}", false);
 			state.PlayerManaMax = MQ.Query<int>("${Me.MaxMana}", false);
+			state.PlayerEndCurrent = MQ.Query<int>("${Me.CurrentEndurance}", false);
+			state.PlayerEndMax = MQ.Query<int>("${Me.MaxEndurance}", false);
 
 
 
@@ -1050,7 +1052,7 @@ namespace E3Core.UI.Windows.Hud
 								imgui_TextColored(0, 1, 0, 1.0f, state.DisplayEndMax);
 								using (var style = PushStyle.Aquire())
 								{
-									style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0, 1, 1, 1); //Yellow?
+									style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]); //Yellow?
 									imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 0, 125, state.PlayerEndPercent.ToString());
 								}
 							}
