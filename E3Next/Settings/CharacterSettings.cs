@@ -169,6 +169,8 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_ShowPlayerInfo = true;
 		[INI_Section("E3Hud_Hub", "ShowTargetInfo")]
 		public bool E3Hud_Hub_ShowTargetInfo = true;
+		[INI_Section("E3Hud_Hub", "PeerSortOrder")]
+		public string E3Hud_Hub_PeerSortOrder = "Alphabetical";
 		
 		[INI_Section("E3Hud_Hub_PlayerInfo", "SelectedFont")]
 		public string E3Hud_Hub_PlayerInfo_SelectedFont = "robo";
@@ -180,6 +182,14 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_PlayerInfo_Locked = false;
 		[INI_Section("E3Hud_Hub_PlayerInfo", "RGBA_DiscProgressBar")]
 		public float[] E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar = { 0, 1f, 1f, 0.4f };
+		[INI_Section("E3Hud_Hub_PlayerInfo", "ShowHPAsPercent")]
+		public bool E3Hud_Hub_PlayerInfo_ShowHPAsPercent = false;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "ShowManaAsPercent")]
+		public bool E3Hud_Hub_PlayerInfo_ShowManaAsPercent = false;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "ShowEndAsPercent")]
+		public bool E3Hud_Hub_PlayerInfo_ShowEndAsPercent = false;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "ShowProgressBars")]
+		public bool E3Hud_Hub_PlayerInfo_ShowProgressBars = true;
 
 		[INI_Section("E3Hud_Hub_TargetInfo", "Alpha")]
 		public float E3Hud_Hub_TargetInfo_Alpha = 0.8f;
@@ -845,6 +855,7 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub", "ShowHotButtons", ParsedData, ref E3Hud_Hub_ShowHotButtons);
 			LoadKeyData("E3Hud_Hub", "ShowPlayerInfo", ParsedData, ref E3Hud_Hub_ShowPlayerInfo);
 			LoadKeyData("E3Hud_Hub", "ShowTargetInfo", ParsedData, ref E3Hud_Hub_ShowTargetInfo);
+			LoadKeyData("E3Hud_Hub", "PeerSortOrder", ParsedData, ref E3Hud_Hub_PeerSortOrder);
 
 		
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFont", ParsedData, ref E3Hud_Hub_PlayerInfo_SelectedFont);
@@ -853,9 +864,13 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Detached", ParsedData, ref E3Hud_Hub_PlayerInfo_Detached);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Locked", ParsedData, ref E3Hud_Hub_PlayerInfo_Locked);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "RGBA_DiscProgressBar", ParsedData, E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowHPAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowHPAsPercent);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowManaAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowManaAsPercent);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowEndAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowEndAsPercent);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowProgressBars", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowProgressBars);
 
 
-		
+
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Alpha", ParsedData, ref E3Hud_Hub_TargetInfo_Alpha);
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Detached", ParsedData, ref E3Hud_Hub_TargetInfo_Detached);
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Locked", ParsedData, ref E3Hud_Hub_TargetInfo_Locked);
@@ -1316,6 +1331,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ShowHotButtons", "True");
 			section.Keys.AddKey("ShowPlayerInfo", "True");
 			section.Keys.AddKey("ShowTargetInfo", "True");
+			section.Keys.AddKey("PeerSortOrder", "Alphabetical");
 
 			newFile.Sections.AddSection("E3Hud_Hub_PlayerInfo");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_PlayerInfo");
@@ -1324,6 +1340,10 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("RGBA_DiscProgressBar", "0,1,1,0.4");
+			section.Keys.AddKey("ShowHPAsPercent", "False");
+			section.Keys.AddKey("ShowManaAsPercent", "False");
+			section.Keys.AddKey("ShowEndAsPercent", "False");
+			section.Keys.AddKey("ShowProgressBars", "True");
 
 			newFile.Sections.AddSection("E3Hud_Hub_TargetInfo");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_TargetInfo");

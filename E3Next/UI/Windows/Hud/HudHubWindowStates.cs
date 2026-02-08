@@ -26,6 +26,7 @@ namespace E3Core.UI.Windows.Hud
 		private State_HotbuttonsWindow _hotbuttonWindowState = new State_HotbuttonsWindow();
 		private State_PlayerInfoWindow _playerInfoWindowState = new State_PlayerInfoWindow();
 		private State_TargetInfoWindow _targetInfoWindowState = new State_TargetInfoWindow();
+		private State_PeerAAWindow _peerAAWindowState = new State_PeerAAWindow();
 
 		public T GetState<T>()
 		{
@@ -57,6 +58,10 @@ namespace E3Core.UI.Windows.Hud
 			if (type == typeof(State_TargetInfoWindow))
 			{
 				return (T)(object)_targetInfoWindowState;
+			}
+			if (type == typeof(State_PeerAAWindow))
+			{
+				return (T)(object)_peerAAWindowState;
 			}
 			return default(T);
 		}
@@ -94,6 +99,8 @@ namespace E3Core.UI.Windows.Hud
 		public float[] HealthBarColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_HealthBar; }
 		public float[] PetHealthBarColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_PetHealthBar; }
 
+		public string PeerSortOrder { get => E3.CharacterSettings.E3Hud_Hub_PeerSortOrder; set { E3.CharacterSettings.E3Hud_Hub_PeerSortOrder = value; IsDirty = true; } }
+		public string[] PeerSortOrders = { "Alphabetical", "Me On Top" };
 		public string[] LeftClickActions = { "Target", "Foreground", "ViewBuffs", "NavToToon" };
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;
@@ -318,6 +325,10 @@ namespace E3Core.UI.Windows.Hud
 		public (float r, float g, float b, float a) PlayerManaColor;
 		public (float r, float g, float b, float a) PlayerEndColor;
 		public float[] DiscProgressBarColor { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar; }
+		public bool ShowHPAsPercent { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_ShowHPAsPercent; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_ShowHPAsPercent = value; IsDirty = true; } }
+		public bool ShowManaAsPercent { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_ShowManaAsPercent; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_ShowManaAsPercent = value; IsDirty = true; } }
+		public bool ShowEndAsPercent { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_ShowEndAsPercent; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_ShowEndAsPercent = value; IsDirty = true; } }
+		public bool ShowProgressBars { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_ShowProgressBars; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_ShowProgressBars = value; IsDirty = true; } }
 
 		public bool IsDirty = false;
 		public string Display = "";
@@ -329,6 +340,16 @@ namespace E3Core.UI.Windows.Hud
 		{
 			IsDirty = false;
 		}
+	}
+	public class State_PeerAAWindow
+	{
+		public string WindowName = $"E3 Peer AA - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+		public float WindowAlpha = 0.8f;
+		public bool IsDirty = false;
+		public bool IsOpen = false;
+		public List<(string Name, string AAPoints)> PeerAAInfo = new List<(string Name, string AAPoints)>();
+		public Int64 LastUpdated = 0;
+		public Int64 UpdateInterval = 1000;
 	}
 	public class State_TargetInfoWindow
 	{
