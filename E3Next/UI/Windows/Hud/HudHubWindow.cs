@@ -221,7 +221,8 @@ namespace E3Core.UI.Windows.Hud
 				counterNumber = buff.CounterNumber;
 
 				string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-				var buffRow = new TableRow_BuffInfo(buffName);
+				var buffRow = new TableRow_BuffInfo(spellid);
+				buffRow.Name = buffName;
 				buffRow.SpellID = spellid;
 				buffRow.Duration = duration;
 				var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
@@ -280,7 +281,7 @@ namespace E3Core.UI.Windows.Hud
 					counterNumber = (int)tempBuffer[6];
 
 					string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-					var buffRow = new TableRow_BuffInfo(buffName);
+					var buffRow = new TableRow_BuffInfo(spellid);
 					buffRow.BuffType = bufftype;
 					buffRow.CounterNumberValue = counterNumber;
 					buffRow.SpellID = spellid;
@@ -305,16 +306,19 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private static void RefreshBuffInfo()
 		{
-			var hubState = _state.GetState<State_HubWindow>();
+
+
 			var buffState = _state.GetState<State_BuffWindow>();
-			var songState = _state.GetState<State_SongWindow>();
-			var debuffState = _state.GetState<State_DebuffWindow>();
 
 			if (!e3util.ShouldCheck(ref buffState.LastUpdated, buffState.LastUpdateInterval)) return;
-
-
-			try
+			//using (var RefreshBuffInfoTrace = E3.Log.Trace("RefreshBuffInfo"))
 			{
+				var hubState = _state.GetState<State_HubWindow>();
+				var songState = _state.GetState<State_SongWindow>();
+				var debuffState = _state.GetState<State_DebuffWindow>();
+
+				//try
+				//{
 				string userTouse = E3.CurrentName;
 
 				if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
@@ -343,135 +347,151 @@ namespace E3Core.UI.Windows.Hud
 
 					//get the proper data either from the custom string or protobuf
 					List<TableRow_BuffInfo> dataInfo = null;
-					if (e3util.UseProtoBufForBuffs)
+
+					//using (var decompressTrace = E3.Log.Trace("BuffDecompress"))
 					{
-						dataInfo = RefreshBuffInfo_ParseProtoBuffData(buffInfo);
+						if (e3util.UseProtoBufForBuffs)
+						{
+							dataInfo = RefreshBuffInfo_ParseProtoBuffData(buffInfo);
+						}
+						else
+						{
+							dataInfo = RefreshBuffInfo_ParseBuffData(buffInfo);
+						}
 					}
-					else
-					{
-						dataInfo = RefreshBuffInfo_ParseBuffData(buffInfo);
-					}
+
 					//var dataInfo = RefreshBuffInfo_ParseProtoBuffData(buffInfo);
-
-					foreach (var buffRow in dataInfo)
+					//using (var RefreshBuffInfoSetData = E3.Log.Trace("RefreshBuffInfoSetData"))
 					{
-						Int32 spellid = buffRow.SpellID;
-						Int32 duration = buffRow.Duration;
-						Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
-						string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-						Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}", false) * 6 * 1000;
-						var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
-						buffRow.iconID = spellIcon;
-						buffRow.MaxDuration_Value = maxDuration;
-						buffRow.Duration = duration;
+						foreach (var buffRow in dataInfo)
+						{
+							Int32 spellid = buffRow.SpellID;
+							Int32 duration = buffRow.Duration;
 
-						if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
-						{
-							buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
-						}
-						else
-						{
-							buffRow.Spell = null;
-						}
+							string buffName = buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
 
-						if (duration < 0)
-						{
-							buffRow.SimpleDuration = "(p)";
-						}
-						else if (buffTimeSpan.TotalHours >= 1)
-						{
-							buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
-						}
-						else if (buffTimeSpan.TotalMinutes >= 1)
-						{
-							buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
-						}
-						else
-						{
-							buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
-						}
-						if (duration < 160000d)
-						{
-							buffRow.DisplayName = buffName + $" ( {buffRow.Duration} )";
-						}
-						else
-						{
-							buffRow.DisplayName = buffName;
-						}
-						//put them into their proper collections
-						if (buffRow.BuffType == 0) //if normal buff
-						{
-							if (buffRow.SpellType == 0)
+							buffRow.Name = buffName;
+
+							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
 							{
-								if (buffRow.CounterTypeID == 0) buffRow.CounterType = "Disease";
-								else if (buffRow.CounterTypeID == 1) buffRow.CounterType = "Poison";
-								else if (buffRow.CounterTypeID == 2) buffRow.CounterType = "Curse";
-								else if (buffRow.CounterTypeID == 3) buffRow.CounterType = "Corruption";
-
-								if (buffRow.CounterNumberValue > 0)
-								{
-									buffRow.Display_CounterNumber = buffRow.CounterNumberValue.ToString();
-
-								}
-								debuffState.DebuffInfo.Add(buffRow);
+								buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
+								buffRow.MaxDuration_Value = buffRow.Spell.Duration * 6 * 1000;
+								buffRow.iconID = buffRow.Spell.SpellIcon;
 							}
 							else
 							{
-								buffState.BuffInfo.Add(buffRow);
+								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
+								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}", false) * 6 * 1000;
+								buffRow.iconID = spellIcon;
+								buffRow.MaxDuration_Value = maxDuration;
+								buffRow.Spell = null;
+								
 							}
-						}
-						else
-						{
-							//this is a song
-							songState.SongInfo.Add(buffRow);
+
+							if (duration < 0)
+							{
+								buffRow.SimpleDuration = "(p)";
+							}
+							else if (buffTimeSpan.TotalHours >= 1)
+							{
+								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
+							}
+							else if (buffTimeSpan.TotalMinutes >= 1)
+							{
+								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
+							}
+							else
+							{
+								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
+							}
+							if (duration < 160000d)
+							{
+								buffRow.DisplayName = buffName + $" ( {buffRow.Duration} )";
+							}
+							else
+							{
+								buffRow.DisplayName = buffName;
+							}
+							//put them into their proper collections
+							if (buffRow.BuffType == 0) //if normal buff
+							{
+								if (buffRow.SpellType == 0)
+								{
+									if (buffRow.CounterTypeID == 0) buffRow.CounterType = "Disease";
+									else if (buffRow.CounterTypeID == 1) buffRow.CounterType = "Poison";
+									else if (buffRow.CounterTypeID == 2) buffRow.CounterType = "Curse";
+									else if (buffRow.CounterTypeID == 3) buffRow.CounterType = "Corruption";
+
+									if (buffRow.CounterNumberValue > 0)
+									{
+										buffRow.Display_CounterNumber = buffRow.CounterNumberValue.ToString();
+
+									}
+									debuffState.DebuffInfo.Add(buffRow);
+								}
+								else
+								{
+									buffState.BuffInfo.Add(buffRow);
+								}
+							}
+							else
+							{
+								//this is a song
+								songState.SongInfo.Add(buffRow);
+							}
 						}
 					}
 
-
-					//okay buff data is all setup, lets put them into the proper collection for the UI to use.
-
-					if (buffState.PreviousBuffs.Count > 0)
+					//using (var RefreshBuffInfoSetData2 = E3.Log.Trace("RefreshBuffInfoSetData2"))
 					{
+
+						//okay buff data is all setup, lets put them into the proper collection for the UI to use.
+
+						if (buffState.PreviousBuffs.Count > 0)
+						{
+							foreach (var buff in buffState.BuffInfo)
+							{
+								if (!buffState.PreviousBuffs.Contains(buff.SpellID))
+								{
+									buffState.NewBuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+								}
+							}
+							foreach (var buff in songState.SongInfo)
+							{
+								if (!buffState.PreviousBuffs.Contains(buff.SpellID))
+								{
+									buffState.NewBuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+								}
+							}
+							foreach (var buff in debuffState.DebuffInfo)
+							{
+								if (!buffState.PreviousBuffs.Contains(buff.SpellID))
+								{
+									buffState.NewBuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+								}
+							}
+						}
+						buffState.PreviousBuffs.Clear();
 						foreach (var buff in buffState.BuffInfo)
 						{
-							if (!buffState.PreviousBuffs.Contains(buff.SpellID))
-							{
-								buffState.NewBuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
-							}
+							buffState.PreviousBuffs.Add(buff.SpellID);
 						}
 						foreach (var buff in songState.SongInfo)
 						{
-							if (!buffState.PreviousBuffs.Contains(buff.SpellID))
-							{
-								buffState.NewBuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
-							}
+							buffState.PreviousBuffs.Add(buff.SpellID);
 						}
 						foreach (var buff in debuffState.DebuffInfo)
 						{
-							if (!buffState.PreviousBuffs.Contains(buff.SpellID))
-							{
-								buffState.NewBuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
-							}
+							buffState.PreviousBuffs.Add(buff.SpellID);
 						}
 					}
-					buffState.PreviousBuffs.Clear();
-					foreach (var buff in buffState.BuffInfo)
-					{
-						buffState.PreviousBuffs.Add(buff.SpellID);
-					}
-					foreach (var buff in songState.SongInfo)
-					{
-						buffState.PreviousBuffs.Add(buff.SpellID);
-					}
-					foreach (var buff in debuffState.DebuffInfo)
-					{
-						buffState.PreviousBuffs.Add(buff.SpellID);
-					}
 				}
-			}
-			catch (Exception ex)
-			{
-				_exceptionMessage = ex.StackTrace;
+				//}
+				//catch (Exception ex)
+				//{
+				//	_exceptionMessage = ex.StackTrace;
+				//}
 			}
 		}
 		private static void RefreshGroupInfo()
@@ -868,7 +888,8 @@ namespace E3Core.UI.Windows.Hud
 				Int32 duration = MQ.Query<Int32>($"${{Target.Buff[{i}].Duration}}", false);
 				Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
 				string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-				var buffRow = new TableRow_BuffInfo(buffName);
+				var buffRow = new TableRow_BuffInfo(spellid);
+				buffRow.Name = buffName;
 				buffRow.iconID = spellIcon;
 				var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
 				buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
@@ -1105,7 +1126,7 @@ namespace E3Core.UI.Windows.Hud
 										push.PushItemWidth(-1);
 										imgui_ProgressBar((float)state.PlayerHPPercent / 100f, 0, 0, state.PlayerHPPercent.ToString());
 									}
-										
+
 								}
 							}
 							if (columnSections[i] == "resource")
@@ -1159,8 +1180,8 @@ namespace E3Core.UI.Windows.Hud
 
 												imgui_ProgressBar(((float)state.PlayerEndPercent / (float)100), 5, 0, "");
 											}
-											}
 										}
+									}
 
 								}
 								else
@@ -1511,11 +1532,6 @@ namespace E3Core.UI.Windows.Hud
 
 						if (window.Begin(state.WindowName, flags))
 						{
-							RefreshGroupInfo();
-							RefreshBuffInfo();
-							RefreshPlayerInfo();
-							RefreshTargetInfo();
-
 							if (state.IsDirty || buffstate.IsDirty || songstate.IsDirty || buttonstate.IsDirty || playerInfoState.IsDirty || targetInfoState.IsDirty)
 							{
 								if (imgui_Button("Save"))
@@ -1634,6 +1650,12 @@ namespace E3Core.UI.Windows.Hud
 			{
 				TryReattachWindowsIfClosed();
 				var buttonState = _state.GetState<State_HotbuttonsWindow>();
+
+
+				RefreshGroupInfo();
+				RefreshBuffInfo();
+				RefreshPlayerInfo();
+				RefreshTargetInfo();
 
 				RenderHub_MainWindow();
 
@@ -2465,8 +2487,6 @@ namespace E3Core.UI.Windows.Hud
 			var hubState = _state.GetState<State_HubWindow>();
 			var buffState = _state.GetState<State_BuffWindow>();
 			var debuffState = _state.GetState<State_DebuffWindow>();
-
-			RefreshBuffInfo();
 
 			float widthAvail = imgui_GetContentRegionAvailX();
 
@@ -3366,7 +3386,7 @@ namespace E3Core.UI.Windows.Hud
 			public Int32 CounterNumberValue = 0;
 			public Spell Spell;
 			public Int32 SpellID = 0;
-			public string Name;
+			public string Name = String.Empty;
 			public string DisplayName { get; set; }
 			public (float r, float g, float b, float a) DisplayNameColor;
 			public Int32 iconID;
@@ -3384,9 +3404,9 @@ namespace E3Core.UI.Windows.Hud
 			public string CounterType = "";
 			public string Display_CounterNumber = String.Empty;
 
-			public TableRow_BuffInfo(string buffName)
+			public TableRow_BuffInfo(Int32 spellid)
 			{
-				Name = buffName;
+				SpellID = spellid;
 			}
 		}
 		public class TableRow_GroupInfo

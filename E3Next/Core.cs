@@ -1775,7 +1775,7 @@ namespace MonoCore
             {
                 return;
             }
-            this.Write($"|- {methodName} ==>");
+            this.WriteDelayed($"|- {methodName} ==>");
         }
         public void TraceEnd(string methodName)
         {
@@ -1783,7 +1783,7 @@ namespace MonoCore
             {
                 return;
             }
-            this.Write($"<== {methodName} -|");
+            this.WriteDelayed($"<== {methodName} -|");
         }
         public void Delay(Int32 value)
         {
