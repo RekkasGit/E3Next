@@ -125,8 +125,20 @@ namespace E3Core.UI.Windows.Hud
 			IsDirty = false;
 		}
 	}
+	public class BuffCacheEntry
+	{
+		public BuffCacheEntry() { }
+
+		public string Name = String.Empty;
+		public Int32 MaxDuration = 0;
+		public Int32 SpellIcon = 0;
+
+
+	}
 	public class State_BuffWindow
 	{
+
+		public ConcurrentDictionary<Int32, BuffCacheEntry> BuffCache = new ConcurrentDictionary<int, BuffCacheEntry>();
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_Buff_Alpha; set { E3.CharacterSettings.E3Hud_Hub_Buff_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_Buff_Detached; set { E3.CharacterSettings.E3Hud_Hub_Buff_Detached = value; IsDirty = true; } }
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_Buff_SelectedFont = value; IsDirty = true; } }

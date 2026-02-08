@@ -2304,7 +2304,7 @@ namespace MonoCore
 
         public static List<Spawn> _spawns = new List<Spawn>(2048);
         public static ConcurrentDictionary<string, Spawn> _spawnsByName = new ConcurrentDictionary<string, Spawn>(3,2048,StringComparer.OrdinalIgnoreCase);
-        public static Dictionary<Int32, Spawn> SpawnsByID = new Dictionary<int, Spawn>(2048);
+        public static ConcurrentDictionary<Int32, Spawn> SpawnsByID = new ConcurrentDictionary<int, Spawn>();
         public static Int64 _lastRefesh = 0;
         public static Int64 RefreshTimePeriodInMS = 750;
 
@@ -2401,7 +2401,7 @@ namespace MonoCore
                             _spawnsByName.TryAdd(spawn.Name, spawn);
                         }
                     }
-                    SpawnsByID.Add(spawn.ID, spawn);
+                    SpawnsByID.TryAdd(spawn.ID, spawn);
                 }
                 else
                 {

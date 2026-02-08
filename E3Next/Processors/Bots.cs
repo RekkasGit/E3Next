@@ -1127,23 +1127,19 @@ namespace E3Core.Processors
 		}
 		public string Query(string name,string query)
         {
-			//register the user to get their buff data if its not already there
-			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			if(NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(name,out var userTopics))
 			{
-				return "NULL"; //dunno
+				//check to see if it has been filled out yet.
+				string keyToUse = query;
+				if(userTopics.TryGetValue(keyToUse,out var entry))
+				{
+					lock (entry)
+					{
+						return entry.Data;
+					}
+				}
 			}
-			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
-			//check to see if it has been filled out yet.
-			string keyToUse = query;
-			if (!userTopics.ContainsKey(keyToUse))
-			{
-				return "NULL"; //dunno
-			}
-			var entry = userTopics[keyToUse];
-			lock (entry)
-			{
-                return entry.Data;
-			}
+			return "NULL"; //dunno
 		}
 
 		public List<int> PetBuffList(string name)

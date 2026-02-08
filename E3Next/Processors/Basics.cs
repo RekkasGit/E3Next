@@ -10,6 +10,7 @@ using IniParser.Model;
 using MonoCore;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
@@ -34,8 +35,12 @@ namespace E3Core.Processors
 		[ExposedData("Basics", "GroupMembers")]
 		public static List<int> GroupMembersInZone = new List<int>();
 		public static List<string> GroupMemberNames = new List<string>();
+		public static ConcurrentDictionary<string, string> GroupMemberNamesLookup = new ConcurrentDictionary<string, string>();
 		public static List<int> RaidMembers = new List<int>();
 		public static List<string> RaidMemberNames = new List<string>();
+		public static ConcurrentDictionary<string, string> RaidMemberNamesLookup = new ConcurrentDictionary<string, string>();
+
+
 		private static long _nextGroupCheck = 0;
 		private static long _nextGroupCheckInterval = 500;
 		private static long _nextRaidCheck = 0;
@@ -1349,6 +1354,7 @@ namespace E3Core.Processors
 			groupCount++;
 			GroupMembersInZone.Clear();
 			GroupMemberNames.Clear();
+			GroupMemberNamesLookup.Clear();
 			//refresh group members.
 
 			for (int i = 0; i < groupCount; i++)
@@ -1357,6 +1363,7 @@ namespace E3Core.Processors
 				if (name != "NULL")
 				{
 					GroupMemberNames.Add(name);
+					GroupMemberNamesLookup.TryAdd(name, name);
 				}
 				int id = MQ.Query<int>($"${{Group.Member[{i}].ID}}");
 				if (id > 0)
@@ -1377,6 +1384,7 @@ namespace E3Core.Processors
 			int raidCount = MQ.Query<int>("${Raid.Members}");
 			RaidMembers.Clear();
 			RaidMemberNames.Clear();
+			RaidMemberNamesLookup.Clear();
 			if (raidCount > 0)
 			{
 				raidCount++;
@@ -1394,6 +1402,7 @@ namespace E3Core.Processors
 						}
 						// Add name regardless of whether they're in zone (id > 0) or not
 						RaidMemberNames.Add(name);
+						RaidMemberNamesLookup.TryAdd(name, name);
 					}
 				}
 			}

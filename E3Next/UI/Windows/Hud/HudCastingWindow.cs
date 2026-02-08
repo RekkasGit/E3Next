@@ -82,27 +82,25 @@ namespace E3Core.UI.Windows.Hud
 			if (!e3util.ShouldCheck(ref _lastUpdate, _lastUpdateInterval)) return;
 			_tableRows.Clear();
 			//get the connected bots.
-			List<string> users = E3.Bots.BotsConnected().ToList(); //make a copy as this returns a direct copy of cache
-			users.Sort();
+			List<string> users = E3.Bots.BotsConnected(readOnly:true); //make a copy as this returns a direct copy of cache
 			foreach (var user in users)
 			{
 				bool inGroupOrRaid = false;
 				if (Basics.GroupMemberNames.Contains(user)) inGroupOrRaid = true;
 				if (!inGroupOrRaid && Basics.RaidMemberNames.Contains(user)) inGroupOrRaid = true;
 				if (!inGroupOrRaid) continue;
-
 				string casting = E3.Bots.Query(user, "${Me.Casting}");
 				string targetidString = E3.Bots.Query(user, "${Me.CurrentTargetID}");
 				string aaTotal = E3.Bots.Query(user, "${Me.AAPoints}");
-
 				Int32 targetid = 0;
 				Int32.TryParse(targetidString, out targetid);
 			
 				string targetName = "none";
-				if(targetid >0 && _spawns.TryByID(targetid, out var s,false))
+				if(targetid >0 && _spawns.TryByID(targetid, out var s,useCurrentCache:true))
 				{
 					targetName = s.Name;
 				}
+				
 				var row = new TableRow(user, targetName,casting);
 				if(row.Name==E3.CurrentName) row.IsSelf = true;
 				row.AATotal = aaTotal;

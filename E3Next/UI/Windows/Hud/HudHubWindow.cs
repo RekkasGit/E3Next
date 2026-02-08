@@ -220,9 +220,7 @@ namespace E3Core.UI.Windows.Hud
 				counterType = buff.CounterType;
 				counterNumber = buff.CounterNumber;
 
-				string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
 				var buffRow = new TableRow_BuffInfo(spellid);
-				buffRow.Name = buffName;
 				buffRow.SpellID = spellid;
 				buffRow.Duration = duration;
 				var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
@@ -279,8 +277,6 @@ namespace E3Core.UI.Windows.Hud
 					bufftype = (int)tempBuffer[4];
 					counterType = (int)tempBuffer[5];
 					counterNumber = (int)tempBuffer[6];
-
-					string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
 					var buffRow = new TableRow_BuffInfo(spellid);
 					buffRow.BuffType = bufftype;
 					buffRow.CounterNumberValue = counterNumber;
@@ -368,27 +364,29 @@ namespace E3Core.UI.Windows.Hud
 							Int32 spellid = buffRow.SpellID;
 							Int32 duration = buffRow.Duration;
 
-							string buffName = buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
+							if(!buffState.BuffCache.ContainsKey(spellid))
+							{
+								string buffName = buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
+								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
+								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}", false) * 6 * 1000;
+								buffState.BuffCache.TryAdd(spellid, new BuffCacheEntry() { Name = buffName, SpellIcon = spellIcon, MaxDuration = maxDuration });
+							}
 
-							buffRow.Name = buffName;
 
+							var cacheEntry = buffState.BuffCache[spellid];
+
+							buffRow.Name = cacheEntry.Name;
+							buffRow.iconID = cacheEntry.SpellIcon;
+							buffRow.MaxDuration_Value = cacheEntry.MaxDuration;
 							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
 							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
 							{
 								buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
-								buffRow.MaxDuration_Value = buffRow.Spell.Duration * 6 * 1000;
-								buffRow.iconID = buffRow.Spell.SpellIcon;
 							}
 							else
 							{
-								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
-								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}", false) * 6 * 1000;
-								buffRow.iconID = spellIcon;
-								buffRow.MaxDuration_Value = maxDuration;
 								buffRow.Spell = null;
-								
 							}
-
 							if (duration < 0)
 							{
 								buffRow.SimpleDuration = "(p)";
@@ -407,11 +405,11 @@ namespace E3Core.UI.Windows.Hud
 							}
 							if (duration < 160000d)
 							{
-								buffRow.DisplayName = buffName + $" ( {buffRow.Duration} )";
+								buffRow.DisplayName = buffRow.Name + $" ( {buffRow.Duration} )";
 							}
 							else
 							{
-								buffRow.DisplayName = buffName;
+								buffRow.DisplayName = buffRow.Name;
 							}
 							//put them into their proper collections
 							if (buffRow.BuffType == 0) //if normal buff
@@ -504,28 +502,36 @@ namespace E3Core.UI.Windows.Hud
 
 			//get the connected bots.
 			List<string> users = E3.Bots.BotsConnected().ToList(); //make a copy as this returns a direct copy of cache
-			users.Sort();
+
+			
+			//users.Sort();
 			if (state.PeerSortOrder == "Me On Top" && users.Remove(E3.CurrentName))
 			{
 				users.Insert(0, E3.CurrentName);
 			}
+			
 			foreach (var user in users)
 			{
 				//if (user == E3.CurrentName) continue;
 				bool inGroupOrRaid = false;
-				if (Basics.GroupMemberNames.Contains(user)) inGroupOrRaid = true;
-				if (!inGroupOrRaid && Basics.RaidMemberNames.Contains(user)) inGroupOrRaid = true;
+				if (Basics.GroupMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
+				if (!inGroupOrRaid && Basics.RaidMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
 				if (!inGroupOrRaid) continue;
+
+
+				
 
 				string casting = E3.Bots.Query(user, "${Me.Casting}");
 				double x, y, z = 0;
 
-
+				
 				Int32 mana, endurance, hp, aggroPct, aggroPctXtarget, aggroPctMinXtarget, pet_pctHealth;
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctHPs}"), out hp);
+				
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctMana}"), out mana);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctEndurance}"), out endurance);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.PctAggro}"), out aggroPct);
+				
 				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMaxAggro}"), out aggroPctXtarget);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMinAggro}"), out aggroPctMinXtarget);
 				Int32.TryParse(E3.Bots.Query(user, "${Me.Pet.CurrentHPs}"), out pet_pctHealth);
@@ -533,6 +539,7 @@ namespace E3Core.UI.Windows.Hud
 				double.TryParse(E3.Bots.Query(user, "${Me.X}"), out x);
 				double.TryParse(E3.Bots.Query(user, "${Me.Y}"), out y);
 				double.TryParse(E3.Bots.Query(user, "${Me.Z}"), out z);
+				
 
 				string zoneid = E3.Bots.Query(user, "${Me.ZoneID}");
 				string zonename = E3.Bots.Query(user, "${Me.ZoneShortName}");
@@ -541,9 +548,10 @@ namespace E3Core.UI.Windows.Hud
 				bool.TryParse(E3.Bots.Query(user, "${Me.IsInvis}"), out isInvis);
 				bool isInvul = false;
 				bool.TryParse(E3.Bots.Query(user, "${Me.Invulnerable}"), out isInvul);
+			
 				var row = new TableRow_GroupInfo(user);
 
-				if (_spawns.TryByName(user, out var spawn, true))
+				if (_spawns.TryByName(user, out var spawn, useCurrentCache: true))
 				{
 					x = E3.Loc_X - x;
 					y = E3.Loc_Y - y;
@@ -553,7 +561,7 @@ namespace E3Core.UI.Windows.Hud
 					row.InZone = true;
 
 				}
-
+				
 				row.PetHPPercent = pet_pctHealth;
 
 				if (distance == 0)
@@ -641,8 +649,6 @@ namespace E3Core.UI.Windows.Hud
 				if (!state.GroupMembersAdded.Contains(user)) state.GroupMembersAdded.Add(user);
 
 			}
-
-
 			foreach (var user in Basics.GroupMemberNames)
 			{
 				if (state.GroupMembersAdded.Contains(user)) continue;
@@ -838,9 +844,10 @@ namespace E3Core.UI.Windows.Hud
 				state.NoTargetTextWidth = imgui_CalcTextSizeX(state.NoTargetText);
 			}
 
-			if (_spawns.TryByID(targetID, out var spawn, false))
+		
+			if (_spawns.TryByID(targetID, out var spawn, useCurrentCache:true))
 			{
-
+				
 				if (spawn.CleanName != state.TargetName)
 				{
 					state.PreviousTargetName = state.TargetName;
@@ -851,7 +858,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 
 
-
+				
 				state.TargetHP = MQ.Query<Int32>("${Target.PctHPs}", false);
 				state.TargetLevel = spawn.Level;
 				state.TargetClassName = spawn.ClassShortName;
@@ -893,7 +900,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				state.Display_CurrentNameSize = imgui_CalcTextSizeX(E3.CurrentName);
 			}
-
+			
 			// Refresh target buffs on a slower cadence, or immediately on target change
 			bool targetChanged = (targetID != state.PreviousTargetID);
 			if (targetChanged)
@@ -3450,7 +3457,7 @@ namespace E3Core.UI.Windows.Hud
 											}
 											break;
 										case "NavToToon":
-											if (_spawns.TryByName(stats.Name, out var spawnsNav, true))
+											if (_spawns.TryByName(stats.Name, out var spawnsNav, useCurrentCache: true))
 											{
 												string command = $"/nav id {spawnsNav.ID}";
 												E3ImGUI.MQCommandQueue.Enqueue(command);
@@ -3458,7 +3465,7 @@ namespace E3Core.UI.Windows.Hud
 											break;
 										case "Target":
 										default:
-											if (_spawns.TryByName(stats.Name, out var spawns, true))
+											if (_spawns.TryByName(stats.Name, out var spawns, useCurrentCache: true))
 											{
 												string command = $"/target id {spawns.ID}";
 												E3ImGUI.MQCommandQueue.Enqueue(command);
@@ -3483,7 +3490,7 @@ namespace E3Core.UI.Windows.Hud
 											///
 											if (imgui_MenuItem("Trade Item on Cursor"))
 											{
-												if (_spawns.TryByName(stats.Name, out var spawns, true))
+												if (_spawns.TryByName(stats.Name, out var spawns, useCurrentCache: true))
 												{
 													if (spawns.Distance3D > 19)
 													{
@@ -3506,7 +3513,7 @@ namespace E3Core.UI.Windows.Hud
 											}
 											if (imgui_MenuItem("Nav to Toon"))
 											{
-												if (_spawns.TryByName(stats.Name, out var spawns, true))
+												if (_spawns.TryByName(stats.Name, out var spawns, useCurrentCache: true))
 												{
 													string command = $"/nav id {spawns.ID}";
 													E3ImGUI.MQCommandQueue.Enqueue(command);
@@ -3514,7 +3521,7 @@ namespace E3Core.UI.Windows.Hud
 											}
 											if (imgui_MenuItem("Nav Toon to us"))
 											{
-												if (_spawns.TryByName(E3.CurrentName, out var spawns, true))
+												if (_spawns.TryByName(E3.CurrentName, out var spawns, useCurrentCache: true))
 												{
 													string command = $"/e3bct {stats.Name} /nav id {spawns.ID}";
 													E3ImGUI.MQCommandQueue.Enqueue(command);
