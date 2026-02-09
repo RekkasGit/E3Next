@@ -72,14 +72,14 @@ namespace E3Core.UI.Windows.Hud
 		{
 			var state = _state.GetState<State_HubWindow>();
 
-			if (Core._MQ2MonoVersion < 0.37m) return;
+			if (Core._MQ2MonoVersion < 0.41m) return;
 			E3ImGUI.RegisterWindow(state.WindowName, RenderHub);
 
 			EventProcessor.RegisterCommand("/e3hud_hub", (x) =>
 			{
-				if (Core._MQ2MonoVersion < 0.40m)
+				if (Core._MQ2MonoVersion < 0.41m)
 				{
-					MQ.Write("This requires MQ2Mono 0.40 or greater");
+					MQ.Write("This requires MQ2Mono 0.41 or greater");
 					return;
 				}
 				if (x.args.Count > 0)
@@ -1588,7 +1588,7 @@ namespace E3Core.UI.Windows.Hud
 				{
 					style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.3f, 0.3f, 0.3f, 0.5f);
 					style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-					imgui_ProgressBar(0f, 18, (int)widthAvail, String.Empty);
+					imgui_ProgressBar(0f, 18, widthAvail, String.Empty);
 				}
 
 
@@ -1681,7 +1681,7 @@ namespace E3Core.UI.Windows.Hud
 			{
 				style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.8f, 0.15f, 0.15f, 0.9f);
 				style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-				imgui_ProgressBar((float)state.TargetHP / 100f, 18, (int)widthAvail, $"{state.TargetHP}%");
+				imgui_ProgressBar((float)state.TargetHP / 100f, 18, widthAvail, $"{state.TargetHP}%");
 			}
 
 
@@ -2593,7 +2593,7 @@ namespace E3Core.UI.Windows.Hud
 										style.PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBGColor[0], BuffListView_ProgressBGColor[1], BuffListView_ProgressBGColor[2], windowAlpha);
 
 										float widthOfColumn = imgui_GetContentRegionAvailX();
-										imgui_ProgressBar(((float)stats.Duration / (float)stats.MaxDuration_Value), 20, (int)widthOfColumn, "");
+										imgui_ProgressBar(((float)stats.Duration / (float)stats.MaxDuration_Value), 20, widthOfColumn, "");
 									}
 
 									float[] barPos = imgui_GetItemRectMin();
@@ -3548,7 +3548,7 @@ namespace E3Core.UI.Windows.Hud
 										style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.HealthBarColor[0], state.HealthBarColor[1], state.HealthBarColor[2], state.HealthBarColor[3]);
 										style.PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
 										float widthOfColumn = imgui_GetContentRegionAvailX();
-										imgui_ProgressBar(((float)stats.HPPercent / (float)100), 20, (int)widthOfColumn, "");
+										imgui_ProgressBar(((float)stats.HPPercent / (float)100), 20, widthOfColumn, "");
 									}
 
 									float[] barPos = imgui_GetItemRectMin();
@@ -3582,7 +3582,7 @@ namespace E3Core.UI.Windows.Hud
 											style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.PetHealthBarColor[0], state.PetHealthBarColor[1], state.PetHealthBarColor[2], state.PetHealthBarColor[3]);
 											style.PushStyleColor((int)ImGuiCol.FrameBg, 0, 0, 0, 0f);
 											float widthOfColumn = imgui_GetContentRegionAvailX();
-											imgui_ProgressBar(((float)stats.PetHPPercent / (float)100), 5, (int)widthOfColumn, "");
+											imgui_ProgressBar(((float)stats.PetHPPercent / (float)100), 5, widthOfColumn, "");
 										}
 									}
 

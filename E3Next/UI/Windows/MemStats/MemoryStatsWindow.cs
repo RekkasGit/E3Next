@@ -36,7 +36,11 @@ namespace E3Core.UI.Windows.MemStats
 		[SubSystemInit]
 		public static void Init()
 		{
-			if (Core._MQ2MonoVersion < 0.36m) return;
+			if (Core._MQ2MonoVersion < 0.41m)
+			{
+				E3.MQ.Write("This requires MQ2Mono 0.41 or greater");
+				return;
+			}
 			E3ImGUI.RegisterWindow(_WindowName, RenderWindow);
 
 			EventProcessor.RegisterCommand("/e3memstats", (x) =>

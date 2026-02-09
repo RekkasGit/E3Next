@@ -96,9 +96,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			EventProcessor.RegisterCommand("/e3config", (x) =>
 			{
 
-				if (Core._MQ2MonoVersion < 0.35m)
+				if (Core._MQ2MonoVersion < 0.41m)
 				{
-					Core.mqInstance.Write("MQ2Mono Version needs to be at least 0.35 to use this command");
+					E3.MQ.Write("This requires MQ2Mono 0.41 or greater");
 					return;
 				}
 

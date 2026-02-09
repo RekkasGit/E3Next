@@ -35,13 +35,12 @@ namespace E3Core.UI.Windows.Hud
 
 			EventProcessor.RegisterCommand("/e3hud_casting", (x) =>
 			{
-				if(Core._MQ2MonoVersion<0.36m)
+				if (Core._MQ2MonoVersion < 0.41m)
 				{
-					MQ.Write("This requires MQ2Mono 0.36 or greater");
+					E3.MQ.Write("This requires MQ2Mono 0.41 or greater");
 					return;
-				}	
-
-				if(x.args.Count>0)
+				}
+				if (x.args.Count>0)
 				{
 					float.TryParse(x.args[0], out _windowAlpha);
 					//MQ.Write($"Setting alpha to {_windowAlpha}");

@@ -2470,7 +2470,7 @@ namespace MonoCore
 		public extern static void imgui_ColorPicker_Clear(string label);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_ProgressBar(float fraction, int height, int width, string overlay);
+		public extern static void imgui_ProgressBar(float fraction, float height, float width, string overlay);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float[] imgui_GetItemRectSize();
 	
