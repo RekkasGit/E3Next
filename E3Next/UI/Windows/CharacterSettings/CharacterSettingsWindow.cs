@@ -2620,7 +2620,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_InlineHelpButton("SpellEditor_DelayHelp", "Seconds to pause after a successful cast before this entry can fire again.");
 					Render_TwoColumn_TableInt("##SpellEditor_RecastDelay", "Recast Delay:", currentSpell.RecastDelay, (u) => { currentSpell.RecastDelay = u; });
 					Render_InlineHelpButton("SpellEditor_RecastDelayHelp", "Extra cooldown (in seconds) inserted before reusing this entry.");
-					Render_TwoColumn_TableInt("##SpellEditor_DelayBeforeRecast", "Min Duration Before Recast:", (int)currentSpell.MinDurationBeforeRecast, (u) => { currentSpell.MinDurationBeforeRecast = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_DelayBeforeRecast", "Min Duration Before Recast:", (int)currentSpell.MinDurationBeforeRecast/1000, (u) => { currentSpell.MinDurationBeforeRecast = u * 1000; });
 					Render_InlineHelpButton("SpellEditor_MinDurationHelp", "Minimum duration (seconds) that must elapse before the spell is considered for recast—great for songs/buffs.");
 					Render_TwoColumn_TableInt("##SpellEditor_BeforeSpellDelay", "Before Spell Delay:", currentSpell.BeforeSpellDelay, (u) => { currentSpell.BeforeSpellDelay = u; });
 					Render_InlineHelpButton("SpellEditor_BeforeSpellDelayHelp", "Milliseconds to wait just before casting this entry.");
