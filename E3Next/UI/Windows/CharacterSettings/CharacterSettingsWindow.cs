@@ -415,7 +415,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			EnsureConfigEditorInit();
 			var pd = data.GetActiveCharacterIniData();
-			if (pd == null || pd.Sections == null) { imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded."); return; }
+			if (pd == null || pd.Sections == null) { imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded. If you just launched /e3config, please select an INI from the drop down (even if it appears one is already selected)!"); return; }
 
 			Render_MainWindow_CatalogStatus();
 			data.RebuildSectionsOrderIfNeeded();
