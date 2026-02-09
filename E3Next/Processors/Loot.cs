@@ -540,7 +540,11 @@ namespace E3Core.Processors
             Double startY = MQ.Query<Double>("${Me.Y}");
             Double startZ = MQ.Query<Double>("${Me.Z}");
 
-            List<Spawn> corpses = new List<Spawn>();
+            BuffCheck.Check_BlockedBuffs();//to see if we need to remove torpor
+
+
+
+			List<Spawn> corpses = new List<Spawn>();
             foreach (var spawn in _spawns.Get())
             {
                 //only player corpses have a Deity

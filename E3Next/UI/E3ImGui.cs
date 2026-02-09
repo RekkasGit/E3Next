@@ -1796,8 +1796,6 @@ namespace MonoCore
 
 			// User Options (right-click on widget to change some of them).
 			AlphaBar = 1 << 16,  //              // ColorEdit, ColorPicker: show vertical alpha bar/gradient in picker.
-			AlphaPreview = 1 << 17,  //              // ColorEdit, ColorPicker, ColorButton: display preview as a transparent color over a checkerboard, instead of opaque.
-			AlphaPreviewHalf = 1 << 18,  //              // ColorEdit, ColorPicker, ColorButton: display half opaque / half checkerboard, instead of opaque.
 			HDR = 1 << 19,  //              // (WIP) ColorEdit: Currently only disable 0.0f..1.0f limits in RGBA edition (note: you probably want to use Float flag as well).
 			DisplayRGB = 1 << 20,  // [Display]    // ColorEdit: override _display_ type among RGB/HSV/Hex. ColorPicker: select any combination using one or more of RGB/HSV/Hex.
 			DisplayHSV = 1 << 21,  // [Display]    // "
@@ -1867,14 +1865,13 @@ namespace MonoCore
 			ImGuiWindowFlags_NoInputs = ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus,
 
 			// [Internal]
-			ImGuiWindowFlags_NavFlattened = 1 << 23,  // [BETA] Allow gamepad/keyboard navigation to cross over parent border to this child (only use on child that have no scrolling!)
+			ImGuiWindowFlags_DockNodeHost = 1 << 23,  // Don't use! For internal use by Begin()/NewFrame()
 			ImGuiWindowFlags_ChildWindow = 1 << 24,  // Don't use! For internal use by BeginChild()
 			ImGuiWindowFlags_Tooltip = 1 << 25,  // Don't use! For internal use by BeginTooltip()
 			ImGuiWindowFlags_Popup = 1 << 26,  // Don't use! For internal use by BeginPopup()
 			ImGuiWindowFlags_Modal = 1 << 27,  // Don't use! For internal use by BeginPopupModal()
 			ImGuiWindowFlags_ChildMenu = 1 << 28,  // Don't use! For internal use by BeginMenu()
-			ImGuiWindowFlags_DockNodeHost = 1 << 29   // Don't use! For internal use by Begin()/NewFrame()
-
+	
 			// [Obsolete]
 			//ImGuiWindowFlags_ResizeFromAnySide    = 1 << 17,  // --> Set io.ConfigWindowsResizeFromEdges=true and make sure mouse cursors are supported by backend (io.BackendFlags & ImGuiBackendFlags_HasMouseCursors)
 		}
@@ -1897,31 +1894,48 @@ namespace MonoCore
 		};
 		public enum ImGuiStyleVar
 		{
-			Alpha,
-			DisabledAlpha,
-			WindowPadding,          // ImVec2
-			WindowRounding,         // float
-			WindowBorderSize,       // float
-			WindowMinSize,          // ImVec2
-			WindowTitleAlign,       // ImVec2
-			ChildRounding,          // float
-			ChildBorderSize,        // float
-			PopupRounding,          // float
-			PopupBorderSize,        // float
-			FramePadding,           // ImVec2
-			FrameRounding,          // float
-			FrameBorderSize,        // float
-			ItemSpacing,            // ImVec2
-			ItemInnerSpacing,       // ImVec2
-			IndentSpacing,          // float
-			CellPadding,            // ImVec2
-			ScrollbarSize,          // float
-			ScrollbarRounding,      // float
-			GrabMinSize,            // float
-			GrabRounding,           // float
-			TabRounding,            // float
-			ButtonTextAlign,        // ImVec2
-			SelectableTextAlign     // ImVec2
+			Alpha,                    // float     Alpha
+			DisabledAlpha,            // float     DisabledAlpha
+			WindowPadding,            // ImVec2    WindowPadding
+			WindowRounding,           // float     WindowRounding
+			WindowBorderSize,         // float     WindowBorderSize
+			WindowMinSize,            // ImVec2    WindowMinSize
+			WindowTitleAlign,         // ImVec2    WindowTitleAlign
+			ChildRounding,            // float     ChildRounding
+			ChildBorderSize,          // float     ChildBorderSize
+			PopupRounding,            // float     PopupRounding
+			PopupBorderSize,          // float     PopupBorderSize
+			FramePadding,             // ImVec2    FramePadding
+			FrameRounding,            // float     FrameRounding
+			FrameBorderSize,          // float     FrameBorderSize
+			ItemSpacing,              // ImVec2    ItemSpacing
+			ItemInnerSpacing,         // ImVec2    ItemInnerSpacing
+			IndentSpacing,            // float     IndentSpacing
+			CellPadding,              // ImVec2    CellPadding
+			ScrollbarSize,            // float     ScrollbarSize
+			ScrollbarRounding,        // float     ScrollbarRounding
+			ScrollbarPadding,         // float     ScrollbarPadding
+			GrabMinSize,              // float     GrabMinSize
+			GrabRounding,             // float     GrabRounding
+			LayoutAlign,              // float     LayoutAlign
+			ImageBorderSize,          // float     ImageBorderSize
+			TabRounding,              // float     TabRounding
+			TabBorderSize,            // float     TabBorderSize
+			TabMinWidthBase,          // float     TabMinWidthBase
+			TabMinWidthShrink,        // float     TabMinWidthShrink
+			TabBarBorderSize,         // float     TabBarBorderSize
+			TabBarOverlineSize,       // float     TabBarOverlineSize
+			TableAngledHeadersAngle,  // float     TableAngledHeadersAngle
+			TableAngledHeadersTextAlign,// ImVec2  TableAngledHeadersTextAlign
+			TreeLinesSize,            // float     TreeLinesSize
+			TreeLinesRounding,        // float     TreeLinesRounding
+			ButtonTextAlign,          // ImVec2    ButtonTextAlign
+			SelectableTextAlign,      // ImVec2    SelectableTextAlign
+			SeparatorTextBorderSize,  // float     SeparatorTextBorderSize
+			SeparatorTextAlign,       // ImVec2    SeparatorTextAlign
+			SeparatorTextPadding,     // ImVec2    SeparatorTextPadding
+			DockingSeparatorSize,     // float     DockingSeparatorSize
+			COUNT
 		}
 		public enum ImGuiChildFlags
 		{
@@ -1972,6 +1986,7 @@ namespace MonoCore
 			ResizeGrip,            // Resize grip in lower-right and lower-left corners of windows.
 			ResizeGripHovered,
 			ResizeGripActive,
+			InputTextCursor,       // InputText cursor/caret
 			TabHovered,            // Tab background, when hovered
 			Tab,                   // Tab background, when tab-bar is focused & tab is unselected
 			TabSelected,           // Tab background, when tab-bar is focused & tab is selected
@@ -1991,13 +2006,16 @@ namespace MonoCore
 			TableRowBg,            // Table row background (even rows)
 			TableRowBgAlt,         // Table row background (odd rows)
 			TextLink,              // Hyperlink color
-			TextSelectedBg,
-			DragDropTarget,        // Rectangle highlighting a drop target
+			TextSelectedBg,        // Selected text inside an InputText
+			TreeLines,             // Tree node hierarchy outlines when using ImGuiTreeNodeFlags_DrawLines
+			DragDropTarget,        // Rectangle border highlighting a drop target
+			DragDropTargetBg,      // Rectangle background highlighting a drop target
+			UnsavedMarker,         // Unsaved Document marker (in window title and tabs)
 			NavCursor,             // Color of keyboard/gamepad navigation cursor/rectangle, when visible
-			NavWindowingHighlight, // Highlight window when using CTRL+TAB
-			NavWindowingDimBg,     // Darken/colorize entire screen behind the CTRL+TAB window list, when active
+			NavWindowingHighlight, // Highlight window when using Ctrl+Tab
+			NavWindowingDimBg,     // Darken/colorize entire screen behind the Ctrl+Tab window list, when active
 			ModalWindowDimBg,      // Darken/colorize entire screen behind a modal window, when one is active
-			COUNT,
+			COUNT
 		}
 		public enum ImGuiTableBgTarget
 		{
@@ -2019,18 +2037,29 @@ namespace MonoCore
 			ImGuiTreeNodeFlags_None = 0,
 			ImGuiTreeNodeFlags_Selected = 1 << 0,   // Draw as selected
 			ImGuiTreeNodeFlags_Framed = 1 << 1,   // Draw frame with background (e.g. for CollapsingHeader)
-			ImGuiTreeNodeFlags_AllowItemOverlap = 1 << 2,   // Hit testing to allow subsequent widgets to overlap this one
+			ImGuiTreeNodeFlags_AllowOverlap = 1 << 2,   // Hit testing to allow subsequent widgets to overlap this one
 			ImGuiTreeNodeFlags_NoTreePushOnOpen = 1 << 3,   // Don't do a TreePush() when open (e.g. for CollapsingHeader) = no extra indent nor pushing on ID stack
 			ImGuiTreeNodeFlags_NoAutoOpenOnLog = 1 << 4,   // Don't automatically and temporarily open node when Logging is active (by default logging will automatically open tree nodes)
 			ImGuiTreeNodeFlags_DefaultOpen = 1 << 5,   // Default node to be open
-			ImGuiTreeNodeFlags_OpenOnDoubleClick = 1 << 6,   // Need double-click to open node
-			ImGuiTreeNodeFlags_OpenOnArrow = 1 << 7,   // Only open when clicking on the arrow part. If ImGuiTreeNodeFlags_OpenOnDoubleClick is also set, single-click arrow or double-click all box to open.
-			ImGuiTreeNodeFlags_Leaf = 1 << 8,   // No collapsing, no arrow (use as a convenience for leaf nodes)
-			ImGuiTreeNodeFlags_Bullet = 1 << 9,   // Display a bullet instead of arrow
-			ImGuiTreeNodeFlags_FramePadding = 1 << 10,  // Use FramePadding (even for an unframed text node) to vertically align text baseline to regular widget height. Equivalent to calling AlignTextToFramePadding().
-			ImGuiTreeNodeFlags_SpanAvailWidth = 1 << 11,  // Extend hit box to the right-most edge, even if not framed. This is not the default in order to allow adding other items on the same line. In the future we may refactor the hit system to be front-to-back, allowing natural overlaps and then this can become the default.
-			ImGuiTreeNodeFlags_SpanFullWidth = 1 << 12,  // Extend hit box to the left-most and right-most edges (bypass the indented area).
-			ImGuiTreeNodeFlags_NavLeftJumpsBackHere = 1 << 13  // (WIP) Nav: left direction may move to this TreeNode() from any of its child (items submitted between TreeNode and TreePop)
+			ImGuiTreeNodeFlags_OpenOnDoubleClick = 1 << 6,   // Open on double-click instead of simple click (default for multi-select unless any _OpenOnXXX behavior is set explicitly). Both behaviors may be combined.
+			ImGuiTreeNodeFlags_OpenOnArrow = 1 << 7,   // Open when clicking on the arrow part (default for multi-select unless any _OpenOnXXX behavior is set explicitly). Both behaviors may be combined.
+			ImGuiTreeNodeFlags_Leaf = 1 << 8,   // No collapsing, no arrow (use as a convenience for leaf nodes).
+			ImGuiTreeNodeFlags_Bullet = 1 << 9,   // Display a bullet instead of arrow. IMPORTANT: node can still be marked open/close if you don't set the _Leaf flag!
+			ImGuiTreeNodeFlags_FramePadding = 1 << 10,  // Use FramePadding (even for an unframed text node) to vertically align text baseline to regular widget height. Equivalent to calling AlignTextToFramePadding() before the node.
+			ImGuiTreeNodeFlags_SpanAvailWidth = 1 << 11,  // Extend hit box to the right-most edge, even if not framed. This is not the default in order to allow adding other items on the same line without using AllowOverlap mode.
+			ImGuiTreeNodeFlags_SpanFullWidth = 1 << 12,  // Extend hit box to the left-most and right-most edges (cover the indent area).
+			ImGuiTreeNodeFlags_SpanLabelWidth = 1 << 13,  // Narrow hit box + narrow hovering highlight, will only cover the label text.
+			ImGuiTreeNodeFlags_SpanAllColumns = 1 << 14,  // Frame will span all columns of its container table (label will still fit in current column)
+			ImGuiTreeNodeFlags_LabelSpanAllColumns = 1 << 15,  // Label will span all columns of its container table
+															   //ImGuiTreeNodeFlags_NoScrollOnOpen     = 1 << 16,  // FIXME: TODO: Disable automatic scroll on TreePop() if node got just open and contents is not visible
+			ImGuiTreeNodeFlags_NavLeftJumpsToParent = 1 << 17,  // Nav: left arrow moves back to parent. This is processed in TreePop() when there's an unfulfilled Left nav request remaining.
+			ImGuiTreeNodeFlags_CollapsingHeader = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_NoAutoOpenOnLog,
+
+			// [EXPERIMENTAL] Draw lines connecting TreeNode hierarchy. Discuss in GitHub issue #2920.
+			// Default value is pulled from style.TreeLinesFlags. May be overridden in TreeNode calls.
+			ImGuiTreeNodeFlags_DrawLinesNone = 1 << 18,  // No lines drawn
+			ImGuiTreeNodeFlags_DrawLinesFull = 1 << 19,  // Horizontal lines to child nodes. Vertical line drawn down to TreePop() position: cover full contents. Faster (for large trees).
+			ImGuiTreeNodeFlags_DrawLinesToNodes = 1 << 20,  // Horizontal lines to child nodes. Vertical line drawn down to bottom-most child node. Slower (for large trees).
 		}
 
 		public enum ImGuiTableFlags
