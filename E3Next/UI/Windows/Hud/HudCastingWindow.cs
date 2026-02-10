@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using static MonoCore.E3ImGUI;
 using static System.Windows.Forms.AxHost;
 
@@ -17,24 +18,20 @@ namespace E3Core.UI.Windows.Hud
 {
 	public static class HudCastingWindow
 	{
+		private static State_CastingHudWindow _state = new State_CastingHudWindow();
 		private static bool _windowInitialized = false;
 		private static bool _imguiContextReady = false;
-		private static float[] _nameColors = { 0.169f, 1f, 0f, 1f };
-		private static Int64 _lastUpdate = 0;
-		private static Int64 _lastUpdateInterval = 250;
-		private static List<TableRow> _tableRows = new List<TableRow>();
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
-		private static string _WindowName =$"E3 Casting Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
-		private static float _windowAlpha = 0.4f;
 		[SubSystemInit]
 		public static void Init()
 		{
-			if (Core._MQ2MonoVersion < 0.36m) return;
-			E3ImGUI.RegisterWindow(_WindowName, RenderBotCastingWindow);
+		
+			E3ImGUI.RegisterWindow(_state.WindowName, RenderBotCastingWindow);
 
 			EventProcessor.RegisterCommand("/e3hud_casting", (x) =>
 			{
+
 				if (Core._MQ2MonoVersion < 0.41m)
 				{
 					E3.MQ.Write("This requires MQ2Mono 0.41 or greater");
@@ -42,7 +39,11 @@ namespace E3Core.UI.Windows.Hud
 				}
 				if (x.args.Count>0)
 				{
-					float.TryParse(x.args[0], out _windowAlpha);
+
+					if(float.TryParse(x.args[0], out var alpha))
+					{
+						_state.WindowAlpha = alpha;
+					}
 					//MQ.Write($"Setting alpha to {_windowAlpha}");
 
 				}
@@ -57,13 +58,13 @@ namespace E3Core.UI.Windows.Hud
 				if (!_windowInitialized)
 				{
 					_windowInitialized = true;
-					imgui_Begin_OpenFlagSet(_WindowName, true);
+					imgui_Begin_OpenFlagSet(_state.WindowName, true);
 				}
 				else
 				{
-					bool open = imgui_Begin_OpenFlagGet(_WindowName);
+					bool open = imgui_Begin_OpenFlagGet(_state.WindowName);
 					bool newState = !open;
-					imgui_Begin_OpenFlagSet(_WindowName, newState);
+					imgui_Begin_OpenFlagSet(_state.WindowName, newState);
 				}
 				_imguiContextReady = true;
 			}
@@ -78,8 +79,8 @@ namespace E3Core.UI.Windows.Hud
 		private static ConcurrentDictionary<string, Int64> PreviousDiscTimeStamp = new ConcurrentDictionary<string, long>();
 		private static void CheckRefresh()
 		{
-			if (!e3util.ShouldCheck(ref _lastUpdate, _lastUpdateInterval)) return;
-			_tableRows.Clear();
+			if (!e3util.ShouldCheck(ref _state.LastUpdated, _state.UpdateInterval)) return;
+			_state.TableRows.Clear();
 			//get the connected bots.
 			List<string> users = E3.Bots.BotsConnected(readOnly:true); //make a copy as this returns a direct copy of cache
 			foreach (var user in users)
@@ -135,13 +136,13 @@ namespace E3Core.UI.Windows.Hud
 					row.ActiveDiscTimeleft = ((((durationOfDiscInSeconds * 1000) + PreviousDiscTimeStamp[user]) - Core.StopWatch.ElapsedMilliseconds)/1000).ToString()+"s";
 
 				}
-				_tableRows.Add(row);
+				_state.TableRows.Add(row);
 			}
 		}
 		private static void RenderBotCastingWindow()
 		{
 			if (!_imguiContextReady) return;
-			if (!imgui_Begin_OpenFlagGet(_WindowName)) return;
+			if (!imgui_Begin_OpenFlagGet(_state.WindowName)) return;
 
 			PushCurrentTheme();
 			try
@@ -151,12 +152,24 @@ namespace E3Core.UI.Windows.Hud
 				using (var window = ImGUIWindow.Aquire())
 				{
 					imgui_SetNextWindowSizeWithCond(360f, 320f, (int)ImGuiCond.FirstUseEver);
-					int flags = ((int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse) | (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar
-						);
-					imgui_SetNextWindowBgAlpha(_windowAlpha);
-					if (window.Begin(_WindowName, flags))
+					int flags = ((int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse) | (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar);
+
+					if (_state.Locked)
 					{
-						var entries = _tableRows;
+						flags = flags | (int)ImGuiWindowFlags.ImGuiWindowFlags_NoMove;
+					}
+					imgui_SetNextWindowBgAlpha(_state.WindowAlpha);
+					if (window.Begin(_state.WindowName, flags))
+					{
+						if (_state.IsDirty)
+						{
+							if (imgui_Button("Save"))
+							{	
+								E3.CharacterSettings.SaveData();
+								_state.IsDirty = false;
+							}
+						}
+						var entries = _state.TableRows;
 						if (entries.Count == 0)
 						{
 							imgui_TextColored(0.7f, 0.7f, 0.7f, 1.0f, "No connected bots detected.");
@@ -171,7 +184,7 @@ namespace E3Core.UI.Windows.Hud
 				PopCurrentTheme();
 			}
 		}
-		static string _selectedFont = "robo";
+	
 		private static void RenderBotCastingGrid(IReadOnlyList<TableRow> entries)
 		{
 			int columnCount = 3;
@@ -204,7 +217,18 @@ namespace E3Core.UI.Windows.Hud
 			{
 				if (popup.BeginPopupContextItem($"##CastingHudPopup", 1))
 				{
-					
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						if (_state.Locked)
+						{
+							if (imgui_MenuItem("UnLock")) _state.Locked = false;
+						}
+						else
+						{
+							if (imgui_MenuItem("Lock")) _state.Locked = true;
+						}
+					}
 
 					imgui_Separator();
 					using (var style = PushStyle.Aquire())
@@ -216,15 +240,15 @@ namespace E3Core.UI.Windows.Hud
 
 					using (var combo = ImGUICombo.Aquire())
 					{
-						if (combo.BeginCombo("##Select Font for GroupTable", _selectedFont))
+						if (combo.BeginCombo("##Select Font for Casting Hud", _state.SelectedFont))
 						{
 							foreach (var pair in E3ImGUI.FontList)
 							{
-								bool sel = string.Equals(_selectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+								bool sel = string.Equals(_state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
 
 								if (imgui_Selectable($"{pair.Key}", sel))
 								{
-									_selectedFont = pair.Key;
+									_state.SelectedFont = pair.Key;
 								}
 							}
 						}
@@ -241,7 +265,7 @@ namespace E3Core.UI.Windows.Hud
 
 					string keyForInput = $"##CastingHud_alpha_set";
 					imgui_SetNextItemWidth(100);
-					if (imgui_InputInt(keyForInput, (int)(_windowAlpha * 255), 1, 20))
+					if (imgui_InputInt(keyForInput, (int)(_state.WindowAlpha * 255), 1, 20))
 					{
 						int updated = imgui_InputInt_Get(keyForInput);
 
@@ -255,7 +279,7 @@ namespace E3Core.UI.Windows.Hud
 							updated = 0;
 
 						}
-						_windowAlpha = ((float)updated) / 255f;
+						_state.WindowAlpha = ((float)updated) / 255f;
 						imgui_InputInt_Clear(keyForInput);
 					}
 
@@ -268,14 +292,15 @@ namespace E3Core.UI.Windows.Hud
 					}
 						
 					imgui_Separator();
-					if (imgui_ColorPicker4_Float("##CastingHudNameColorPicker", _nameColors[0], _nameColors[1], _nameColors[2], _nameColors[3], 0))
+					if (imgui_ColorPicker4_Float("##CastingHudNameColorPicker", _state.NameColors[0], _state.NameColors[1], _state.NameColors[2], _state.NameColors[3], 0))
 					{
 
 						float[] newColors = imgui_ColorPicker_GetRGBA_Float("##CastingHudNameColorPicker");
-						_nameColors[0] = newColors[0];
-						_nameColors[1] = newColors[1];
-						_nameColors[2] = newColors[2];
-						_nameColors[3] = newColors[3];
+						_state.NameColors[0] = newColors[0];
+						_state.NameColors[1] = newColors[1];
+						_state.NameColors[2] = newColors[2];
+						_state.NameColors[3] = newColors[3];
+						_state.IsDirty = true;
 						
 					}
 				}
@@ -292,8 +317,8 @@ namespace E3Core.UI.Windows.Hud
 			}
 			using (var imguiFont = IMGUI_Fonts.Aquire())
 			{
-				imguiFont.PushFont(_selectedFont);
-				imgui_TextColored(_nameColors[0], _nameColors[1], _nameColors[2], _nameColors[3], entry.Name);
+				imguiFont.PushFont(_state.SelectedFont);
+				imgui_TextColored(_state.NameColors[0], _state.NameColors[1], _state.NameColors[2], _state.NameColors[3], entry.Name);
 				//if (entry.IsSelf)
 				//{
 				//	imgui_TextColored(0.169f, 1f, 0f, 1f, entry.Name);
@@ -341,7 +366,23 @@ namespace E3Core.UI.Windows.Hud
 				
 			}
 		}
+		public class State_CastingHudWindow
+		{
+			public string WindowName  = $"E3 Casting Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+			
+			public bool IsDirty = false;
+			public List<TableRow> TableRows = new List<TableRow>();
 
+			public Int64 LastUpdated = 0;
+			public Int64 UpdateInterval = 250;
+			public float[] NameColors { get => E3.CharacterSettings.E3Hud_Casting_RGBA_NameColor; }
+			public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Casting_Alpha; set { E3.CharacterSettings.E3Hud_Casting_Alpha = value; IsDirty = true; } }
+
+			public bool Locked { get => E3.CharacterSettings.E3Hud_Casting_Locked; set { E3.CharacterSettings.E3Hud_Casting_Locked = value; IsDirty = true; } }
+
+			public string SelectedFont { get => E3.CharacterSettings.E3Hud_Casting_SelectedFont; set { E3.CharacterSettings.E3Hud_Casting_SelectedFont = value; IsDirty = true; } }
+
+		}
 
 		public class TableRow
 		{

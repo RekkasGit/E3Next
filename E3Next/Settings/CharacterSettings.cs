@@ -127,6 +127,16 @@ namespace E3Core.Settings
 		[INI_Section("UI Theme", "Rounding")]
 		public float UITheme_Rounding = 8.0f;
 
+		[INI_Section("E3Hud_Casting", "SelectedFont")]
+		public string E3Hud_Casting_SelectedFont = "robo";
+		[INI_Section("E3Hud_Casting", "Alpha")]
+		public float E3Hud_Casting_Alpha = 0.8f;
+		[INI_Section("E3Hud_Casting", "Locked")]
+		public bool E3Hud_Casting_Locked = false;
+		[INI_Section("E3Hud_Casting", "RGBA_NameColor")]
+		public float[] E3Hud_Casting_RGBA_NameColor = { 0.169f, 1f, 0f, 1f };
+
+
 
 		[INI_Section("E3Hud_Hub", "Alpha")]
 		public float E3Hud_Hub_Alpha = 0.8f;
@@ -857,12 +867,18 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub", "ShowTargetInfo", ParsedData, ref E3Hud_Hub_ShowTargetInfo);
 			LoadKeyData("E3Hud_Hub", "PeerSortOrder", ParsedData, ref E3Hud_Hub_PeerSortOrder);
 
-		
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFont", ParsedData, ref E3Hud_Hub_PlayerInfo_SelectedFont);
 
+
+			LoadKeyData("E3Hud_Casting", "SelectedFont", ParsedData, ref E3Hud_Casting_SelectedFont);
+			LoadKeyData("E3Hud_Casting", "Alpha", ParsedData, ref E3Hud_Casting_Alpha);
+			LoadKeyData("E3Hud_Casting", "Locked", ParsedData, ref E3Hud_Casting_Locked);
+			LoadKeyData("E3Hud_Casting", "RGBA_NameColor", ParsedData, E3Hud_Casting_RGBA_NameColor);
+
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFont", ParsedData, ref E3Hud_Hub_PlayerInfo_SelectedFont);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Alpha", ParsedData, ref E3Hud_Hub_PlayerInfo_Alpha);
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "Detached", ParsedData, ref E3Hud_Hub_PlayerInfo_Detached);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Locked", ParsedData, ref E3Hud_Hub_PlayerInfo_Locked);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "Detached", ParsedData, ref E3Hud_Hub_PlayerInfo_Detached);
+
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "RGBA_DiscProgressBar", ParsedData, E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowHPAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowHPAsPercent);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowManaAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowManaAsPercent);
@@ -1332,6 +1348,13 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ShowPlayerInfo", "True");
 			section.Keys.AddKey("ShowTargetInfo", "True");
 			section.Keys.AddKey("PeerSortOrder", "Alphabetical");
+
+			newFile.Sections.AddSection("E3Hud_Casting");
+			section = newFile.Sections.GetSectionData("E3Hud_Casting");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("RGBA_NameColor", "0.169f, 1f, 0f, 1f");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("Locked", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_PlayerInfo");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_PlayerInfo");
