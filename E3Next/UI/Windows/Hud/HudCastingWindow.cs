@@ -254,15 +254,12 @@ namespace E3Core.UI.Windows.Hud
 						}
 					}
 					imgui_Separator();
-					imgui_Separator();
 					using (var style = PushStyle.Aquire())
 					{
 						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 						imgui_Text("Alpha");
 						
 					}
-						
-
 					string keyForInput = $"##CastingHud_alpha_set";
 					imgui_SetNextItemWidth(100);
 					if (imgui_InputInt(keyForInput, (int)(_state.WindowAlpha * 255), 1, 20))
@@ -283,6 +280,32 @@ namespace E3Core.UI.Windows.Hud
 						imgui_InputInt_Clear(keyForInput);
 					}
 
+
+					imgui_Separator();
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Font Size");
+					}
+					keyForInput = $"##CastingHud_fontsize_set";
+					imgui_SetNextItemWidth(100);
+					if (imgui_InputInt(keyForInput, (int)_state.FontSize, 1, 20))
+					{
+						int updated = imgui_InputInt_Get(keyForInput);
+
+						if (updated > 100)
+						{
+							updated = 100;
+
+						}
+						if (updated < 1)
+						{
+							updated = 1;
+
+						}
+						_state.FontSize = updated;
+						imgui_InputInt_Clear(keyForInput);
+					}
 
 					imgui_Separator();
 					using (var style = PushStyle.Aquire())
@@ -318,16 +341,9 @@ namespace E3Core.UI.Windows.Hud
 			using (var imguiFont = IMGUI_Fonts.Aquire())
 			{
 				imguiFont.PushFont(_state.SelectedFont);
+				imguiFont.PushFontSize(_state.FontSize);
 				imgui_TextColored(_state.NameColors[0], _state.NameColors[1], _state.NameColors[2], _state.NameColors[3], entry.Name);
-				//if (entry.IsSelf)
-				//{
-				//	imgui_TextColored(0.169f, 1f, 0f, 1f, entry.Name);
-				//}
-				//else
-				//{
-				//	imgui_TextColored(0.85f, 0.75f, 1.0f, 1.0f, entry.Name);
-				//}
-
+				
 				imgui_SameLine();
 				imgui_Text("(");
 				imgui_SameLine(0.0f, 0.0f);
@@ -381,6 +397,7 @@ namespace E3Core.UI.Windows.Hud
 			public bool Locked { get => E3.CharacterSettings.E3Hud_Casting_Locked; set { E3.CharacterSettings.E3Hud_Casting_Locked = value; IsDirty = true; } }
 
 			public string SelectedFont { get => E3.CharacterSettings.E3Hud_Casting_SelectedFont; set { E3.CharacterSettings.E3Hud_Casting_SelectedFont = value; IsDirty = true; } }
+			public int FontSize = 16;
 
 		}
 

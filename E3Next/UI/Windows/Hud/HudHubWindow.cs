@@ -302,8 +302,6 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private static void RefreshBuffInfo()
 		{
-
-
 			var buffState = _state.GetState<State_BuffWindow>();
 
 			if (!e3util.ShouldCheck(ref buffState.LastUpdated, buffState.LastUpdateInterval)) return;
@@ -325,12 +323,11 @@ namespace E3Core.UI.Windows.Hud
 
 				if (buffState.PreviousBuffInfo != string.Empty)
 				{
-					if (buffState.PreviousBuffInfo == buffInfo)
+					if (String.Equals(buffState.PreviousBuffInfo, buffInfo, StringComparison.Ordinal))
 					{
 						//no difference
 						return;
 					}
-
 				}
 				buffState.PreviousBuffInfo = buffInfo;
 

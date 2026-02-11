@@ -105,6 +105,9 @@ namespace MonoCore
                 //give execution back to the C++ thread, to go back into MQ/EQ
                 if (Core.IsProcessing)
                 {
+                    //Delay(100);
+                    //note if init isn't called in e3, this will lock up the client, so just use the above delay instead
+                    //if your tearing apart the code.
                     Delay(E3.CharacterSettings.CPU_ProcessLoopDelay);//this calls the reset events and sets the delay to 10ms at min
                 }
             }
@@ -2306,7 +2309,7 @@ namespace MonoCore
         public static ConcurrentDictionary<string, Spawn> _spawnsByName = new ConcurrentDictionary<string, Spawn>(3,2048,StringComparer.OrdinalIgnoreCase);
         public static ConcurrentDictionary<Int32, Spawn> SpawnsByID = new ConcurrentDictionary<int, Spawn>();
         public static Int64 _lastRefesh = 0;
-        public static Int64 RefreshTimePeriodInMS = 750;
+        public static Int64 RefreshTimePeriodInMS = 3000;
 
         public bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false)
         {

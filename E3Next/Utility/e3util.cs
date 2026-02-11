@@ -910,22 +910,27 @@ namespace E3Core.Utility
 		}
 		static System.Text.StringBuilder buffInfoStringBuilder = new StringBuilder();
 		//this is accessed about 1 per second, to publish out buff info, while we are here we will populate the buff cache.
+
+		public class BuffInfoCacheEntry
+		{
+			public BuffInfoCacheEntry() { }
+			public string SpellType;
+			public string CounterType;
+		}
+		public static Dictionary<Int32, BuffInfoCacheEntry> _buffInfoCache = new Dictionary<Int32, BuffInfoCacheEntry>();
 		public static string GenerateBuffInfoForPubSub()
 		{
 			using (_log.Trace())
 			{
 				//incase this changes at runtime
 				MaxBuffSlots = MQ.Query<Int32>("${Me.MaxBuffSlots}");
-
+				
 				buffInfoStringBuilder.Clear();
 				//lets look for a partial match.
-
 				BuffDataList buffDataList = null;
 				if(UseProtoBufForBuffs)  buffDataList= new BuffDataList();
-
 				for (Int32 i = 1; i <= MaxBuffSlots; i++)
 				{
-				
 					string spellID = MQ.Query<string>($"${{Me.Buff[{i}].Spell.ID}}");
 					if (spellID != "NULL")
 					{
@@ -936,62 +941,77 @@ namespace E3Core.Utility
 							{
 								BuffCheck.BuffCacheLookupQueue.TryAdd(spell_id, spell_id);
 							}
+
+							string spellType = String.Empty;
+							string counterType = String.Empty;
+							if(_buffInfoCache.TryGetValue(spell_id,out var entry))
+							{
+								spellType = entry.SpellType;
+								counterType = entry.CounterType;
+							}
+							else
+							{
+								spellType = MQ.Query<String>($"${{Me.Buff[{i}].SpellType}}");
+								counterType = MQ.Query<String>($"${{Me.Buff[{i}].CounterType}}");
+								_buffInfoCache.Add(spell_id, new BuffInfoCacheEntry() { SpellType = spellType, CounterType = counterType });
+							}
+
+							Int32 duration = MQ.Query<Int32>($"${{Me.Buff[{i}].Duration}}");
+							Int32 hitcount = MQ.Query<Int32>($"${{Me.Buff[{i}].HitCount}}");
+							Int32 counterTypeID = -1;
+							if (counterType == "Disease") counterTypeID = 0;
+							else if (counterType == "Poison") counterTypeID = 1;
+							else if (counterType == "Curse") counterTypeID = 2;
+							else if (counterType == "Corruption") counterTypeID = 3;
+
+							/*	SpellType_Detrimental = 0,
+								SpellType_Beneficial = 1,
+								SpellType_BeneficialGroupOnly = 2
+							*/
+							Int32 spellTypeID = 0;
+							if (spellType == "Detrimental") spellTypeID = 0;
+							if (spellType == "Beneficial") spellTypeID = 1;
+							if (spellType == "Beneficial(Group)") spellTypeID = 2;
+
+
+							Int32 counterNumber = 0;
+							
+							if(spellTypeID==0) counterNumber = MQ.Query<Int32>($"${{Me.Buff[{i}].CounterNumber}}");
+
+
+
+							if (UseProtoBufForBuffs)
+							{
+								BuffData buffData = new BuffData();
+
+								buffData.SpellID = spell_id;
+								buffData.Duration = duration;
+								buffData.Hitcount = hitcount;
+								buffData.CounterType = counterTypeID;
+								buffData.BuffType = 0;//buff
+								buffData.CounterNumber = counterNumber;
+								buffData.SpellTypeID = spellTypeID;
+								buffDataList.Data.Add(buffData);
+
+							}
+							else
+							{
+								buffInfoStringBuilder.Append(spellID);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(duration);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(hitcount);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(spellTypeID);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(0); //0 for buff
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(counterTypeID);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(counterNumber);
+								buffInfoStringBuilder.Append(":");
+							}
 						}
-
-
-						Int32 duration = MQ.Query<Int32>($"${{Me.Buff[{i}].Duration}}");
-						Int32 hitcount = MQ.Query<Int32>($"${{Me.Buff[{i}].HitCount}}");
-						string spellType = MQ.Query<String>($"${{Me.Buff[{i}].SpellType}}");
-						string counterType = MQ.Query<String>($"${{Me.Buff[{i}].CounterType}}");
-						Int32 counterNumber = MQ.Query<Int32>($"${{Me.Buff[{i}].CounterNumber}}");
-						Int32 counterTypeID = -1;
-						if (counterType == "Disease") counterTypeID = 0;
-						else if (counterType == "Poison") counterTypeID = 1;
-						else if (counterType == "Curse") counterTypeID = 2;
-						else if (counterType == "Corruption") counterTypeID = 3;
-
-						/*	SpellType_Detrimental = 0,
-							SpellType_Beneficial = 1,
-							SpellType_BeneficialGroupOnly = 2
-						*/
-						Int32 spellTypeID = 0;
-						if (spellType == "Detrimental") spellTypeID = 0;
-						if (spellType == "Beneficial") spellTypeID = 1;
-						if (spellType == "Beneficial(Group)") spellTypeID = 2;
-
-						if(UseProtoBufForBuffs)
-						{
-							BuffData buffData = new BuffData();
-
-							buffData.SpellID = spell_id;
-							buffData.Duration = duration;
-							buffData.Hitcount = hitcount;
-							buffData.CounterType = counterTypeID;
-							buffData.BuffType = 0;//buff
-							buffData.CounterNumber = counterNumber;
-							buffData.SpellTypeID = spellTypeID;
-							buffDataList.Data.Add(buffData);
-
-						}
-						else
-						{
-							buffInfoStringBuilder.Append(spellID.ToString());
-							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(duration.ToString());
-							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(hitcount.ToString());
-							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(spellTypeID);
-							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(0); //0 for buff
-							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(counterTypeID);
-							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(counterNumber.ToString());
-							buffInfoStringBuilder.Append(":");
-
-						}
-
 
 					}
 				}
@@ -1027,7 +1047,16 @@ namespace E3Core.Utility
 
 						Int32 duration = MQ.Query<Int32>($"${{Me.Song[{i}].Duration}}");
 						Int32 hitcount = MQ.Query<Int32>($"${{Me.Song[{i}].HitCount}}");
-						string spellType = MQ.Query<string>($"${{Me.Song[{i}].SpellType}}");
+						string spellType = String.Empty;
+						if (_buffInfoCache.TryGetValue(spell_id, out var entry))
+						{
+							spellType = entry.SpellType;
+						}
+						else
+						{
+							spellType = MQ.Query<String>($"${{Me.Song[{i}].SpellType}}");
+							_buffInfoCache.Add(spell_id, new BuffInfoCacheEntry() { SpellType = spellType, CounterType = String.Empty });
+						}
 						Int32 spellTypeID = 0;
 						if (spellType == "Detrimental") spellTypeID = 0;
 						if (spellType == "Beneficial") spellTypeID = 1;
@@ -1048,13 +1077,13 @@ namespace E3Core.Utility
 						}
 						else
 						{
-							buffInfoStringBuilder.Append(spellID.ToString());
+							buffInfoStringBuilder.Append(spellID);
 							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(duration.ToString());
+							buffInfoStringBuilder.Append(duration);
 							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(hitcount.ToString());
+							buffInfoStringBuilder.Append(hitcount);
 							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(spellTypeID.ToString());
+							buffInfoStringBuilder.Append(spellTypeID);
 							buffInfoStringBuilder.Append(",");
 							buffInfoStringBuilder.Append(1); //1 for song
 							buffInfoStringBuilder.Append(",");

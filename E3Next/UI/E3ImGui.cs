@@ -42,18 +42,18 @@ namespace MonoCore
 		//EQ Font 10 - Arial 40 Bold
 		//lucon.ttf, 13px
 		public static Dictionary<String, string> FontList = new Dictionary<string, string>() { {"robo","RobotoRegular" }, {"robo-large", "RobotoRegular (Large)" }
-		,{"arial-10", "EQ Font 0 - Arial 10 Thin" }
-		,{"arial-12", "EQ Font 1 - Arial 12 Thin" }
-		,{"arial-14", "EQ Font 2 - Arial 14 Thin" }
-		,{"arial-15","EQ Font 3 - Arial 15 Thin" }
-		,{"arial-16","EQ Font 4 - Arial 16 Thin" }
-		,{"arial-20","EQ Font 7 - Arial 20" }
-		,{"arial-24","EQ Font 8 - Arial 24" }
-		,{"arial_bold-20","EQ Font 5 - Arial 20 Bold" }
-		,{"arial_bold-24","EQ Font 6 - Arial 24 Bold" }
-		,{"arial_bold-40","EQ Font 10 - Arial 40 Bold" }
-		,{"courier_new-9","EQ Font 9 - Courier New 14" }
-		,{"lucon-13","lucon.ttf, 13px" }};
+		//,{"arial-10", "EQ Font 0 - Arial 10 Thin" }
+		//,{"arial-12", "EQ Font 1 - Arial 12 Thin" }
+		//,{"arial-14", "EQ Font 2 - Arial 14 Thin" }
+		//,{"arial-15","EQ Font 3 - Arial 15 Thin" }
+		//,{"arial-16","EQ Font 4 - Arial 16 Thin" }
+		//,{"arial-20","EQ Font 7 - Arial 20" }
+		//,{"arial-24","EQ Font 8 - Arial 24" }
+		//,{"arial_bold-20","EQ Font 5 - Arial 20 Bold" }
+		//,{"arial_bold-24","EQ Font 6 - Arial 24 Bold" }
+		//,{"arial_bold-40","EQ Font 10 - Arial 40 Bold" }
+		//,{"courier_new-9","EQ Font 9 - Courier New 14" }
+		,{"lucon.ttf","lucon.ttf" }};
 		public static class MaterialFont
 		{
 			public const string threed_rotation = "\ue84d";
@@ -2319,7 +2319,10 @@ namespace MonoCore
 
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static bool imgui_PushFont(string name);
+		public extern static bool imgui_PushFont(string name, float font_size);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_PushEQFont(int fontid,float size);
 
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -3291,7 +3294,7 @@ namespace MonoCore
 		}
 		public class IMGUI_Fonts : IDisposable
 		{
-			bool fontChanged = false;
+			Int32 fontsApplied = 0;
 			public void PushFont(string font)
 			{
 				string fontToUse = font;
@@ -3299,7 +3302,18 @@ namespace MonoCore
 				{
 					fontToUse = FontList[font];
 				}
-				fontChanged = imgui_PushFont(fontToUse);
+				if(imgui_PushFont(fontToUse,0))
+				{
+					fontsApplied++;
+				}
+			}
+			public void PushFontSize(float fontsize)
+			{
+				
+				if (imgui_PushFont(String.Empty, fontsize))
+				{
+					fontsApplied++;
+				}
 			}
 			#region objectPoolingStuff
 			//private constructor, needs to be created so that you are forced to use the pool.
@@ -3319,11 +3333,11 @@ namespace MonoCore
 			}
 			public void Dispose()
 			{
-				if (fontChanged)
+				for(int i = 0;i<fontsApplied;i++)
 				{
 					imgui_PopFont();
 				}
-				fontChanged = false;
+				fontsApplied = 0;
 				StaticObjectPool.Push(this);
 			}
 			~IMGUI_Fonts()

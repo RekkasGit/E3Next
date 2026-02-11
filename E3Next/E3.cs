@@ -46,10 +46,12 @@ namespace E3Core.Processors
 			//did someone send us a command? lets process it. 
 			ProcessExternalCommands();
 
-            //update all states, important.
+			
+			//update all states, important.
             StateUpdates();
+		
 			RefreshCaches();
-
+			
 			//don't eat stat food even if paused!
 			Basics.CheckFood();
 			//kickout after updates if paused
@@ -65,8 +67,7 @@ namespace E3Core.Processors
 			if (MQ.Query<bool>("${Me.Invulnerable}")) return; //can't do anything anyway
 
 			EventProcessor.ProcessEventsInQueues("/nowcast");
-			
-		
+
 			if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //we are dead
 			if (MQ.Query<bool>("${Me.Feigning}") && E3.CharacterSettings.IfFDStayDown) return;
 
@@ -92,10 +93,8 @@ namespace E3Core.Processors
 				//follow/rez/etc
 				ClassMethodCalls();
 			}
-
-			
-            //final cleanup/actions after the main loop has done processing
-            FinalCalls();
+			//final cleanup/actions after the main loop has done processing
+			FinalCalls();
         }
 
         private static void BeforeAdvancedSettingsCalls()
@@ -130,7 +129,7 @@ namespace E3Core.Processors
 		}
 		private static void AdvancedSettingsCalls()
 		{
-			using (Log.Trace("AdvMethodCalls"))
+			//using (Log.Trace("AdvMethodCalls"))
 			{
 				//rembmer check_heals is auto inserted, should probably just pull out here
 				List<string> _methodsToInvokeAsStrings;
@@ -151,9 +150,9 @@ namespace E3Core.Processors
 						}
 						//check backoff
 						//check nowcast
-						EventProcessor.ProcessEventsInQueues("/nowcast");
-						EventProcessor.ProcessEventsInQueues("/backoff");
+						
 					}
+					EventProcessor.ProcessEventsInQueues();
 				}
 			}
 		}
@@ -195,10 +194,12 @@ namespace E3Core.Processors
 					{
 						kvp.Value.Invoke();
 					}
-					EventProcessor.ProcessEventsInQueues("/nowcast");
-					EventProcessor.ProcessEventsInQueues("/backoff");
-					EventProcessor.ProcessEventsInQueues("/assistme");
+					EventProcessor.ProcessEventsInQueues();
 				}
+				//perf penality for calling this many, its not free, so don't do it in a loop.
+				//EventProcessor.ProcessEventsInQueues("/nowcast");
+				//EventProcessor.ProcessEventsInQueues("/backoff");
+				//EventProcessor.ProcessEventsInQueues("/assistme");
 				e3util.PutOriginalTargetBackIfNeeded(orgTargetID);
 			}
 
@@ -445,25 +446,27 @@ namespace E3Core.Processors
 				IsInvul = MQ.Query<bool>("${Me.Invulnerable}");
 				CurrentId = MQ.Query<int>("${Me.ID}");
 				CurrentInCombat = Basics.InCombat();
-
+				
 				E3ImGUI.ProcessMQCommands();
-
 				//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
 				if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, E3.CharacterSettings.CPU_PublishStateDataInMS))
 				{
 					StateUpdates_Stats();
 				}
+				
 				//other stuff not quite so quickly
 				if (e3util.ShouldCheck(ref _nextMiscUpdateCheckTime, E3.CharacterSettings.CPU_PublishMiscDataInMS))
 				{
 					StateUpdates_Misc();
 				}
+				
 				//expensive only send out once per second?
 				if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, E3.CharacterSettings.CPU_PublishBuffDataInMS))
 				{
 					StateUpdates_BuffInformation();
 					StateUpdates_Counters();
 				}
+				
 				if (e3util.ShouldCheck(ref _nextMemoryUpdateCheckTime, _nextMemoryUpdateCheckRate))
 				{
 					StateUpdates_Memory();
