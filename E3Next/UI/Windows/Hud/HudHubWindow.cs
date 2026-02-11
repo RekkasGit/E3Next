@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using static MonoCore.E3ImGUI;
+using static System.Windows.Forms.AxHost;
 
 namespace E3Core.UI.Windows.Hud
 {
@@ -187,13 +188,6 @@ namespace E3Core.UI.Windows.Hud
 
 		static Task UpdateTask;
 
-
-		private static void ProcessUpdates()
-		{
-			RefreshBuffInfo();
-			RefreshGroupInfo();
-		}
-
 		static string _exceptionMessage = String.Empty;
 
 		private static List<TableRow_BuffInfo> RefreshBuffInfo_ParseProtoBuffData(string s)
@@ -220,7 +214,19 @@ namespace E3Core.UI.Windows.Hud
 				counterType = buff.CounterType;
 				counterNumber = buff.CounterNumber;
 
-				var buffRow = new TableRow_BuffInfo(spellid);
+				TableRow_BuffInfo buffRow = null;
+				
+				if(_personalBuffInfoCache.TryGetValue(spellid,out var tbi))
+				{
+					buffRow = tbi;
+				}
+				else
+				{
+					buffRow = new TableRow_BuffInfo(spellid);
+					_personalBuffInfoCache.Add(spellid,buffRow);
+				}
+
+
 				buffRow.SpellID = spellid;
 				buffRow.Duration = duration;
 				var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
@@ -231,12 +237,13 @@ namespace E3Core.UI.Windows.Hud
 				buffRow.CounterTypeID = counterType;
 				buffRow.CounterNumberValue = counterNumber;
 				//check if spellid exists
-
-				buffRow.SpellID = spellid;
-
 				if (hitcount > 0)
 				{
 					buffRow.HitCount = hitcount.ToString();
+				}
+				else
+				{
+					buffRow.HitCount = String.Empty;
 				}
 
 				returnValue.Add(buffRow);
@@ -277,7 +284,17 @@ namespace E3Core.UI.Windows.Hud
 					bufftype = (int)tempBuffer[4];
 					counterType = (int)tempBuffer[5];
 					counterNumber = (int)tempBuffer[6];
-					var buffRow = new TableRow_BuffInfo(spellid);
+					TableRow_BuffInfo buffRow = null;
+
+					if (_personalBuffInfoCache.TryGetValue(spellid, out var tbi))
+					{
+						buffRow = tbi;
+					}
+					else
+					{
+						buffRow = new TableRow_BuffInfo(spellid);
+						_personalBuffInfoCache.Add(spellid, buffRow);
+					}
 					buffRow.BuffType = bufftype;
 					buffRow.CounterNumberValue = counterNumber;
 					buffRow.SpellID = spellid;
@@ -292,6 +309,10 @@ namespace E3Core.UI.Windows.Hud
 					if (hitcount > 0)
 					{
 						buffRow.HitCount = hitcount.ToString();
+					}
+					else
+					{
+						buffRow.HitCount = String.Empty;
 					}
 					dataInfo.Add(buffRow);
 					start = end + 1;
@@ -489,6 +510,215 @@ namespace E3Core.UI.Windows.Hud
 				//}
 			}
 		}
+		private static TableRow_GroupInfo RefreshGroupInfo_GetRowDataForPartyMember(string user)
+		{
+			TableRow_GroupInfo row = null;
+
+			if (_groupInfoCache.TryGetValue(user, out var gi))
+			{
+				row = gi;
+			}
+			else
+			{
+				row = new TableRow_GroupInfo();
+
+			}
+
+			int hp = MQ.Query<Int32>($"${{Group.Member[{user}].PctHPs}}", false);
+
+			row.PetHPPercent = MQ.Query<Int32>($"${{Group.Member[{user}].Spawn.Pet.CurrentHPs}}", false); //user;
+			decimal distance = MQ.Query<Decimal>($"${{Group.Member[{user}].Spawn.Distance3D}}", false);
+			row.Distance = distance.ToString("N0");
+
+
+			if (distance == 0)
+			{
+				row.Distance = "--";
+
+			}
+			else
+			{
+				row.Distance = distance.ToString("N0");
+				row.DistanceColor = GetDistanceSeverityColor((double)distance);
+			}
+
+			row.DisplayName = user;
+			row.DisplayNameColor = (0.275f, 0.860f, 0.85f, 1);
+			Int32 mana = MQ.Query<Int32>($"${{Group.Member[{user}].PctMana}}", false);
+			if (mana == 0)
+			{
+				row.Mana = "-";
+			}
+			else
+			{
+				row.Mana = mana.ToString() + "%";
+
+			}
+			row.ManaColor = GetResourceSeverityColor(mana);
+
+			Int32 endurance = MQ.Query<Int32>($"${{Group.Member[{user}].PctEndurance}}", false);
+			row.Endurance = endurance.ToString() + "%";
+			row.EndColor = GetResourceSeverityColor(endurance);
+			row.HPPercent = hp;
+			row.HP = hp.ToString() + "%";
+			row.HPColor = GetResourceSeverityColor(hp);
+			Int32 aggroPct = MQ.Query<Int32>($"${{Group.Member[{user}].PctAggro}}", false);
+
+			if (aggroPct > 0)
+			{
+				row.AggroPct = aggroPct.ToString();
+
+			}
+			else
+			{
+				row.AggroPct = "-";
+			}
+			row.AggroColor = GetAggroSeverityColor(aggroPct);
+			row.XtargetAggroPct = "-";
+			row.XtargetMinAggroPct = "-";
+			return row;
+		}
+		private static TableRow_GroupInfo RefreshGroupInfo_GetRowDataForBot(string user)
+		{
+			//if (user == E3.CurrentName) continue;
+		
+			string casting = E3.Bots.Query(user, "${Me.Casting}");
+			double x, y, z = 0;
+
+
+			Int32 mana, endurance, hp, aggroPct, aggroPctXtarget, aggroPctMinXtarget, pet_pctHealth;
+			Int32.TryParse(E3.Bots.Query(user, "${Me.PctHPs}"), out hp);
+
+			Int32.TryParse(E3.Bots.Query(user, "${Me.PctMana}"), out mana);
+			Int32.TryParse(E3.Bots.Query(user, "${Me.PctEndurance}"), out endurance);
+			Int32.TryParse(E3.Bots.Query(user, "${Me.PctAggro}"), out aggroPct);
+
+			Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMaxAggro}"), out aggroPctXtarget);
+			Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMinAggro}"), out aggroPctMinXtarget);
+			Int32.TryParse(E3.Bots.Query(user, "${Me.Pet.CurrentHPs}"), out pet_pctHealth);
+
+			double.TryParse(E3.Bots.Query(user, "${Me.X}"), out x);
+			double.TryParse(E3.Bots.Query(user, "${Me.Y}"), out y);
+			double.TryParse(E3.Bots.Query(user, "${Me.Z}"), out z);
+
+
+			string zoneid = E3.Bots.Query(user, "${Me.ZoneID}");
+			string zonename = E3.Bots.Query(user, "${Me.ZoneShortName}");
+			double distance = 0;
+			bool isInvis = false;
+			bool.TryParse(E3.Bots.Query(user, "${Me.IsInvis}"), out isInvis);
+			bool isInvul = false;
+			bool.TryParse(E3.Bots.Query(user, "${Me.Invulnerable}"), out isInvul);
+
+			TableRow_GroupInfo row = null;
+
+			if (_groupInfoCache.TryGetValue(user, out var gi))
+			{
+				row = gi;
+			}
+			else
+			{
+				row = new TableRow_GroupInfo();
+
+			}
+
+
+			if (_spawns.TryByName(user, out var spawn, useCurrentCache: true))
+			{
+				x = E3.Loc_X - x;
+				y = E3.Loc_Y - y;
+				z = E3.Loc_Z - z;
+				//we can calculate distance
+				distance = Math.Sqrt(x * x + y * y + z * z);
+				row.InZone = true;
+
+			}
+
+			row.PetHPPercent = pet_pctHealth;
+
+			if (distance == 0)
+			{
+				row.Distance = zonename;
+
+			}
+			else
+			{
+				row.Distance = distance.ToString("N0");
+				row.DistanceColor = GetDistanceSeverityColor(distance);
+			}
+
+			if (!row.InZone)
+			{
+				row.DisplayName = "<" + user + ">";
+				row.DisplayNameColor = (0.427f, 0.595f, 0.610f, 1); //grayish
+			}
+			else if (isInvis)
+			{
+				row.DisplayName = "(" + user + ")";
+				row.DisplayNameColor = (0.427f, 0.595f, 0.610f, 1); //grayish
+			}
+			else if (isInvul)
+			{
+				row.DisplayName = "[" + user + "]";
+				row.DisplayNameColor = (0.950f, 0.910f, 0.143f, 1); //GOLD
+			}
+			else
+			{
+				row.DisplayName = user;
+				//row.DisplayNameColor = (0.275f, 0.860f, 0.85f,1);
+			}
+			if (mana == 0)
+			{
+				row.Mana = "-";
+			}
+			else
+			{
+				row.Mana = mana.ToString() + "%";
+
+			}
+			row.ManaColor = GetResourceSeverityColor(mana);
+
+			row.Endurance = endurance.ToString() + "%";
+			row.EndColor = GetResourceSeverityColor(endurance);
+			row.HPPercent = hp;
+			row.HP = hp.ToString() + "%";
+			row.HPColor = GetResourceSeverityColor(hp);
+
+			if (aggroPct > 0)
+			{
+				row.AggroPct = aggroPct.ToString();
+
+			}
+			else
+			{
+				row.AggroPct = "-";
+			}
+			row.AggroColor = GetAggroSeverityColor(aggroPct);
+
+			if (aggroPctXtarget > 0)
+			{
+				row.XtargetAggroPct = aggroPctXtarget.ToString();
+
+			}
+			else
+			{
+				row.XtargetAggroPct = "-";
+			}
+			row.AggroXTargetColor = GetAggroSeverityColor(aggroPctXtarget);
+			if (aggroPctMinXtarget > 0)
+			{
+				row.XtargetMinAggroPct = aggroPctMinXtarget.ToString();
+
+			}
+			else
+			{
+				row.XtargetMinAggroPct = "-";
+			}
+			row.AggroMinXTargetColor = GetAggroSeverityColor(aggroPctMinXtarget);
+
+			return row;
+		
+		}
 		private static void RefreshGroupInfo()
 		{
 			var state = _state.GetState<State_HubWindow>();
@@ -498,214 +728,33 @@ namespace E3Core.UI.Windows.Hud
 			state.GroupMembersAdded.Clear();
 
 			//get the connected bots.
-			List<string> users = E3.Bots.BotsConnected().ToList(); //make a copy as this returns a direct copy of cache
+			List<string> users = E3.Bots.BotsConnected(readOnly:true); //this is a direct cache value, do not edit
 
 			
 			//users.Sort();
-			if (state.PeerSortOrder == "Me On Top" && users.Remove(E3.CurrentName))
+			if (state.PeerSortOrder == "Me On Top")
 			{
-				users.Insert(0, E3.CurrentName);
+				var row = RefreshGroupInfo_GetRowDataForBot(E3.CurrentName);
+				state.GroupInfo.Add(row);
+				state.GroupMembersAdded.Add(E3.CurrentName);
 			}
-			
 			foreach (var user in users)
 			{
-				//if (user == E3.CurrentName) continue;
+				if (state.GroupMembersAdded.Contains(user)) continue;
+
 				bool inGroupOrRaid = false;
 				if (Basics.GroupMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
 				if (!inGroupOrRaid && Basics.RaidMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
 				if (!inGroupOrRaid) continue;
-
-
-				
-
-				string casting = E3.Bots.Query(user, "${Me.Casting}");
-				double x, y, z = 0;
-
-				
-				Int32 mana, endurance, hp, aggroPct, aggroPctXtarget, aggroPctMinXtarget, pet_pctHealth;
-				Int32.TryParse(E3.Bots.Query(user, "${Me.PctHPs}"), out hp);
-				
-				Int32.TryParse(E3.Bots.Query(user, "${Me.PctMana}"), out mana);
-				Int32.TryParse(E3.Bots.Query(user, "${Me.PctEndurance}"), out endurance);
-				Int32.TryParse(E3.Bots.Query(user, "${Me.PctAggro}"), out aggroPct);
-				
-				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMaxAggro}"), out aggroPctXtarget);
-				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMinAggro}"), out aggroPctMinXtarget);
-				Int32.TryParse(E3.Bots.Query(user, "${Me.Pet.CurrentHPs}"), out pet_pctHealth);
-
-				double.TryParse(E3.Bots.Query(user, "${Me.X}"), out x);
-				double.TryParse(E3.Bots.Query(user, "${Me.Y}"), out y);
-				double.TryParse(E3.Bots.Query(user, "${Me.Z}"), out z);
-				
-
-				string zoneid = E3.Bots.Query(user, "${Me.ZoneID}");
-				string zonename = E3.Bots.Query(user, "${Me.ZoneShortName}");
-				double distance = 0;
-				bool isInvis = false;
-				bool.TryParse(E3.Bots.Query(user, "${Me.IsInvis}"), out isInvis);
-				bool isInvul = false;
-				bool.TryParse(E3.Bots.Query(user, "${Me.Invulnerable}"), out isInvul);
-			
-				var row = new TableRow_GroupInfo(user);
-
-				if (_spawns.TryByName(user, out var spawn, useCurrentCache: true))
-				{
-					x = E3.Loc_X - x;
-					y = E3.Loc_Y - y;
-					z = E3.Loc_Z - z;
-					//we can calculate distance
-					distance = Math.Sqrt(x * x + y * y + z * z);
-					row.InZone = true;
-
-				}
-				
-				row.PetHPPercent = pet_pctHealth;
-
-				if (distance == 0)
-				{
-					row.Distance = zonename;
-
-				}
-				else
-				{
-					row.Distance = distance.ToString("N0");
-					row.DistanceColor = GetDistanceSeverityColor(distance);
-				}
-
-				if (!row.InZone)
-				{
-					row.DisplayName = "<" + user + ">";
-					row.DisplayNameColor = (0.427f, 0.595f, 0.610f, 1); //grayish
-				}
-				else if (isInvis)
-				{
-					row.DisplayName = "(" + user + ")";
-					row.DisplayNameColor = (0.427f, 0.595f, 0.610f, 1); //grayish
-				}
-				else if (isInvul)
-				{
-					row.DisplayName = "[" + user + "]";
-					row.DisplayNameColor = (0.950f, 0.910f, 0.143f, 1); //GOLD
-				}
-				else
-				{
-					row.DisplayName = user;
-					//row.DisplayNameColor = (0.275f, 0.860f, 0.85f,1);
-				}
-				if (mana == 0)
-				{
-					row.Mana = "-";
-				}
-				else
-				{
-					row.Mana = mana.ToString() + "%";
-
-				}
-				row.ManaColor = GetResourceSeverityColor(mana);
-
-				row.Endurance = endurance.ToString() + "%";
-				row.EndColor = GetResourceSeverityColor(endurance);
-				row.HPPercent = hp;
-				row.HP = hp.ToString() + "%";
-				row.HPColor = GetResourceSeverityColor(hp);
-
-				if (aggroPct > 0)
-				{
-					row.AggroPct = aggroPct.ToString();
-
-				}
-				else
-				{
-					row.AggroPct = "-";
-				}
-				row.AggroColor = GetAggroSeverityColor(aggroPct);
-
-				if (aggroPctXtarget > 0)
-				{
-					row.XtargetAggroPct = aggroPctXtarget.ToString();
-
-				}
-				else
-				{
-					row.XtargetAggroPct = "-";
-				}
-				row.AggroXTargetColor = GetAggroSeverityColor(aggroPctXtarget);
-				if (aggroPctMinXtarget > 0)
-				{
-					row.XtargetMinAggroPct = aggroPctMinXtarget.ToString();
-
-				}
-				else
-				{
-					row.XtargetMinAggroPct = "-";
-				}
-				row.AggroMinXTargetColor = GetAggroSeverityColor(aggroPctMinXtarget);
-
+				var row = RefreshGroupInfo_GetRowDataForBot(user);
 				state.GroupInfo.Add(row);
 
 				if (!state.GroupMembersAdded.Contains(user)) state.GroupMembersAdded.Add(user);
-
 			}
 			foreach (var user in Basics.GroupMemberNames)
 			{
 				if (state.GroupMembersAdded.Contains(user)) continue;
-
-				var row = new TableRow_GroupInfo(user);
-				//MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.Pet.CurrentHPs}}"); //pets
-				//MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}"); //user
-
-				int hp = MQ.Query<Int32>($"${{Group.Member[{user}].PctHPs}}", false);
-
-				row.PetHPPercent = MQ.Query<Int32>($"${{Group.Member[{user}].Spawn.Pet.CurrentHPs}}", false); //user;
-				decimal distance = MQ.Query<Decimal>($"${{Group.Member[{user}].Spawn.Distance3D}}", false);
-				row.Distance = distance.ToString("N0");
-
-
-				if (distance == 0)
-				{
-					row.Distance = "--";
-
-				}
-				else
-				{
-					row.Distance = distance.ToString("N0");
-					row.DistanceColor = GetDistanceSeverityColor((double)distance);
-				}
-
-				row.DisplayName = user;
-				row.DisplayNameColor = (0.275f, 0.860f, 0.85f, 1);
-				Int32 mana = MQ.Query<Int32>($"${{Group.Member[{user}].PctMana}}", false);
-				if (mana == 0)
-				{
-					row.Mana = "-";
-				}
-				else
-				{
-					row.Mana = mana.ToString() + "%";
-
-				}
-				row.ManaColor = GetResourceSeverityColor(mana);
-
-				Int32 endurance = MQ.Query<Int32>($"${{Group.Member[{user}].PctEndurance}}", false);
-				row.Endurance = endurance.ToString() + "%";
-				row.EndColor = GetResourceSeverityColor(endurance);
-				row.HPPercent = hp;
-				row.HP = hp.ToString() + "%";
-				row.HPColor = GetResourceSeverityColor(hp);
-				Int32 aggroPct = MQ.Query<Int32>($"${{Group.Member[{user}].PctAggro}}", false);
-
-				if (aggroPct > 0)
-				{
-					row.AggroPct = aggroPct.ToString();
-
-				}
-				else
-				{
-					row.AggroPct = "-";
-				}
-				row.AggroColor = GetAggroSeverityColor(aggroPct);
-				row.XtargetAggroPct = "-";
-				row.XtargetMinAggroPct = "-";
+				var row = RefreshGroupInfo_GetRowDataForPartyMember(user);
 				state.GroupInfo.Add(row);
 			}
 
@@ -920,7 +969,17 @@ namespace E3Core.UI.Windows.Hud
 				Int32 duration = MQ.Query<Int32>($"${{Target.Buff[{i}].Duration}}", false);
 				Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
 				string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-				var buffRow = new TableRow_BuffInfo(spellid);
+				TableRow_BuffInfo buffRow = null;
+
+				if (_targetBuffInfoCache.TryGetValue(spellid, out var tbi))
+				{
+					buffRow = tbi;
+				}
+				else
+				{
+					buffRow = new TableRow_BuffInfo(spellid);
+					_targetBuffInfoCache.Add(spellid, buffRow);
+				}
 				buffRow.Name = buffName;
 				buffRow.iconID = spellIcon;
 				var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
@@ -2758,7 +2817,6 @@ namespace E3Core.UI.Windows.Hud
 			Int32 numberOfBuffsPerRow = (int)widthAvail / buffState.IconSize;
 
 			if (numberOfBuffsPerRow < 1) numberOfBuffsPerRow = 1;
-
 			if (debuffState.DebuffInfo.Count > 0)
 			{
 				imgui_Text("Debuffs:");
@@ -3664,6 +3722,9 @@ namespace E3Core.UI.Windows.Hud
 			}
 
 		}
+
+		public static Dictionary<Int32, TableRow_BuffInfo> _personalBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
+		public static Dictionary<Int32, TableRow_BuffInfo> _targetBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
 		public class TableRow_BuffInfo
 		{
 			public Int32 BuffType = 0;
@@ -3694,6 +3755,8 @@ namespace E3Core.UI.Windows.Hud
 				SpellID = spellid;
 			}
 		}
+		public static Dictionary<string, TableRow_GroupInfo> _groupInfoCache = new Dictionary<string, TableRow_GroupInfo>();
+
 		public class TableRow_GroupInfo
 		{
 

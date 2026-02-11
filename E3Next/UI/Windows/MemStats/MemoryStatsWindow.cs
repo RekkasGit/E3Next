@@ -157,6 +157,8 @@ namespace E3Core.UI.Windows.MemStats
 				_memoryStats.Add(memoryStat);
 			}
 		}
+		static Int64 lastGCZeroCount = 0;
+		static Int64 lastGCZeroTimeStamp = 0;
 		private static void RenderWindow()
 		{
 			if (!_imguiContextReady) return;
@@ -173,6 +175,19 @@ namespace E3Core.UI.Windows.MemStats
 
 					// Header with refresh button
 					imgui_Text("E3 Memory Statistics by Rekka/Linamas");
+
+					Int64 GCZeroCount = GC.CollectionCount(0);
+					if(lastGCZeroCount!=GCZeroCount)
+					{
+						lastGCZeroCount = GCZeroCount;
+						lastGCZeroTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+					}
+
+					Decimal millisecondsSinceLastChange = Core.StopWatch.ElapsedMilliseconds - lastGCZeroTimeStamp;
+
+
+					imgui_Text($"GC Collect Gen0:({GCZeroCount}) Gen0Time:({millisecondsSinceLastChange}) Gen1:({GC.CollectionCount(1)}) Gen2:({GC.CollectionCount(2)})");
+
 					imgui_Separator();
 					using(var child =ImGUIChild.Aquire())
 					{
