@@ -159,6 +159,7 @@ namespace E3Core.UI.Windows.MemStats
 		}
 		static Int64 lastGCZeroCount = 0;
 		static Int64 lastGCZeroTimeStamp = 0;
+		static string GCDisplay = $"GC Collect Gen0:({GC.CollectionCount(0)}) Gen0Time:(0) Gen1:({GC.CollectionCount(1)}) Gen2:({GC.CollectionCount(2)})";
 		private static void RenderWindow()
 		{
 			if (!_imguiContextReady) return;
@@ -177,16 +178,20 @@ namespace E3Core.UI.Windows.MemStats
 					imgui_Text("E3 Memory Statistics by Rekka/Linamas");
 
 					Int64 GCZeroCount = GC.CollectionCount(0);
-					if(lastGCZeroCount!=GCZeroCount)
-					{
-						lastGCZeroCount = GCZeroCount;
-						lastGCZeroTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-					}
-
+					Int64 GCZeroDisplay = 0;
 					Decimal millisecondsSinceLastChange = Core.StopWatch.ElapsedMilliseconds - lastGCZeroTimeStamp;
 
+					if (lastGCZeroCount!=GCZeroCount)
+					{
+						lastGCZeroCount = GCZeroCount;
+						GCZeroDisplay = Core.StopWatch.ElapsedMilliseconds - lastGCZeroTimeStamp;
+						lastGCZeroTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+						GCDisplay = $"GC Collect Gen0:({GCZeroCount}) Gen0Time:({GCZeroDisplay}) Gen1:({GC.CollectionCount(1)}) Gen2:({GC.CollectionCount(2)})";
+					}
 
-					imgui_Text($"GC Collect Gen0:({GCZeroCount}) Gen0Time:({millisecondsSinceLastChange}) Gen1:({GC.CollectionCount(1)}) Gen2:({GC.CollectionCount(2)})");
+				
+
+					imgui_Text(GCDisplay);
 
 					imgui_Separator();
 					using(var child =ImGUIChild.Aquire())

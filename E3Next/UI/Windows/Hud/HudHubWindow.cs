@@ -384,7 +384,7 @@ namespace E3Core.UI.Windows.Hud
 
 							if(!buffState.BuffCache.ContainsKey(spellid))
 							{
-								string buffName = buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
+								string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
 								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
 								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}", false) * 6 * 1000;
 								buffState.BuffCache.TryAdd(spellid, new BuffCacheEntry() { Name = buffName, SpellIcon = spellIcon, MaxDuration = maxDuration });
@@ -1066,7 +1066,7 @@ namespace E3Core.UI.Windows.Hud
 		private static void RenderPeerAAWindow()
 		{
 			var state = _state.GetState<State_PeerAAWindow>();
-
+			RefreshPeerAAInfo();
 			imgui_Text("Peer AA Points");
 			imgui_Separator();
 
@@ -1973,8 +1973,6 @@ namespace E3Core.UI.Windows.Hud
 				RefreshBuffInfo();
 				RefreshPlayerInfo();
 				RefreshTargetInfo();
-				RefreshPeerAAInfo();
-
 				RenderHub_MainWindow();
 
 				var buffState = _state.GetState<State_BuffWindow>();
@@ -1996,7 +1994,6 @@ namespace E3Core.UI.Windows.Hud
 				{
 					RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
 				}
-
 				var peerAAState = _state.GetState<State_PeerAAWindow>();
 				if (peerAAState.IsOpen)
 				{

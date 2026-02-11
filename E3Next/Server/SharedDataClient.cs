@@ -24,6 +24,9 @@ using E3Core.Utility;
 using Google.Protobuf.WellKnownTypes;
 using E3Core.UI.Windows.NetworkingStats;
 using System.Runtime.InteropServices;
+using CommunityToolkit.HighPerformance.Buffers;
+using System.Security.Cryptography;
+using System.Buffers;
 
 namespace E3Core.Server
 {
@@ -59,6 +62,8 @@ namespace E3Core.Server
 		static bool _isProxyMode = false;
 		ConcurrentQueue<ConnectionInfo> _usersToConnectTo = new ConcurrentQueue<ConnectionInfo>();
 		public ConcurrentDictionary<string, ConnectionInfo> UsersConnectedTo = new ConcurrentDictionary<string, ConnectionInfo>(StringComparer.OrdinalIgnoreCase);
+		public StringPool _stringPool = StringPool.Shared;
+		public ArrayPool<char> _arrayPool = ArrayPool<char>.Shared;
 		Task _mainProcessingTask = null;
 		public bool RegisterUser(string user, string path, bool isproxy = false)
 		{
@@ -652,6 +657,8 @@ namespace E3Core.Server
 				NetMQ.Msg msg_topic = new NetMQ.Msg();
 				NetMQ.Msg msg_payload = new NetMQ.Msg();
 
+				ReadOnlySpan<char> ServerNameAsSpan = E3.ServerName.AsSpan();
+
 				while (Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
 				{
 					Process_CheckNewConnections(subSocket);
@@ -680,218 +687,275 @@ namespace E3Core.Server
 
 							subSocket.Receive(ref msg_payload);
 
-							string messageReceived;
-							messageReceived = System.Text.Encoding.Default.GetString(msg_payload.Data, 0, msg_payload.Size);
-
-							string originalMessage = messageReceived;
-							string payloaduser;
-							Int32 indexOfColon = messageReceived.IndexOf(':');
-							payloaduser = messageReceived.Substring(0, indexOfColon);
-							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
-							indexOfColon = messageReceived.IndexOf(':');
-							string payloadServer = messageReceived.Substring(0, indexOfColon);
-
-							if (!String.Equals(payloadServer, E3.ServerName))
+							ReadOnlySpan<byte> byteSpan = msg_payload.Data.AsSpan(0, msg_payload.Size);
+							int exactCharCount;
+							ReadOnlySpan<char> messageReceivedAsSpan;
+							char[] chars = null;
+							try
 							{
-								continue;
-							}
-
-							messageReceived = messageReceived.Substring(indexOfColon + 1, messageReceived.Length - indexOfColon - 1);
-
-							if (UsersConnectedTo.TryGetValue(payloaduser, out var connectionInfo))
-							{
-								connectionInfo.LastMessageTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-							}
-							//most common goes first
-							if (messageTopicReceived.StartsWith("${Me."))
-							{
-
-								ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
-
-							}
-							else if (messageTopicReceived == "OnCommand-All")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandAll;
-
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-AllZone")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandAllZone;
-
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-Group")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroup;
-
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-GroupZone")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupZone;
-
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-AllExceptMe")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandAllExceptMe;
-
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-AllExceptMeZone")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandAllExceptMeZone;
-
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-GroupAll")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupAll;
-
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-GroupAllZone")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupAllZone;
-
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-Raid")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaid;
-
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-RaidNotMe")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidNotMe;
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-RaidZone")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidZone;
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "OnCommand-RaidZoneNotMe")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidZoneNotMe;
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "BroadCastMessage")
-							{
-								//send this message, even if we are on a different thread, just use delayed.
-								ProcessBroadcast(messageReceived);
-								//var data = OnCommandData.Aquire();
-								//data.Data = messageReceived;
-								//data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessage;
-
-								//CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived == "BroadCastMessageZone")
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessageZone;
-
-								CommandQueue.Enqueue(data);
-							}
-							else if (messageTopicReceived.StartsWith("${DataChannel."))
-							{
-								//don't do the command you are issuing out
-								if (payloaduser != E3.CurrentName)
+								unsafe
 								{
-									if (E3.CharacterSettings.E3ChatChannelsToJoin.Contains(messageTopicReceived, StringComparer.OrdinalIgnoreCase))
+									fixed (byte* pBytes = byteSpan)
 									{
-										var data = OnCommandData.Aquire();
-										data.Data = messageReceived;
-										data.TypeOfCommand = OnCommandData.CommandType.OnCommandChannel;
-										CommandQueue.Enqueue(data);
+										exactCharCount = Encoding.Default.GetCharCount(pBytes, byteSpan.Length);
+										chars = _arrayPool.Rent(exactCharCount);
+										fixed (char* pChars = chars)
+										{
+											Encoding.Default.GetChars(pBytes, byteSpan.Length, pChars, exactCharCount);
+											messageReceivedAsSpan = new ReadOnlySpan<char>(pChars, exactCharCount);
+
+										}
 									}
 								}
+								ReadOnlySpan<char> originalMessage = messageReceivedAsSpan;
+								Int32 indexOfColon = messageReceivedAsSpan.IndexOf(':');
+								string payloaduser = _stringPool.GetOrAdd(messageReceivedAsSpan.Slice(0, indexOfColon));
+								messageReceivedAsSpan = messageReceivedAsSpan.Slice(indexOfColon + 1, messageReceivedAsSpan.Length - indexOfColon - 1);
+								indexOfColon = messageReceivedAsSpan.IndexOf(':');
+								string payloadServer = _stringPool.GetOrAdd(messageReceivedAsSpan.Slice(0, indexOfColon));
+								if (!String.Equals(payloadServer, E3.ServerName))
+								{
+									continue;
+								}
+								messageReceivedAsSpan = messageReceivedAsSpan.Slice(indexOfColon + 1, messageReceivedAsSpan.Length - indexOfColon - 1);
+
+								if (UsersConnectedTo.TryGetValue(payloaduser, out var connectionInfo))
+								{
+									connectionInfo.LastMessageTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+								}
+
+								//most common goes first
+								if (messageTopicReceived.StartsWith("${Me."))
+								{
+									string messageReceived = String.Empty;
+
+									//there are some of the Me.* we don't want to pull from the string pool, as they are crazy dynamic/large
+									if(messageTopicReceived == "${Me.BuffInfo}" || messageTopicReceived == "${Me.PetBuffInfo}"
+										|| messageTopicReceived == "${Me.Pet.CurrentHPs}" || messageTopicReceived == "${Me.CurrentMana}"
+										|| messageTopicReceived == "${Me.CurrentEndurance}"
+										)
+									{
+										messageReceived = messageReceivedAsSpan.ToString();
+									}
+									else
+									{
+										messageReceived = _stringPool.GetOrAdd(messageReceivedAsSpan);
+									}
+
+									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
+								}
+								else if (messageTopicReceived == "OnCommand-All")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandAll;
+
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-AllZone")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandAllZone;
+
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-Group")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroup;
+
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-GroupZone")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupZone;
+
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-AllExceptMe")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandAllExceptMe;
+
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-AllExceptMeZone")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandAllExceptMeZone;
+
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-GroupAll")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupAll;
+
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-GroupAllZone")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandGroupAllZone;
+
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-Raid")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaid;
+
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-RaidNotMe")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidNotMe;
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-RaidZone")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidZone;
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "OnCommand-RaidZoneNotMe")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandRaidZoneNotMe;
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "BroadCastMessage")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									//send this message, even if we are on a different thread, just use delayed.
+									ProcessBroadcast(messageReceived);
+									//var data = OnCommandData.Aquire();
+									//data.Data = messageReceived;
+									//data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessage;
+
+									//CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived == "BroadCastMessageZone")
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.BroadCastMessageZone;
+
+									CommandQueue.Enqueue(data);
+								}
+								else if (messageTopicReceived.StartsWith("${DataChannel."))
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									//don't do the command you are issuing out
+									if (payloaduser != E3.CurrentName)
+									{
+										if (E3.CharacterSettings.E3ChatChannelsToJoin.Contains(messageTopicReceived, StringComparer.OrdinalIgnoreCase))
+										{
+											var data = OnCommandData.Aquire();
+											data.Data = messageReceived;
+											data.TypeOfCommand = OnCommandData.CommandType.OnCommandChannel;
+											CommandQueue.Enqueue(data);
+										}
+									}
+								}
+								else if (messageTopicReceived.StartsWith("CatalogReq-", StringComparison.Ordinal))
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									E3.Log.WriteDelayed($"Request recieved for catalog data topic:{messageTopicReceived}", Logging.LogLevels.Debug);
+
+									var data = OnCommandData.Aquire();
+									data.Data = messageTopicReceived;
+									data.Data2 = payloaduser;
+									data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_GetCatalogData;
+									IMGUICommands.Enqueue(data);
+								}
+								else if (messageTopicReceived.StartsWith("InvReq-", StringComparison.Ordinal))
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageTopicReceived;
+									data.Data2 = payloaduser;
+									data.Data3 = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_GetItemsByType;
+									IMGUICommands.Enqueue(data);
+
+								}
+								else if (messageTopicReceived.StartsWith("ConfigValueReq-", StringComparison.Ordinal))
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageTopicReceived;
+									data.Data2 = payloaduser;
+									data.Data3 = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_ConfigValueReq;
+									IMGUICommands.Enqueue(data);
+
+								}
+								else if (messageTopicReceived.StartsWith("ConfigValueResp-", StringComparison.Ordinal))
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
+								}
+								else if (messageTopicReceived.StartsWith("ConfigValueUpdate-", StringComparison.Ordinal))
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									var data = OnCommandData.Aquire();
+									data.Data = messageTopicReceived;
+									data.Data2 = payloaduser;
+									data.Data3 = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_ConfigValueUpdate;
+									IMGUICommands.Enqueue(data);
+
+								}
+								else if (messageTopicReceived == OnCommandName)
+								{
+									string messageReceived = messageReceivedAsSpan.ToString();
+									//bct commands
+									var data = OnCommandData.Aquire();
+									data.Data = messageReceived;
+									data.TypeOfCommand = OnCommandData.CommandType.OnCommandName;
+									CommandQueue.Enqueue(data);
+								}
+								else
+								{
+									string messageReceived = _stringPool.GetOrAdd(messageReceivedAsSpan);
+									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
+
+								}
 							}
-							else if (messageTopicReceived.StartsWith("CatalogReq-", StringComparison.Ordinal))
+							finally
 							{
-								E3.Log.WriteDelayed($"Request recieved for catalog data topic:{messageTopicReceived}", Logging.LogLevels.Debug);
-
-								var data = OnCommandData.Aquire();
-								data.Data = messageTopicReceived;
-								data.Data2 = payloaduser;
-								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_GetCatalogData;
-								IMGUICommands.Enqueue(data);
+								if (chars != null)
+								{
+									_arrayPool.Return(chars);
+								}
 							}
-							else if (messageTopicReceived.StartsWith("InvReq-", StringComparison.Ordinal))
-							{
-
-								var data = OnCommandData.Aquire();
-								data.Data = messageTopicReceived;
-								data.Data2 = payloaduser;
-								data.Data3 = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_GetItemsByType;
-								IMGUICommands.Enqueue(data);
-
-							}
-							else if (messageTopicReceived.StartsWith("ConfigValueReq-", StringComparison.Ordinal))
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageTopicReceived;
-								data.Data2 = payloaduser;
-								data.Data3 = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_ConfigValueReq;
-								IMGUICommands.Enqueue(data);
-
-							}
-							else if (messageTopicReceived.StartsWith("ConfigValueResp-", StringComparison.Ordinal))
-							{
-								ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
-							}
-							else if (messageTopicReceived.StartsWith("ConfigValueUpdate-", StringComparison.Ordinal))
-							{
-								var data = OnCommandData.Aquire();
-								data.Data = messageTopicReceived;
-								data.Data2 = payloaduser;
-								data.Data3 = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnIMGUICommand_ConfigValueUpdate;
-								IMGUICommands.Enqueue(data);
-
-							}
-							else if (messageTopicReceived == OnCommandName)
-							{   //bct commands
-								var data = OnCommandData.Aquire();
-								data.Data = messageReceived;
-								data.TypeOfCommand = OnCommandData.CommandType.OnCommandName;
-								CommandQueue.Enqueue(data);
-							}
-							else
-							{
-								ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
-
-							}
-
 						}
 					}
 					catch(Exception ex)
