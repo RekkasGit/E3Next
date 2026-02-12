@@ -2512,7 +2512,7 @@ namespace E3Core.Processors
 							string keyValue = match.Groups[2].Value;
 							keyValue = "${Data." + keyValue + "}"; //data format for custom keys
 							replaceValue = "";
-							string result = E3.Bots.Query(targetname, keyValue);
+							string result = E3.Bots.Query<String>(targetname, keyValue);
 							if (result != "NULL")
 							{
 								replaceValue = result;
@@ -2615,7 +2615,7 @@ namespace E3Core.Processors
 							replaceValue = "100";
 						}
 						//string startTime = E3.Bots.Query(user, "${Me.Memory_CSharpStartTime}");
-						string result = E3.Bots.Query(targetname, $"${{Me.{query}}}");
+						string result = E3.Bots.Query<String>(targetname, $"${{Me.{query}}}");
 						if (result != "NULL")
 						{
 							replaceValue = result;

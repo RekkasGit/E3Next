@@ -579,8 +579,7 @@ namespace E3Core.Processors
 				if (E3.Bots.IsMyBot(target))
 				{
 					pctHealth = E3.Bots.PctHealth(target);
-					bool invulnerable = false;
-					Boolean.TryParse(E3.Bots.Query(target, "${Me.Invulnerable}"), out invulnerable);
+					bool invulnerable = E3.Bots.Query<Boolean>(target, "${Me.Invulnerable}");
 					if (invulnerable) continue; //can't heal people who are invulnerable
 				}
 				else
@@ -643,8 +642,7 @@ namespace E3Core.Processors
 				{
 					//lets look up their health
 					pctHealth = E3.Bots.PctHealth(name);
-					bool invulnerable = false;
-					Boolean.TryParse(E3.Bots.Query(name, "${Me.Invulnerable}"), out invulnerable);
+					bool invulnerable = E3.Bots.Query<Boolean>(name, "${Me.Invulnerable}");
 					if (invulnerable) continue; //can't heal people who are invulnerable
 
 				}
@@ -736,8 +734,7 @@ namespace E3Core.Processors
 						bool isABot = E3.Bots.BotsConnected().Contains(name, StringComparer.OrdinalIgnoreCase);
 						if (isABot)
 						{
-							bool invulnerable = false;
-							Boolean.TryParse(E3.Bots.Query(name, "${Me.Invulnerable}"), out invulnerable);
+							bool invulnerable = E3.Bots.Query<Boolean>(name, "${Me.Invulnerable}");
 							if (invulnerable) continue; //can't heal people who are invulnerable
 
 							//they are a bot and they are in zone
@@ -946,8 +943,7 @@ namespace E3Core.Processors
 					{
 						if (E3.Bots.IsMyBot(s.CleanName))
 						{
-							bool invulnerable = false;
-							Boolean.TryParse(E3.Bots.Query(s.CleanName, "${Me.Invulnerable}"), out invulnerable);
+							bool invulnerable = E3.Bots.Query<Boolean>(s.CleanName, "${Me.Invulnerable}");
 							if (invulnerable) continue; //can't heal people who are invulnerable
 						}
 
@@ -1069,8 +1065,7 @@ namespace E3Core.Processors
 
 					if (E3.Bots.IsMyBot(name))
 					{
-						bool invulnerable = false;
-						Boolean.TryParse(E3.Bots.Query(name, "${Me.Invulnerable}"), out invulnerable);
+						bool invulnerable = E3.Bots.Query<Boolean>(name, "${Me.Invulnerable}");
 						if (invulnerable) continue; //can't heal people who are invulnerable
 					}
 

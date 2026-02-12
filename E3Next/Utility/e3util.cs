@@ -41,8 +41,105 @@ namespace E3Core.Utility
 		private static StringBuilder _resultStringBuilder = new StringBuilder(1024);
 		//modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
 
+		public static bool EqualsIgnoreCase(ReadOnlySpan<char> span1, ReadOnlySpan<char> span2)
+		{
+			if (span1.Length != span2.Length) return false;
 
+			for (int i = 0; i < span1.Length; i++)
+			{
+				if (char.ToUpperInvariant(span1[i]) != char.ToUpperInvariant(span2[i]))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		public static bool DoubleTryParse(ReadOnlySpan<char> span, out double result)
+		{
+			result = 0.0;
+			if (span.IsEmpty) return false;
 
+			int i = 0;
+			bool isNegative = false;
+
+			// 1. Sign handling
+			if (span[0] == '-') { isNegative = true; i++; }
+			else if (span[0] == '+') { i++; }
+
+			// 2. Parse numbers
+			bool hasDigits = false;
+			double tempResult = 0.0;
+
+			// Integer part
+			while (i < span.Length && char.IsDigit(span[i]))
+			{
+				tempResult = tempResult * 10 + (span[i] - '0');
+				i++;
+				hasDigits = true;
+			}
+
+			// Decimal part
+			if (i < span.Length && span[i] == '.')
+			{
+				i++;
+				double divisor = 10;
+				while (i < span.Length && char.IsDigit(span[i]))
+				{
+					tempResult += (span[i] - '0') / divisor;
+					divisor *= 10;
+					i++;
+					hasDigits = true;
+				}
+			}
+
+			// 3. Final validation
+			if (!hasDigits || i < span.Length) return false;
+
+			result = isNegative ? -tempResult : tempResult;
+			return true;
+		}
+		public static bool Int32TryParse(ReadOnlySpan<char> span, out int result)
+		{
+			bool isNegative = false;
+
+			if (span[0] == '-') isNegative = true;
+
+			result = 0;
+			Int32 digits = 0;
+			foreach (char c in span)
+			{
+				if (digits==0 && (c == '-' || c == '+'))
+				{
+					continue;
+				}
+				if (c < '0' || c > '9') return false;
+				result = result * 10 + (c - '0');
+				digits++;
+			}
+			if (isNegative) result = -result;
+			return true;
+		}
+		public static bool Int64TryParse(ReadOnlySpan<char> span, out Int64 result)
+		{
+			bool isNegative = false;
+			if (span[0] == '-') isNegative = true;
+
+			result = 0;
+			Int32 digits = 0;
+			foreach (char c in span)
+			{
+				if (digits == 0 && (c == '-' || c == '+'))
+				{
+					continue;
+				}
+				if (c < '0' || c > '9') return false;
+				result = result * 10 + (c - '0');
+			}
+
+			if(isNegative) result = -result;
+
+			return true;
+		}
 		public static Int32 Latency()
 		{
 			Int32 returnValue = 0;
@@ -618,9 +715,9 @@ namespace E3Core.Utility
 			return _resultStringBuilder.ToString();
 
 		}
-		public static void StringsToNumbers(string s, char delim, List<Int32> list)
+		public static void StringsToNumbers(ReadOnlySpan<char> s, char delim, List<Int64> list)
 		{
-			List<int> result = list;
+			List<Int64> result = list;
 			int start = 0;
 			int end = 0;
 			foreach (char x in s)
@@ -629,7 +726,9 @@ namespace E3Core.Utility
 				{
 					if (end == s.Length - 1 && x != delim)
 						end++;
-					result.Add(int.Parse(s.Substring(start, end - start)));
+					Int64 valueTOAdd = 0;
+					e3util.Int64TryParse(s.Slice(start, end - start), out valueTOAdd);
+					result.Add(valueTOAdd);
 					start = end + 1;
 				}
 				end++;
@@ -655,7 +754,7 @@ namespace E3Core.Utility
 
 		}
 		private static List<Int64> _buffInfoTempList = new List<Int64>();
-		public static void BuffInfoToDictonary(string s, Dictionary<Int32, Int64> list, char delim = ':')
+		public static void BuffInfoToDictonary(ReadOnlySpan<char> s, Dictionary<Int32, Int64> list, char delim = ':')
 		{
 			list.Clear();
 			Dictionary<Int32, Int64> result = list;
@@ -663,7 +762,7 @@ namespace E3Core.Utility
 			if(UseProtoBufForBuffs)
 			{
 				BuffDataList bufflist = new BuffDataList();
-				bufflist.MergeFrom(ByteString.FromBase64(s));
+				bufflist.MergeFrom(ByteString.FromBase64(s.ToString()));
 				foreach (var buff in bufflist.Data)
 				{
 					result[buff.SpellID] = buff.Duration;
@@ -681,7 +780,7 @@ namespace E3Core.Utility
 							end++;
 						//number,number
 						_buffInfoTempList.Clear();
-						string tstring = s.Substring(start, end - start);
+						ReadOnlySpan<char> tstring = s.Slice(start, end - start);
 						StringsToNumbers(tstring, ',', _buffInfoTempList);
 						result[(int)_buffInfoTempList[0]] = _buffInfoTempList[1];
 						start = end + 1;

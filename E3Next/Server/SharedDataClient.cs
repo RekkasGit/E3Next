@@ -33,7 +33,13 @@ namespace E3Core.Server
 
 	public class ShareDataEntry
 	{
-		public String Data { get; set; }
+		//public string Data;
+		public char[] Data { get; set; }
+		public Int32 DataLength { get; set; }
+		public ReadOnlySpan<char> GetData()
+		{
+			return Data.AsSpan().Slice(0, DataLength);
+		}
 		public Int64 LastUpdate
 		{
 			get; set;
@@ -493,9 +499,8 @@ namespace E3Core.Server
 		/// <param name="user"></param>
 		/// <param name="messageTopicReceived"></param>
 		/// <param name="messageReceived"></param>
-		private void ProcessTopicMessage(string user, string messageTopicReceived, string messageReceived)
+		private void ProcessTopicMessage(string user, string messageTopicReceived, ReadOnlySpan<char> messageReceivedAsSpan)
 		{
-
 			//get the user from the payload
 			ConcurrentDictionary<string, ShareDataEntry> usertopics;
 			if (!TopicUpdates.TryGetValue(user, out usertopics))
@@ -503,22 +508,30 @@ namespace E3Core.Server
 				usertopics = new ConcurrentDictionary<string, ShareDataEntry>(StringComparer.OrdinalIgnoreCase);
 				TopicUpdates.TryAdd(user, usertopics);
 			}
-
 			Int64 updateTime = Core.StopWatch.ElapsedMilliseconds;
 			ShareDataEntry entry;
 			if (!usertopics.TryGetValue(messageTopicReceived, out entry))
 			{
-				entry = new ShareDataEntry() { Data = messageReceived, LastUpdate = updateTime };
+				if (messageReceivedAsSpan.Length > 0 && messageReceivedAsSpan[messageReceivedAsSpan.Length - 1] == '\0')
+				{
+					MQ.WriteDelayed("Wrong size span2!");
+
+				}
+
+				char[] dataBuffer = _arrayPool.Rent(messageReceivedAsSpan.Length);
+				messageReceivedAsSpan.CopyTo(dataBuffer);
+				entry = new ShareDataEntry();
+				entry.Data = dataBuffer;
+				entry.DataLength = messageReceivedAsSpan.Length;
+				entry.LastUpdate = updateTime;
 				usertopics.TryAdd(messageTopicReceived, entry);
+				return;
 			}
-
-
-			if (!String.Equals(entry.Data, messageReceived))
+			if (messageReceivedAsSpan.Length == entry.DataLength && messageReceivedAsSpan.SequenceEqual(entry.GetData()))
 			{
+				//why do work if its the same data?	
 				lock (entry)
 				{
-					//why do work if its the same data?	
-					entry.Data = messageReceived;
 					entry.LastUpdate = updateTime;
 				}
 			}
@@ -526,6 +539,12 @@ namespace E3Core.Server
 			{
 				lock (entry)
 				{
+					//we need to update our data, 1st, return the data back to the pool
+					_arrayPool.Return(entry.Data,clearArray:true);
+					char[] dataBuffer = _arrayPool.Rent(messageReceivedAsSpan.Length);
+					messageReceivedAsSpan.CopyTo(dataBuffer);
+					entry.Data = dataBuffer;
+					entry.DataLength = messageReceivedAsSpan.Length;
 					entry.LastUpdate = updateTime;
 				}
 			}
@@ -658,7 +677,7 @@ namespace E3Core.Server
 				NetMQ.Msg msg_payload = new NetMQ.Msg();
 
 				ReadOnlySpan<char> ServerNameAsSpan = E3.ServerName.AsSpan();
-
+				
 				while (Core.IsProcessing && E3.NetMQ_SharedDataServerThreadRun)
 				{
 					Process_CheckNewConnections(subSocket);
@@ -672,77 +691,123 @@ namespace E3Core.Server
 					{
 						if (subSocket.TryReceive(ref msg_topic, recieveTimeout))
 						{
-							//got a topic, need to update collections
-							byteComparer.ByteArrayLength = msg_topic.Size; //this needs to be here to limit the comparer to how deep into the array to look
-							if (!topicCache.ContainsKey(msg_topic.Data))
+							try
 							{
-								string topicString = System.Text.Encoding.Default.GetString(msg_topic.Data, 0, msg_topic.Size);
-								byte[] topickey = new byte[msg_topic.Size];
-								Buffer.BlockCopy(msg_topic.Data, 0, topickey, 0, msg_topic.Size);
-								topicCache.Add(topickey, topicString);
+								//got a topic, need to update collections
+								byteComparer.ByteArrayLength = msg_topic.Size; //this needs to be here to limit the comparer to how deep into the array to look
+								if (!topicCache.ContainsKey(msg_topic.Data))
+								{
+									string topicString = Encoding.ASCII.GetString(msg_topic.Data, 0, msg_topic.Size);
+									byte[] topickey = new byte[msg_topic.Size];
+									Buffer.BlockCopy(msg_topic.Data, 0, topickey, 0, msg_topic.Size);
+									topicCache.Add(topickey, topicString);
 
+								}
+								//get reused string! no allocation needed.
+								messageTopicReceived = topicCache[msg_topic.Data];
 							}
-							//get reused string! no allocation needed.
-							messageTopicReceived = topicCache[msg_topic.Data];
-
-							subSocket.Receive(ref msg_payload);
+							finally
+							{
+								subSocket.Receive(ref msg_payload);
+							}
 
 							ReadOnlySpan<byte> byteSpan = msg_payload.Data.AsSpan(0, msg_payload.Size);
 							int exactCharCount;
+
+							if (msg_payload.Size == 0)
+							{
+								MQ.WriteDelayed("Zero sized message!");
+							}
 							ReadOnlySpan<char> messageReceivedAsSpan;
 							char[] chars = null;
 							try
 							{
-								unsafe
+								try
 								{
-									fixed (byte* pBytes = byteSpan)
+									unsafe
 									{
-										exactCharCount = Encoding.Default.GetCharCount(pBytes, byteSpan.Length);
-										chars = _arrayPool.Rent(exactCharCount);
-										fixed (char* pChars = chars)
+										fixed (byte* pBytes = byteSpan)
 										{
-											Encoding.Default.GetChars(pBytes, byteSpan.Length, pChars, exactCharCount);
-											messageReceivedAsSpan = new ReadOnlySpan<char>(pChars, exactCharCount);
-
+											exactCharCount = Encoding.ASCII.GetCharCount(pBytes, byteSpan.Length);
+											chars = _arrayPool.Rent(exactCharCount);
+											fixed (char* pChars = chars)
+											{
+												exactCharCount = Encoding.ASCII.GetChars(pBytes, byteSpan.Length, pChars, exactCharCount);
+											}
+											messageReceivedAsSpan = chars.AsSpan<char>(0, exactCharCount);
 										}
 									}
+
+									if (exactCharCount != messageReceivedAsSpan.Length || messageReceivedAsSpan.ToString().Length != exactCharCount)
+									{
+										MQ.WriteDelayed($"issue with Size of payload Topic: {messageTopicReceived} Payload:{messageReceivedAsSpan.ToString()}");
+
+									}
+
 								}
-								ReadOnlySpan<char> originalMessage = messageReceivedAsSpan;
-								Int32 indexOfColon = messageReceivedAsSpan.IndexOf(':');
-								string payloaduser = _stringPool.GetOrAdd(messageReceivedAsSpan.Slice(0, indexOfColon));
-								messageReceivedAsSpan = messageReceivedAsSpan.Slice(indexOfColon + 1, messageReceivedAsSpan.Length - indexOfColon - 1);
-								indexOfColon = messageReceivedAsSpan.IndexOf(':');
-								string payloadServer = _stringPool.GetOrAdd(messageReceivedAsSpan.Slice(0, indexOfColon));
-								if (!String.Equals(payloadServer, E3.ServerName))
+								catch(Exception ex)
 								{
+									MQ.WriteDelayed("Expcetion in unsafe area. Message" + ex.Message);
+									System.Threading.Thread.Sleep(1000);
 									continue;
 								}
-								messageReceivedAsSpan = messageReceivedAsSpan.Slice(indexOfColon + 1, messageReceivedAsSpan.Length - indexOfColon - 1);
 
-								if (UsersConnectedTo.TryGetValue(payloaduser, out var connectionInfo))
+								string payloadServer = String.Empty;
+								string payloaduser = String.Empty;
+								ReadOnlySpan<char> originalMessage = messageReceivedAsSpan;
+
+
+							
+
+
+								try
 								{
-									connectionInfo.LastMessageTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+									Int32 indexOfColon = messageReceivedAsSpan.IndexOf(':');
+									payloaduser = _stringPool.GetOrAdd(messageReceivedAsSpan.Slice(0, indexOfColon));
+									messageReceivedAsSpan = messageReceivedAsSpan.Slice(indexOfColon + 1, messageReceivedAsSpan.Length - indexOfColon - 1);
+									indexOfColon = messageReceivedAsSpan.IndexOf(':');
+									payloadServer = _stringPool.GetOrAdd(messageReceivedAsSpan.Slice(0, indexOfColon));
+									if (!String.Equals(payloadServer, E3.ServerName))
+									{
+										continue;
+									}
+									messageReceivedAsSpan = messageReceivedAsSpan.Slice(indexOfColon + 1, messageReceivedAsSpan.Length - indexOfColon - 1);
+
+									if (UsersConnectedTo.TryGetValue(payloaduser, out var connectionInfo))
+									{
+										connectionInfo.LastMessageTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+									}
+
+								}
+								catch (Exception ex)
+								{
+									MQ.WriteDelayed($"Expcetion in message parsing area. Topic: {messageTopicReceived} Payload:{messageReceivedAsSpan.ToString()}");
+									System.Threading.Thread.Sleep(1000);
+									continue;
+								}
+
+								if (messageReceivedAsSpan.Length == 0)
+								{
+									//MQ.WriteDelayed("Zero sized message!");
+								}
+
+								if (messageReceivedAsSpan.Length >0 && messageReceivedAsSpan[messageReceivedAsSpan.Length - 1] == '\0')
+								{
+									MQ.WriteDelayed("Wrong size span!");
+
+								}
+
+								if(messageReceivedAsSpan.Length > 0 && messageTopicReceived == "${Me.BuffInfo}" && messageReceivedAsSpan[messageReceivedAsSpan.Length-1]!=':')
+								{
+									MQ.WriteDelayed("Bad data!");
+
 								}
 
 								//most common goes first
 								if (messageTopicReceived.StartsWith("${Me."))
 								{
-									string messageReceived = String.Empty;
-
-									//there are some of the Me.* we don't want to pull from the string pool, as they are crazy dynamic/large
-									if(messageTopicReceived == "${Me.BuffInfo}" || messageTopicReceived == "${Me.PetBuffInfo}"
-										|| messageTopicReceived == "${Me.Pet.CurrentHPs}" || messageTopicReceived == "${Me.CurrentMana}"
-										|| messageTopicReceived == "${Me.CurrentEndurance}"
-										)
-									{
-										messageReceived = messageReceivedAsSpan.ToString();
-									}
-									else
-									{
-										messageReceived = _stringPool.GetOrAdd(messageReceivedAsSpan);
-									}
-
-									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
+						
+									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceivedAsSpan);
 								}
 								else if (messageTopicReceived == "OnCommand-All")
 								{
@@ -919,8 +984,7 @@ namespace E3Core.Server
 								}
 								else if (messageTopicReceived.StartsWith("ConfigValueResp-", StringComparison.Ordinal))
 								{
-									string messageReceived = messageReceivedAsSpan.ToString();
-									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
+									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceivedAsSpan);
 								}
 								else if (messageTopicReceived.StartsWith("ConfigValueUpdate-", StringComparison.Ordinal))
 								{
@@ -944,23 +1008,22 @@ namespace E3Core.Server
 								}
 								else
 								{
-									string messageReceived = _stringPool.GetOrAdd(messageReceivedAsSpan);
-									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceived);
-
+									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceivedAsSpan);
 								}
 							}
 							finally
 							{
 								if (chars != null)
 								{
-									_arrayPool.Return(chars);
+									_arrayPool.Return(chars,true);
 								}
 							}
 						}
 					}
 					catch(Exception ex)
 					{
-						MQ.WriteDelayed("Networking error:"+ex.Message );
+						MQ.WriteDelayed("Networking error:"+ex.Message +"   stack:"+ex.StackTrace );
+						System.Threading.Thread.Sleep(1000);
 					}
 					finally
 					{

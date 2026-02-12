@@ -2,6 +2,7 @@
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
+using E3Core.UI.Windows.Hud;
 using E3Core.Utility;
 using MonoCore;
 using NetMQ;
@@ -57,7 +58,6 @@ namespace E3Core.Processors
 			//kickout after updates if paused
 			if (IsPaused()) return;
 			//stunned, no sense in processing
-
 
 			EventProcessor.ProcessEventsInQueues("/backoff");
 			EventProcessor.ProcessEventsInQueues("/assistme");

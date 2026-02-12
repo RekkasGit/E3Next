@@ -955,8 +955,7 @@ namespace E3Core.Processors
 				}
 				if (E3.Bots.IsMyBot(target) && !usePets)
 				{
-					bool invulnerable = false;
-					Boolean.TryParse(E3.Bots.Query(target, "${Me.Invulnerable}"), out invulnerable);
+					bool invulnerable = E3.Bots.Query<bool>(target, "${Me.Invulnerable}");
 					if (invulnerable) return BuffBots_ReturnType.Continue;
 				}
 
@@ -1512,22 +1511,23 @@ namespace E3Core.Processors
 			}
 			//we have the data, lets check on it. 
 			//we don't have it in our memeory, so lets add it
-			lock (userTopics[keyToUse])
+			var entry = userTopics[keyToUse];
+			lock (entry)
 			{
 				if (!_characterBuffs.ContainsKey(keyNameToUse))
 				{
 					var buffInfo = CharacterBuffs.Aquire();
-					e3util.BuffInfoToDictonary(userTopics[keyToUse].Data, buffInfo.BuffDurations);
-					buffInfo.LastUpdate = userTopics[keyToUse].LastUpdate;
+					e3util.BuffInfoToDictonary(entry.GetData(), buffInfo.BuffDurations);
+					buffInfo.LastUpdate = entry.LastUpdate;
 					_characterBuffs.Add(keyNameToUse, buffInfo);
 				}
 				//do we have updated information that is newer than what we already have?
-				if (userTopics[keyToUse].LastUpdate > _characterBuffs[keyNameToUse].LastUpdate)
+				if (entry.LastUpdate > _characterBuffs[keyNameToUse].LastUpdate)
 				{
 					//new info, lets update!
 					var buffInfo = _characterBuffs[keyNameToUse];
-					e3util.BuffInfoToDictonary(userTopics[keyToUse].Data, buffInfo.BuffDurations);
-					buffInfo.LastUpdate = userTopics[keyToUse].LastUpdate;
+					e3util.BuffInfoToDictonary(entry.GetData(), buffInfo.BuffDurations);
+					buffInfo.LastUpdate = entry.LastUpdate;
 					
 				}
 			}

@@ -89,9 +89,9 @@ namespace E3Core.UI.Windows.Hud
 				if (Basics.GroupMemberNames.Contains(user)) inGroupOrRaid = true;
 				if (!inGroupOrRaid && Basics.RaidMemberNames.Contains(user)) inGroupOrRaid = true;
 				if (!inGroupOrRaid) continue;
-				string casting = E3.Bots.Query(user, "${Me.Casting}");
-				string targetidString = E3.Bots.Query(user, "${Me.CurrentTargetID}");
-				string aaTotal = E3.Bots.Query(user, "${Me.AAPoints}");
+				string casting = E3.Bots.Query<String>(user, "${Me.Casting}");
+				string targetidString = E3.Bots.Query<String>(user, "${Me.CurrentTargetID}");
+				string aaTotal = E3.Bots.Query<String>(user, "${Me.AAPoints}");
 				Int32 targetid = 0;
 				Int32.TryParse(targetidString, out targetid);
 			
@@ -109,11 +109,9 @@ namespace E3Core.UI.Windows.Hud
 				{
 					PreviousDiscs.TryAdd(user, String.Empty);
 				}
-				string activeDisc = E3.Bots.Query(user, "${Me.ActiveDisc}");
-				string activeDiscDurationInTicks = E3.Bots.Query(user, "${Me.ActiveDiscTimeLeft}");
-				Int32 durationOfDiscInSeconds = 0;
-				Int32.TryParse(activeDiscDurationInTicks, out durationOfDiscInSeconds);
-
+				string activeDisc = E3.Bots.Query<string>(user, "${Me.ActiveDisc}");
+				Int32 durationOfDiscInSeconds = E3.Bots.Query<Int32>(user, "${Me.ActiveDiscTimeLeft}");
+			
 				if (String.IsNullOrWhiteSpace(activeDisc))
 				{
 					PreviousDiscs[user] = string.Empty;
