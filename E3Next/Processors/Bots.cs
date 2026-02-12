@@ -1174,6 +1174,13 @@ namespace E3Core.Processors
 							
 							return (T)(object)result;
 						}
+						if (type == typeof(Decimal))
+						{
+							double result;
+							e3util.DoubleTryParse(entry.GetData(), out result);
+
+							return (T)(object)(Decimal)result;
+						}
 						if (type==typeof(Boolean))
 						{
 							var trueSpan = "true".AsSpan();

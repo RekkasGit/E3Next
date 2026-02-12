@@ -3063,6 +3063,17 @@ namespace MonoCore
 				IsOpen = imgui_BeginPopupContextItem(id, flags);
 				return IsOpen;
 			}
+			public bool BeginPopupContextItemPerf(string type,string idString,Int32 id, int flags)
+			{
+				string rowID = String.Empty;
+				if (!IntToStringIDLookup(type, id, out rowID))
+				{
+					rowID = $"{idString}{id}";
+					IntToStringIDRegister(type, id, rowID);
+				}
+				IsOpen = imgui_BeginPopupContextItem(rowID, flags);
+				return IsOpen;
+			}
 			#region objectPoolingStuff
 			//private constructor, needs to be created so that you are forced to use the pool.
 			private ImGUIPopUpContext()
@@ -3350,7 +3361,28 @@ namespace MonoCore
 
 			#endregion
 		}
-		
 
+		private static Dictionary<string, Dictionary<Int32, string>> _intToStringLookup = new Dictionary<string, Dictionary<int, string>>();
+
+		public static bool IntToStringIDLookup(string type, Int32 key, out string value)
+		{
+			if (!_intToStringLookup.ContainsKey(type))
+			{
+				_intToStringLookup.Add(type, new Dictionary<Int32, string>());
+			}
+			if (!_intToStringLookup[type].TryGetValue(key, out value))
+			{
+				return false;
+			}
+			return true;
+		}
+		public static void IntToStringIDRegister(string type, Int32 key, string value)
+		{
+			if (!_intToStringLookup.ContainsKey(type))
+			{
+				_intToStringLookup.Add(type, new Dictionary<Int32, string>());
+			}
+			_intToStringLookup[type][key] = value;
+		}
 	}
 }

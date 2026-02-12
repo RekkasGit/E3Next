@@ -796,10 +796,11 @@ namespace E3Core.UI.Windows.Hud
 			try
 			{
 				var state = _state.GetState<State_PlayerInfoWindow>();
-				var hub_state = _state.GetState<State_HubWindow>();
-				if (!hub_state.ShowPlayerInfo) return;
 				if (!e3util.ShouldCheck(ref state.PlayerInfoLastUpdated, state.PlayerInfoUpdateInterval)) return;
 
+				var hub_state = _state.GetState<State_HubWindow>();
+				if (!hub_state.ShowPlayerInfo) return;
+			
 				state.PlayerLevel = MQ.Query<int>("${Me.Level}", false);
 				state.PlayerHPPercent = E3.PctHPs;
 				state.PlayerManaPercent = MQ.Query<int>("${Me.PctMana}", false);
@@ -830,7 +831,7 @@ namespace E3Core.UI.Windows.Hud
 
 				if (state.ShowHPAsPercent)
 				{
-					state.DisplayHPCurrent = $"{state.PlayerHPPercent}%";
+					state.DisplayHPCurrent = PercentString(state.PlayerHPPercent);
 					state.DisplayHPMax = string.Empty;
 				}
 				else
@@ -854,7 +855,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				if (state.ShowEndAsPercent)
 				{
-					state.DisplayEndCurrent = $"{state.PlayerEndPercent}%";
+					state.DisplayEndCurrent = PercentString(state.PlayerEndPercent);
 					state.DisplayEndMax = string.Empty;
 				}
 				else
@@ -902,6 +903,7 @@ namespace E3Core.UI.Windows.Hud
 
 
 		}
+		
 		private static void RefreshTargetInfo()
 		{
 			var state = _state.GetState<State_TargetInfoWindow>();
@@ -999,11 +1001,40 @@ namespace E3Core.UI.Windows.Hud
 
 			for (int i = 1; i <= maxBuffs; i++)
 			{
-				Int32 spellid = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}", false);
+				string targetBuffID = String.Empty;
+				if(!IntToStringIDLookup("Hub_RenderTargetInfo_BuffID",i,out targetBuffID))
+				{
+					targetBuffID = $"${{Target.Buff[{i}].ID}}";
+					IntToStringIDRegister("Hub_RenderTargetInfo_BuffID", i, targetBuffID);
+				}
+
+				Int32 spellid = MQ.Query<Int32>(targetBuffID, false);
 				if (spellid <= 0) continue;
-				Int32 duration = MQ.Query<Int32>($"${{Target.Buff[{i}].Duration}}", false);
-				Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
-				string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
+
+				string targetBuffDuration = String.Empty;
+				if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffDuration", i, out targetBuffDuration))
+				{
+					targetBuffDuration = $"${{Target.Buff[{i}].Duration}}";
+					IntToStringIDRegister("Hub_RenderTargetIHub_RenderTargetInfo_BuffDuration", i, targetBuffDuration);
+				}
+				Int32 duration = MQ.Query<Int32>(targetBuffDuration, false);
+				string targetSpellIcon = String.Empty;
+				if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffIcon", spellid, out targetSpellIcon))
+				{
+					targetSpellIcon = $"${{Spell[{spellid}].SpellIcon}}";
+					IntToStringIDRegister("Hub_RenderTargetInfo_BuffIcon", spellid, targetSpellIcon);
+				}
+				Int32 spellIcon = MQ.Query<Int32>(targetSpellIcon, false);
+
+
+				string targetSpellName = String.Empty;
+				if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffName", spellid, out targetSpellName))
+				{
+					targetSpellName = $"${{Spell[{spellid}].Name}}";
+					IntToStringIDRegister("Hub_RenderTargetInfo_BuffName", spellid, targetSpellName);
+				}
+
+				string buffName = MQ.Query<string>(targetSpellName, false);
 				TableRow_BuffInfo buffRow = null;
 
 				if (_targetBuffInfoCache.TryGetValue(spellid, out var tbi))
@@ -1020,7 +1051,13 @@ namespace E3Core.UI.Windows.Hud
 				var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
 				buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
 				buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
-				string spellType = MQ.Query<string>($"${{Spell[{spellid}].SpellType}}", false);
+				string targetSpellType = String.Empty;
+				if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffType", spellid, out targetSpellType))
+				{
+					targetSpellType = $"${{Spell[{spellid}].SpellType}}";
+					IntToStringIDRegister("Hub_RenderTargetInfo_BuffType", spellid, targetSpellType);
+				}
+				string spellType = MQ.Query<string>(targetSpellType, false);
 
 				Int32 spellTypeID = 0;
 				if (spellType == "Detrimental") spellTypeID = 0;
@@ -1158,7 +1195,7 @@ namespace E3Core.UI.Windows.Hud
 							font2.PushFont("robo");
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								if (popup.BeginPopupContextItem($"##PlayerInfoDockedSettingsPopup", 1))
+								if (popup.BeginPopupContextItem("##PlayerInfoDockedSettingsPopup", 1))
 								{
 									using (var style = PushStyle.Aquire())
 									{
@@ -1238,7 +1275,7 @@ namespace E3Core.UI.Windows.Hud
 						aaStyle.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 						aaStyle.PushStyleVarVec2((int)ImGuiStyleVar.FramePadding, 0, 0);
 						var peerAAState = _state.GetState<State_PeerAAWindow>();
-						if (imgui_Button($"##PeerAAToggle"))
+						if (imgui_Button("##PeerAAToggle"))
 						{
 							peerAAState.IsOpen = !peerAAState.IsOpen;
 							imgui_Begin_OpenFlagSet(peerAAState.WindowName, peerAAState.IsOpen);
@@ -1255,7 +1292,7 @@ namespace E3Core.UI.Windows.Hud
 						font2.PushFont("robo");
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
-							if (popup.BeginPopupContextItem($"##PlayerInfoSettingsPopup", 1))
+							if (popup.BeginPopupContextItem("##PlayerInfoSettingsPopup", 1))
 							{
 								if (imgui_MenuItem("Dock"))
 								{
@@ -1399,7 +1436,7 @@ namespace E3Core.UI.Windows.Hud
 						using (var style = PushStyle.Aquire())
 						{
 							style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"{state.ActiveDisc}");
+							imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.ActiveDisc);
 							using (var push = Push.Aquire())
 							{
 								push.PushItemWidth(-1);
@@ -1567,7 +1604,7 @@ namespace E3Core.UI.Windows.Hud
 									using (var style = PushStyle.Aquire())
 									{
 										style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
-										imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"{state.ActiveDisc}");
+										imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.ActiveDisc);
 										using (var push = Push.Aquire())
 										{
 											push.PushItemWidth(-1);
@@ -1772,7 +1809,7 @@ namespace E3Core.UI.Windows.Hud
 			{
 				style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.8f, 0.15f, 0.15f, 0.9f);
 				style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-				imgui_ProgressBar((float)state.TargetHP / 100f, 18, widthAvail, $"{state.TargetHP}%");
+				imgui_ProgressBar((float)state.TargetHP / 100f, 18, widthAvail, PercentString(state.TargetHP));
 			}
 
 
@@ -2044,9 +2081,7 @@ namespace E3Core.UI.Windows.Hud
 
 
 		}
-		private static Dictionary<Int32, string> LookupFor_RenderSongTableSimple_PopupRows = new Dictionary<int, string>();
-		private static Dictionary<Int32, string> Lookup_RenderSongTableSimple_IconsContext = new Dictionary<int, string>();
-
+	
 		private static void RenderSongTableSimple()
 		{
 			var hubState = _state.GetState<State_HubWindow>();
@@ -2061,14 +2096,12 @@ namespace E3Core.UI.Windows.Hud
 
 			string songDisplay = String.Empty;
 			Int32 keyCount = state.SongInfo.Count ;
-			if (!Lookup_RenderSongTableSimple_IconsContext.TryGetValue(keyCount, out songDisplay))
+			if (!IntToStringIDLookup("Hub_SongDisplay", keyCount, out songDisplay))
 			{
-				songDisplay = $"Songs:({state.SongInfo.Count})";
-				Lookup_RenderSongTableSimple_IconsContext[keyCount] = songDisplay;
+				songDisplay = $"Songs: ({keyCount})";
+				IntToStringIDRegister("Hub_SongDisplay", keyCount, songDisplay);
 			}
-
 			imgui_Text(songDisplay);
-
 			if (!state.Detached)
 			{
 				imgui_SameLine(0);
@@ -2090,7 +2123,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem($"##SongWindowSettingsPopup", 1))
+					if (popup.BeginPopupContextItem("##SongWindowSettingsPopup", 1))
 					{
 						if (imgui_MenuItem("Dock"))
 						{
@@ -2125,7 +2158,7 @@ namespace E3Core.UI.Windows.Hud
 						}
 
 
-						string keyForInput = $"##songWindow_alpha_set";
+						string keyForInput = "##songWindow_alpha_set";
 						imgui_SetNextItemWidth(100);
 						if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
 						{
@@ -2267,13 +2300,7 @@ namespace E3Core.UI.Windows.Hud
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								string rowID = String.Empty;
-								if (!LookupFor_RenderSongTableSimple_PopupRows.TryGetValue(counter, out rowID))
-								{
-									rowID = $"##row_selected_context_{counter}";
-									LookupFor_RenderSongTableSimple_PopupRows[counter] = rowID;
-								}
-								if (popup.BeginPopupContextItem(rowID, 1))
+								if (popup.BeginPopupContextItemPerf("Hub_RenderSongTableSimpleContext", "##row_selected_context_",counter, 1))
 								{
 									using (var style = PushStyle.Aquire())
 									{
@@ -2351,7 +2378,6 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 		}
-		private static Dictionary<Int32, String> LookupFor_RenderHotbuttons_PopupRows = new Dictionary<int, string>();
 		private static void RenderHotbuttons()
 		{
 
@@ -2369,7 +2395,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem($"##Hotbutton_WindowSettingsPopup", 1))
+					if (popup.BeginPopupContextItem("##Hotbutton_WindowSettingsPopup", 1))
 					{
 
 						if (imgui_MenuItem("Dock"))
@@ -2543,14 +2569,7 @@ namespace E3Core.UI.Windows.Hud
 						}
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
-							string rowID = String.Empty;
-							if (!LookupFor_RenderHotbuttons_PopupRows.TryGetValue(counter, out rowID))
-							{
-								rowID = $"##Hotbutton_detach-{counter}";
-								LookupFor_RenderHotbuttons_PopupRows[counter] = rowID;
-							}
-
-							if (popup.BeginPopupContextItem(rowID, 1))
+							if (popup.BeginPopupContextItemPerf("Hub_HotButtonDetachPopup", "##Hotbutton_detach-",counter,1))
 							{
 								using (var style = PushStyle.Aquire())
 								{
@@ -2870,9 +2889,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 		}
-		private static Dictionary<Int32, string> Lookup_RenderBuffTableSimple_BuffTotals = new Dictionary<int, string>();
-		private static Dictionary<Int32, string> Lookup_RenderBuffTableSimple_IconsContext = new Dictionary<int, string>();
-
+		
 		private static void RenderBuffTableSimple()
 		{
 			var hubState = _state.GetState<State_HubWindow>();
@@ -2974,12 +2991,13 @@ namespace E3Core.UI.Windows.Hud
 				imgui_Separator();
 			}
 
+		
 			string buffDisplay = String.Empty;
 			Int32 keyCount = buffState.BuffInfo.Count + debuffState.DebuffInfo.Count;
-			if (!Lookup_RenderBuffTableSimple_BuffTotals.TryGetValue(keyCount, out buffDisplay))
+			if (!IntToStringIDLookup("BuffDisplay",keyCount,out buffDisplay))
 			{
 				buffDisplay = $"Buffs: ({buffState.BuffInfo.Count + debuffState.DebuffInfo.Count})";
-				Lookup_RenderBuffTableSimple_BuffTotals[keyCount] = buffDisplay;
+				IntToStringIDRegister("BuffDisplay", keyCount, buffDisplay);
 			}
 			imgui_Text(buffDisplay);
 			if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
@@ -3009,7 +3027,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem($"##BuffgWindowSettingsPopup", 1))
+					if (popup.BeginPopupContextItem("##BuffgWindowSettingsPopup", 1))
 					{
 						if (imgui_MenuItem("Dock"))
 						{
@@ -3189,13 +3207,7 @@ namespace E3Core.UI.Windows.Hud
 								}
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
-									string rowID = String.Empty;
-									if (!Lookup_RenderBuffTableSimple_IconsContext.TryGetValue(counter, out rowID))
-									{
-										rowID = $"BuffTableIconContext-{counter}";
-										Lookup_RenderBuffTableSimple_IconsContext[counter] = rowID;
-									}
-									if (popup.BeginPopupContextItem(rowID, 1))
+									if (popup.BeginPopupContextItemPerf("HC_RenderBuffTableSimpleIconContext", "BuffTableIconContext-",counter,1))
 									{
 										using (var style = PushStyle.Aquire())
 										{
@@ -3287,11 +3299,6 @@ namespace E3Core.UI.Windows.Hud
 			}
 
 		}
-
-		private static Dictionary<Int32, string> LookupFor_RenderGroupTable_SelectableRows = new System.Collections.Generic.Dictionary<int, string>();
-		private static Dictionary<Int32, string> LookupFor_RenderGroupTable_PopupRows = new System.Collections.Generic.Dictionary<int, string>();
-		private static Dictionary<Int32, string> LookupFor_RenderGroupTable_GroupHeaderContext = new System.Collections.Generic.Dictionary<int, string>();
-
 		private static void RenderGroupTable()
 		{
 
@@ -3345,13 +3352,8 @@ namespace E3Core.UI.Windows.Hud
 
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								string rowID = String.Empty;
-								if (!LookupFor_RenderGroupTable_GroupHeaderContext.TryGetValue(i, out rowID))
-								{
-									rowID = $"##GroupTableHeaderContext-{i}";
-									LookupFor_RenderGroupTable_GroupHeaderContext[i] = rowID;
-								}
-								if (popup.BeginPopupContextItem(rowID, 1))
+								int flags = 1;
+								if (popup.BeginPopupContextItemPerf("Hud_GroupTableHeaderContext", "##GroupTableHeaderContext-",i, flags))
 								{
 									using (var style = PushStyle.Aquire())
 									{
@@ -3583,10 +3585,10 @@ namespace E3Core.UI.Windows.Hud
 								bool is_row_selected = (state.SelectedRow == rowCount);
 
 								string rowID = String.Empty;
-								if(!LookupFor_RenderGroupTable_SelectableRows.TryGetValue(rowCount, out rowID))
+								if(!IntToStringIDLookup("Hub_RenderGroupTable_SelectableRows",rowCount,out rowID))
 								{
 									rowID = $"##row_selected_{rowCount}";
-									LookupFor_RenderGroupTable_SelectableRows[rowCount] = rowID;
+									IntToStringIDRegister("Hub_RenderGroupTable_SelectableRows", rowCount, rowID);
 								}
 								if (imgui_Selectable_WithFlags(rowID, is_row_selected, (int)(ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags.ImGuiSelectableFlags_AllowOverlap)))
 								{
@@ -3626,13 +3628,7 @@ namespace E3Core.UI.Windows.Hud
 								}
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
-									rowID = String.Empty;
-									if (!LookupFor_RenderGroupTable_PopupRows.TryGetValue(rowCount, out rowID))
-									{
-										rowID = $"##row_selected_context_{rowCount}";
-										LookupFor_RenderGroupTable_PopupRows[rowCount] = rowID;
-									}
-									if (popup.BeginPopupContextItem(rowID, 1))
+									if (popup.BeginPopupContextItemPerf("Hub_RenderGroupTablePopupRows", "##row_selected_context_",rowCount,1))
 									{
 										state.SelectedToonForBuffs = String.Empty;
 										state.SelectedRow = -1;
@@ -3823,9 +3819,6 @@ namespace E3Core.UI.Windows.Hud
 			}
 
 		}
-
-		public static Dictionary<Int32, TableRow_BuffInfo> _personalBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
-		public static Dictionary<Int32, TableRow_BuffInfo> _targetBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
 		public class TableRow_BuffInfo
 		{
 			public Int32 BuffType = 0;
@@ -3857,6 +3850,8 @@ namespace E3Core.UI.Windows.Hud
 			}
 		}
 		public static Dictionary<string, TableRow_GroupInfo> _groupInfoCache = new Dictionary<string, TableRow_GroupInfo>();
+		public static Dictionary<Int32, TableRow_BuffInfo> _personalBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
+		public static Dictionary<Int32, TableRow_BuffInfo> _targetBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
 
 		public class TableRow_GroupInfo
 		{
