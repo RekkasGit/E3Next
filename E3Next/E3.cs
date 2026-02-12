@@ -320,7 +320,7 @@ namespace E3Core.Processors
 		public static void StateUpdates_Memory()
 		{
 			double eqprocessMemoryMB = 0;
-			if (Core._MQ2MonoVersion > 0.35M)
+			if (Core._MQ2MonoVersion > 0.40M && !Debugger.IsAttached)
 			{
 				eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
 			}
@@ -632,10 +632,10 @@ namespace E3Core.Processors
         //test to see if we need to GC every 5 min to maintain proper memory profile
         private static void CheckGC()
         {
-			if (Basics.InCombat()) return;
-			if (!e3util.ShouldCheck(ref _lastGCCollect, 300000)) return;
-			GC.Collect();
-        }
+			//if (Basics.InCombat()) return;
+			if (!e3util.ShouldCheck(ref _lastGCCollect, 60000)) return;
+			GC.GetTotalMemory(true);
+		}
 
         public static bool ActionTaken = false;
         public static bool Following = false;

@@ -1,19 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Diagnostics;
-using System.Collections.Concurrent;
-using System.Text.RegularExpressions;
-using Nancy;
+﻿using Nancy;
 using Nancy.Hosting.Self;
-using NetMQ.Sockets;
 using NetMQ;
-using System.Globalization;
+using NetMQ.Sockets;
+using System;
 using System.Collections;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+
 
 
 /// <summary>
@@ -775,7 +777,7 @@ namespace MonoCore
 
     //This class is for C++ thread to come in and call. for the most part, leave this alone. 
 
-    public static class Core
+    public unsafe static class Core
     {
         public static IMQ mqInstance; //needs to be declared first
         public static Logging _log;
@@ -949,7 +951,15 @@ namespace MonoCore
             PubServer._pubMessages.Enqueue(line);
             //EventProcessor.ProcessEvent(line);
         }
-        public static void OnSetSpawns(byte[] data, int size)
+		public unsafe static void OnSetSpawnsViaCallback()
+		{
+			byte* array = mq_GetSpawns3_Buffer(out var length);
+			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(array, length);
+			var spawn = Spawn.Aquire();
+            spawn.Init(data);
+			Spawns._spawns.Add(spawn);
+		}
+		public static void OnSetSpawns(byte[] data, int size)
         {
             var spawn = Spawn.Aquire();
             spawn.Init(data, size);
@@ -986,7 +996,11 @@ namespace MonoCore
         public extern static void mq_RemoveCommand(string command);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_GetSpawns();
-        [MethodImpl(MethodImplOptions.InternalCall)]
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void mq_GetSpawns2();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void mq_GetSpawns3();
+		[MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool mq_GetRunNextCommand();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static string mq_GetFocusedWindowName();
@@ -996,6 +1010,8 @@ namespace MonoCore
 		public extern static int mq_GetSpellDataEffectCount(string query);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static string mq_GetSpellDataEffect(string query,int line);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		private static extern byte* mq_GetSpawns3_Buffer(out int length);
 
 		#region IMGUI
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -1612,7 +1628,7 @@ namespace MonoCore
         {
             ClearList();
             //request new spawns!
-            Core.mq_GetSpawns();
+            Core.mq_GetSpawns3();
             //_spawns should have fresh data now!
             _lastRefesh = Core._stopWatch.ElapsedMilliseconds;
 
@@ -1633,8 +1649,17 @@ namespace MonoCore
             }
 
             return obj;
-        }
-        public void Init(byte[] data, Int32 length)
+		}
+		public void Init(ReadOnlySpan<byte> data)
+		{
+            //used for remote debug, to send the representastion of the data over.
+
+            data.CopyTo(_data);
+            _dataSize = data.Length;
+			//end of remote debug
+
+		}
+		public void Init(byte[] data, Int32 length)
         {
             //used for remote debug, to send the representastion of the data over.
             System.Buffer.BlockCopy(data, 0, _data, 0, length);

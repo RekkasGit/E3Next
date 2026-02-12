@@ -21,7 +21,7 @@ namespace MQServerClient
 			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 
 			AsyncIO.ForceDotNet.Force();
-            MonoCore.Core._MQ2MonoVersion = 0.21m;
+            MonoCore.Core._MQ2MonoVersion = 0.40m;
             MonoCore.Core.mqInstance = new NetMQMQ();
             MonoCore.Core.spawnInstance = new NetMQSpawns();
             MonoCore.Core.OnInit();
@@ -201,12 +201,16 @@ namespace MQServerClient
                     if (_spawnsByID.TryGetValue(ID, out s))
                     {
                         //just update the value
-                        s.Init(_requestMsg.Data, _requestMsg.Size);
+
+                        ReadOnlySpan<byte> tdata = new ReadOnlySpan<byte>(_requestMsg.Data, 0,_requestMsg.Size);
+                        s.Init(tdata);
                     }
                     else
                     {
                         var spawn = Spawn.Aquire();
-                        spawn.Init(_requestMsg.Data, _requestMsg.Size);
+						ReadOnlySpan<byte> tdata = new ReadOnlySpan<byte>(_requestMsg.Data, 0, _requestMsg.Size);
+						spawn.Init(tdata);
+						//spawn.Init(_requestMsg.Data, _requestMsg.Size);
                         _spawns.Add(spawn);
                     }
                    

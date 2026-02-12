@@ -1,4 +1,5 @@
-﻿using E3Core.Data;
+﻿using CommunityToolkit.HighPerformance.Buffers;
+using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Server;
 using E3Core.Utility;
@@ -6,7 +7,10 @@ using Google.Protobuf;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using static MonoCore.E3ImGUI;
 using static System.Windows.Forms.AxHost;
@@ -105,6 +109,7 @@ namespace E3Core.UI.Windows.Hud
 		[SubSystemInit]
 		public static void Init()
 		{
+			if (Debugger.IsAttached) return;
 			var state = _state.GetState<State_HubWindow>();
 
 			if (Core._MQ2MonoVersion < 0.41m) return;
@@ -633,6 +638,10 @@ namespace E3Core.UI.Windows.Hud
 
 			}
 
+			if(row.Name!=String.Empty)
+			{
+				row.Name = user;
+			}
 
 			if (_spawns.TryByName(user, out var spawn, useCurrentCache: true))
 			{
@@ -1229,7 +1238,7 @@ namespace E3Core.UI.Windows.Hud
 						aaStyle.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 						aaStyle.PushStyleVarVec2((int)ImGuiStyleVar.FramePadding, 0, 0);
 						var peerAAState = _state.GetState<State_PeerAAWindow>();
-						if (imgui_Button($"{state.DisplayAA}##PeerAAToggle"))
+						if (imgui_Button($"##PeerAAToggle"))
 						{
 							peerAAState.IsOpen = !peerAAState.IsOpen;
 							imgui_Begin_OpenFlagSet(peerAAState.WindowName, peerAAState.IsOpen);
@@ -2035,6 +2044,9 @@ namespace E3Core.UI.Windows.Hud
 
 
 		}
+		private static Dictionary<Int32, string> LookupFor_RenderSongTableSimple_PopupRows = new Dictionary<int, string>();
+		private static Dictionary<Int32, string> Lookup_RenderSongTableSimple_IconsContext = new Dictionary<int, string>();
+
 		private static void RenderSongTableSimple()
 		{
 			var hubState = _state.GetState<State_HubWindow>();
@@ -2045,7 +2057,17 @@ namespace E3Core.UI.Windows.Hud
 			Int32 numberOfBuffsPerRow = (int)widthAvail / state.IconSize;
 
 			if (numberOfBuffsPerRow < 1) numberOfBuffsPerRow = 1;
-			imgui_Text($"Songs:({state.SongInfo.Count})");
+
+
+			string songDisplay = String.Empty;
+			Int32 keyCount = state.SongInfo.Count ;
+			if (!Lookup_RenderSongTableSimple_IconsContext.TryGetValue(keyCount, out songDisplay))
+			{
+				songDisplay = $"Songs:({state.SongInfo.Count})";
+				Lookup_RenderSongTableSimple_IconsContext[keyCount] = songDisplay;
+			}
+
+			imgui_Text(songDisplay);
 
 			if (!state.Detached)
 			{
@@ -2245,7 +2267,13 @@ namespace E3Core.UI.Windows.Hud
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								if (popup.BeginPopupContextItem($"SongTableIconContext-{counter}", 1))
+								string rowID = String.Empty;
+								if (!LookupFor_RenderSongTableSimple_PopupRows.TryGetValue(counter, out rowID))
+								{
+									rowID = $"##row_selected_context_{counter}";
+									LookupFor_RenderSongTableSimple_PopupRows[counter] = rowID;
+								}
+								if (popup.BeginPopupContextItem(rowID, 1))
 								{
 									using (var style = PushStyle.Aquire())
 									{
@@ -2323,7 +2351,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 		}
-
+		private static Dictionary<Int32, String> LookupFor_RenderHotbuttons_PopupRows = new Dictionary<int, string>();
 		private static void RenderHotbuttons()
 		{
 
@@ -2515,7 +2543,14 @@ namespace E3Core.UI.Windows.Hud
 						}
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
-							if (popup.BeginPopupContextItem($"##Hotbutton_detach-{counter}", 1))
+							string rowID = String.Empty;
+							if (!LookupFor_RenderHotbuttons_PopupRows.TryGetValue(counter, out rowID))
+							{
+								rowID = $"##Hotbutton_detach-{counter}";
+								LookupFor_RenderHotbuttons_PopupRows[counter] = rowID;
+							}
+
+							if (popup.BeginPopupContextItem(rowID, 1))
 							{
 								using (var style = PushStyle.Aquire())
 								{
@@ -2835,6 +2870,8 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 		}
+		private static Dictionary<Int32, string> Lookup_RenderBuffTableSimple_BuffTotals = new Dictionary<int, string>();
+		private static Dictionary<Int32, string> Lookup_RenderBuffTableSimple_IconsContext = new Dictionary<int, string>();
 
 		private static void RenderBuffTableSimple()
 		{
@@ -2937,7 +2974,14 @@ namespace E3Core.UI.Windows.Hud
 				imgui_Separator();
 			}
 
-			imgui_Text($"Buffs: ({buffState.BuffInfo.Count + debuffState.DebuffInfo.Count})");
+			string buffDisplay = String.Empty;
+			Int32 keyCount = buffState.BuffInfo.Count + debuffState.DebuffInfo.Count;
+			if (!Lookup_RenderBuffTableSimple_BuffTotals.TryGetValue(keyCount, out buffDisplay))
+			{
+				buffDisplay = $"Buffs: ({buffState.BuffInfo.Count + debuffState.DebuffInfo.Count})";
+				Lookup_RenderBuffTableSimple_BuffTotals[keyCount] = buffDisplay;
+			}
+			imgui_Text(buffDisplay);
 			if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
 			{
 				imgui_SameLine(0);
@@ -3145,7 +3189,13 @@ namespace E3Core.UI.Windows.Hud
 								}
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
-									if (popup.BeginPopupContextItem($"BuffTableIconContext-{counter}", 1))
+									string rowID = String.Empty;
+									if (!Lookup_RenderBuffTableSimple_IconsContext.TryGetValue(counter, out rowID))
+									{
+										rowID = $"BuffTableIconContext-{counter}";
+										Lookup_RenderBuffTableSimple_IconsContext[counter] = rowID;
+									}
+									if (popup.BeginPopupContextItem(rowID, 1))
 									{
 										using (var style = PushStyle.Aquire())
 										{
@@ -3238,6 +3288,9 @@ namespace E3Core.UI.Windows.Hud
 
 		}
 
+		private static Dictionary<Int32, string> LookupFor_RenderGroupTable_SelectableRows = new System.Collections.Generic.Dictionary<int, string>();
+		private static Dictionary<Int32, string> LookupFor_RenderGroupTable_PopupRows = new System.Collections.Generic.Dictionary<int, string>();
+		private static Dictionary<Int32, string> LookupFor_RenderGroupTable_GroupHeaderContext = new System.Collections.Generic.Dictionary<int, string>();
 
 		private static void RenderGroupTable()
 		{
@@ -3292,7 +3345,13 @@ namespace E3Core.UI.Windows.Hud
 
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								if (popup.BeginPopupContextItem($"##GroupTableHeaderContext-{i}", 1))
+								string rowID = String.Empty;
+								if (!LookupFor_RenderGroupTable_GroupHeaderContext.TryGetValue(i, out rowID))
+								{
+									rowID = $"##GroupTableHeaderContext-{i}";
+									LookupFor_RenderGroupTable_GroupHeaderContext[i] = rowID;
+								}
+								if (popup.BeginPopupContextItem(rowID, 1))
 								{
 									using (var style = PushStyle.Aquire())
 									{
@@ -3523,7 +3582,13 @@ namespace E3Core.UI.Windows.Hud
 								imgui_TableNextColumn();
 								bool is_row_selected = (state.SelectedRow == rowCount);
 
-								if (imgui_Selectable_WithFlags($"##row_selected_{rowCount}", is_row_selected, (int)(ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags.ImGuiSelectableFlags_AllowOverlap)))
+								string rowID = String.Empty;
+								if(!LookupFor_RenderGroupTable_SelectableRows.TryGetValue(rowCount, out rowID))
+								{
+									rowID = $"##row_selected_{rowCount}";
+									LookupFor_RenderGroupTable_SelectableRows[rowCount] = rowID;
+								}
+								if (imgui_Selectable_WithFlags(rowID, is_row_selected, (int)(ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags.ImGuiSelectableFlags_AllowOverlap)))
 								{
 									state.SelectedRow = rowCount;
 
@@ -3561,7 +3626,13 @@ namespace E3Core.UI.Windows.Hud
 								}
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
-									if (popup.BeginPopupContextItem($"##row_selected_context_{rowCount}", 1))
+									rowID = String.Empty;
+									if (!LookupFor_RenderGroupTable_PopupRows.TryGetValue(rowCount, out rowID))
+									{
+										rowID = $"##row_selected_context_{rowCount}";
+										LookupFor_RenderGroupTable_PopupRows[rowCount] = rowID;
+									}
+									if (popup.BeginPopupContextItem(rowID, 1))
 									{
 										state.SelectedToonForBuffs = String.Empty;
 										state.SelectedRow = -1;

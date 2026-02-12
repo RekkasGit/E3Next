@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -1127,14 +1128,14 @@ namespace MonoCore
     }
 
     //This class is for C++ thread to come in and call. for the most part, leave this alone. 
-    public static partial class Core
+    public unsafe static partial class Core
     {
         public static IMQ mqInstance; //needs to be declared first
         public static ISpawns spawnInstance;
         public static Logging logInstance;
         public volatile static bool IsProcessing = false;
-        public const string _coreVersion = "0.2";
-        public static Decimal _MQ2MonoVersion = 0.2M;
+        public const string _coreVersion = "0.411";
+        public static Decimal _MQ2MonoVersion = 0.411m;
 
         //Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
         //only use the events you need to prevent string allocations to be passed in
@@ -1401,6 +1402,37 @@ namespace MonoCore
             //mq_Echo("final result:" + results);
             return results;
         }
+        public static void OnSetSpawnsViaCallback()
+        {
+            byte* array = mq_GetSpawns3_Buffer(out var length);
+            ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(array, length);
+			Int32 ID = MemoryMarshal.Read<Int32>(data);
+			Spawn s;
+			if (Spawns.SpawnsByID.TryGetValue(ID, out s))
+			{
+				//just update the value
+				try
+				{
+					s.Init(data);
+				}
+				catch (Exception) { }
+			}
+			else
+			{
+				var spawn = Spawn.Aquire();
+				try
+				{
+					spawn.Init(data);
+					Spawns._spawns.Add(spawn);
+
+				}
+				catch (Exception)
+				{
+					spawn.Dispose();
+				}
+			}
+		}
+
         public static void OnSetSpawns(byte[] data, int size)
         {
 
@@ -1476,7 +1508,9 @@ namespace MonoCore
         public extern static void mq_GetSpawns();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void mq_GetSpawns2();
-        [MethodImpl(MethodImplOptions.InternalCall)]
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void mq_GetSpawns3();
+		[MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool mq_GetRunNextCommand();
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static string mq_GetFocusedWindowName();
@@ -1491,7 +1525,8 @@ namespace MonoCore
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static double mq_Memory_GetPageFileSize();
-
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		private static extern byte* mq_GetSpawns3_Buffer(out int length);
 
 
 
@@ -2309,7 +2344,7 @@ namespace MonoCore
         public static ConcurrentDictionary<string, Spawn> _spawnsByName = new ConcurrentDictionary<string, Spawn>(3,2048,StringComparer.OrdinalIgnoreCase);
         public static ConcurrentDictionary<Int32, Spawn> SpawnsByID = new ConcurrentDictionary<int, Spawn>();
         public static Int64 _lastRefesh = 0;
-        public static Int64 RefreshTimePeriodInMS = 3000;
+        public static Int64 RefreshTimePeriodInMS = 1000;
 
         public bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false)
         {
@@ -2377,15 +2412,17 @@ namespace MonoCore
                 spawn.isDirty = false;
             }
             //request new spawns!
-            if (Core._MQ2MonoVersion > 0.23m)
+            if(Core._MQ2MonoVersion>0.41m)
+			{
+				Core.mq_GetSpawns3();
+			}
+            else if (Core._MQ2MonoVersion > 0.23m)
             {
                 Core.mq_GetSpawns2();
-
             }
             else
             {
                 Core.mq_GetSpawns();
-
             }
 
             //spawns has new/updated data, get rid of the non dirty stuff.
@@ -2449,8 +2486,255 @@ namespace MonoCore
 
         }
         static Dictionary<string, string> _stringLookup = new Dictionary<string, string>();
+		public void Init(ReadOnlySpan<byte> data)
+		{
+			isDirty = true;
+            //used for zone copying and maybe remote debuf? from old comments, not sure
+            data.CopyTo(_data);
+            _dataSize = data.Length;
+	
+            ID = MemoryMarshal.Read<Int32>(data);
+            data = data.Slice(4);
+            AFK = MemoryMarshal.Read<Boolean>(data);
+		    data = data.Slice(1);
+			Aggressive = MemoryMarshal.Read<Boolean>(data);
+			data = data.Slice(1);
+			Anonymous = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			Blind = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			BodyTypeID = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			//bodytype desc
+			int slength = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+            //to prevent GC from chruning from destroying long lived string, keep a small collection of them
+            //change to byte key based dictionary for even better?
+            string tstring = String.Empty;
+			unsafe
+			{
+				fixed (byte* p = data)
+				{
+					tstring = Encoding.ASCII.GetString(p, slength);
+				}
+			}
+			if (!_stringLookup.TryGetValue(tstring, out BodyTypeDesc))
+			{
+				_stringLookup.Add(tstring, tstring);
+				BodyTypeDesc = tstring;
+			}
+			data = data.Slice(slength);
+			Buyer = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			ClassID = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			//cleanname
+			slength = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			unsafe
+			{
+				fixed (byte* p = data)
+				{
+					tstring = Encoding.ASCII.GetString(p, slength);
+				}
+			}
+			if (!_stringLookup.TryGetValue(tstring, out CleanName))
+			{
+				_stringLookup.Add(tstring, tstring);
+				CleanName = tstring;
+			}
+			data = data.Slice(slength);
 
-        public void Init(byte[] data, Int32 length)
+			ConColorID = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			CurrentEndurnace = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			CurrentHPs = MemoryMarshal.Read<Int64>(data);
+			data=data.Slice(8);
+
+			
+			CurrentMana = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			Dead = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			//displayname
+			slength = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+
+            unsafe
+            {
+                fixed(byte* p = data)
+                {
+					tstring = Encoding.ASCII.GetString(p,slength);
+				}
+            }
+        	if (!_stringLookup.TryGetValue(tstring, out DisplayName))
+			{
+				_stringLookup.Add(tstring, tstring);
+				DisplayName = tstring;
+			}
+            data = data.Slice(slength);
+			
+            Ducking = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			Feigning = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			GenderID = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			GM = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			
+			GuildID = MemoryMarshal.Read<Int64>(data);
+			data=data.Slice(8);
+			
+			Heading = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+			Height = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+
+			Invis = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			IsSummoned = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			Level = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			Levitate = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			Linkdead = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			Look = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+			MasterID = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			MaxEndurance = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			MaxRange = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+			MaxRangeTo = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+			Mount = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			Moving = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			//name
+			slength = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+
+			unsafe
+			{
+				fixed (byte* p = data)
+				{
+					tstring = Encoding.ASCII.GetString(p, slength);
+				}
+			}
+			if (!_stringLookup.TryGetValue(tstring, out Name))
+			{
+				_stringLookup.Add(tstring, tstring);
+				Name = tstring;
+			}
+			data = data.Slice(slength);
+
+			Named = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			
+			PctHps = MemoryMarshal.Read<Int64>(data);
+			data=data.Slice(8);
+			
+			PctMana = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			PetID = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			PlayerState = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			RaceID = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			//RaceName
+			slength = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			unsafe
+			{
+				fixed (byte* p = data)
+				{
+					tstring = Encoding.ASCII.GetString(p, slength);
+				}
+			}
+			if (!_stringLookup.TryGetValue(tstring, out RaceName))
+			{
+				_stringLookup.Add(tstring, tstring);
+				RaceName = tstring;
+			}
+			data = data.Slice(slength);
+
+			RolePlaying = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			Sitting = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			Sneaking = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			Standing = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			Stunned = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			//Suffix
+			slength = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			unsafe
+			{
+				fixed (byte* p = data)
+				{
+					tstring = Encoding.ASCII.GetString(p, slength);
+				}
+			}
+			if (!_stringLookup.TryGetValue(tstring, out Suffix))
+			{
+				_stringLookup.Add(tstring, tstring);
+				Suffix = tstring;
+			}
+			data = data.Slice(slength);
+
+			Targetable = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			TargetOfTargetID = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			Trader = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			//TypeDesc
+			slength = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+			unsafe
+			{
+				fixed (byte* p = data)
+				{
+					tstring = Encoding.ASCII.GetString(p, slength);
+				}
+			}
+			if (!_stringLookup.TryGetValue(tstring, out TypeDesc))
+			{
+				_stringLookup.Add(tstring, tstring);
+				TypeDesc = tstring;
+			}
+			data = data.Slice(slength);
+
+			Underwater = MemoryMarshal.Read<Boolean>(data);
+			data=data.Slice(1);
+			X = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+			Y = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+			Z = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+			playerX = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+			playerY = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+			playerZ = MemoryMarshal.Read<float>(data);
+			data=data.Slice(4);
+			DeityID = MemoryMarshal.Read<Int32>(data);
+			data=data.Slice(4);
+
+
+		}
+		public void Init(byte[] data, Int32 length)
         {
             isDirty = true;
             //used for remote debug, to send the representastion of the data over.

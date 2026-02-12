@@ -4,6 +4,7 @@ using MonoCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace E3Core.UI.Windows.NetworkingStats
 		[SubSystemInit]
 		public static void Init()
 		{
+			if (Debugger.IsAttached) return;
 			if (Core._MQ2MonoVersion < 0.36m) return;
 			E3ImGUI.RegisterWindow(_WindowName, RenderWindow);
 

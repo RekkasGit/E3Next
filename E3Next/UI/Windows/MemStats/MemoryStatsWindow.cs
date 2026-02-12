@@ -1,13 +1,14 @@
-﻿using MonoCore;
+﻿using E3Core.Classes;
+using E3Core.Processors;
+using E3Core.Server;
+using E3Core.Utility;
+using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using static MonoCore.E3ImGUI;
-using E3Core.Classes;
-using E3Core.Processors;
-using E3Core.Utility;
-using E3Core.Server;
 using System.Text;
+using static MonoCore.E3ImGUI;
 
 namespace E3Core.UI.Windows.MemStats
 {
@@ -36,6 +37,7 @@ namespace E3Core.UI.Windows.MemStats
 		[SubSystemInit]
 		public static void Init()
 		{
+			if (Debugger.IsAttached) return;
 			if (Core._MQ2MonoVersion < 0.41m)
 			{
 				E3.MQ.Write("This requires MQ2Mono 0.41 or greater");

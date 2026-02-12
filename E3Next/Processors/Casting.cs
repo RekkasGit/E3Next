@@ -242,12 +242,6 @@ namespace E3Core.Processors
 					{
 						MQ.Delay(50);
 
-						//if (E3.IsPaused())
-						//{
-						//	Interrupt();
-						//	return CastReturn.CAST_INTERRUPTED;
-						//}
-
 						if (!isEmergency && Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana))
 						{
 							E3.Bots.Broadcast($"Interrupting [{spell.CastName}] for Emergency Heal.");

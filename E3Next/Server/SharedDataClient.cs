@@ -537,16 +537,17 @@ namespace E3Core.Server
 			}
 			else
 			{
+				char[] dataBuffer = _arrayPool.Rent(messageReceivedAsSpan.Length);
+				char[] returnedBuffer = entry.Data;
+				messageReceivedAsSpan.CopyTo(dataBuffer);
 				lock (entry)
 				{
 					//we need to update our data, 1st, return the data back to the pool
-					_arrayPool.Return(entry.Data,clearArray:true);
-					char[] dataBuffer = _arrayPool.Rent(messageReceivedAsSpan.Length);
-					messageReceivedAsSpan.CopyTo(dataBuffer);
 					entry.Data = dataBuffer;
 					entry.DataLength = messageReceivedAsSpan.Length;
 					entry.LastUpdate = updateTime;
 				}
+				_arrayPool.Return(returnedBuffer, clearArray: true);
 			}
 		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

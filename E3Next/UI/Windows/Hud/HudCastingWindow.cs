@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -31,7 +32,7 @@ namespace E3Core.UI.Windows.Hud
 
 			EventProcessor.RegisterCommand("/e3hud_casting", (x) =>
 			{
-
+				if (Debugger.IsAttached) return;
 				if (Core._MQ2MonoVersion < 0.41m)
 				{
 					E3.MQ.Write("This requires MQ2Mono 0.41 or greater");

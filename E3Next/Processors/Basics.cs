@@ -365,6 +365,15 @@ namespace E3Core.Processors
 				}
 
 			});
+			EventProcessor.RegisterCommand("/e3debug_list_spawns", x =>
+			{
+
+				foreach(var spawn in _spawns.Get())
+				{
+					MQ.Write($"ID:{spawn.ID} SpawnName:{spawn.Name}  TypeDesc:{spawn.TypeDesc}");
+				}
+
+			});
 			EventProcessor.RegisterEvent("GMBuff", "(.+) A GM has cast (.+) world-wide!", (x) =>
 			{
 				if (x.match.Groups.Count == 3)

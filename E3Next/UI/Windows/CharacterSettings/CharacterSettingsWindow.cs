@@ -9,6 +9,7 @@ using MonoCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -69,7 +70,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 		[SubSystemInit]
 		public static void CharacterSettingsWindow_Init()
 		{
-			if (Core._MQ2MonoVersion < 0.35m) return;
+			if (Debugger.IsAttached) return;
+			if (Core._MQ2MonoVersion < 0.412m ) return;
 			_versionInfo = $"nE³xt v{Setup.E3Version} by Rekka | Build {Setup.BuildDate}. Editor by Linamas/Rekka";
 
 			// Load UI theme settings from character INI
@@ -95,7 +97,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			// Toggle the in-game ImGui config window
 			EventProcessor.RegisterCommand("/e3config", (x) =>
 			{
-
+				
 				if (Core._MQ2MonoVersion < 0.41m)
 				{
 					E3.MQ.Write("This requires MQ2Mono 0.41 or greater");
