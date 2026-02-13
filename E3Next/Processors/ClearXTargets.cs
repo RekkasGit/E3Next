@@ -138,7 +138,7 @@ namespace E3Core.Processors
                     if (_spawns.TryByID(MobToAttack, out var ts))
                     {
                         //is it still alive?
-                        if (ts.TypeDesc == "Corpse") MobToAttack = 0;//its dead jim
+                        if (ts.Dead) MobToAttack = 0;//its dead jim
                     }
                     else
                     {

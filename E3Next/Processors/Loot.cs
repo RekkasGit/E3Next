@@ -1,4 +1,6 @@
-﻿using E3Core.Settings.FeatureSettings;
+﻿using E3Core.Data;
+using E3Core.Settings;
+using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
@@ -534,16 +536,29 @@ namespace E3Core.Processors
             BuffCheck.Check_BlockedBuffs();//to see if we need to remove torpor
 
 
-
+            _log.Write("Trying to loot area");
 			List<Spawn> corpses = new List<Spawn>();
-            foreach (var id in _spawns.GetIDs())
+
+            List<Int32> currentSpawns = _spawns.GetIDs();
+
+			_log.Write($"Retrieved {currentSpawns.Count} total spawns in zone.");
+
+			foreach (var id in currentSpawns)
             {
+
                 if(_spawns.TryByID(id, out var spawn))
                 {
-					//only player corpses have a Deity
-					if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse")
+
+                    //only player corpses have a Deity
+
+
+                    _log.Write($"Checking spawn data: dis:{spawn.Distance3D} god:{spawn.DeityID} typedesc:{spawn.TypeDesc}  dead?:{spawn.Dead}");
+
+                    if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.Dead)
 					{
-						//is it too far above/below us? ignore it
+				        
+
+                        //is it too far above/below us? ignore it
 						if (Math.Abs(spawn.Z - startZ) > 20) continue;
 
 						if (!Zoning.CurrentZone.IsSafeZone)
@@ -557,8 +572,10 @@ namespace E3Core.Processors
 				}
 			}
             if (corpses.Count==0)
-            {
-                return;
+			{
+				_log.Write($"No corpses were found in range.");
+
+				return;
             }
                 //sort all the corpses, removing the ones we cannot loot
              corpses = corpses.OrderBy(x => x.Distance).ToList();

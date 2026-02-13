@@ -1269,7 +1269,7 @@ namespace E3Core.Utility
 		public static Dictionary<Int32, BuffInfoCacheEntry> _buffInfoCache = new Dictionary<Int32, BuffInfoCacheEntry>();
 		public static string GenerateBuffInfoForPubSub()
 		{
-			//if(Core._MQ2MonoVersion>=0.411m && !Debugger.IsAttached)
+			if(Core._MQ2MonoVersion>=0.411m && !Debugger.IsAttached)
 			{
 				return GetBuffDataForPubSubHighPerf();
 			}
@@ -1515,7 +1515,7 @@ namespace E3Core.Utility
 		{
 			//using (_log.Trace())
 			{
-				//if(Core._MQ2MonoVersion>0.411m && !Debugger.IsAttached)
+				if(Core._MQ2MonoVersion>0.411m && !Debugger.IsAttached)
 				{
 					return GetPetBuffDataForPubSubHighPerf();
 				}

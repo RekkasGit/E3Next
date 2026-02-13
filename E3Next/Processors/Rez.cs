@@ -226,7 +226,7 @@ namespace E3Core.Processors
 			{
 				if(_spawns.TryByID(spawnid,out var spawn))
 				{
-					if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && spawn.ClassShortName == "CLR")
+					if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead && spawn.ClassShortName == "CLR")
 					{
 						if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
 						{
@@ -257,7 +257,7 @@ namespace E3Core.Processors
 			{
 				if(_spawns.TryByID(spawnid,out var spawn))
 				{
-					if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse" && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
+					if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
 					{
 						if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
 						{
@@ -289,7 +289,7 @@ namespace E3Core.Processors
 			{
 				if(_spawns.TryByID(spawnid,out var spawn))
 				{
-					if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse")
+					if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead)
 					{
 						if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
 						{
@@ -326,7 +326,7 @@ namespace E3Core.Processors
 				{
 					if(_spawns.TryByID(spawnid, out var spawn))
 					{
-						if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.TypeDesc == "Corpse")
+						if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead)
 						{
 							//lists are super small so contains is fine
 							if (!_corpseList.Contains(spawn.ID))

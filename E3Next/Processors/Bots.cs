@@ -1046,7 +1046,7 @@ namespace E3Core.Processors
 					}
 					else
 					{
-						sharedInfo.Data = true;
+						sharedInfo.Data = false;
 						sharedInfo.LastUpdate = entry.LastUpdate;
 					}
 				}

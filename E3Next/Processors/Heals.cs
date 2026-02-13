@@ -333,7 +333,7 @@ namespace E3Core.Processors
 					{
 						if (!IgnoreHealTargets.Contains(s.CleanName))
 						{
-							if (s.TypeDesc != "Corpse")
+							if (s.Dead)
 							{
 								if (s.Distance < 200)
 								{

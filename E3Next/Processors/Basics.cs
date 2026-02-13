@@ -2292,7 +2292,7 @@ namespace E3Core.Processors
 					{
 						e3util.SetXTargetSlotToAutoHater(x);
 					}
-					else if (s.TypeDesc == "Corpse")
+					else if (s.Dead)
 					{
 						e3util.SetXTargetSlotToAutoHater(x);
 					}

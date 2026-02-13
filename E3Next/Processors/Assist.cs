@@ -530,7 +530,7 @@ namespace E3Core.Processors
                 Int32 mobid = MQ.Query<Int32>("${Target.ID}");
                 if (_spawns.TryByID(mobid, out var spawn))
                 {
-                    if (spawn.Aggressive && spawn.TypeDesc != "Corpse")
+                    if (spawn.Aggressive && !spawn.Dead)
                     {
                         Int32 targetHPPct = MQ.Query<Int32>("${Target.PctHPs}");
                         if (targetHPPct > 0 && targetHPPct <= E3.CharacterSettings.Assist_AutoAssistPercent)
@@ -606,7 +606,7 @@ namespace E3Core.Processors
             {
                 MobLifeExpectancy = 1;
 
-				if (s.TypeDesc == "Corpse")
+				if (s.Dead)
                 {
                     E3.Bots.Broadcast("Cannot assist, a corpse");
                     return;
