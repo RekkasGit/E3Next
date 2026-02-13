@@ -177,6 +177,7 @@ namespace E3Core.Processors
 						{
 							//find all mobs that are close
 							if (s.TypeDesc != "NPC") continue;
+							if (s.Dead) continue;
 							if (!s.Targetable) continue;
 							if (!s.Aggressive) continue;
 							if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet

@@ -943,6 +943,10 @@ namespace E3Core.UI.Windows.Hud
 
 
 				state.TargetHP = MQ.Query<Int32>("${Target.PctHPs}", false);
+
+				//if (spawn.Dead) state.TargetHP = 0;
+
+
 				state.TargetLevel = spawn.Level;
 				state.TargetClassName = spawn.ClassShortName;
 				state.TargetDistance = spawn.Distance3D;
@@ -954,11 +958,14 @@ namespace E3Core.UI.Windows.Hud
 				//get my aggro on target
 				Decimal percentAggro = MQ.Query<Decimal>("${Target.PctAggro}", false);
 
+
+
 				if (percentAggro > 0) { state.Display_MyAggroPercent = $"{percentAggro}%"; }
 				else { state.Display_MyAggroPercent = String.Empty; }
 
 				state.MyAggroPercent = percentAggro;
 
+		
 
 				Decimal percentAggro2nd = MQ.Query<Decimal>("${Target.SecondaryPctAggro}", false);
 

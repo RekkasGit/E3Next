@@ -93,6 +93,7 @@ namespace E3Core.Processors
 					if (_mobsToOffAsist.Contains(s.ID)) continue;
 					//find all mobs that are close
 					if (s.PctHps < 10) continue;
+                    if (s.Dead) continue;
 					if (s.TypeDesc != "NPC") continue;
 					if (!s.Targetable) continue;
 					if (!s.Aggressive) continue;
