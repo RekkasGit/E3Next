@@ -1,4 +1,5 @@
 ﻿using E3Core.Classes;
+using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
@@ -41,13 +42,13 @@ namespace E3Core.Processors
 			if (!IsInit) { Init(); }
 			//auto X min gc check
 			CheckGC();
+
 			
 			//did someone send us a command? lets process it. 
 			ProcessExternalCommands();
-
-
-			//update all states, important.
 			
+			//update all states, important.
+
 			StateUpdates();
 			RefreshCaches();
 			
@@ -429,23 +430,50 @@ namespace E3Core.Processors
 					StateUpdates_BuffInformation();
 					StateUpdates_Counters();
 				}
-				
+			
 				if (e3util.ShouldCheck(ref _nextMemoryUpdateCheckTime, _nextMemoryUpdateCheckRate))
 				{
 					StateUpdates_Memory();
 				}
+				
 				//not horribly important stuff, can just be sent out whever, currently once per second
 				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
 				{
 					StateUpdates_AAInformation();
+					
+					if (Core._MQ2MonoVersion>=0.412m && !Debugger.IsAttached)
+					{
+						unsafe
+						{
+							int length;
+							byte* p;
 
-					Int32 xtargetMaxAggro = e3util.GetXtargetMaxAggro();
-					if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
-					PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", xtargetMaxAggro.ToString());
-					Int32 xtargetMinAggro = e3util.GetXtargetMinAggro();
-					if (xtargetMinAggro < 0) xtargetMinAggro = 0;
-					PubServer.AddTopicMessage("${Me.XTargetMinAggro}", xtargetMinAggro.ToString());
+							p = Core.mq_GetXtargetInfo(out length);
+							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+							//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+							int dataStartingLength = data.Length;
 
+							Int32 xtargetMaxAggro = e3util.GetXTargetMaxAggro(data);
+							if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
+							PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", xtargetMaxAggro.ToString());
+
+							Int32 xtargetMinAggro = e3util.GetXTargetMinAggro(data);
+							if (xtargetMinAggro < 0) xtargetMinAggro = 0;
+							PubServer.AddTopicMessage("${Me.XTargetMinAggro}", xtargetMinAggro.ToString());
+						}
+					
+					}
+					else
+					{
+						Int32 xtargetMaxAggro = e3util.GetXtargetMaxAggro();
+						if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
+						PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", xtargetMaxAggro.ToString());
+						Int32 xtargetMinAggro = e3util.GetXtargetMinAggro();
+						if (xtargetMinAggro < 0) xtargetMinAggro = 0;
+						PubServer.AddTopicMessage("${Me.XTargetMinAggro}", xtargetMinAggro.ToString());
+					}
+
+					
 					string activeDisc = MQ.Query<string>("${Me.ActiveDisc}");
 
 					Int32 timeInTicksForDisc = 0;
@@ -603,7 +631,7 @@ namespace E3Core.Processors
 				//as there is an order dependecy
 				Setup.Init();
                 IsInit = true;
-                MonoCore.Spawns.RefreshTimePeriodInMS = 500;
+                //MonoCore.Spawns.RefreshTimePeriodInMS = 500;
 			}
 
 
@@ -634,7 +662,7 @@ namespace E3Core.Processors
         private static void CheckGC()
         {
 			//if (Basics.InCombat()) return;
-			if (!e3util.ShouldCheck(ref _lastGCCollect, 60000)) return;
+			if (!e3util.ShouldCheck(ref _lastGCCollect, 300000)) return;
 			GC.GetTotalMemory(true);
 		}
 

@@ -1744,6 +1744,116 @@ namespace E3Core.Utility
 			return false;
 		}
 
+		public unsafe static Int32 GetXTargetMinAggro(ReadOnlySpan<byte> input_data)
+		{
+
+			ReadOnlySpan<byte> data = input_data;
+			Int32 currentAggro = 0;
+			Int32 tempMinAggro = 101;
+			while (data.Length > 0)
+			{
+				XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+
+				Int32 mobId = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+
+
+				if (targetTypes == XTargetTypes.XTARGET_AUTO_HATER) continue;
+
+				if(mobId>0)
+				{
+					Spawn s;
+					//if (_spawns.TryByID(mobId, out s))
+					{
+						//if (s.Aggressive)
+						{
+							currentAggro = aggroPct;
+							if (tempMinAggro > currentAggro)
+							{
+								tempMinAggro = currentAggro;
+							}
+						}
+					}
+				}
+
+			}
+			if (tempMinAggro == 101) return 0;
+
+			return tempMinAggro;
+		}
+		public unsafe static Int32 GetXTargetMaxAggro(ReadOnlySpan<byte> input_data)
+		{
+			ReadOnlySpan<byte> data = input_data;
+			Int32 currentAggro = 0;
+			Int32 tempMaxAggro = 0;
+			while (data.Length > 0)
+			{
+				XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+
+				Int32 mobId = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				if (targetTypes == XTargetTypes.XTARGET_AUTO_HATER) continue;
+				if (mobId > 0)
+				{
+					Spawn s;
+					//if (_spawns.TryByID(mobId, out s))
+					{
+						//if (s.Aggressive)
+						{
+							currentAggro = aggroPct;
+							if (tempMaxAggro < currentAggro)
+							{
+								tempMaxAggro = currentAggro;
+
+								if (tempMaxAggro == 100) return tempMaxAggro;
+							}
+						}
+					}
+				}
+			}
+			return tempMaxAggro;
+		}
+		public static Int32 GetXtargetMinAggro()
+		{
+			Int32 currentAggro = 0;
+			Int32 tempMinAggro = 101;
+
+			for (Int32 i = 1; i <= 13; i++)
+			{
+				bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
+				if (!autoHater) continue;
+				Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
+				if (mobId > 0)
+				{
+					Spawn s;
+					//if (_spawns.TryByID(mobId, out s))
+					{
+						//if (s.Aggressive)
+						{
+							currentAggro = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctAggro}}");
+							if (tempMinAggro > currentAggro)
+							{
+								tempMinAggro = currentAggro;
+							}
+						}
+					}
+				}
+			}
+
+			if (tempMinAggro == 101) return 0;
+
+			return tempMinAggro;
+		}
 		public static Int32 GetXtargetMaxAggro()
 		{
 			Int32 currentAggro = 0;
@@ -1851,37 +1961,7 @@ namespace E3Core.Utility
 			MQ.Write($"Hiest HP is mob:{highestHPMob} with percent of {currentHighestHP}");
 			return highestHPMob;
 		}
-		public static Int32 GetXtargetMinAggro()
-		{
-			Int32 currentAggro = 0;
-			Int32 tempMinAggro = 101;
-
-			for (Int32 i = 1; i <= 13; i++)
-			{
-				bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
-				if (!autoHater) continue;
-				Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
-				if (mobId > 0)
-				{
-					Spawn s;
-					if (_spawns.TryByID(mobId, out s))
-					{
-						if (s.Aggressive)
-						{
-							currentAggro = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctAggro}}");
-							if (tempMinAggro > currentAggro)
-							{
-								tempMinAggro = currentAggro;
-							}
-						}
-					}
-				}
-			}
-
-			if (tempMinAggro == 101) return 0;
-
-			return tempMinAggro;
-		}
+		
 		public static void YieldToEQ()
 		{
 			MQ.Delay(0);

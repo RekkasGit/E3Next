@@ -715,10 +715,6 @@ namespace E3Core.Server
 							ReadOnlySpan<byte> byteSpan = msg_payload.Data.AsSpan(0, msg_payload.Size);
 							int exactCharCount;
 
-							if (msg_payload.Size == 0)
-							{
-								MQ.WriteDelayed("Zero sized message!");
-							}
 							ReadOnlySpan<char> messageReceivedAsSpan;
 							char[] chars = null;
 							try
@@ -737,12 +733,6 @@ namespace E3Core.Server
 											}
 											messageReceivedAsSpan = chars.AsSpan<char>(0, exactCharCount);
 										}
-									}
-
-									if (exactCharCount != messageReceivedAsSpan.Length || messageReceivedAsSpan.ToString().Length != exactCharCount)
-									{
-										MQ.WriteDelayed($"issue with Size of payload Topic: {messageTopicReceived} Payload:{messageReceivedAsSpan.ToString()}");
-
 									}
 
 								}
@@ -1023,7 +1013,7 @@ namespace E3Core.Server
 					}
 					catch(Exception ex)
 					{
-						MQ.WriteDelayed("Networking error:"+ex.Message +"   stack:"+ex.StackTrace );
+						//MQ.WriteDelayed("Networking error:"+ex.Message +"   stack:"+ex.StackTrace );
 						System.Threading.Thread.Sleep(1000);
 					}
 					finally

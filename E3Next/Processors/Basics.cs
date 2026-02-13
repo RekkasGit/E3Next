@@ -366,7 +366,101 @@ namespace E3Core.Processors
 				}
 
 			});
+			EventProcessor.RegisterCommand("/e3debug_checkspawndelta", x =>
+			{
 
+				using (var trace = _log.Trace("deltaspeedtest"))
+				{
+					unsafe
+					{
+						int length;
+						byte* p;
+						using (var tarce2 = _log.Trace("deltaspeedtest_mqcall"))
+						{
+							p= Core.mq_GetSpawns3_Delta(out length);
+						}
+						 
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+						int dataStartingLength = data.Length;
+						
+						while(data.Length>0)
+						{
+							Int32 spawnid = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							bool agressive = MemoryMarshal.Read<bool>(data);
+							data = data.Slice(1);
+							bool dead = MemoryMarshal.Read<bool>(data);
+							data = data.Slice(1);
+							float heading = MemoryMarshal.Read<float>(data);
+							data = data.Slice(4);
+							float height = MemoryMarshal.Read<float>(data);
+							data = data.Slice(4);
+
+							Int32 master = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							bool moving = MemoryMarshal.Read<bool>(data);
+							data = data.Slice(1);
+							Int64 pctHps = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(8);
+							Int32 petid = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							bool targetable = MemoryMarshal.Read<bool>(data);
+							data = data.Slice(1);
+							Int32 targetoftargetID = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+
+							float s_x = MemoryMarshal.Read<float>(data);
+							data = data.Slice(4);
+							float s_y = MemoryMarshal.Read<float>(data);
+							data = data.Slice(4);
+							float s_z = MemoryMarshal.Read<float>(data);
+							data = data.Slice(4);
+
+							float p_x = MemoryMarshal.Read<float>(data);
+							data = data.Slice(4);
+							float p_y = MemoryMarshal.Read<float>(data);
+							data = data.Slice(4);
+							float p_z = MemoryMarshal.Read<float>(data);
+							data = data.Slice(4);
+							//MQ.Write($"ID:{spawnid} a:{agressive} h:{heading} hp:{pctHps} s_x:{s_x} s_y:{s_y} s_z:{s_z} p_x:{p_x} p_y:{p_y} p_z:{p_z} dl:{data.Length}");
+
+						}
+					}
+				}
+			});
+			EventProcessor.RegisterCommand("/e3debug_checkxtarget", x =>
+			{
+
+				using (var trace = _log.Trace("xtargetspeedtest"))
+				{
+					unsafe
+					{
+						int length;
+						byte* p;
+						
+						p = Core.mq_GetXtargetInfo(out length);
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+						int dataStartingLength = data.Length;
+
+						while (data.Length > 0)
+						{
+							XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+						
+							Int32 id = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+
+							MQ.Write($"ID:{id} tt:{targetTypes.ToString()} apct:{aggroPct} hp:{pctHPs}");
+						}
+					}
+				}
+			});
 			EventProcessor.RegisterCommand("/e3debug_CheckBuff", x =>
 			{
 
