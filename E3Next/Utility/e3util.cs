@@ -1233,7 +1233,7 @@ namespace E3Core.Utility
 						}
 						buffInfoStringBuilder.Append(spellID);
 						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(duration);
+						buffInfoStringBuilder.Append(duration*6*1000);
 						buffInfoStringBuilder.Append(",");
 						buffInfoStringBuilder.Append(hitcount);
 						buffInfoStringBuilder.Append(",");
