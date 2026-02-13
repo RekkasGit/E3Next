@@ -39,18 +39,16 @@ namespace E3Core.Processors
 			}
 			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 			if (!IsInit) { Init(); }
-			var sw = new Stopwatch();
-			sw.Start();
 			//auto X min gc check
 			CheckGC();
-
+			
 			//did someone send us a command? lets process it. 
 			ProcessExternalCommands();
 
-			
+
 			//update all states, important.
-            StateUpdates();
-		
+			
+			StateUpdates();
 			RefreshCaches();
 			
 			//don't eat stat food even if paused!
@@ -361,6 +359,7 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.ZoneID}", ZoneID.ToString());
 			PubServer.AddTopicMessage("${Me.ZoneShortName}", MQ.Query<string>("${Zone.ShortName}"));
 			PubServer.AddTopicMessage("${Me.Instance}", MQ.Query<string>("${Me.Instance}"));
+			
 
 		}
 		public static void StateUpdates_Stats()
@@ -374,44 +373,8 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.CurrentHPs}", MQ.Query<string>("${Me.CurrentHPs}"));
 			PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
 			PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
-
 			Int32 pet_hps = MQ.Query<Int32>("${Me.Pet.CurrentHPs}");
 			PubServer.AddTopicMessage("${Me.Pet.CurrentHPs}", pet_hps.ToString());
-
-			Loc_X = MQ.Query<double>("${Me.X}");
-			Loc_Y = MQ.Query<double>("${Me.Y}");
-			Loc_Z = MQ.Query<double>("${Me.Z}");
-			PubServer.AddTopicMessage("${Me.X}", Loc_X.ToString());
-			PubServer.AddTopicMessage("${Me.Y}", Loc_Y.ToString());
-			PubServer.AddTopicMessage("${Me.Z}", Loc_Z.ToString());
-			PubServer.AddTopicMessage("${Me.IsInvis}", IsInvis.ToString());
-
-			Int32 pctAggr = MQ.Query<Int32>("${Me.PctAggro}");
-			if (pctAggr < 0) pctAggr = 0;
-			PubServer.AddTopicMessage("${Me.PctAggro}", pctAggr.ToString());
-			Int32 xtargetMaxAggro = e3util.GetXtargetMaxAggro();
-			if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
-			PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", xtargetMaxAggro.ToString());
-			Int32 xtargetMinAggro = e3util.GetXtargetMinAggro();
-			if (xtargetMinAggro < 0) xtargetMinAggro = 0;
-			PubServer.AddTopicMessage("${Me.XTargetMinAggro}", xtargetMinAggro.ToString());
-
-			string activeDisc = MQ.Query<string>("${Me.ActiveDisc}");
-
-			Int32 timeInTicksForDisc = 0;
-			if(activeDisc!="NULL")
-			{
-				timeInTicksForDisc = MQ.Query<Int32>("${Me.ActiveDisc.Duration}");
-			}
-			else
-			{
-				activeDisc = "";
-			}
-			PubServer.AddTopicMessage("${Me.ActiveDisc}", activeDisc);
-			PubServer.AddTopicMessage("${Me.ActiveDiscTimeLeft}", (timeInTicksForDisc*6).ToString());
-			Decimal discPercentage = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}");
-			PubServer.AddTopicMessage("${Me.ActiveDiscPerentTimeLeft}", discPercentage.ToString());
-
 		}
 		public static void StateUpdates_BuffInformation()
 		{
@@ -428,9 +391,9 @@ namespace E3Core.Processors
 		public static void ProcessExternalCommands()
 		{
 			NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
-			e3util.ProcessE3BCCommands(); //send out data we may have queued up for /e3bc commands
+			//e3util.ProcessE3BCCommands(); //send out data we may have queued up for /e3bc commands
 			RouterServer.ProcessRequests();//process any tlo request from the UI, or anything really.
-			//process any commands we need to process from the UI
+			////process any commands we need to process from the UI
 			PubClient.ProcessRequests();
 			
 		}
@@ -475,6 +438,44 @@ namespace E3Core.Processors
 				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
 				{
 					StateUpdates_AAInformation();
+
+					Int32 xtargetMaxAggro = e3util.GetXtargetMaxAggro();
+					if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
+					PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", xtargetMaxAggro.ToString());
+					Int32 xtargetMinAggro = e3util.GetXtargetMinAggro();
+					if (xtargetMinAggro < 0) xtargetMinAggro = 0;
+					PubServer.AddTopicMessage("${Me.XTargetMinAggro}", xtargetMinAggro.ToString());
+
+					string activeDisc = MQ.Query<string>("${Me.ActiveDisc}");
+
+					Int32 timeInTicksForDisc = 0;
+					if (activeDisc != "NULL")
+					{
+						timeInTicksForDisc = MQ.Query<Int32>("${Me.ActiveDisc.Duration}");
+					}
+					else
+					{
+						activeDisc = "";
+					}
+					PubServer.AddTopicMessage("${Me.ActiveDisc}", activeDisc);
+					PubServer.AddTopicMessage("${Me.ActiveDiscTimeLeft}", (timeInTicksForDisc * 6).ToString());
+					Decimal discPercentage = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}");
+					PubServer.AddTopicMessage("${Me.ActiveDiscPerentTimeLeft}", discPercentage.ToString());
+					PubServer.AddTopicMessage("${Me.IsInvis}", IsInvis ? "true" : "false");
+
+					Int32 pctAggr = MQ.Query<Int32>("${Me.PctAggro}");
+					if (pctAggr < 0) pctAggr = 0;
+					PubServer.AddTopicMessage("${Me.PctAggro}", pctAggr.ToString());
+
+					string loc_x = MQ.Query<string>("${Me.X}");
+					string loc_y = MQ.Query<string>("${Me.Y}");
+					string loc_z = MQ.Query<string>("${Me.Z}");
+					PubServer.AddTopicMessage("${Me.X}", loc_x);
+					PubServer.AddTopicMessage("${Me.Y}", loc_y);
+					PubServer.AddTopicMessage("${Me.Z}", loc_z);
+					double.TryParse(loc_x, out Loc_X);
+					double.TryParse(loc_y, out Loc_Y);
+					double.TryParse(loc_z, out Loc_Z);
 					//lets query the data we are configured to send out extra
 					if (E3.CharacterSettings.E3BotsPublishData.Count > 0)
 					{

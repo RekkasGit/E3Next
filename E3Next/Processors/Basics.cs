@@ -16,6 +16,7 @@ using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 
@@ -365,6 +366,46 @@ namespace E3Core.Processors
 				}
 
 			});
+
+			EventProcessor.RegisterCommand("/e3debug_CheckBuff", x =>
+			{
+
+				using(var trace = _log.Trace("buffspeedtest"))
+				{
+					unsafe
+					{
+						
+						int length;
+						byte* p = Core.mq_GetPetBuffData(out length);
+						
+						if (length == 0)
+						{
+							MQ.Write("No Buffs or buffs not found yet");
+							return;
+						}
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+						int dataStartingLength = data.Length;
+						for (int i = 0; i < e3util.MaxTempBuffs; i++)
+						{
+							Int32 ID = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 duration = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 spellType = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+					
+							MQ.Write($"ID:{ID} D:{duration}  st:{spellType}");
+							if(dataStartingLength-data.Length>=length)
+							{
+								MQ.Write($"End of array at {dataStartingLength - data.Length}");
+								break;
+							}
+						}
+					}
+				}
+			});
+
 			EventProcessor.RegisterCommand("/e3debug_list_spawns", x =>
 			{
 

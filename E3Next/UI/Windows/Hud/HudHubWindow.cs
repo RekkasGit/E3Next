@@ -997,123 +997,126 @@ namespace E3Core.UI.Windows.Hud
 			state.TargetBuffs.Clear();
 
 			Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}", false);
-			int maxBuffs = Math.Min(buffCount, 30);
-
-			for (int i = 1; i <= maxBuffs; i++)
+			int maxBuffs = e3util.MaxTempBuffs;
+			if(buffCount>0)
 			{
-				string targetBuffID = String.Empty;
-				if(!IntToStringIDLookup("Hub_RenderTargetInfo_BuffID",i,out targetBuffID))
+				for (int i = 1; i <= maxBuffs; i++)
 				{
-					targetBuffID = $"${{Target.Buff[{i}].ID}}";
-					IntToStringIDRegister("Hub_RenderTargetInfo_BuffID", i, targetBuffID);
-				}
+					string targetBuffID = String.Empty;
+					if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffID", i, out targetBuffID))
+					{
+						targetBuffID = $"${{Target.Buff[{i}].ID}}";
+						IntToStringIDRegister("Hub_RenderTargetInfo_BuffID", i, targetBuffID);
+					}
 
-				Int32 spellid = MQ.Query<Int32>(targetBuffID, false);
-				if (spellid <= 0) continue;
+					Int32 spellid = MQ.Query<Int32>(targetBuffID, false);
+					if (spellid <= 0) continue;
 
-				string targetBuffDuration = String.Empty;
-				if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffDuration", i, out targetBuffDuration))
-				{
-					targetBuffDuration = $"${{Target.Buff[{i}].Duration}}";
-					IntToStringIDRegister("Hub_RenderTargetIHub_RenderTargetInfo_BuffDuration", i, targetBuffDuration);
-				}
-				Int32 duration = MQ.Query<Int32>(targetBuffDuration, false);
-				string targetSpellIcon = String.Empty;
-				if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffIcon", spellid, out targetSpellIcon))
-				{
-					targetSpellIcon = $"${{Spell[{spellid}].SpellIcon}}";
-					IntToStringIDRegister("Hub_RenderTargetInfo_BuffIcon", spellid, targetSpellIcon);
-				}
-				Int32 spellIcon = MQ.Query<Int32>(targetSpellIcon, false);
-
-
-				string targetSpellName = String.Empty;
-				if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffName", spellid, out targetSpellName))
-				{
-					targetSpellName = $"${{Spell[{spellid}].Name}}";
-					IntToStringIDRegister("Hub_RenderTargetInfo_BuffName", spellid, targetSpellName);
-				}
-
-				string buffName = MQ.Query<string>(targetSpellName, false);
-				TableRow_BuffInfo buffRow = null;
-
-				if (_targetBuffInfoCache.TryGetValue(spellid, out var tbi))
-				{
-					buffRow = tbi;
-				}
-				else
-				{
-					buffRow = new TableRow_BuffInfo(spellid);
-					_targetBuffInfoCache.Add(spellid, buffRow);
-				}
-				buffRow.Name = buffName;
-				buffRow.iconID = spellIcon;
-				var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
-				buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
-				buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
-				string targetSpellType = String.Empty;
-				if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffType", spellid, out targetSpellType))
-				{
-					targetSpellType = $"${{Spell[{spellid}].SpellType}}";
-					IntToStringIDRegister("Hub_RenderTargetInfo_BuffType", spellid, targetSpellType);
-				}
-				string spellType = MQ.Query<string>(targetSpellType, false);
-
-				Int32 spellTypeID = 0;
-				if (spellType == "Detrimental") spellTypeID = 0;
-				if (spellType == "Beneficial") spellTypeID = 1;
-				if (spellType == "Beneficial(Group)") spellTypeID = 2;
-				buffRow.SpellType = (Int32)spellTypeID;
-				buffRow.SpellID = spellid;
-
-				if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
-				{
-					buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
-				}
-				else
-				{
-					buffRow.Spell = null;
-				}
-
-				if (duration < 0)
-				{
-					buffRow.SimpleDuration = "(p)";
-				}
-				else if (buffTimeSpan.TotalHours >= 1)
-				{
-					buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
-				}
-				else if (buffTimeSpan.TotalMinutes >= 1)
-				{
-					buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
-				}
-				else
-				{
-					buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
-				}
-				if (duration < 160000d)
-				{
-					buffRow.DisplayName = buffName + $" ( {buffRow.Display_Duration} )";
-				}
-				else
-				{
-					buffRow.DisplayName = buffName;
-				}
-				if (buffName == "NULL") buffName = "Unknown";
+					string targetBuffDuration = String.Empty;
+					if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffDuration", i, out targetBuffDuration))
+					{
+						targetBuffDuration = $"${{Target.Buff[{i}].Duration}}";
+						IntToStringIDRegister("Hub_RenderTargetIHub_RenderTargetInfo_BuffDuration", i, targetBuffDuration);
+					}
+					Int32 duration = MQ.Query<Int32>(targetBuffDuration, false);
+					string targetSpellIcon = String.Empty;
+					if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffIcon", spellid, out targetSpellIcon))
+					{
+						targetSpellIcon = $"${{Spell[{spellid}].SpellIcon}}";
+						IntToStringIDRegister("Hub_RenderTargetInfo_BuffIcon", spellid, targetSpellIcon);
+					}
+					Int32 spellIcon = MQ.Query<Int32>(targetSpellIcon, false);
 
 
-				if (BuffCheck.BuffInfoCache.TryGetValue(spellid, out var spell))
-				{
-					buffRow.Spell = spell;
-				}
-				else
-				{
-					BuffCheck.BuffCacheLookupQueue.TryAdd(spellid, spellid);
-				}
-				state.TargetBuffs.Add(buffRow);
+					string targetSpellName = String.Empty;
+					if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffName", spellid, out targetSpellName))
+					{
+						targetSpellName = $"${{Spell[{spellid}].Name}}";
+						IntToStringIDRegister("Hub_RenderTargetInfo_BuffName", spellid, targetSpellName);
+					}
+
+					string buffName = MQ.Query<string>(targetSpellName, false);
+					TableRow_BuffInfo buffRow = null;
+
+					if (_targetBuffInfoCache.TryGetValue(spellid, out var tbi))
+					{
+						buffRow = tbi;
+					}
+					else
+					{
+						buffRow = new TableRow_BuffInfo(spellid);
+						_targetBuffInfoCache.Add(spellid, buffRow);
+					}
+					buffRow.Name = buffName;
+					buffRow.iconID = spellIcon;
+					var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+					buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+					buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
+					string targetSpellType = String.Empty;
+					if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffType", spellid, out targetSpellType))
+					{
+						targetSpellType = $"${{Spell[{spellid}].SpellType}}";
+						IntToStringIDRegister("Hub_RenderTargetInfo_BuffType", spellid, targetSpellType);
+					}
+					string spellType = MQ.Query<string>(targetSpellType, false);
+
+					Int32 spellTypeID = 0;
+					if (spellType == "Detrimental") spellTypeID = 0;
+					if (spellType == "Beneficial") spellTypeID = 1;
+					if (spellType == "Beneficial(Group)") spellTypeID = 2;
+					buffRow.SpellType = (Int32)spellTypeID;
+					buffRow.SpellID = spellid;
+
+					if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
+					{
+						buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
+					}
+					else
+					{
+						buffRow.Spell = null;
+					}
+
+					if (duration < 0)
+					{
+						buffRow.SimpleDuration = "(p)";
+					}
+					else if (buffTimeSpan.TotalHours >= 1)
+					{
+						buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
+					}
+					else if (buffTimeSpan.TotalMinutes >= 1)
+					{
+						buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
+					}
+					else
+					{
+						buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
+					}
+					if (duration < 160000d)
+					{
+						buffRow.DisplayName = buffName + $" ( {buffRow.Display_Duration} )";
+					}
+					else
+					{
+						buffRow.DisplayName = buffName;
+					}
+					if (buffName == "NULL") buffName = "Unknown";
 
 
+					if (BuffCheck.BuffInfoCache.TryGetValue(spellid, out var spell))
+					{
+						buffRow.Spell = spell;
+					}
+					else
+					{
+						BuffCheck.BuffCacheLookupQueue.TryAdd(spellid, spellid);
+					}
+					state.TargetBuffs.Add(buffRow);
+
+
+				}
 			}
+			
 		}
 		private static void RefreshPeerAAInfo()
 		{

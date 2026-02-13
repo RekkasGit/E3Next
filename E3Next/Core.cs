@@ -1527,8 +1527,12 @@ namespace MonoCore
 		public extern static double mq_Memory_GetPageFileSize();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		private static extern byte* mq_GetSpawns3_Buffer(out int length);
-
-
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetBuffData(out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetPetBuffData(out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetTargetBuffData(int spawnid,out int length);
 
 		#endregion
 
@@ -2508,22 +2512,26 @@ namespace MonoCore
 			//bodytype desc
 			int slength = MemoryMarshal.Read<Int32>(data);
 			data=data.Slice(4);
-            //to prevent GC from chruning from destroying long lived string, keep a small collection of them
-            //change to byte key based dictionary for even better?
-            string tstring = String.Empty;
-			unsafe
-			{
-				fixed (byte* p = data)
+			//to prevent GC from chruning from destroying long lived string, keep a small collection of them
+			//change to byte key based dictionary for even better?
+			string tstring = String.Empty;
+			if (BodyTypeDesc==String.Empty)
+            {
+				unsafe
 				{
-					tstring = Encoding.ASCII.GetString(p, slength);
+					fixed (byte* p = data)
+					{
+						tstring = Encoding.ASCII.GetString(p, slength);
+					}
 				}
+				if (!_stringLookup.TryGetValue(tstring, out BodyTypeDesc))
+				{
+					_stringLookup.Add(tstring, tstring);
+					BodyTypeDesc = tstring;
+				}
+
 			}
-			if (!_stringLookup.TryGetValue(tstring, out BodyTypeDesc))
-			{
-				_stringLookup.Add(tstring, tstring);
-				BodyTypeDesc = tstring;
-			}
-			data = data.Slice(slength);
+    		data = data.Slice(slength);
 			Buyer = MemoryMarshal.Read<Boolean>(data);
 			data=data.Slice(1);
 			ClassID = MemoryMarshal.Read<Int32>(data);
@@ -2531,18 +2539,22 @@ namespace MonoCore
 			//cleanname
 			slength = MemoryMarshal.Read<Int32>(data);
 			data=data.Slice(4);
-			unsafe
-			{
-				fixed (byte* p = data)
+            if(CleanName==string.Empty)
+            {
+				unsafe
 				{
-					tstring = Encoding.ASCII.GetString(p, slength);
+					fixed (byte* p = data)
+					{
+						tstring = Encoding.ASCII.GetString(p, slength);
+					}
+				}
+				if (!_stringLookup.TryGetValue(tstring, out CleanName))
+				{
+					_stringLookup.Add(tstring, tstring);
+					CleanName = tstring;
 				}
 			}
-			if (!_stringLookup.TryGetValue(tstring, out CleanName))
-			{
-				_stringLookup.Add(tstring, tstring);
-				CleanName = tstring;
-			}
+		
 			data = data.Slice(slength);
 
 			ConColorID = MemoryMarshal.Read<Int32>(data);
@@ -2560,19 +2572,23 @@ namespace MonoCore
 			//displayname
 			slength = MemoryMarshal.Read<Int32>(data);
 			data=data.Slice(4);
-
-            unsafe
+            if (DisplayName == String.Empty)
             {
-                fixed(byte* p = data)
-                {
-					tstring = Encoding.ASCII.GetString(p,slength);
+
+				unsafe
+				{
+					fixed (byte* p = data)
+					{
+						tstring = Encoding.ASCII.GetString(p, slength);
+					}
 				}
-            }
-        	if (!_stringLookup.TryGetValue(tstring, out DisplayName))
-			{
-				_stringLookup.Add(tstring, tstring);
-				DisplayName = tstring;
+				if (!_stringLookup.TryGetValue(tstring, out DisplayName))
+				{
+					_stringLookup.Add(tstring, tstring);
+					DisplayName = tstring;
+				}
 			}
+           
             data = data.Slice(slength);
 			
             Ducking = MemoryMarshal.Read<Boolean>(data);
@@ -2620,18 +2636,23 @@ namespace MonoCore
 			slength = MemoryMarshal.Read<Int32>(data);
 			data=data.Slice(4);
 
-			unsafe
-			{
-				fixed (byte* p = data)
+            if (Name== String.Empty)
+            {
+				unsafe
 				{
-					tstring = Encoding.ASCII.GetString(p, slength);
+					fixed (byte* p = data)
+					{
+						tstring = Encoding.ASCII.GetString(p, slength);
+					}
 				}
+				if (!_stringLookup.TryGetValue(tstring, out Name))
+				{
+					_stringLookup.Add(tstring, tstring);
+					Name = tstring;
+				}
+
 			}
-			if (!_stringLookup.TryGetValue(tstring, out Name))
-			{
-				_stringLookup.Add(tstring, tstring);
-				Name = tstring;
-			}
+			
 			data = data.Slice(slength);
 
 			Named = MemoryMarshal.Read<Boolean>(data);
@@ -2651,18 +2672,22 @@ namespace MonoCore
 			//RaceName
 			slength = MemoryMarshal.Read<Int32>(data);
 			data=data.Slice(4);
-			unsafe
-			{
-				fixed (byte* p = data)
+            if(RaceName==String.Empty)
+            {
+				unsafe
 				{
-					tstring = Encoding.ASCII.GetString(p, slength);
+					fixed (byte* p = data)
+					{
+						tstring = Encoding.ASCII.GetString(p, slength);
+					}
+				}
+				if (!_stringLookup.TryGetValue(tstring, out RaceName))
+				{
+					_stringLookup.Add(tstring, tstring);
+					RaceName = tstring;
 				}
 			}
-			if (!_stringLookup.TryGetValue(tstring, out RaceName))
-			{
-				_stringLookup.Add(tstring, tstring);
-				RaceName = tstring;
-			}
+			
 			data = data.Slice(slength);
 
 			RolePlaying = MemoryMarshal.Read<Boolean>(data);
@@ -2678,18 +2703,23 @@ namespace MonoCore
 			//Suffix
 			slength = MemoryMarshal.Read<Int32>(data);
 			data=data.Slice(4);
-			unsafe
-			{
-				fixed (byte* p = data)
+            if(Suffix==String.Empty)
+            {
+				unsafe
 				{
-					tstring = Encoding.ASCII.GetString(p, slength);
+					fixed (byte* p = data)
+					{
+						tstring = Encoding.ASCII.GetString(p, slength);
+					}
 				}
+				if (!_stringLookup.TryGetValue(tstring, out Suffix))
+				{
+					_stringLookup.Add(tstring, tstring);
+					Suffix = tstring;
+				}
+
 			}
-			if (!_stringLookup.TryGetValue(tstring, out Suffix))
-			{
-				_stringLookup.Add(tstring, tstring);
-				Suffix = tstring;
-			}
+			
 			data = data.Slice(slength);
 
 			Targetable = MemoryMarshal.Read<Boolean>(data);
@@ -2701,17 +2731,20 @@ namespace MonoCore
 			//TypeDesc
 			slength = MemoryMarshal.Read<Int32>(data);
 			data=data.Slice(4);
-			unsafe
-			{
-				fixed (byte* p = data)
+            if(TypeDesc==String.Empty)
+            {
+				unsafe
 				{
-					tstring = Encoding.ASCII.GetString(p, slength);
+					fixed (byte* p = data)
+					{
+						tstring = Encoding.ASCII.GetString(p, slength);
+					}
 				}
-			}
-			if (!_stringLookup.TryGetValue(tstring, out TypeDesc))
-			{
-				_stringLookup.Add(tstring, tstring);
-				TypeDesc = tstring;
+				if (!_stringLookup.TryGetValue(tstring, out TypeDesc))
+				{
+					_stringLookup.Add(tstring, tstring);
+					TypeDesc = tstring;
+				}
 			}
 			data = data.Slice(slength);
 
@@ -2975,13 +3008,13 @@ namespace MonoCore
         public bool Trader;
         public Int32 TargetOfTargetID;
         public bool Targetable;
-        public String Suffix;
-        public bool Stunned;
+        public String Suffix = String.Empty;
+		public bool Stunned;
         public bool Standing;
         public bool Sneaking;
         public bool Sitting;
         public bool RolePlaying;
-        public String RaceName;
+        public String RaceName = String.Empty;
         public Int32 RaceID;
         public Int32 PlayerState;
         public Int32 PetID;
@@ -3204,6 +3237,13 @@ namespace MonoCore
         public void Dispose()
         {
             _dataSize = 0;
+            Suffix = String.Empty;
+            RaceName = String.Empty;
+            DisplayName = String.Empty;
+            Name = String.Empty;
+            BodyTypeDesc = String.Empty;
+            TypeDesc = String.Empty;
+            CleanName = String.Empty;
             TableID = 0;
             Recording_MovementOccured = false;
             Recording_StepCount = 0;
