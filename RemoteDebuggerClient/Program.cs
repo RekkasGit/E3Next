@@ -254,7 +254,17 @@ namespace MQServerClient
             _lastRefesh = Core.StopWatch.ElapsedMilliseconds;
 
         }
-    }
+
+		public List<int> GetIDs()
+		{
+			List<Int32> ids = new List<Int32>();
+            foreach(var spawn in _spawns)
+            {
+                ids.Add(spawn.ID);
+            }
+            return ids;
+		}
+	}
 
     public static class RemoteDebugServerConfig
     {

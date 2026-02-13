@@ -479,9 +479,12 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3debug_list_spawns", x =>
 			{
 
-				foreach(var spawn in _spawns.Get())
+				foreach(var spawnid in _spawns.GetIDs())
 				{
-					MQ.Write($"ID:{spawn.ID} SpawnName:{spawn.Name}  TypeDesc:{spawn.TypeDesc}");
+					if(_spawns.TryByID(spawnid,out var spawn))
+					{
+						MQ.Write($"ID:{spawn.ID} SpawnName:{spawn.Name}  TypeDesc:{spawn.TypeDesc}");
+					}
 				}
 
 			});
@@ -2432,7 +2435,7 @@ namespace E3Core.Processors
 
 			if (boxSpawn != null)
 			{
-				Loot.LootCorpse(boxSpawn, true);
+				Loot.LootCorpse(boxSpawn.ID, true);
 				MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
 			}
 			else

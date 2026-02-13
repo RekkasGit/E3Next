@@ -2325,8 +2325,13 @@ namespace MonoCore
 
     public interface ISpawns
     {
-
+        /// <summary>
+        /// Warning this is super dangerous, be sure to not release control by calling any MQ queries or the like while you have this
+        /// iterator
+        /// </summary>
+        /// <returns></returns>
         IEnumerable<Spawn> Get();
+        List<Int32> GetIDs();
         void RefreshList();
         void EmptyLists();
         bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false);
@@ -2463,7 +2468,17 @@ namespace MonoCore
             _lastRefesh = Core.StopWatch.ElapsedMilliseconds;
 
         }
-    }
+
+		public List<Int32> GetIDs()
+		{
+            List<Int32> returnList = new List<Int32>();
+			foreach (var spawn in _spawns )
+			{
+                returnList.Add(spawn.ID);
+			}
+            return returnList;
+		}
+	}
     /// <summary>
     /// the actual object pooled spawn object that can be used in scripts. 
     /// </summary>

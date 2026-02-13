@@ -97,7 +97,7 @@ namespace E3Core.Processors
 					if (!s.Targetable) continue;
 					if (!s.Aggressive) continue;
 					if (s.CleanName.EndsWith("s pet")) continue;
-					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}",false)) continue;
 					if (s.Distance > 200) break;//mob is too far away, and since it is ordered, kick out.
 											   //its valid to attack!
                     if(_mobsToIgnoreOffAsist.Contains(s.ID)) continue;
