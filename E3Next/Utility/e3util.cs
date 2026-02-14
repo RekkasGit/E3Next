@@ -1763,7 +1763,7 @@ namespace E3Core.Utility
 				data = data.Slice(4);
 
 
-				if (targetTypes == XTargetTypes.XTARGET_AUTO_HATER) continue;
+				if (targetTypes != XTargetTypes.XTARGET_AUTO_HATER) continue;
 
 				if(mobId>0)
 				{
@@ -1802,7 +1802,7 @@ namespace E3Core.Utility
 				data = data.Slice(4);
 				Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
 				data = data.Slice(4);
-				if (targetTypes == XTargetTypes.XTARGET_AUTO_HATER) continue;
+				if (targetTypes != XTargetTypes.XTARGET_AUTO_HATER) continue;
 				if (mobId > 0)
 				{
 					Spawn s;
@@ -1885,6 +1885,51 @@ namespace E3Core.Utility
 
 			return tempMaxAggro;
 		}
+		public unsafe static Int32 GetXtargetLowestHP(ReadOnlySpan<byte> input_data)
+		{
+			ReadOnlySpan<byte> data = input_data;
+			Int32 tempLowestHP = 100;
+			Int32 currentLowestHP = 100;
+			Int32 lowstHPMob = -1;
+			while (data.Length > 0)
+			{
+				XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+
+				Int32 mobId = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				if (targetTypes != XTargetTypes.XTARGET_AUTO_HATER) continue;
+				if (mobId > 0)
+				{
+					
+					Spawn s;
+					if (_spawns.TryByID(mobId, out s))
+					{
+						if (s.TypeDesc != "NPC") continue;
+						if (!s.Targetable) continue;
+						if (!s.Aggressive) continue;
+						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
+						if (s.CleanName.EndsWith("s pet")) continue;
+						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+						if (s.Distance3D > 60) continue;
+
+						tempLowestHP = pctHPs;
+						if (tempLowestHP > 0 && tempLowestHP < currentLowestHP)
+						{
+							currentLowestHP = tempLowestHP;
+							lowstHPMob = mobId;
+						}
+
+					}
+				}
+			}
+			MQ.Write($"Lowest HP is mob:{lowstHPMob} with percent of {currentLowestHP}");
+			return lowstHPMob;
+		}
 		public static Int32 GetXtargetLowestHP()
 		{
 			Int32 tempLowestHP = 100;
@@ -1921,6 +1966,51 @@ namespace E3Core.Utility
 			}
 			MQ.Write($"Lowest HP is mob:{lowstHPMob} with percent of {currentLowestHP}");
 			return lowstHPMob;
+		}
+		public unsafe static Int32 GetXtargetHighestHP(ReadOnlySpan<byte> input_data)
+		{
+			ReadOnlySpan<byte> data = input_data;
+			Int32 tempHighestHP = 100;
+			Int32 currentHighestHP = 0;
+			Int32 highestHPMob = -1;
+			while (data.Length > 0)
+			{
+				XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+
+				Int32 mobId = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				if (targetTypes != XTargetTypes.XTARGET_AUTO_HATER) continue;
+				if (mobId > 0)
+				{
+					Spawn s;
+					if (_spawns.TryByID(mobId, out s))
+					{
+						if (s.TypeDesc != "NPC") continue;
+						if (!s.Targetable) continue;
+						if (!s.Aggressive) continue;
+						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
+						if (s.CleanName.EndsWith("s pet")) continue;
+						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+						if (s.Distance3D > 60) continue;
+
+						tempHighestHP = pctHPs;
+						if (tempHighestHP > 0 && tempHighestHP > currentHighestHP)
+						{
+							currentHighestHP = tempHighestHP;
+							highestHPMob = mobId;
+							if (currentHighestHP == 100) break;
+						}
+
+					}
+				}
+			}
+			MQ.Write($"Hiest HP is mob:{highestHPMob} with percent of {currentHighestHP}");
+			return highestHPMob;
 		}
 		public static Int32 GetXtargetHighestHP()
 		{

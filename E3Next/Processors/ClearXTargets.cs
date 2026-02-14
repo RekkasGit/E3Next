@@ -5,6 +5,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -132,7 +133,7 @@ namespace E3Core.Processors
             if (Enabled)
             {
                 e3util.YieldToEQ();
-                _spawns.RefreshList();
+                _spawns.RefreshList(full:true); //force a full refresh
                 if (MobToAttack > 0)
                 {
                     if (_spawns.TryByID(MobToAttack, out var ts))
@@ -165,11 +166,40 @@ namespace E3Core.Processors
 					}
 					if (FindLowestHPTarget)
 					{
-						MobToAttack = e3util.GetXtargetLowestHP();
+						if(Core._MQ2MonoVersion>=0.412m && !Debugger.IsAttached)
+						{
+							unsafe
+							{
+								int length;
+								byte* p;
+								p = Core.mq_GetXtargetInfo(out length);
+								ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+								MobToAttack = e3util.GetXtargetLowestHP(data);
+							}
+						}
+						else
+						{
+							MobToAttack = e3util.GetXtargetLowestHP();
+						}
 					}
 					else if (FindHighestHPTarget)
 					{
-						MobToAttack = e3util.GetXtargetHighestHP();
+						if (Core._MQ2MonoVersion >= 0.412m && !Debugger.IsAttached)
+						{
+							unsafe
+							{
+								int length;
+								byte* p;
+								p = Core.mq_GetXtargetInfo(out length);
+								ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+								MobToAttack = e3util.GetXtargetHighestHP(data);
+							}
+						}
+						else
+						{
+							MobToAttack = e3util.GetXtargetHighestHP();
+						}
+						
 					}
 					if (MobToAttack<1)
 					{

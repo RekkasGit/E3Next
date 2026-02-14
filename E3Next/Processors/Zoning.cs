@@ -145,7 +145,7 @@ namespace E3Core.Processors
 						{
 							foreach (var s in _spawns.Get().OrderBy(z => z.X))
 							{
-
+								return;//disabled the copy to data/datasize, need to create tspawn a different way.
 								Spawn tspawn = Spawn.Aquire();
 								tspawn.Init(s._data, s._dataSize);
 								tspawn.TableID = npcIDToStartAt;
@@ -199,7 +199,7 @@ namespace E3Core.Processors
 			{
 				if (!e3util.ShouldCheck(ref _nextRecordingCheck, _nextRecordingInterval)) return;
 
-				_spawns.RefreshList();
+				_spawns.RefreshList(full:true);
 
 				foreach (var s in _recordedSpawns.Values)
 				{

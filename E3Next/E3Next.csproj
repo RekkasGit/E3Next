@@ -140,6 +140,7 @@
     <Compile Include="Processors\ClearXTargets.cs" />
     <Compile Include="Processors\Commands.cs" />
     <Compile Include="Processors\DebuffDot.cs" />
+    <Compile Include="Processors\Debug.cs" />
     <Compile Include="Processors\Dispel.cs" />
     <Compile Include="Processors\GiveMe.cs" />
     <Compile Include="Processors\Inventory.cs" />

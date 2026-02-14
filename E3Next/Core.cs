@@ -1409,16 +1409,19 @@ namespace MonoCore
 			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(array, length);
 			Int32 ID = MemoryMarshal.Read<Int32>(data);
 			Spawn s;
-			if (Spawns.SpawnsByID.TryGetValue(ID, out s))
-			{
-				//just update the value
-				try
-				{
-					s.Init(data);
-				}
-				catch (Exception) { }
-			}
-			else
+			
+			//NOTE, this is only ever initazted by mq_GetSpawns3 and that is only called in once place
+			//and this call empties out all the lists now, so no need to check constantly if it exists, just add. 
+			//if (Spawns.SpawnsByID.TryGetValue(ID, out s))
+			//{
+			//	//just update the value
+			//	try
+			//	{
+			//		s.Init(data);
+			//	}
+			//	catch (Exception) { }
+			//}
+			//else
 			{
 				var spawn = Spawn.Aquire();
 				try
@@ -2338,7 +2341,7 @@ namespace MonoCore
 		/// <returns></returns>
 		IEnumerable<Spawn> Get();
 		List<Int32> GetIDs();
-		void RefreshList();
+		void RefreshList(bool full=false);
 		void EmptyLists();
 		bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false);
 		bool TryByName(string name, out Spawn s, Boolean useCurrentCache = false);
@@ -2422,7 +2425,7 @@ namespace MonoCore
 			foreach (var spawn in _spawns) { spawn.Dispose(); }
 			_spawns.Clear();
 		}
-		public void RefreshList()
+		public void RefreshList(bool full = false)
 		{
 			_refershSpawnIdsToDelete.Clear();
 			//need to mark everything not dirty so we know what get spawns gets us.
@@ -2432,7 +2435,7 @@ namespace MonoCore
 			}
 
 			//first we need to check the delta to see if we even need a full download
-			if (Core._MQ2MonoVersion >= 0.412m && !Debugger.IsAttached)
+			if (Core._MQ2MonoVersion >= 0.412m && !Debugger.IsAttached && !full)
 			{
 				//E3.MQ.WriteDelayed("Refreshing spawn delta");
 
@@ -2547,16 +2550,24 @@ namespace MonoCore
 									spawn.Dispose();
 								}
 							}
-
+							//foreach (var spawn in _spawns)
+							//{
+							//	spawn.isDirty = true;
+							//}
 							_lastRefesh = Core.StopWatch.ElapsedMilliseconds;
 							return;
 						}
 					}
 				}
 					
+				if(full)
+				{
+					E3.MQ.WriteDelayed($"Refreshing spawn data full");
+				}
 
-				//E3.MQ.WriteDelayed($"Refreshing spawn data full");
 
+				//time to blow it all away
+				EmptyLists();
 				//request new spawns!
 				if (Core._MQ2MonoVersion >= 0.412m)
 				{
@@ -2570,40 +2581,20 @@ namespace MonoCore
 				{
 					Core.mq_GetSpawns();
 				}
-
-				//spawns has new/updated data, get rid of the non dirty stuff.
-				//can use the other dictionaries to help
-				_spawnsByName.Clear();
-				SpawnsByID.Clear();
 				foreach (var spawn in _spawns)
 				{
-					if (spawn.isDirty)
+					if (spawn.TypeDesc == "PC")
 					{
-						_tmpSpawnList.Add(spawn);
-						if (spawn.TypeDesc == "PC")
+						if (!_spawnsByName.ContainsKey(spawn.Name))
 						{
-							if (!_spawnsByName.ContainsKey(spawn.Name))
-							{
 								_spawnsByName.TryAdd(spawn.Name, spawn);
-							}
 						}
-						SpawnsByID.TryAdd(spawn.ID, spawn);
 					}
-					else
-					{
-						spawn.Dispose();
-					}
+					SpawnsByID.TryAdd(spawn.ID, spawn);
 				}
-				//swap the collections
-				_spawns.Clear();
-				List<Spawn> tmpPtr = _spawns;
-				_spawns = _tmpSpawnList;
-				_tmpSpawnList = tmpPtr;
-
 				//clear the dictionaries and rebuild.
 				//_spawns should have fresh data now!
 				_lastRefesh = Core.StopWatch.ElapsedMilliseconds;
-
 			}
 		}
 		public List<Int32> GetIDs()
@@ -2646,8 +2637,8 @@ namespace MonoCore
 		{
 			isDirty = true;
 			//used for zone copying and maybe remote debuf? from old comments, not sure
-			data.CopyTo(_data);
-			_dataSize = data.Length;
+			//data.CopyTo(_data);
+			//_dataSize = data.Length;
 
 			ID = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);

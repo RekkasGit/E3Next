@@ -122,7 +122,7 @@ namespace MQServerClient
         {
 
         }
-        public void RefreshList()
+        public void RefreshList(bool full = false)
         {
             foreach (var spawn in _spawns)
             {

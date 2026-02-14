@@ -129,11 +129,7 @@ namespace E3Core.Processors
 				ClearBuffTimers();
 
 			});
-			EventProcessor.RegisterCommand("/e3debug_buffTimers", (x) =>
-			{
-				e3util.PrintTimerStatus(_buffTimers, "Buff timers");
-
-			});
+			
 
 			EventProcessor.RegisterCommand("/blockbuff", (x) =>
 			{

@@ -50,61 +50,7 @@ namespace E3Core.UI.Windows.MemStats
 				MemoryStatsWindow.ToggleWindow();
 			}, "toggle memory stats window");
 
-			EventProcessor.RegisterCommand("/e3debug_memory_collect", (x) =>
-			{
-
-				if(x.args.Count>0)
-				{
-					int generation = 0;
-					Int32.TryParse(x.args[0], out generation);
-
-					if (generation < 0)
-					{
-						generation = 0;
-					}
-					else if (generation > 2)
-					{
-						generation = 2;
-					}
-					E3.Bots.Broadcast($"Collecting C# Memory ({generation})");
-					GC.Collect(generation, GCCollectionMode.Forced, false);
-				}
-				else
-				{
-					GC.GetTotalMemory(true);
-					E3.Bots.Broadcast("Collecting C# Memory (All)");
-				}
-
-				
-			}, "toggle memory stats window");
-			EventProcessor.RegisterCommand("/e3debug_memory_counts", (x) =>
-			{
-
-					//events
-				E3.Bots.Broadcast($"Events: MQ:{EventProcessor._mqEventProcessingQueue.Count}, MQC:{EventProcessor._mqCommandProcessingQueue.Count}, E:{EventProcessor._eventProcessingQueue.Count}" +
-				$", FREX:{EventProcessor._filterRegexes.Count}, EL:{EventProcessor.EventList.Count}, CLQ:{EventProcessor.CommandListQueue.Count}");
-				E3.Bots.Broadcast($"PubSub: T:{PubServer._topicMessages.Count}, IM:{PubServer.IncomingChatMessages.Count}, CTS:{PubServer.CommandsToSend.Count}, MQCM:{PubServer.MQChatMessages.Count}");
-				E3.Bots.Broadcast($"Router: TLORequest:{RouterServer._tloRequests.Count}, TLOReponse:{RouterServer._tloResposne.Count}");
-				E3.Bots.Broadcast($"BegForBuffs: Queued Buffs:{BegForBuffs._queuedBuffs.Count}");
-				//NetMQServer.SharedDataClient.TopicUpdates
-				E3.Bots.Broadcast($"Shared Data: UTopics:{NetMQServer.SharedDataClient.TopicUpdates.Count}");
-
-				StringBuilder sb = new StringBuilder();
-
-				bool firstAppend = true;
-				foreach(var pair in NetMQServer.SharedDataClient.TopicUpdates)
-				{
-
-					if (!firstAppend) sb.Append(",");
-					if(firstAppend) firstAppend=false;
-					sb.Append($"{pair.Key}:{pair.Value.Count}");
-					
-				}
-				E3.Bots.Broadcast($"Shared Data user topic Count: UTopics:{NetMQServer.SharedDataClient.TopicUpdates.Count}, Users: {sb.ToString()}");
-
-
-
-			}, "Output collection sizes");
+			
 
 		}
 		public static void ToggleWindow()

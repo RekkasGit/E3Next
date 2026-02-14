@@ -447,21 +447,16 @@ namespace E3Core.Processors
 						{
 							int length;
 							byte* p;
-
 							p = Core.mq_GetXtargetInfo(out length);
 							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
-							//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
-							int dataStartingLength = data.Length;
-
 							Int32 xtargetMaxAggro = e3util.GetXTargetMaxAggro(data);
 							if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
 							PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", xtargetMaxAggro.ToString());
-
 							Int32 xtargetMinAggro = e3util.GetXTargetMinAggro(data);
 							if (xtargetMinAggro < 0) xtargetMinAggro = 0;
 							PubServer.AddTopicMessage("${Me.XTargetMinAggro}", xtargetMinAggro.ToString());
 						}
-					
+
 					}
 					else
 					{
