@@ -1,15 +1,11 @@
-﻿using E3Core.Classes;
-using E3Core.Data;
-using E3Core.Settings;
+﻿using E3Core.Settings;
 using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
+
 
 namespace E3Core.Processors
 {
@@ -132,7 +128,7 @@ namespace E3Core.Processors
         {
             if (Enabled)
             {
-                e3util.YieldToEQ();
+                //e3util.YieldToEQ();
                 _spawns.RefreshList(full:true); //force a full refresh
                 if (MobToAttack > 0)
                 {
@@ -157,7 +153,7 @@ namespace E3Core.Processors
 						{
 							if (_spawns.TryByID(targetedMobID, out var tmob))
 							{
-								if (tmob.TypeDesc == "NPC" && tmob.Targetable && tmob.Aggressive)
+								if (!tmob.Dead && tmob.TypeDesc == "NPC" && tmob.Targetable && tmob.Aggressive)
 								{
 									MobToAttack = tmob.ID;
 								}
@@ -235,7 +231,7 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByID(mobId, out s))
                         {
-                            MQ.Write($"\agClear Targets: \aoIssuing Assist on {s.DisplayName} with id:{s.ID}.");
+                            MQ.Write($"\agClear Targets: \aoIssuing Assist on {s.DisplayName} with id:{s.ID}. who is Dead:{s.Dead}");
                             Assist.AllowControl = true;
                             Assist.AssistOn(s.ID, Zoning.CurrentZone.Id);
                             if (FaceTarget)

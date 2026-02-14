@@ -2612,8 +2612,8 @@ namespace MonoCore
 	/// </summary>
 	public class Spawn : IDisposable
 	{
-		public byte[] _data = new byte[1024];
-		public Int32 _dataSize;
+		//public byte[] _data = new byte[1024];
+		//public Int32 _dataSize;
 		public bool isDirty = false;
 		public static Spawn Aquire()
 		{
@@ -2914,8 +2914,8 @@ namespace MonoCore
 		{
 			isDirty = true;
 			//used for remote debug, to send the representastion of the data over.
-			System.Buffer.BlockCopy(data, 0, _data, 0, length);
-			_dataSize = length;
+			//System.Buffer.BlockCopy(data, 0, _data, 0, length);
+			//_dataSize = length;
 			//end of remote debug
 
 			Int32 cb = 0;
@@ -3379,7 +3379,7 @@ namespace MonoCore
 
 		public void Dispose()
 		{
-			_dataSize = 0;
+			//_dataSize = 0;
 			Suffix = String.Empty;
 			RaceName = String.Empty;
 			DisplayName = String.Empty;
