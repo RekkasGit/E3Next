@@ -1108,7 +1108,7 @@ namespace E3Core.Utility
 				ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 				//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
 				int dataStartingLength = data.Length;
-				for (int i = 0; i < e3util.MaxTempBuffs; i++)
+				for (int i = 0; i < e3util.MaxNPCBuffSlots; i++)
 				{
 					Int32 ID = MemoryMarshal.Read<Int32>(data);
 					data = data.Slice(4);

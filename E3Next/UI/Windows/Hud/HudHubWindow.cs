@@ -2585,7 +2585,15 @@ namespace E3Core.UI.Windows.Hud
 								{
 									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 
-									if (imgui_MenuItem("Pop Out"))
+									if(state.Detached)
+									{
+										if (imgui_MenuItem("Dock"))
+										{
+											state.Detached = false;
+											imgui_Begin_OpenFlagSet(state.WindowName, false);
+										}
+									}
+									else if (imgui_MenuItem("Pop Out"))
 									{
 										state.Detached = true;
 										imgui_Begin_OpenFlagSet(state.WindowName, true);
