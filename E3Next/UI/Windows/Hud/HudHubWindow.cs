@@ -294,7 +294,7 @@ namespace E3Core.UI.Windows.Hud
 			return returnValue;
 		}
 
-		private static List<TableRow_BuffInfo> RefreshBuffInfo_ParseBuffData(ArraySegment<char> input)
+		private static List<TableRow_BuffInfo> RefreshBuffInfo_ParseBuffData(ArraySegment<char> input, Dictionary<int, TableRow_BuffInfo> infoCache)
 		{
 			ReadOnlySpan<char> s = input;
 
@@ -330,14 +330,16 @@ namespace E3Core.UI.Windows.Hud
 					counterNumber = (int)tempBuffer[6];
 					TableRow_BuffInfo buffRow = null;
 
-					if (_personalBuffInfoCache.TryGetValue(spellid, out var tbi))
+					duration = duration * 6 * 1000; //change to milliseconds
+
+					if (infoCache.TryGetValue(spellid, out var tbi))
 					{
 						buffRow = tbi;
 					}
 					else
 					{
 						buffRow = new TableRow_BuffInfo(spellid);
-						_personalBuffInfoCache.Add(spellid, buffRow);
+						infoCache.Add(spellid, buffRow);
 					}
 					buffRow.BuffType = bufftype;
 					buffRow.CounterNumberValue = counterNumber;
@@ -345,10 +347,7 @@ namespace E3Core.UI.Windows.Hud
 					buffRow.BuffType = bufftype;
 					buffRow.CounterTypeID = counterType;
 					buffRow.CounterNumberValue = counterNumber;
-					var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
 					buffRow.Duration = duration;
-					buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
-					buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 					buffRow.SpellType = (Int32)spelltypeid;
 					if (hitcount > 0)
 					{
@@ -386,7 +385,7 @@ namespace E3Core.UI.Windows.Hud
 						//if (E3.CurrentName != userTouse) return;
 						buffState.BuffInfo.Clear();
 						ArraySegment<char> data = new ArraySegment<char>(entry.Data, 0, entry.DataLength);
-						dataInfo = RefreshBuffInfo_ParseBuffData(data);
+						dataInfo = RefreshBuffInfo_ParseBuffData(data,_petBuffInfoCache);
 					}
 				}
 				if (dataInfo != null)
@@ -412,7 +411,9 @@ namespace E3Core.UI.Windows.Hud
 							buffRow.Name = cacheEntry.Name;
 							buffRow.iconID = cacheEntry.SpellIcon;
 							buffRow.MaxDuration_Value = cacheEntry.MaxDuration;
-							var buffTimeSpan = TimeSpan.FromMilliseconds(duration * 6 * 1000);
+							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+							buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
 							{
 								buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
@@ -522,7 +523,7 @@ namespace E3Core.UI.Windows.Hud
 						songState.SongInfo.Clear();
 						debuffState.DebuffInfo.Clear();
 						ArraySegment<char> data = new ArraySegment<char>(entry.Data, 0, entry.DataLength);
-						dataInfo = RefreshBuffInfo_ParseBuffData(data);
+						dataInfo = RefreshBuffInfo_ParseBuffData(data,_personalBuffInfoCache);
 					}
 				}
 				if (dataInfo != null)
@@ -549,6 +550,8 @@ namespace E3Core.UI.Windows.Hud
 							buffRow.iconID = cacheEntry.SpellIcon;
 							buffRow.MaxDuration_Value = cacheEntry.MaxDuration;
 							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+							buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
 							{
 								buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
@@ -1167,6 +1170,8 @@ namespace E3Core.UI.Windows.Hud
 							Int32 casterNameLength = MemoryMarshal.Read<Int32>(data);
 							data = data.Slice(4);
 
+							duration = duration * 6 * 1000;//change to ms
+
 							string CasterName = string.Empty;
 
 							if (casterNameLength > 0)
@@ -1217,7 +1222,7 @@ namespace E3Core.UI.Windows.Hud
 
 							}
 							buffRow.CasterName = CasterName;
-							var buffTimeSpan = TimeSpan.FromMilliseconds(duration * 1000 * 6);//convert from ticks
+							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);//convert from ticks
 							buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
 							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 
@@ -4438,6 +4443,8 @@ namespace E3Core.UI.Windows.Hud
 		}
 		public static Dictionary<string, TableRow_GroupInfo> _groupInfoCache = new Dictionary<string, TableRow_GroupInfo>();
 		public static Dictionary<Int32, TableRow_BuffInfo> _personalBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
+		public static Dictionary<Int32, TableRow_BuffInfo> _petBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
+
 		public static Dictionary<Int32, TableRow_BuffInfo> _targetBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
 
 		public class TableRow_GroupInfo
