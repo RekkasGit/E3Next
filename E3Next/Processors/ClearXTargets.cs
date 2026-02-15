@@ -168,7 +168,7 @@ namespace E3Core.Processors
 							{
 								int length;
 								byte* p;
-								p = Core.mq_GetXtargetInfo(out length);
+								p = MQ.GetXtargetDataPtr(out length);
 								ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 								MobToAttack = e3util.GetXtargetLowestHP(data);
 							}
@@ -186,7 +186,7 @@ namespace E3Core.Processors
 							{
 								int length;
 								byte* p;
-								p = Core.mq_GetXtargetInfo(out length);
+								p = MQ.GetXtargetDataPtr(out length);
 								ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 								MobToAttack = e3util.GetXtargetHighestHP(data);
 							}

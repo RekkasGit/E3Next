@@ -260,6 +260,11 @@ namespace TestCore
                 length = 0;
                 return null;
 			}
+
+			public unsafe byte* GetXtargetDataPtr(out int length)
+			{
+				throw new NotImplementedException();
+			}
 		}
 
     }

@@ -170,7 +170,7 @@ namespace E3Core.Processors
 						int length;
 						byte* p;
 
-						p = Core.mq_GetXtargetInfo(out length);
+						p =MQ.GetXtargetDataPtr(out length);
 						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 						//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
 						int dataStartingLength = data.Length;

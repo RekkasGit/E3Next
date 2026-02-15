@@ -1536,13 +1536,13 @@ namespace MonoCore
 		public static extern byte* mq_GetBuffData(out int length);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetPetBuffData(out int length);
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern byte* mq_GetTargetBuffData(int spawnid, out int length);
+	
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetSpawns3_Delta(out int length);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetXtargetInfo(out int length);
-
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetTargetBuffData(int spawnid, out int length);
 
 		#endregion
 
@@ -1609,6 +1609,7 @@ namespace MonoCore
 		string GetFocusedWindowName();
 		string GetHoverWindowName();
 		unsafe byte* GetPetBuffDataPtr(out int length);
+		unsafe byte* GetXtargetDataPtr(out int length);
 		unsafe byte* GetSpawns3_DeltaPtr(out int length);
 	}
 	public class MQ : IMQ
@@ -1647,6 +1648,23 @@ namespace MonoCore
 			length = _petBuffDataPtrLength;
 			return _petBuffDataPtr;
 		}
+
+		private int _getXTargetDataPtrLength = 0;
+		private unsafe byte* _getXTargetDataPtr;
+		private Int64 _getXTargetDataRefreshInterval = 250;
+		private Int64 _getXTargetDataRefreshTimeStamp;
+		public unsafe byte* GetXtargetDataPtr(out int length)
+		{
+			if (!e3util.ShouldCheck(ref _getXTargetDataRefreshTimeStamp, _getXTargetDataRefreshInterval))
+			{
+				length = _getXTargetDataPtrLength;
+				return _getXTargetDataPtr;
+			}
+			_getXTargetDataPtr = Core.mq_GetXtargetInfo(out _getXTargetDataPtrLength);
+			length = _getXTargetDataPtrLength;
+			return _getXTargetDataPtr;
+		}
+	
 		private int _getSpawns3_DeltaLength;
 		private unsafe byte* _getSpawns3_DeltaPtr;
 		public unsafe byte* GetSpawns3_DeltaPtr(out int length)
@@ -2460,7 +2478,7 @@ namespace MonoCore
 			}
 
 			//first we need to check the delta to see if we even need a full download
-			if (Core._MQ2MonoVersion >= 0.412m && !Debugger.IsAttached && !full)
+			if ((Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached) && !full)
 			{
 				//E3.MQ.WriteDelayed("Refreshing spawn delta");
 
@@ -2470,7 +2488,7 @@ namespace MonoCore
 					unsafe
 					{
 						int length;
-						byte* p = Core.mq_GetSpawns3_Delta(out length);
+						byte* p = E3.MQ.GetSpawns3_DeltaPtr(out length);
 
 						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 						int dataStartingLength = data.Length;

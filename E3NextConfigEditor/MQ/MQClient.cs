@@ -79,6 +79,11 @@ namespace E3NextConfigEditor.MQ
 			throw new NotImplementedException();
 		}
 
+		public unsafe byte* GetXtargetDataPtr(out int length)
+		{
+			throw new NotImplementedException();
+		}
+
 		public T Query<T>(string query, bool delayPossible = true)
 		{
 			string mqReturnValue = _tloClient.RequestData(query);

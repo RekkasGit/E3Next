@@ -51,7 +51,8 @@ namespace MonoCore
         SpellDataEffectCount,
         SpellDataEffect,
 		GetPetBuffData,
-        GetSpawns3Delta
+        GetSpawns3Delta,
+        GetXTargetData
 
 	}
 
@@ -68,7 +69,8 @@ namespace MonoCore
 		GetSpelLDataEffectCount,
 		GetSpellDataEffect,
 		GetPetBuffData,
-        GetSpawns3Delta
+        GetSpawns3Delta,
+        GetXTargetData
 
 	}
 	public static class RemoteDebugServerConfig
@@ -341,6 +343,26 @@ namespace MonoCore
 									message.payloadLength = length;//32bit length at the 1st 4 bytes
 								}
 								RouterServer._responseQueues[(int)ResponseQueueTypes.GetSpawns3Delta].Enqueue(message);
+								foundRequest = true;
+								foundRequestCount++;
+							}
+
+						}
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetXTargetData];
+						while (q.Count > 0)
+						{
+							RouterMessage message;
+							if (q.TryDequeue(out message))
+							{
+								unsafe
+								{
+									int length = 0;
+									byte* p = MQ.GetXtargetDataPtr(out length);
+									ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(p, length);
+									span.CopyTo(message.payload);
+									message.payloadLength = length;//32bit length at the 1st 4 bytes
+								}
+								RouterServer._responseQueues[(int)ResponseQueueTypes.GetXTargetData].Enqueue(message);
 								foundRequest = true;
 								foundRequestCount++;
 							}
@@ -1149,6 +1171,7 @@ namespace MonoCore
 		Int32 SpellDataGetLineCount(string query);
         unsafe byte* GetPetBuffDataPtr(out int length);
         unsafe byte* GetSpawns3_DeltaPtr(out int length);
+        unsafe byte* GetXtargetDataPtr(out int length);
 	}
     public class MQ : IMQ
     {   //**************************************************************************************************
@@ -1168,8 +1191,6 @@ namespace MonoCore
 		}
 		private int _petBuffDataPtrLength = 0;
 		private unsafe byte* _petBuffDataPtr;
-		private Int64 _petBuffDataRefreshInterval = 250;
-		private Int64 _petBuffDataRefreshTimeStamp;
 		public unsafe byte* GetPetBuffDataPtr(out int length)
 		{	
 			_petBuffDataPtr = Core.mq_GetPetBuffData(out _petBuffDataPtrLength);
@@ -1184,6 +1205,16 @@ namespace MonoCore
 			_getSpawns3_DeltaPtr = Core.mq_GetSpawns3_Delta(out _getSpawns3_DeltaLength);
 			length = _getSpawns3_DeltaLength;
 			return _getSpawns3_DeltaPtr;
+		}
+
+
+		private int _getXTargetDataPtrLength = 0;
+		private unsafe byte* _getXTargetDataPtr;
+		public unsafe byte* GetXtargetDataPtr(out int length)
+		{
+			_getXTargetDataPtr = Core.mq_GetXtargetInfo(out _getXTargetDataPtrLength);
+			length = _getXTargetDataPtrLength;
+			return _getXTargetDataPtr;
 		}
 
 		public static Int64 _maxMillisecondsToWork = 40;

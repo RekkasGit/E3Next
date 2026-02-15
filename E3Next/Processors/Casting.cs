@@ -2880,7 +2880,7 @@ namespace E3Core.Processors
 		{
 			Int32 buff_spellID = MQ.Query<Int32>($"${{Spell[{buffName}].ID}}");
 			return_duration = 0;
-			if (Core._MQ2MonoVersion >= 0.412m && !Debugger.IsAttached)
+			if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
 			{
 				unsafe
 				{
