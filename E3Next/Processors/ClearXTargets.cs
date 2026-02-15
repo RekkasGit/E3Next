@@ -162,7 +162,7 @@ namespace E3Core.Processors
 					}
 					if (FindLowestHPTarget)
 					{
-						if(Core._MQ2MonoVersion>=0.412m && !Debugger.IsAttached)
+						if(Core._MQ2MonoVersion>=0.412m || Debugger.IsAttached)
 						{
 							unsafe
 							{
@@ -180,7 +180,7 @@ namespace E3Core.Processors
 					}
 					else if (FindHighestHPTarget)
 					{
-						if (Core._MQ2MonoVersion >= 0.412m && !Debugger.IsAttached)
+						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
 						{
 							unsafe
 							{

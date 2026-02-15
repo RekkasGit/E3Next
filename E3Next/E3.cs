@@ -441,7 +441,7 @@ namespace E3Core.Processors
 				{
 					StateUpdates_AAInformation();
 					
-					if (Core._MQ2MonoVersion>=0.412m && !Debugger.IsAttached)
+					if (Core._MQ2MonoVersion>=0.412m || Debugger.IsAttached)
 					{
 						unsafe
 						{
