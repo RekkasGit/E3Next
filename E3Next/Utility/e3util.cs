@@ -1234,6 +1234,7 @@ namespace E3Core.Utility
 						{
 							BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
 						}
+						duration = duration * 6 * 1000;
 						buffInfoStringBuilder.Append(spellID);
 						buffInfoStringBuilder.Append(",");
 						buffInfoStringBuilder.Append(duration);
@@ -1480,6 +1481,7 @@ namespace E3Core.Utility
 						}
 						else
 						{
+
 							buffInfoStringBuilder.Append(spellID);
 							buffInfoStringBuilder.Append(",");
 							buffInfoStringBuilder.Append(duration);
