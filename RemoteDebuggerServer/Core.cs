@@ -50,7 +50,8 @@ namespace MonoCore
         Spawn,
         SpellDataEffectCount,
         SpellDataEffect,
-		GetPetBuffData
+		GetPetBuffData,
+        GetSpawns3Delta
 
 	}
 
@@ -66,7 +67,8 @@ namespace MonoCore
 		GetSpawns,
 		GetSpelLDataEffectCount,
 		GetSpellDataEffect,
-		GetPetBuffData
+		GetPetBuffData,
+        GetSpawns3Delta
 
 	}
 	public static class RemoteDebugServerConfig
@@ -319,6 +321,26 @@ namespace MonoCore
 									message.payloadLength = length;//32bit length at the 1st 4 bytes
                                 }
 								RouterServer._responseQueues[(int)ResponseQueueTypes.GetPetBuffData].Enqueue(message);
+								foundRequest = true;
+								foundRequestCount++;
+							}
+
+						}
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetSpawns3Delta];
+						while (q.Count > 0)
+						{
+							RouterMessage message;
+							if (q.TryDequeue(out message))
+							{
+								unsafe
+								{
+									int length = 0;
+									byte* p = MQ.GetSpawns3_DeltaPtr(out length);
+									ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(p, length);
+									span.CopyTo(message.payload);
+									message.payloadLength = length;//32bit length at the 1st 4 bytes
+								}
+								RouterServer._responseQueues[(int)ResponseQueueTypes.GetSpawns3Delta].Enqueue(message);
 								foundRequest = true;
 								foundRequestCount++;
 							}
@@ -1126,7 +1148,7 @@ namespace MonoCore
 		string SpellDataGetLine(string query, Int32 line);
 		Int32 SpellDataGetLineCount(string query);
         unsafe byte* GetPetBuffDataPtr(out int length);
-
+        unsafe byte* GetSpawns3_DeltaPtr(out int length);
 	}
     public class MQ : IMQ
     {   //**************************************************************************************************
@@ -1154,6 +1176,16 @@ namespace MonoCore
 			length = _petBuffDataPtrLength;
 			return _petBuffDataPtr;
 		}
+
+		private int _getSpawns3_DeltaLength;
+		private unsafe byte* _getSpawns3_DeltaPtr;
+		public unsafe byte* GetSpawns3_DeltaPtr(out int length)
+		{
+			_getSpawns3_DeltaPtr = Core.mq_GetSpawns3_Delta(out _getSpawns3_DeltaLength);
+			length = _getSpawns3_DeltaLength;
+			return _getSpawns3_DeltaPtr;
+		}
+
 		public static Int64 _maxMillisecondsToWork = 40;
         public static Int64 _sinceLastDelay = 0;
         public static Int64 _totalQueryCounts;

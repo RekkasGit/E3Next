@@ -1609,6 +1609,7 @@ namespace MonoCore
 		string GetFocusedWindowName();
 		string GetHoverWindowName();
 		unsafe byte* GetPetBuffDataPtr(out int length);
+		unsafe byte* GetSpawns3_DeltaPtr(out int length);
 	}
 	public class MQ : IMQ
 	{   //**************************************************************************************************
@@ -1645,6 +1646,14 @@ namespace MonoCore
 			_petBuffDataPtr = Core.mq_GetPetBuffData(out _petBuffDataPtrLength);
 			length = _petBuffDataPtrLength;
 			return _petBuffDataPtr;
+		}
+		private int _getSpawns3_DeltaLength;
+		private unsafe byte* _getSpawns3_DeltaPtr;
+		public unsafe byte* GetSpawns3_DeltaPtr(out int length)
+		{
+			_getSpawns3_DeltaPtr = Core.mq_GetSpawns3_Delta(out _getSpawns3_DeltaLength);
+			length = _getSpawns3_DeltaLength;
+			return _getSpawns3_DeltaPtr;
 		}
 		public Int32 SpellDataGetLineCount(string query)
 		{

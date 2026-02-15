@@ -108,7 +108,7 @@ namespace E3Core.Processors
 						byte* p;
 						using (var tarce2 = _log.Trace("deltaspeedtest_mqcall"))
 						{
-							p = Core.mq_GetSpawns3_Delta(out length);
+							p = MQ.GetSpawns3_DeltaPtr(out length);
 						}
 
 						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);

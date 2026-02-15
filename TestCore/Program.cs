@@ -254,6 +254,12 @@ namespace TestCore
                 length = 0;
                 return null;
 			}
+
+			public unsafe byte* GetSpawns3_DeltaPtr(out int length)
+			{
+                length = 0;
+                return null;
+			}
 		}
 
     }
