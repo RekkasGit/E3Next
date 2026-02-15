@@ -3,10 +3,12 @@ using MonoCore;
 using NetMQ;
 using NetMQ.Sockets;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -331,11 +333,13 @@ namespace MQServerClient
         public TimeSpan RecieveTimeout = new TimeSpan(0, 5, 30);
         byte[] _payload = new byte[1000 * 86];
         Int32 _payloadLength = 0;
-
-        public NetMQMQ()
+		byte[] _getPetBuffDataArray = new byte[1024*1024];
+        GCHandle _getPetBuffDataArrayHandle;
+		public NetMQMQ()
         {
-           
-            _requestSocket = new DealerSocket();
+			_getPetBuffDataArrayHandle = GCHandle.Alloc(_getPetBuffDataArray, GCHandleType.Pinned);
+
+			_requestSocket = new DealerSocket();
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
             _requestSocket.Options.SendHighWatermark = 100;
             _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
@@ -951,6 +955,67 @@ namespace MQServerClient
 		public string GetHoverWindowName()
 		{
 			return "NULL";
+		}
+
+	
+		public unsafe byte* GetPetBuffDataPtr(out int length)
+		{
+			if (_requestMsg.IsInitialised)
+			{
+				_requestMsg.Close();
+			}
+			_requestMsg.InitEmpty();
+			//send empty frame
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+            _payloadLength = 0;
+
+			_requestMsg.Close();
+
+			//include command+ length in payload
+			_requestMsg.InitPool(_payloadLength + 8);
+			unsafe
+			{
+				fixed (byte* src = _payload)
+				{
+
+					fixed (byte* dest = _requestMsg.Data)
+					{   //4 bytes = commandtype
+						//4 bytes = length
+						//N-bytes = payload
+						byte* tPtr = dest;
+						*((Int32*)tPtr) = 10;//GetPetBuffDataPtr
+						tPtr += 4;
+						*(Int32*)tPtr = _payloadLength; //init/modify
+						tPtr += 4;
+						Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+					}
+				}
+			}
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+
+			//recieve the empty frame
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			//data is back, lets parse out the data
+            //first get the length out of the first 4 bytes.
+            ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(_requestMsg.Data,0,_requestMsg.Size);
+            length = _requestMsg.Size;
+            data.CopyTo(_getPetBuffDataArray);
+			_requestMsg.Close();
+			IntPtr ptr = _getPetBuffDataArrayHandle.AddrOfPinnedObject();
+            return (byte*)ptr.ToPointer();
+
 		}
 	}
 

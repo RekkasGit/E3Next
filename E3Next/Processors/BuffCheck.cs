@@ -1130,8 +1130,9 @@ namespace E3Core.Processors
 						{
 							foreach (var checkforItem in spell.CheckForCollection.Keys)
 							{
-								hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{checkforItem}]}}]}}");
-								hasCachedCheckFor = MQ.Query<bool>($"${{Bool[${{Spawn[${{Me.Pet.ID}}].Buff[{checkforItem}]}}]}}");
+								hasCheckFor = Casting.TryGetPetBuffDuration(checkforItem, out var _);
+								//hasCheckFor = MQ.Query<bool>($"${{Bool[${{Me.Pet.Buff[{checkforItem}]}}]}}");
+								//hasCachedCheckFor = MQ.Query<bool>($"${{Bool[${{Spawn[${{Me.Pet.ID}}].Buff[{checkforItem}]}}]}}");
 								if (hasCheckFor || hasCachedCheckFor)
 								{
 

@@ -1031,6 +1031,7 @@ namespace E3Core.Utility
 				}
 			}
 		}
+		
 
 		private static string GetPetBuffDataForPubSubHighPerf()
 		{
@@ -1039,7 +1040,7 @@ namespace E3Core.Utility
 				buffInfoStringBuilder.Clear();
 
 				int length;
-				byte* p = Core.mq_GetPetBuffData(out length);
+				byte* p = MQ.GetPetBuffDataPtr(out length);
 
 				if (length == 0)
 				{

@@ -43,8 +43,33 @@ namespace MonoCore
     /// </summary>
     /// 
 
+    public enum ResponseQueueTypes
+    { 
+    
+        TLO=1,
+        Spawn,
+        SpellDataEffectCount,
+        SpellDataEffect,
+		GetPetBuffData
 
-    public static class RemoteDebugServerConfig
+	}
+
+
+    public enum RequestQueueTypes
+	{
+		TLO = 1,
+		Command,
+		Write,
+		NewCommand,
+		RemoveCommand,
+		ClearCommand,
+		GetSpawns,
+		GetSpelLDataEffectCount,
+		GetSpellDataEffect,
+		GetPetBuffData
+
+	}
+	public static class RemoteDebugServerConfig
     {
         //used for browser queries
         public static Int32 HTTPPort = 12345;
@@ -126,27 +151,31 @@ namespace MonoCore
                     foundRequest = false;
                     //using (_log.Trace())
                     {
-                        //check all the queues where work may be available
-                        while (RouterServer._tloRequets.Count > 0)
+                        ConcurrentQueue<RouterMessage> q;
+						//check all the queues where work may be available
+
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.TLO];
+						while (q.Count > 0)
                         {
                             RouterMessage message;
-                            RouterServer._tloRequets.TryDequeue(out message);
+							q.TryDequeue(out message);
 
                             //lets pull out the string
                             string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
                             string response = MQ.Query<string>(query);
 
                             message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
-                            RouterServer._tloResposne.Enqueue(message);
+
+                            RouterServer._responseQueues[(int)ResponseQueueTypes.TLO].Enqueue(message);
                             foundRequest = true;
                             foundRequestCount++;
 
                         }
-
-                        while (RouterServer._commandRequests.Count > 0)
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.Command];
+						while (q.Count > 0)
                         {
                             RouterMessage message;
-                            if (RouterServer._commandRequests.TryDequeue(out message))
+                            if (q.TryDequeue(out message))
                             {
                                 try
                                 {
@@ -180,10 +209,11 @@ namespace MonoCore
                             foundRequest = true;
                             foundRequestCount++;
                         }
-                        while (RouterServer._writeRequests.Count > 0)
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.Write];
+						while (q.Count > 0)
                         {
                             RouterMessage message;
-                            if (RouterServer._writeRequests.TryDequeue(out message))
+                            if (q.TryDequeue(out message))
                             {
                                 try
                                 {
@@ -199,10 +229,11 @@ namespace MonoCore
                             foundRequest = true;
                             foundRequestCount++;
                         }
-                        while (RouterServer._newCommandRequests.Count > 0)
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.NewCommand];
+						while (q.Count > 0)
                         {
                             RouterMessage message;
-                            if (RouterServer._newCommandRequests.TryDequeue(out message))
+                            if (q.TryDequeue(out message))
                             {
                                 try
                                 {
@@ -218,11 +249,11 @@ namespace MonoCore
                             foundRequest = true;
                             foundRequestCount++;
                         }
-
-                        while (RouterServer._clearCommandRequests.Count > 0)
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.ClearCommand];
+						while ( q.Count > 0)
                         {
                             RouterMessage message;
-                            if (RouterServer._clearCommandRequests.TryDequeue(out message))
+                            if (q.TryDequeue(out message))
                             {
                                 try
                                 {
@@ -237,10 +268,11 @@ namespace MonoCore
                             foundRequest = true;
                             foundRequestCount++;
                         }
-                        while (RouterServer._removeCommandRequests.Count > 0)
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.RemoveCommand];
+						while (q.Count > 0)
                         {
                             RouterMessage message;
-                            if (RouterServer._removeCommandRequests.TryDequeue(out message))
+                            if (q.TryDequeue(out message))
                             {
                                 try
                                 {
@@ -257,46 +289,68 @@ namespace MonoCore
                             foundRequest = true;
                             foundRequestCount++;
                         }
-
-                        while (RouterServer._getSpawnsRequests.Count > 0)
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetSpawns];
+						while (q.Count > 0)
                         {
                             RouterMessage message;
-                            if (RouterServer._getSpawnsRequests.TryDequeue(out message))
+                            if (q.TryDequeue(out message))
                             {
                                 
                                 IEnumerable<Spawn> spawnList = Spawns.Get();
                                 message.spawns = spawnList.ToList();
-                                RouterServer._getSpawnsResponse.Enqueue(message);
+								RouterServer._responseQueues[(int)ResponseQueueTypes.Spawn].Enqueue(message);
                                 foundRequest = true;
                                 foundRequestCount++;
                             }
                            
                         }
-						while (RouterServer._getSpellDataEffectCountRequest.Count > 0)
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetPetBuffData];
+						while (q.Count > 0)
 						{
 							RouterMessage message;
-							if (RouterServer._getSpellDataEffectCountRequest.TryDequeue(out message))
+							if (q.TryDequeue(out message))
+							{
+                                unsafe
+                                {
+                                    int length = 0;
+                                    byte* p = MQ.GetPetBuffDataPtr(out length);
+                                    ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(p, length);
+                                    span.CopyTo(message.payload);
+									message.payloadLength = length;//32bit length at the 1st 4 bytes
+                                }
+								RouterServer._responseQueues[(int)ResponseQueueTypes.GetPetBuffData].Enqueue(message);
+								foundRequest = true;
+								foundRequestCount++;
+							}
+
+						}
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetSpelLDataEffectCount];
+						while (q.Count > 0)
+                    	{
+							RouterMessage message;
+							if (q.TryDequeue(out message))
 							{
 								string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
 								string response = MQ.SpellDataGetLineCount(query).ToString();
 
 								message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
-								RouterServer._getSpellDataEffectCountResponse.Enqueue(message);
+								RouterServer._responseQueues[(int)ResponseQueueTypes.SpellDataEffectCount].Enqueue(message);
+								
 							}
 
 						}
-						while (RouterServer._getSpellDataEffectRequest.Count > 0)
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetSpellDataEffect];
+						while (q.Count > 0)
 						{
 							RouterMessage message;
-							if (RouterServer._getSpellDataEffectRequest.TryDequeue(out message))
+							if (q.TryDequeue(out message))
 							{
 								string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
 								string[] qparams = query.Split(',');
 								string response = MQ.SpellDataGetLine(qparams[0], Int32.Parse(qparams[1]));
 								message.payloadLength = System.Text.Encoding.Default.GetBytes(response, 0, response.Length, message.payload, 0);
-								RouterServer._getSpellDataEffectResponse.Enqueue(message);
-							}
-
+								RouterServer._responseQueues[(int)ResponseQueueTypes.SpellDataEffect].Enqueue(message);
+                			}
 						}
 						///FOR THE WEB SERVER, NOT IN USE ANYMORE
 
@@ -364,49 +418,7 @@ namespace MonoCore
 
     }
 
-    //CONFIGURE WEB SERVER
-    public class Module : NancyModule
-    {
-        public Module()
-        {
-
-            Get["/TLO/{name}"] = parameters =>
-            {
-
-                MainProcessor._queuedQuery.Enqueue(parameters.name);
-
-
-                while (MainProcessor._queuedQueryResposne.Count == 0)
-                {
-                    System.Threading.Thread.Sleep(0);
-                }
-
-                string response;
-                MainProcessor._queuedQueryResposne.TryDequeue(out response);
-
-                return response;
-            };
-
-            Get["/command/{command}"] = parameters =>
-            {
-
-
-                MainProcessor._queuedCommands.Enqueue(@"/" + parameters.command);
-
-                return "OK";
-            };
-
-            Get["/write/{message}"] = parameters =>
-            {
-
-
-                MainProcessor._queuedWrite.Enqueue(parameters.message);
-
-                return "OK";
-            };
-
-        }
-    }
+   
 
     //remote debug object
     public class RouterMessage : IDisposable
@@ -414,7 +426,7 @@ namespace MonoCore
         public byte[] identity = new byte[1024 * 86]; //86k to get on the LOH
         public Int32 identiyLength = 0;
         public Int32 commandType = 0;
-        public byte[] payload = new byte[1024 * 86];
+        public byte[] payload = new byte[1024 *1024];
         public Int32 payloadLength = 0;
         public IEnumerable<Spawn> spawns;
         public static RouterMessage Aquire()
@@ -446,19 +458,14 @@ namespace MonoCore
         Int64 counter = 0;
         static TimeSpan timeout = new TimeSpan(0, 0, 0, 5);
 
-        public static ConcurrentQueue<RouterMessage> _tloRequets = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _tloResposne = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _commandRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _writeRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _newCommandRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _clearCommandRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _removeCommandRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _getSpawnsRequests = new ConcurrentQueue<RouterMessage>();
-        public static ConcurrentQueue<RouterMessage> _getSpawnsResponse = new ConcurrentQueue<RouterMessage>();
-		public static ConcurrentQueue<RouterMessage> _getSpellDataEffectCountRequest = new ConcurrentQueue<RouterMessage>();
-		public static ConcurrentQueue<RouterMessage> _getSpellDataEffectCountResponse = new ConcurrentQueue<RouterMessage>();
-		public static ConcurrentQueue<RouterMessage> _getSpellDataEffectRequest = new ConcurrentQueue<RouterMessage>();
-		public static ConcurrentQueue<RouterMessage> _getSpellDataEffectResponse = new ConcurrentQueue<RouterMessage>();
+        //public static ConcurrentQueue<RouterMessage> _tloResposne = new ConcurrentQueue<RouterMessage>();
+        //public static ConcurrentQueue<RouterMessage> _getSpawnsResponse = new ConcurrentQueue<RouterMessage>();
+		//public static ConcurrentQueue<RouterMessage> _getSpellDataEffectCountResponse = new ConcurrentQueue<RouterMessage>();
+		//public static ConcurrentQueue<RouterMessage> _getSpellDataEffectResponse = new ConcurrentQueue<RouterMessage>();
+
+
+        public static Dictionary<Int32, ConcurrentQueue<RouterMessage>> _requestQueues = new Dictionary<int, ConcurrentQueue<RouterMessage>>();
+		public static Dictionary<Int32, ConcurrentQueue<RouterMessage>> _responseQueues = new Dictionary<int, ConcurrentQueue<RouterMessage>>();
 
 
 
@@ -467,7 +474,17 @@ namespace MonoCore
 
             _serverThread = Task.Factory.StartNew(() => { Process(); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
-        }
+			foreach (RequestQueueTypes qt in (RequestQueueTypes[])Enum.GetValues(typeof(RequestQueueTypes)))
+			{
+                _requestQueues.Add((int)qt, new ConcurrentQueue<RouterMessage>());
+			}
+
+			foreach (ResponseQueueTypes qt in (ResponseQueueTypes[])Enum.GetValues(typeof(ResponseQueueTypes)))
+			{
+				_responseQueues.Add((int)qt, new ConcurrentQueue<RouterMessage>());
+			}
+
+		}
 
         private void Process()
         {
@@ -539,48 +556,15 @@ namespace MonoCore
                                 }
                             }
                         }
+						if(_requestQueues.TryGetValue(message.commandType,out var q))
+                        {
 
-                        if (message.commandType == 1)
-                        {
-                            _tloRequets.Enqueue(message);
+                            q.Enqueue(message);
                         }
-                        else if (message.commandType == 2)
-                        {
-                            _commandRequests.Enqueue(message);
-                        }
-                        else if (message.commandType == 3)
-                        {
-                            _writeRequests.Enqueue(message);
-                        }
-                        else if (message.commandType == 4)
-                        {
-                            _newCommandRequests.Enqueue(message);
-                        }
-                        else if (message.commandType == 5)
-                        {
-                            _clearCommandRequests.Enqueue(message);
-                        }
-                        else if (message.commandType == 6)
-                        {
-                            _removeCommandRequests.Enqueue(message);
-                        }
-                        else if (message.commandType == 7)
-                        {
-                            _getSpawnsRequests.Enqueue(message);
-                        }
-						else if (message.commandType == 8)
-						{
-							_getSpellDataEffectCountRequest.Enqueue(message);
-						}
-						else if (message.commandType == 9)
-						{
-							_getSpellDataEffectRequest.Enqueue(message);
-						}
-						else
+                        else
                         {
                             message.Dispose();
                         }
-
 
                         //should not have more here, drain any remaining and close out.
                         while (routerMessage.HasMore)
@@ -596,67 +580,114 @@ namespace MonoCore
                         routerMessage.Close();
                         routerMessage.InitEmpty();
                         counter++;
-
-
-
-
                     }
-                    //process all the responses that we have to give
-                    while (_tloResposne.Count > 0)
-                    {
-						SendResponse(_tloResposne);
 
-					}
-					while (_getSpellDataEffectCountResponse.Count > 0)
-					{
-						SendResponse(_getSpellDataEffectCountResponse);
-					}
-					while (_getSpellDataEffectResponse.Count > 0)
-					{
-						SendResponse(_getSpellDataEffectResponse);
-					}
-					while (_getSpawnsResponse.Count > 0)
+                    foreach(var q in _responseQueues)
                     {
-                        RouterMessage message;
-                        _getSpawnsResponse.TryDequeue(out message);
-                        if (message != null && message.spawns!=null)
+                        if(q.Key==(int)ResponseQueueTypes.Spawn)
                         {
-                            try
-                            {
-                                foreach(var spawn in message.spawns)
-                                {
-                                    routerResponse.InitPool(message.identiyLength);
-                                    Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
-                                    _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                                    routerResponse.Close();
-                                    routerResponse.InitEmpty();
-                                    _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                                    routerResponse.Close();
-                                    routerResponse.InitPool(spawn._dataSize);
-                                    Buffer.BlockCopy(spawn._data, 0, routerResponse.Data, 0, spawn._dataSize);
-                                    _rpcRouter.TrySend(ref routerResponse, timeout, false);
-                                    routerResponse.Close();
-                                }
-                                //we need to send a 'done' response
-                                routerResponse.InitPool(message.identiyLength);
-                                Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
-                                _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                                routerResponse.Close();
-                                routerResponse.InitEmpty();
-                                _rpcRouter.TrySend(ref routerResponse, timeout, true);
-                                routerResponse.Close();
-                                routerResponse.InitEmpty();
-                                _rpcRouter.TrySend(ref routerResponse, timeout, false);
-                                routerResponse.Close();
+							RouterMessage message;
+							q.Value.TryDequeue(out message);
+							if (message != null && message.spawns != null)
+							{
+								try
+								{
+									foreach (var spawn in message.spawns)
+									{
+										routerResponse.InitPool(message.identiyLength);
+										Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
+										_rpcRouter.TrySend(ref routerResponse, timeout, true);
+										routerResponse.Close();
+										routerResponse.InitEmpty();
+										_rpcRouter.TrySend(ref routerResponse, timeout, true);
+										routerResponse.Close();
+										routerResponse.InitPool(spawn._dataSize);
+										Buffer.BlockCopy(spawn._data, 0, routerResponse.Data, 0, spawn._dataSize);
+										_rpcRouter.TrySend(ref routerResponse, timeout, false);
+										routerResponse.Close();
+									}
+									//we need to send a 'done' response
+									routerResponse.InitPool(message.identiyLength);
+									Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
+									_rpcRouter.TrySend(ref routerResponse, timeout, true);
+									routerResponse.Close();
+									routerResponse.InitEmpty();
+									_rpcRouter.TrySend(ref routerResponse, timeout, true);
+									routerResponse.Close();
+									routerResponse.InitEmpty();
+									_rpcRouter.TrySend(ref routerResponse, timeout, false);
+									routerResponse.Close();
 
-                            }
-                            finally
-                            {
-                                //put back into the object pool.
-                                message.Dispose();
-                            }
-                        }
+								}
+								finally
+								{
+									//put back into the object pool.
+									message.Dispose();
+								}
+							}
+						}
+                        else
+                        {
+							SendResponse(q.Value);
+						}
                     }
+
+     //               //process all the responses that we have to give
+     //               while (_tloResposne.Count > 0)
+     //               {
+					//	SendResponse(_tloResposne);
+
+					//}
+					//while (_getSpellDataEffectCountResponse.Count > 0)
+					//{
+					//	SendResponse(_getSpellDataEffectCountResponse);
+					//}
+					//while (_getSpellDataEffectResponse.Count > 0)
+					//{
+					//	SendResponse(_getSpellDataEffectResponse);
+					//}
+					//while (_getSpawnsResponse.Count > 0)
+     //               {
+     //                   RouterMessage message;
+     //                   _getSpawnsResponse.TryDequeue(out message);
+     //                   if (message != null && message.spawns!=null)
+     //                   {
+     //                       try
+     //                       {
+     //                           foreach(var spawn in message.spawns)
+     //                           {
+     //                               routerResponse.InitPool(message.identiyLength);
+     //                               Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
+     //                               _rpcRouter.TrySend(ref routerResponse, timeout, true);
+     //                               routerResponse.Close();
+     //                               routerResponse.InitEmpty();
+     //                               _rpcRouter.TrySend(ref routerResponse, timeout, true);
+     //                               routerResponse.Close();
+     //                               routerResponse.InitPool(spawn._dataSize);
+     //                               Buffer.BlockCopy(spawn._data, 0, routerResponse.Data, 0, spawn._dataSize);
+     //                               _rpcRouter.TrySend(ref routerResponse, timeout, false);
+     //                               routerResponse.Close();
+     //                           }
+     //                           //we need to send a 'done' response
+     //                           routerResponse.InitPool(message.identiyLength);
+     //                           Buffer.BlockCopy(message.identity, 0, routerResponse.Data, 0, message.identiyLength);
+     //                           _rpcRouter.TrySend(ref routerResponse, timeout, true);
+     //                           routerResponse.Close();
+     //                           routerResponse.InitEmpty();
+     //                           _rpcRouter.TrySend(ref routerResponse, timeout, true);
+     //                           routerResponse.Close();
+     //                           routerResponse.InitEmpty();
+     //                           _rpcRouter.TrySend(ref routerResponse, timeout, false);
+     //                           routerResponse.Close();
+
+     //                       }
+     //                       finally
+     //                       {
+     //                           //put back into the object pool.
+     //                           message.Dispose();
+     //                       }
+     //                   }
+     //               }
 
                 }
             }
@@ -783,17 +814,17 @@ namespace MonoCore
         public static Logging _log;
         public volatile static bool _isProcessing = false;
         public const string _coreVersion = "0.1";
+		public static Stopwatch StopWatch = new Stopwatch();
 
+		//Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
+		//only use the events you need to prevent string allocations to be passed in
+		//also, seems these need to be static
 
-        //Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
-        //only use the events you need to prevent string allocations to be passed in
-        //also, seems these need to be static
+		//this is called quite often, haven't determined a throttle yet, but assume 10 times a second
 
-        //this is called quite often, haven't determined a throttle yet, but assume 10 times a second
-
-        //this is protected by the lock, so that the primary C++ thread is the one that executes commands that the
-        //processing thread has done.
-        public static string _currentCommand = string.Empty;
+		//this is protected by the lock, so that the primary C++ thread is the one that executes commands that the
+		//processing thread has done.
+		public static string _currentCommand = string.Empty;
         public static string _currentWrite = String.Empty;
         public static string _currentAddCommand = String.Empty;
         public static Int32 _currentDelay = 0;
@@ -827,7 +858,7 @@ namespace MonoCore
 
         public static void OnInit()
         {
-
+            _stopWatch.Start();
 
             if (!_isInit)
             {
@@ -1024,10 +1055,20 @@ namespace MonoCore
         public extern static bool imgui_Button(string name);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static void imgui_End();
-        #endregion
-        #endregion
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetBuffData(out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetPetBuffData(out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetTargetBuffData(int spawnid, out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetSpawns3_Delta(out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetXtargetInfo(out int length);
+		#endregion
+		#endregion
 
-    }
+	}
     enum ImGuiWindowFlags
     {
         ImGuiWindowFlags_None = 0,
@@ -1084,14 +1125,36 @@ namespace MonoCore
         void RemoveCommand(string commandName);
 		string SpellDataGetLine(string query, Int32 line);
 		Int32 SpellDataGetLineCount(string query);
+        unsafe byte* GetPetBuffDataPtr(out int length);
 
-    }
+	}
     public class MQ : IMQ
     {   //**************************************************************************************************
-        //NONE OF THESE METHODS SHOULD BE CALLED ON THE C++ Thread, as it will cause a deadlock due to delay calls
-        //**************************************************************************************************
-
-        public static Int64 _maxMillisecondsToWork = 40;
+		//NONE OF THESE METHODS SHOULD BE CALLED ON THE C++ Thread, as it will cause a deadlock due to delay calls
+		//**************************************************************************************************
+		public bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
+		{
+			if (Core.StopWatch.ElapsedMilliseconds < nextCheck)
+			{
+				return false;
+			}
+			else
+			{
+				nextCheck = Core.StopWatch.ElapsedMilliseconds + nextCheckInterval;
+				return true;
+			}
+		}
+		private int _petBuffDataPtrLength = 0;
+		private unsafe byte* _petBuffDataPtr;
+		private Int64 _petBuffDataRefreshInterval = 250;
+		private Int64 _petBuffDataRefreshTimeStamp;
+		public unsafe byte* GetPetBuffDataPtr(out int length)
+		{	
+			_petBuffDataPtr = Core.mq_GetPetBuffData(out _petBuffDataPtrLength);
+			length = _petBuffDataPtrLength;
+			return _petBuffDataPtr;
+		}
+		public static Int64 _maxMillisecondsToWork = 40;
         public static Int64 _sinceLastDelay = 0;
         public static Int64 _totalQueryCounts;
         public T Query<T>(string query)

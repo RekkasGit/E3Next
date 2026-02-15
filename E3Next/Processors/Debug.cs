@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using static E3Core.Processors.GiveMeItem;
 
 namespace E3Core.Processors
 {
@@ -191,6 +192,39 @@ namespace E3Core.Processors
 					}
 				}
 			});
+			EventProcessor.RegisterCommand("/e3debug_check_petbuffs", x =>
+			{
+
+				using (var trace = _log.Trace("petbuffsspeedtest"))
+				{
+					unsafe
+					{
+
+						int length;
+						byte* p =E3.MQ.GetPetBuffDataPtr(out length);
+						Int32 counter = 0;
+						if (length > 0)
+						{
+							
+							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+							//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+							int dataStartingLength = data.Length;
+							while(data.Length > 0)
+							{
+								counter++;
+								Int32 spellID = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 duration = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 spellType = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								MQ.WriteDelayed($"index:{counter} ID:{spellID} d:{duration} stype:{spellType}");
+							}
+						}
+					}
+				}
+			});
+
 			EventProcessor.RegisterCommand("/e3debug_check_buffs", x =>
 			{
 
@@ -303,7 +337,7 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3debug_spawns_list", x =>
 			{
 
-				foreach (var spawnid in _spawns.GetIDs().OrderBy(y=>y).ToList())
+				foreach (var spawnid in _spawns.GetIDs().OrderBy(y => y).ToList())
 				{
 					if (_spawns.TryByID(spawnid, out var spawn))
 					{

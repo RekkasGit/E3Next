@@ -248,6 +248,12 @@ namespace TestCore
 			{
 				return "NULL";
 			}
+
+			public unsafe byte* GetPetBuffDataPtr(out int length)
+			{
+                length = 0;
+                return null;
+			}
 		}
 
     }

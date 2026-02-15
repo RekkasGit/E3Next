@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.HighPerformance;
 using E3Core.Processors;
+using E3Core.Utility;
 using NetMQ;
 using System;
 using System.Collections.Concurrent;
@@ -1607,6 +1608,7 @@ namespace MonoCore
 		bool FeatureEnabled(MQFeature feature);
 		string GetFocusedWindowName();
 		string GetHoverWindowName();
+		unsafe byte* GetPetBuffDataPtr(out int length);
 	}
 	public class MQ : IMQ
 	{   //**************************************************************************************************
@@ -1629,7 +1631,21 @@ namespace MonoCore
 				return String.Empty;
 			}
 		}
-
+		private int _petBuffDataPtrLength = 0;
+		private unsafe byte* _petBuffDataPtr;
+		private Int64 _petBuffDataRefreshInterval = 250;
+		private Int64 _petBuffDataRefreshTimeStamp;
+		public unsafe byte* GetPetBuffDataPtr(out int length)
+		{
+			if (!e3util.ShouldCheck(ref _petBuffDataRefreshTimeStamp, _petBuffDataRefreshInterval))
+			{
+				length = _petBuffDataPtrLength;
+				return _petBuffDataPtr;
+			}
+			_petBuffDataPtr = Core.mq_GetPetBuffData(out _petBuffDataPtrLength);
+			length = _petBuffDataPtrLength;
+			return _petBuffDataPtr;
+		}
 		public Int32 SpellDataGetLineCount(string query)
 		{
 			if (Core._MQ2MonoVersion > 0.30M)

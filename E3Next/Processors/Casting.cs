@@ -1,12 +1,15 @@
 ﻿using E3Core.Data;
 using E3Core.Server;
+using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.ServiceModel.Dispatcher;
 using System.Text;
@@ -2872,12 +2875,106 @@ namespace E3Core.Processors
 			}
 			return millisecondsLeft;
 		}
+
+		public static bool TryGetPetBuffDuration(string buffName, out int return_duration)
+		{
+			Int32 buff_spellID = MQ.Query<Int32>($"${{Spell[{buffName}].ID}}");
+			return_duration = 0;
+			if (Core._MQ2MonoVersion >= 0.412m && !Debugger.IsAttached)
+			{
+				unsafe
+				{
+					int length;
+					byte* p = MQ.GetPetBuffDataPtr(out length);
+					if (length > 0)
+					{
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+						int dataStartingLength = data.Length;
+						while (data.Length > 0)
+						{
+							Int32 spellID = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 duration = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 spellType = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+
+							if (buff_spellID == spellID)
+							{
+								return_duration = duration;
+								return true;
+
+							}
+						}
+					}
+					return false;
+				}
+			}
+
+			if(buff_spellID>0)
+			{
+				int buffIndex = MQ.Query<Int32>($"${{Me.Pet.Buff[{buffName}]}}");
+
+				if (buffIndex >-1)
+				{
+					return_duration = MQ.Query<Int32>($"${{Me.Pet.Buff[{buffIndex}].Duration}}");
+				}
+				return buffIndex>-1;
+			}
+			return false;
+		}
+
+		//only for TimeLeftOnMyPetBuff useage
+		private static Int64 TimeLeftOnMyPetBuffPerf(Data.Spell spell)
+		{
+			//don't use this directly, as it will break remote debug
+			Int64 millisecondsLeft = 0;
+			unsafe
+			{
+				int length;
+				byte* p = MQ.GetPetBuffDataPtr(out length);
+				if (length > 0)
+				{
+					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+					int dataStartingLength = data.Length;
+					while (data.Length > 0)
+					{
+						Int32 spellID = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 duration = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 spellType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						millisecondsLeft = duration;
+						if (spellID == spell.SpellID)
+						{
+							if (millisecondsLeft < 0)
+							{
+								//perma buff?
+								millisecondsLeft = Int32.MaxValue;
+							}
+							else
+							{
+								millisecondsLeft = duration * 1000 * 6;
+							}
+						}
+						return millisecondsLeft;
+					}
+				}
+			}
+			return millisecondsLeft;
+		}
+
 		public static Int64 TimeLeftOnMyPetBuff(Data.Spell spell)
 		{
-
+			if(Core._MQ2MonoVersion>=0.412m && !Debugger.IsAttached)
+			{
+				return TimeLeftOnMyPetBuffPerf(spell);
+			}
 			Int64 millisecondsLeft = 0;
 			int buffIndex = MQ.Query<Int32>($"${{Me.Pet.Buff[{spell.SpellName}]}}");
-
 
 			if (buffIndex > 0)
 			{
