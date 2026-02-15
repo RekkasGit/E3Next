@@ -330,8 +330,6 @@ namespace E3Core.UI.Windows.Hud
 					counterNumber = (int)tempBuffer[6];
 					TableRow_BuffInfo buffRow = null;
 
-					duration = duration * 6 * 1000; //change to milliseconds
-
 					if (infoCache.TryGetValue(spellid, out var tbi))
 					{
 						buffRow = tbi;
