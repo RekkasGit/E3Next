@@ -79,6 +79,11 @@ namespace E3NextConfigEditor.MQ
 			throw new NotImplementedException();
 		}
 
+		public unsafe byte* GetTargetBuffDataPtr(Int32 spawnid,out int length)
+		{
+			throw new NotImplementedException();
+		}
+
 		public unsafe byte* GetXtargetDataPtr(out int length)
 		{
 			throw new NotImplementedException();

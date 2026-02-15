@@ -2947,9 +2947,10 @@ namespace E3Core.Processors
 						data = data.Slice(4);
 						Int32 spellType = MemoryMarshal.Read<Int32>(data);
 						data = data.Slice(4);
-						millisecondsLeft = duration;
+						
 						if (spellID == spell.SpellID)
 						{
+							millisecondsLeft = duration;
 							if (millisecondsLeft < 0)
 							{
 								//perma buff?
@@ -2959,8 +2960,9 @@ namespace E3Core.Processors
 							{
 								millisecondsLeft = duration * 1000 * 6;
 							}
+							return millisecondsLeft;
 						}
-						return millisecondsLeft;
+						
 					}
 				}
 			}
@@ -2969,7 +2971,7 @@ namespace E3Core.Processors
 
 		public static Int64 TimeLeftOnMyPetBuff(Data.Spell spell)
 		{
-			if(Core._MQ2MonoVersion>=0.412m && !Debugger.IsAttached)
+			if(Core._MQ2MonoVersion>=0.412m || Debugger.IsAttached)
 			{
 				return TimeLeftOnMyPetBuffPerf(spell);
 			}

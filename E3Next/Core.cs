@@ -1611,6 +1611,7 @@ namespace MonoCore
 		unsafe byte* GetPetBuffDataPtr(out int length);
 		unsafe byte* GetXtargetDataPtr(out int length);
 		unsafe byte* GetSpawns3_DeltaPtr(out int length);
+		unsafe byte* GetTargetBuffDataPtr(Int32 spawnId,out int length);
 	}
 	public class MQ : IMQ
 	{   //**************************************************************************************************
@@ -1672,6 +1673,15 @@ namespace MonoCore
 			_getSpawns3_DeltaPtr = Core.mq_GetSpawns3_Delta(out _getSpawns3_DeltaLength);
 			length = _getSpawns3_DeltaLength;
 			return _getSpawns3_DeltaPtr;
+		}
+		private int _getTargetBuffDataPtrLength = 0;
+		private unsafe byte* _getTargetBuffDataPtr;
+		public unsafe byte* GetTargetBuffDataPtr(Int32 spawnId, out int length)
+		{
+			
+			_getTargetBuffDataPtr = Core.mq_GetTargetBuffData(spawnId, out _getTargetBuffDataPtrLength);
+			length = _getTargetBuffDataPtrLength;
+			return _getTargetBuffDataPtr;
 		}
 		public Int32 SpellDataGetLineCount(string query)
 		{

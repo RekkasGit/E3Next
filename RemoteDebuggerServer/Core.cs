@@ -52,7 +52,8 @@ namespace MonoCore
         SpellDataEffect,
 		GetPetBuffData,
         GetSpawns3Delta,
-        GetXTargetData
+        GetXTargetData,
+        GetTargetData
 
 	}
 
@@ -70,7 +71,8 @@ namespace MonoCore
 		GetSpellDataEffect,
 		GetPetBuffData,
         GetSpawns3Delta,
-        GetXTargetData
+        GetXTargetData,
+		GetTargetData
 
 	}
 	public static class RemoteDebugServerConfig
@@ -368,6 +370,30 @@ namespace MonoCore
 							}
 
 						}
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetTargetData];
+						while (q.Count > 0)
+						{
+							RouterMessage message;
+							if (q.TryDequeue(out message))
+							{
+								unsafe
+								{
+									int length = 0;
+									string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+                                    Int32 spawnid = 0;
+                                    Int32.TryParse(query, out spawnid);
+									byte* p = MQ.GetTargetBuffDataPtr(spawnid,out length);
+									ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(p, length);
+									span.CopyTo(message.payload);
+									message.payloadLength = length;//32bit length at the 1st 4 bytes
+								}
+								RouterServer._responseQueues[(int)ResponseQueueTypes.GetTargetData].Enqueue(message);
+								foundRequest = true;
+								foundRequestCount++;
+							}
+
+						}
+
 						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetSpelLDataEffectCount];
 						while (q.Count > 0)
                     	{
@@ -1172,6 +1198,8 @@ namespace MonoCore
         unsafe byte* GetPetBuffDataPtr(out int length);
         unsafe byte* GetSpawns3_DeltaPtr(out int length);
         unsafe byte* GetXtargetDataPtr(out int length);
+        unsafe byte* GetTargetBuffDataPtr(Int32 spawnid,out int length);
+
 	}
     public class MQ : IMQ
     {   //**************************************************************************************************
@@ -1215,6 +1243,16 @@ namespace MonoCore
 			_getXTargetDataPtr = Core.mq_GetXtargetInfo(out _getXTargetDataPtrLength);
 			length = _getXTargetDataPtrLength;
 			return _getXTargetDataPtr;
+		}
+		private int _getTargetBuffDataPtrLength = 0;
+		private unsafe byte* _getTargetBuffDataPtr;
+
+		public unsafe byte* GetTargetBuffDataPtr(Int32 spawnid, out int length)
+		{
+		
+			_getTargetBuffDataPtr = Core.mq_GetTargetBuffData(spawnid,out _getTargetBuffDataPtrLength);
+			length = _getTargetBuffDataPtrLength;
+			return _getTargetBuffDataPtr;
 		}
 
 		public static Int64 _maxMillisecondsToWork = 40;

@@ -224,6 +224,62 @@ namespace E3Core.Processors
 					}
 				}
 			});
+			EventProcessor.RegisterCommand("/e3debug_check_targetbuffs", x =>
+			{
+
+				using (var trace = _log.Trace("targetbuffsspeedtest"))
+				{
+					unsafe
+					{
+
+						Int32 spawnid = MQ.Query<Int32>("${Target.ID}");
+
+						if(spawnid<1)
+						{
+							MQ.Write("No valid spawnid");
+							return;
+						}
+
+						int length;
+						byte* p = E3.MQ.GetTargetBuffDataPtr(spawnid,out length);
+						Int32 counter = 0;
+						if (length > 0)
+						{
+
+							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+							//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+							int dataStartingLength = data.Length;
+							while (data.Length > 0)
+							{
+								counter++;
+								Int32 spellID = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 duration = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 spellType = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 casterNameLength = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+
+								string CasterName = string.Empty;
+
+								if(casterNameLength>0)
+								{
+									unsafe
+									{
+										fixed (byte* ptostr = data)
+										{
+											CasterName = Encoding.ASCII.GetString(ptostr, casterNameLength);
+										}
+									}
+									data = data.Slice(casterNameLength);
+								}
+								MQ.WriteDelayed($"index:{counter} ID:{spellID} d:{duration} stype:{spellType} casterName:{CasterName}");
+							}
+						}
+					}
+				}
+			});
 
 			EventProcessor.RegisterCommand("/e3debug_check_buffs", x =>
 			{
