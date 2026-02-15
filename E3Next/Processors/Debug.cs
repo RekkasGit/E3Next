@@ -249,6 +249,14 @@ namespace E3Core.Processors
 							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 							//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
 							int dataStartingLength = data.Length;
+							bool buffsPopulated = false;
+							if (data.Length > 0)
+							{
+								//lets pull out the if buffs are being populated
+								buffsPopulated = MemoryMarshal.Read<Boolean>(data);
+								data = data.Slice(1);
+							}
+							
 							while (data.Length > 0)
 							{
 								counter++;
