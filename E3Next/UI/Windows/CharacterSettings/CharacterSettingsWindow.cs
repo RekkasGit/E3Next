@@ -204,6 +204,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			// Header bar: version text on left, buttons on right
 
+		
 			using (var table = ImGUITable.Aquire())
 			{
 				if (table.BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(), 0))

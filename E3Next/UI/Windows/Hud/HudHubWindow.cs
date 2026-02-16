@@ -32,6 +32,7 @@ namespace E3Core.UI.Windows.Hud
 		public static Random rand = new Random();
 
 		private const string IMGUI_DETATCH_BUFFS_ID = FontAwesome.FAExternalLinkSquare + "##detach_buffs";
+		private const string IMGUI_DETATCH_PETBUFFS_ID = FontAwesome.FAExternalLinkSquare + "##detach_petbuffs";
 		private const string IMGUI_DETATCH_SONGS_ID = FontAwesome.FAExternalLinkSquare + "##detach_songs";
 		private const string IMGUI_DETATCH_HOTBUTTON_ID = FontAwesome.FAExternalLinkSquare + "##detach_hotbuttons";
 		private const string IMGUI_DETATCH_PLAYERINFO_ID = FontAwesome.FAExternalLinkSquare + "##detach_playerinfo";
@@ -3182,7 +3183,7 @@ namespace E3Core.UI.Windows.Hud
 				{
 					imgui_SameLine(0);
 					imgui_SetCursorPosX(widthAvail - 20);
-					if (imgui_Button(IMGUI_DETATCH_BUFFS_ID))
+					if (imgui_Button(IMGUI_DETATCH_PETBUFFS_ID))
 					{
 						buffState.Detached = true;
 						imgui_Begin_OpenFlagSet(buffState.WindowName, true);

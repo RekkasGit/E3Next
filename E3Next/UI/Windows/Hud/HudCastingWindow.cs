@@ -160,6 +160,7 @@ namespace E3Core.UI.Windows.Hud
 					imgui_SetNextWindowBgAlpha(_state.WindowAlpha);
 					if (window.Begin(_state.WindowName, flags))
 					{
+					
 						if (_state.IsDirty)
 						{
 							if (imgui_Button("Save"))

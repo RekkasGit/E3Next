@@ -266,6 +266,12 @@ namespace MQServerClient
             }
             return ids;
 		}
+
+		public void AddSpawn(Spawn spawn)
+		{
+			
+
+		}
 	}
 
     public static class RemoteDebugServerConfig

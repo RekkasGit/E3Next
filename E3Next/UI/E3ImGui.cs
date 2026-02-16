@@ -41,19 +41,19 @@ namespace MonoCore
 		//EQ Font 9 - Courier New 14
 		//EQ Font 10 - Arial 40 Bold
 		//lucon.ttf, 13px
-		public static Dictionary<String, string> FontList = new Dictionary<string, string>() { {"robo","RobotoRegular" }, {"robo-large", "RobotoRegular (Large)" }
-		//,{"arial-10", "EQ Font 0 - Arial 10 Thin" }
-		//,{"arial-12", "EQ Font 1 - Arial 12 Thin" }
-		//,{"arial-14", "EQ Font 2 - Arial 14 Thin" }
-		//,{"arial-15","EQ Font 3 - Arial 15 Thin" }
-		//,{"arial-16","EQ Font 4 - Arial 16 Thin" }
-		//,{"arial-20","EQ Font 7 - Arial 20" }
-		//,{"arial-24","EQ Font 8 - Arial 24" }
-		//,{"arial_bold-20","EQ Font 5 - Arial 20 Bold" }
-		//,{"arial_bold-24","EQ Font 6 - Arial 24 Bold" }
-		//,{"arial_bold-40","EQ Font 10 - Arial 40 Bold" }
-		//,{"courier_new-9","EQ Font 9 - Courier New 14" }
-		,{"lucon.ttf","lucon.ttf" }};
+		public static Dictionary<String, string> FontList = new Dictionary<string, string>() { {"robo","RobotoRegular" }//, {"robo-large", "RobotoRegular (Large)" }
+		,{"lucon.ttf","lucon.ttf" }
+		,{"EQ-Thin", "4" }
+		//,{"EQ-1", "1" }
+		//,{"EQ-2", "2" }
+		//,{"EQ-3","3" }
+		//,{"EQ-4","4" }
+		//,{"EQ-5","5" }
+		//,{"EQ-6","6" }
+		//,{"EQ-7","7" }
+		//,{"EQ-8","8" }
+		//,{"EQ-9","9" }
+		,{"EQ-Bold","10" }};
 		public static class MaterialFont
 		{
 			public const string threed_rotation = "\ue84d";
@@ -3303,21 +3303,43 @@ namespace MonoCore
 
 			#endregion
 		}
+		static Dictionary<string, Int32> eqFontStringToInt = new Dictionary<string, Int32>() { { "0", 0 }, { "1", 1 }, { "2", 2 }, { "3", 3 }, { "4", 4 }, { "5", 5 }, { "6",6 }, { "7", 7 }, { "8", 8 }, { "9", 9 }, { "10", 10 } };
 		public class IMGUI_Fonts : IDisposable
 		{
 			Int32 fontsApplied = 0;
 			public void PushFont(string font)
 			{
-				string fontToUse = font;
-				if (FontList.ContainsKey(font))
+				if(font.StartsWith("EQ-"))
 				{
-					fontToUse = FontList[font];
+					if (FontList.TryGetValue(font, out var fontIDAsStrings))
+					{
+						if (eqFontStringToInt.TryGetValue(fontIDAsStrings, out var fontid))
+						{
+							PushEQFont(fontid);
+						}
+					}
 				}
-				if(imgui_PushFont(fontToUse,0))
+				else
+				{
+					string fontToUse = font;
+					if (FontList.ContainsKey(font))
+					{
+						fontToUse = FontList[font];
+					}
+					if (imgui_PushFont(fontToUse, 0))
+					{
+						fontsApplied++;
+					}
+				}
+			}
+			public void PushEQFont(Int32 fontid)
+			{
+				if(imgui_PushEQFont(fontid,0))
 				{
 					fontsApplied++;
 				}
 			}
+
 			public void PushFontSize(float fontsize)
 			{
 				

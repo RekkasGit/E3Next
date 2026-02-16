@@ -1364,6 +1364,40 @@ namespace MonoCore
 			EventProcessor.ProcessEvent(line);
 		}
 
+		public static void OnSpawnAdd()
+		{
+			if (!IsProcessing)
+			{
+				return;
+			}
+			byte* array = mq_GetOnAddSpawnsBuffer(out var length);
+			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(array, length);
+			Int32 ID = MemoryMarshal.Read<Int32>(data);
+			Spawn s;
+			//NOTE, this is only ever initazted by mq_GetSpawns3 and that is only called in once place
+			//and this call empties out all the lists now, so no need to check constantly if it exists, just add. 
+			if (spawnInstance != null)
+			{
+				if (!Spawns.SpawnsByID.TryGetValue(ID, out s))
+				{
+
+					var spawn = Spawn.Aquire();
+					try
+					{
+						spawn.Init(data);
+
+
+						mq_Echo($"OnSpawnAdd id:{spawn.ID} name:{spawn.CleanName} level:{spawn.Level} x:{spawn.X} y:{spawn.Y} z:{spawn.Z}");
+						spawnInstance.AddSpawn(spawn);
+					}
+					catch (Exception)
+					{
+						spawn.Dispose();
+					}
+				}
+			}
+		}
+
 		static System.Text.StringBuilder _queryBuilder = new StringBuilder();
 		public static string OnQuery(string line)
 		{
@@ -1410,7 +1444,7 @@ namespace MonoCore
 			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(array, length);
 			Int32 ID = MemoryMarshal.Read<Int32>(data);
 			Spawn s;
-			
+
 			//NOTE, this is only ever initazted by mq_GetSpawns3 and that is only called in once place
 			//and this call empties out all the lists now, so no need to check constantly if it exists, just add. 
 			//if (Spawns.SpawnsByID.TryGetValue(ID, out s))
@@ -1423,19 +1457,19 @@ namespace MonoCore
 			//	catch (Exception) { }
 			//}
 			//else
+			//{
+			var spawn = Spawn.Aquire();
+			try
 			{
-				var spawn = Spawn.Aquire();
-				try
-				{
-					spawn.Init(data);
-					Spawns._spawns.Add(spawn);
+				spawn.Init(data);
+				spawnInstance.AddSpawn(spawn);
 
-				}
-				catch (Exception)
-				{
-					spawn.Dispose();
-				}
 			}
+			catch (Exception)
+			{
+				spawn.Dispose();
+			}
+			//}
 		}
 
 		public static void OnSetSpawns(byte[] data, int size)
@@ -1459,17 +1493,22 @@ namespace MonoCore
 			}
 			else
 			{
-				var spawn = Spawn.Aquire();
-				try
+				if (spawnInstance != null)
 				{
-					spawn.Init(data, size);
-					Spawns._spawns.Add(spawn);
+					var spawn = Spawn.Aquire();
+					try
+					{
+						spawn.Init(data, size);
+						spawnInstance.AddSpawn(spawn);
 
+
+					}
+					catch (Exception)
+					{
+						spawn.Dispose();
+					}
 				}
-				catch (Exception)
-				{
-					spawn.Dispose();
-				}
+
 			}
 
 
@@ -1533,10 +1572,12 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		private static extern byte* mq_GetSpawns3_Buffer(out int length);
 		[MethodImpl(MethodImplOptions.InternalCall)]
+		private static extern byte* mq_GetOnAddSpawnsBuffer(out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetBuffData(out int length);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetPetBuffData(out int length);
-	
+
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetSpawns3_Delta(out int length);
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -1611,7 +1652,7 @@ namespace MonoCore
 		unsafe byte* GetPetBuffDataPtr(out int length);
 		unsafe byte* GetXtargetDataPtr(out int length);
 		unsafe byte* GetSpawns3_DeltaPtr(out int length);
-		unsafe byte* GetTargetBuffDataPtr(Int32 spawnId,out int length);
+		unsafe byte* GetTargetBuffDataPtr(Int32 spawnId, out int length);
 	}
 	public class MQ : IMQ
 	{   //**************************************************************************************************
@@ -1665,7 +1706,7 @@ namespace MonoCore
 			length = _getXTargetDataPtrLength;
 			return _getXTargetDataPtr;
 		}
-	
+
 		private int _getSpawns3_DeltaLength;
 		private unsafe byte* _getSpawns3_DeltaPtr;
 		public unsafe byte* GetSpawns3_DeltaPtr(out int length)
@@ -1678,7 +1719,7 @@ namespace MonoCore
 		private unsafe byte* _getTargetBuffDataPtr;
 		public unsafe byte* GetTargetBuffDataPtr(Int32 spawnId, out int length)
 		{
-			
+
 			_getTargetBuffDataPtr = Core.mq_GetTargetBuffData(spawnId, out _getTargetBuffDataPtrLength);
 			length = _getTargetBuffDataPtrLength;
 			return _getTargetBuffDataPtr;
@@ -2393,14 +2434,19 @@ namespace MonoCore
 		/// </summary>
 		/// <returns></returns>
 		IEnumerable<Spawn> Get();
+		/// <summary>
+		/// Read quickly, do NOT Release back to MQ until done.
+		/// </summary>
+		/// <returns></returns>
 		List<Int32> GetIDs();
-		void RefreshList(bool full=false);
+		void RefreshList(bool full = false);
 		void EmptyLists();
 		bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false);
 		bool TryByName(string name, out Spawn s, Boolean useCurrentCache = false);
 		Int32 GetIDByName(string name);
 		bool Contains(string name);
 		bool Contains(Int32 id);
+		void AddSpawn(Spawn spawn);
 
 	}
 	/// <summary>
@@ -2415,7 +2461,7 @@ namespace MonoCore
 		public static ConcurrentDictionary<string, Spawn> _spawnsByName = new ConcurrentDictionary<string, Spawn>(3, 2048, StringComparer.OrdinalIgnoreCase);
 		public static ConcurrentDictionary<Int32, Spawn> SpawnsByID = new ConcurrentDictionary<int, Spawn>();
 		public static Int64 _lastRefesh = 0;
-		public static Int64 RefreshTimePeriodInMS = 1000;
+		public static Int64 RefreshTimePeriodInMS = 500;
 		private static List<Int32> _refershSpawnIdsToDelete = new List<Int32>();
 		public bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false)
 		{
@@ -2437,6 +2483,32 @@ namespace MonoCore
 			}
 			return 0;
 		}
+		public void AddSpawn(Spawn spawn)
+		{
+			lock (_spawns)
+			{
+				//update what we have
+				if (SpawnsByID.TryGetValue(spawn.ID,out var cspawn))
+				{
+					//update what we have and dipose of the new one
+					cspawn.Init(spawn);
+					spawn.Dispose();
+					return;
+				}
+
+				//its new, so add it to the collections
+				_spawns.Add(spawn);
+				SpawnsByID.TryAdd(spawn.ID, spawn);
+				if (spawn.TypeDesc == "PC")
+				{
+					if (_spawnsByName.ContainsKey(spawn.Name))
+					{
+						_spawnsByName.TryRemove(spawn.Name, out var _);
+					}
+					_spawnsByName.TryAdd(spawn.Name, spawn);
+				}
+			}
+		}
 		public bool Contains(string name)
 		{
 			RefreshListIfNeeded();
@@ -2447,23 +2519,32 @@ namespace MonoCore
 			RefreshListIfNeeded();
 			return SpawnsByID.ContainsKey(id);
 		}
+		/// <summary>
+		/// Read quickly, do NOT Release back to MQ until done.
+		/// </summary>
+		/// <returns></returns>
 		public IEnumerable<Spawn> Get()
 		{
 			RefreshListIfNeeded();
-			return _spawns;
+			return _spawns; //this is dangerous, calls should only read very quick and NOT release back to MQ while doing so.
 		}
 
 		private void RefreshListIfNeeded()
 		{
+			Int32 spawnCount = 0;
+			lock (_spawns)
+			{
+				spawnCount = _spawns.Count;
+			}
 			if (_spawns.Count == 0)
 			{
 				RefreshList();
 				return;
 			}
 			Int64 delta = Core.StopWatch.ElapsedMilliseconds - _lastRefesh;
-			if (delta> RefreshTimePeriodInMS)
+			if (delta > RefreshTimePeriodInMS)
 			{
-			//	E3.MQ.WriteDelayed($"RefreshListIfNeeded: Calling refresh because of timeout. last:{_lastRefesh} period:{RefreshTimePeriodInMS} current:{Core.StopWatch.ElapsedMilliseconds} delta:{delta}");
+				//	E3.MQ.WriteDelayed($"RefreshListIfNeeded: Calling refresh because of timeout. last:{_lastRefesh} period:{RefreshTimePeriodInMS} current:{Core.StopWatch.ElapsedMilliseconds} delta:{delta}");
 
 				RefreshList();
 			}
@@ -2476,7 +2557,11 @@ namespace MonoCore
 			_spawnsByName.Clear();
 			SpawnsByID.Clear();
 			foreach (var spawn in _spawns) { spawn.Dispose(); }
-			_spawns.Clear();
+			lock (_spawns)
+			{
+				_spawns.Clear();
+			}
+
 		}
 		public void RefreshList(bool full = false)
 		{
@@ -2490,7 +2575,7 @@ namespace MonoCore
 			//first we need to check the delta to see if we even need a full download
 			if ((Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached) && !full)
 			{
-				//E3.MQ.WriteDelayed("Refreshing spawn delta");
+				//E3.MQ.WriteDelayed("Refreshing spawn minimal");
 
 				bool needsToDoRefresh = false;
 				//using (var refreshTrace = E3.Log.Trace("RefreshTraceTime"))
@@ -2566,11 +2651,20 @@ namespace MonoCore
 							}
 							else
 							{
-								//spawn doesn't exist in our delta, will have to do a full refresh. 
-								//E3.MQ.WriteDelayed("Refreshing spawn delta: Missing spawn data, doing full refresh");
+								//if(Core._MQ2MonoVersion<0.414m || SpawnsByID.Count==0)
+								{
+									//we don't have the OnAddSpawn stuff wired up befre this, do a full refresh
+									//spawn doesn't exist in our delta, will have to do a full refresh. 
+									E3.MQ.WriteDelayed("Refreshing spawn delta: Missing spawn data, doing full refresh");
 
-								needsToDoRefresh = true;
-								break;
+									needsToDoRefresh = true;
+									break;
+								}
+								//else
+								//{
+								//	E3.MQ.WriteDelayed($"Refresh Missing spawn data for:{spawnid}, waiting for OnAddSpawn");
+
+								//}
 							}
 						}
 
@@ -2599,7 +2693,11 @@ namespace MonoCore
 
 									}
 									SpawnsByID.TryRemove(spawn.ID, out _);
-									_spawns.Remove(spawn);
+									lock (_spawns)
+									{
+										_spawns.Remove(spawn);
+
+									}
 									spawn.Dispose();
 								}
 							}
@@ -2612,8 +2710,8 @@ namespace MonoCore
 						}
 					}
 				}
-					
-				if(full)
+
+				if (full)
 				{
 					E3.MQ.WriteDelayed($"Refreshing spawn data full");
 				}
@@ -2640,7 +2738,7 @@ namespace MonoCore
 					{
 						if (!_spawnsByName.ContainsKey(spawn.Name))
 						{
-								_spawnsByName.TryAdd(spawn.Name, spawn);
+							_spawnsByName.TryAdd(spawn.Name, spawn);
 						}
 					}
 					SpawnsByID.TryAdd(spawn.ID, spawn);
@@ -2686,6 +2784,74 @@ namespace MonoCore
 
 		}
 		static Dictionary<string, string> _stringLookup = new Dictionary<string, string>();
+
+
+		public void Init(Spawn s)
+		{
+			ID = s.ID;
+			AFK = s.AFK;
+			Aggressive = s.Aggressive;
+			Anonymous = s.Anonymous;
+			Blind = s.Blind;
+			BodyTypeID = s.BodyTypeID;
+			BodyTypeDesc = s.BodyTypeDesc;
+			Buyer = s.Buyer;
+			ClassID = s.ClassID;
+			CleanName = s.CleanName;
+			ConColorID = s.ConColorID;
+			CurrentEndurnace = s.CurrentEndurnace;
+			CurrentHPs = s.CurrentHPs;
+			CurrentMana = s.CurrentMana;
+			Dead = s.Dead;
+			DisplayName = s.DisplayName;
+			Ducking = s.Ducking;
+			Feigning = s.Feigning;
+			GenderID = s.GenderID;
+			GM = s.GM;
+			GuildID = s.GuildID;
+			Heading = s.Heading;
+			Height = s.Height;
+			Invis = s.Invis;
+			IsSummoned = s.IsSummoned;
+			Level = s.Level;
+			Levitate = s.Levitate;
+			Linkdead = s.Linkdead;
+			Look = s.Look;
+			MasterID = s.MasterID;
+			MaxEndurance = s.MaxEndurance;
+			MaxRange = s.MaxRange;
+			MaxRangeTo = s.MaxRangeTo;
+			Mount = s.Mount;
+			Moving = s.Moving;
+			Name = s.Name;
+			Named = s.Named;
+			PctHps = s.PctHps;
+			PctMana = s.PctMana;
+			PetID = s.PetID;
+			PlayerState = s.PlayerState;
+			RaceID = s.RaceID;
+			RaceName = s.RaceName;
+			RolePlaying = s.RolePlaying;
+			Sitting = s.Sitting;
+			Sneaking = s.Sneaking;
+			Standing = s.Standing;
+			Stunned = s.Stunned;
+			Suffix = s.Suffix;
+			Targetable = s.Targetable;
+			TargetOfTargetID = s.TargetOfTargetID;
+			Trader = s.Trader;
+			TypeDesc = s.TypeDesc;
+			Underwater = s.Underwater;
+			X = s.X;
+			Y = s.Y;
+			Z = s.Z;
+			playerX = s.playerX;
+			playerY = s.playerY;
+			playerZ = s.playerZ;
+			DeityID = s.DeityID;
+		}
+
+
 		public void Init(ReadOnlySpan<byte> data)
 		{
 			isDirty = true;
