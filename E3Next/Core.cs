@@ -2569,7 +2569,7 @@ namespace MonoCore
 				//update what we have
 				if (SpawnsByID.TryGetValue(spawn.ID,out var cspawn))
 				{
-					E3.MQ.WriteDelayed($"Trying to add spawn {spawn.ID} but it already exists, updating values. name before:{cspawn.Name} name after {spawn.Name}");
+					//E3.MQ.WriteDelayed($"Trying to add spawn {spawn.ID} but it already exists, updating values. name before:{cspawn.Name} name after {spawn.Name}");
 					//update what we have and dipose of the new one
 					cspawn.Init(spawn);
 					spawn.Dispose();
@@ -2735,7 +2735,7 @@ namespace MonoCore
 								{
 									//we don't have the OnAddSpawn stuff wired up befre this, do a full refresh
 									//spawn doesn't exist in our delta, will have to do a full refresh. 
-									E3.MQ.WriteDelayed("Refreshing spawn delta: Missing spawn data, doing full refresh");
+									//E3.MQ.WriteDelayed("Refreshing spawn delta: Missing spawn data, doing full refresh");
 
 									needsToDoRefresh = true;
 									break;

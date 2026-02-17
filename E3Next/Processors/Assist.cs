@@ -944,7 +944,7 @@ namespace E3Core.Processors
                    if (Int32.TryParse(x.args[0], out mobid))
                    {
                         //make sure the target is in the same zone we are in
-                       if (Int32.TryParse(x.args[1], out zoneid))
+                       if (x.args.Count>1 && Int32.TryParse(x.args[1], out zoneid))
                        {
                            if (mobid != AssistTargetID)
 						   {
@@ -964,6 +964,10 @@ namespace E3Core.Processors
 						   }
 						   AssistOn(mobid, zoneid);
 
+                       }
+                       else
+                       {
+                           E3.Bots.Broadcast("Please pass in a zoneid to the assist command. /assistme targetid zoneid");
                        }
                    }
                }
