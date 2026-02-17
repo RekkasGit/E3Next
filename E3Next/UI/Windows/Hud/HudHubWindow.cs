@@ -2019,10 +2019,11 @@ namespace E3Core.UI.Windows.Hud
 				float borderEndY = imgui_GetCursorScreenPosY();
 				float borderX = imgui_GetWindowPosX() + pad;
 				float borderW = imgui_GetWindowWidth() - (pad * 2);
+				
 				float t = 2f;
 				uint borderColor = GetColor(nc.r, nc.g, nc.b, 0.8f);
 
-				imgui_GetWindowDrawList_AddRect(borderX, borderTop, borderX + borderW - 1, borderEndY, borderColor, 0f, 0, 1f);
+				imgui_GetWindowDrawList_AddRect(borderX, borderTop, borderX + borderW - 1, borderEndY, borderColor, 0f, 0, 2f);
 			
 			}
 
@@ -2049,10 +2050,13 @@ namespace E3Core.UI.Windows.Hud
 				float borderW = imgui_GetWindowWidth() - (pad * 2);
 				float t = 2f;
 				uint borderColor = GetColor(nc.r, nc.g, nc.b, 0.8f);
-				imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + borderW, borderTop + t, borderColor);
-				imgui_GetWindowDrawList_AddRectFilled(borderX, borderEndY - t, borderX + borderW, borderEndY, borderColor);
-				imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + t, borderEndY, borderColor);
-				imgui_GetWindowDrawList_AddRectFilled(borderX + borderW - t, borderTop, borderX + borderW, borderEndY, borderColor);
+
+				imgui_GetWindowDrawList_AddRect(borderX, borderTop, borderX + borderW - 1, borderEndY, borderColor, 0f, 0, 2f);
+
+				//imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + borderW, borderTop + t, borderColor);
+				//imgui_GetWindowDrawList_AddRectFilled(borderX, borderEndY - t, borderX + borderW, borderEndY, borderColor);
+				//imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + t, borderEndY, borderColor);
+				//imgui_GetWindowDrawList_AddRectFilled(borderX + borderW - t, borderTop, borderX + borderW, borderEndY, borderColor);
 			}
 
 

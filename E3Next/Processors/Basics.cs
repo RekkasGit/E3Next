@@ -461,7 +461,7 @@ namespace E3Core.Processors
 				}
 
 				//means we have zoned.
-				_spawns.RefreshList();//make sure we get a new refresh of this zone.
+				_spawns.RefreshList(full:true);//make sure we get a new refresh of this zone.
 				Loot.Reset();
 				Movement.ResetKeepFollow();
 				Assist.Reset();
