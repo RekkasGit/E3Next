@@ -2545,11 +2545,30 @@ namespace MonoCore
 		public bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false)
 		{
 			if (refresh && !useCurrentCache) RefreshListIfNeeded();
+
+			if (_spawns.Count == 0)
+			{
+				lock (_spawns)
+				{
+					if (_spawns.Count == 0) RefreshList();
+				}
+
+			}
+			
 			return SpawnsByID.TryGetValue(id, out s);
 		}
 		public bool TryByName(string name, out Spawn s, Boolean useCurrentCache = false)
 		{
 			if (!useCurrentCache) RefreshListIfNeeded();
+			
+			if(_spawns.Count==0)
+			{
+				lock (_spawns)
+				{
+					if (_spawns.Count == 0) RefreshList();
+				}
+
+			}
 			return _spawnsByName.TryGetValue(name, out s);
 		}
 		public Int32 GetIDByName(string name)
@@ -2667,7 +2686,10 @@ namespace MonoCore
 
 						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 						int dataStartingLength = data.Length;
-						while (data.Length > 0)
+
+						if(dataStartingLength<=0) needsToDoRefresh=true;
+
+						while (data.Length > 0 && !needsToDoRefresh)
 						{
 							Int32 spawnid = MemoryMarshal.Read<Int32>(data);
 							data = data.Slice(4);
