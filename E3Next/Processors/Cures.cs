@@ -172,10 +172,7 @@ namespace E3Core.Processors
 						foreach (var spell in curesSpells)
 						{
 							if (s.Distance3D > spell.MyRange) continue;
-							if (spell.TargetType == "Group v1")
-							{
-								if (!Basics.GroupMemberNames.Contains(target,StringComparer.OrdinalIgnoreCase)) continue;
-							}
+							
 							if (!String.IsNullOrWhiteSpace(spell.Ifs))
 							{
 								if (!Casting.Ifs(spell)) continue;

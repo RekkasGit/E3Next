@@ -1378,16 +1378,14 @@ namespace MonoCore
 			//and this call empties out all the lists now, so no need to check constantly if it exists, just add. 
 			if (spawnInstance != null)
 			{
-				if (!Spawns.SpawnsByID.TryGetValue(ID, out s))
+				//if (!Spawns.SpawnsByID.TryGetValue(ID, out s))
 				{
 
 					var spawn = Spawn.Aquire();
 					try
 					{
 						spawn.Init(data);
-
-
-						mq_Echo($"OnSpawnAdd id:{spawn.ID} name:{spawn.CleanName} level:{spawn.Level} x:{spawn.X} y:{spawn.Y} z:{spawn.Z}");
+						//mq_Echo($"OnSpawnAdd id:{spawn.ID} name:{spawn.CleanName} level:{spawn.Level} x:{spawn.X} y:{spawn.Y} z:{spawn.Z}");
 						spawnInstance.AddSpawn(spawn);
 					}
 					catch (Exception)
@@ -1627,7 +1625,7 @@ namespace MonoCore
 		/// <param name="query">TLO Query</param>
 		/// <param name="delayPossible">set to false if you cannot let C++ control take over.</param>
 		/// <returns></returns>
-		T Query<T>(string query, bool delayPossible = true);
+		T Query<T>(string query);
 		void Cmd(string query, bool delayed = false);
 		void Cmd(string query, Int32 delay, bool delayed = false);
 		void Write(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
@@ -1653,6 +1651,15 @@ namespace MonoCore
 		unsafe byte* GetXtargetDataPtr(out int length);
 		unsafe byte* GetSpawns3_DeltaPtr(out int length);
 		unsafe byte* GetTargetBuffDataPtr(Int32 spawnId, out int length);
+		/// <summary>
+		/// delay lock to prevent releasing back to MQ until done.
+		/// </summary>
+		/// <returns></returns>
+		IMQLock GetDelayLock();
+	}
+	public interface IMQLock : IDisposable
+	{
+		Action CallBackDispose { get; set; }
 	}
 	public class MQ : IMQ
 	{   //**************************************************************************************************
@@ -1735,7 +1742,7 @@ namespace MonoCore
 				return 12;
 			}
 		}
-		public T Query<T>(string query, bool delayPossible = true)
+		public T Query<T>(string query)
 		{
 			if (!Core.IsProcessing)
 			{
@@ -1746,7 +1753,7 @@ namespace MonoCore
 			Int64 elapsedTime = Core.StopWatch.ElapsedMilliseconds;
 			Int64 differenceTime = Core.StopWatch.ElapsedMilliseconds - SinceLastDelay;
 
-			if (MaxMillisecondsToWork < differenceTime && delayPossible)
+			if (MaxMillisecondsToWork < differenceTime)
 			{
 				Delay(0);
 			}
@@ -2057,6 +2064,78 @@ namespace MonoCore
 				return "NULL";
 			}
 		}
+
+		public void DisableDelay()
+		{
+			_noDelay = true;
+		}
+
+		public void EnableDelay()
+		{
+			_noDelay = false;
+		}
+
+		public IMQLock GetDelayLock()
+		{
+			MQLock mqLock = MQLock.Aquire();
+			mqLock.CallBackDispose = EnableDelay;
+			DisableDelay();
+			return mqLock;
+
+		}
+
+		public class MQLock : IMQLock
+		{
+			public Action CallBackDispose { get; set; }
+			#region objectPoolingStuff
+
+
+			//private constructor, needs to be created so that you are forced to use the pool.
+			private MQLock()
+			{
+
+			}
+			public static MQLock Aquire()
+			{
+				MQLock obj;
+				if (!StaticObjectPool.TryPop<MQLock>(out obj))
+				{
+					obj = new MQLock();
+				}
+
+				return obj;
+			}
+
+			public void Dispose()
+			{
+				if (CallBackDispose != null)
+				{
+					CallBackDispose.Invoke();
+				}
+
+				ResetObject();
+
+				StaticObjectPool.Push(this);
+			}
+			private void ResetObject()
+			{
+
+				this.CallBackDispose = null;
+			
+			}
+			~MQLock()
+			{
+				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
+				//if this is called, it will cause the domain to hang in the GC when shuttind down
+				//This is only here to warn you
+
+			}
+
+			#endregion
+		}
+
+
+
 	}
 
 	public class Logging
@@ -2490,6 +2569,7 @@ namespace MonoCore
 				//update what we have
 				if (SpawnsByID.TryGetValue(spawn.ID,out var cspawn))
 				{
+					E3.MQ.WriteDelayed($"Trying to add spawn {spawn.ID} but it already exists, updating values. name before:{cspawn.Name} name after {spawn.Name}");
 					//update what we have and dipose of the new one
 					cspawn.Init(spawn);
 					spawn.Dispose();

@@ -459,7 +459,7 @@ namespace MQServerClient
             return true;
         }
 
-        public T Query<T>(string query, bool delayPossible = true)
+        public T Query<T>(string query)
         {
             // Console.WriteLine(query);
             if (_requestMsg.IsInitialised)
@@ -1214,6 +1214,20 @@ namespace MQServerClient
 			_requestMsg.Close();
 			IntPtr ptr = _getTargetDataHandle.AddrOfPinnedObject();
 			return (byte*)ptr.ToPointer();
+		}
+
+
+		public void DisableDelay()
+		{
+		}
+
+		public void EnableDelay()
+		{
+		}
+
+		public IMQLock GetDelayLock()
+		{
+            return null;
 		}
 	}
 

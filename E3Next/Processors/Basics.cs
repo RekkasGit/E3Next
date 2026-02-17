@@ -578,6 +578,11 @@ namespace E3Core.Processors
 					toDesktop = " desktop";
 					x.args.Remove("desktop");
 				}
+				if (x.args.Contains("server"))
+				{
+					toDesktop = " server";
+					x.args.Remove("server");
+				}
 				if (x.args.Count > 0)
 				{
 					if (!e3util.FilterMe(x))

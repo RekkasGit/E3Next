@@ -398,9 +398,9 @@ namespace E3Core.UI.Windows.Hud
 
 							if (!buffState.BuffCache.ContainsKey(spellid))
 							{
-								string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
-								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}", false) * 6 * 1000;
+								string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}");
+								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}");
+								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}") * 6 * 1000;
 								buffState.BuffCache.TryAdd(spellid, new BuffCacheEntry() { Name = buffName, SpellIcon = spellIcon, MaxDuration = maxDuration });
 							}
 
@@ -536,9 +536,9 @@ namespace E3Core.UI.Windows.Hud
 
 							if (!buffState.BuffCache.ContainsKey(spellid))
 							{
-								string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
-								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}", false) * 6 * 1000;
+								string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}");
+								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}");
+								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}") * 6 * 1000;
 								buffState.BuffCache.TryAdd(spellid, new BuffCacheEntry() { Name = buffName, SpellIcon = spellIcon, MaxDuration = maxDuration });
 							}
 
@@ -675,10 +675,10 @@ namespace E3Core.UI.Windows.Hud
 
 			}
 
-			int hp = MQ.Query<Int32>($"${{Group.Member[{user}].PctHPs}}", false);
+			int hp = MQ.Query<Int32>($"${{Group.Member[{user}].PctHPs}}");
 
-			row.PetHPPercent = MQ.Query<Int32>($"${{Group.Member[{user}].Spawn.Pet.CurrentHPs}}", false); //user;
-			decimal distance = MQ.Query<Decimal>($"${{Group.Member[{user}].Spawn.Distance3D}}", false);
+			row.PetHPPercent = MQ.Query<Int32>($"${{Group.Member[{user}].Spawn.Pet.CurrentHPs}}"); //user;
+			decimal distance = MQ.Query<Decimal>($"${{Group.Member[{user}].Spawn.Distance3D}}");
 			row.Distance = DecimalToIntString(distance);
 
 
@@ -695,7 +695,7 @@ namespace E3Core.UI.Windows.Hud
 
 			row.DisplayName = user;
 			row.DisplayNameColor = (0.275f, 0.860f, 0.85f, 1);
-			Int32 mana = MQ.Query<Int32>($"${{Group.Member[{user}].PctMana}}", false);
+			Int32 mana = MQ.Query<Int32>($"${{Group.Member[{user}].PctMana}}");
 			if (mana == 0)
 			{
 				row.Mana = "-";
@@ -707,13 +707,13 @@ namespace E3Core.UI.Windows.Hud
 			}
 			row.ManaColor = GetResourceSeverityColor(mana);
 
-			Int32 endurance = MQ.Query<Int32>($"${{Group.Member[{user}].PctEndurance}}", false);
+			Int32 endurance = MQ.Query<Int32>($"${{Group.Member[{user}].PctEndurance}}");
 			row.Endurance = PercentString(endurance);
 			row.EndColor = GetResourceSeverityColor(endurance);
 			row.HPPercent = hp;
 			row.HP = PercentString(hp);
 			row.HPColor = GetResourceSeverityColor(hp);
-			Int32 aggroPct = MQ.Query<Int32>($"${{Group.Member[{user}].PctAggro}}", false);
+			Int32 aggroPct = MQ.Query<Int32>($"${{Group.Member[{user}].PctAggro}}");
 
 			if (aggroPct > 0)
 			{
@@ -934,18 +934,18 @@ namespace E3Core.UI.Windows.Hud
 				var hub_state = _state.GetState<State_HubWindow>();
 				if (!hub_state.ShowPlayerInfo) return;
 			
-				state.PlayerLevel = MQ.Query<int>("${Me.Level}", false);
+				state.PlayerLevel = MQ.Query<int>("${Me.Level}");
 				state.PlayerHPPercent = E3.PctHPs;
-				state.PlayerManaPercent = MQ.Query<int>("${Me.PctMana}", false);
-				state.PlayerEndPercent = MQ.Query<int>("${Me.PctEndurance}", false);
-				state.PlayerExp = MQ.Query<Decimal>("${Me.PctExp}", false);
-				state.PlayerAAPoints = MQ.Query<int>("${Me.AAPoints}", false);
-				state.PlayerHPCurrent = MQ.Query<int>("${Me.CurrentHPs}", false);
-				state.PlayerHPMax = MQ.Query<int>("${Me.MaxHPs}", false);
-				state.PlayerManaCurrent = MQ.Query<int>("${Me.CurrentMana}", false);
-				state.PlayerManaMax = MQ.Query<int>("${Me.MaxMana}", false);
-				state.PlayerEndCurrent = MQ.Query<int>("${Me.CurrentEndurance}", false);
-				state.PlayerEndMax = MQ.Query<int>("${Me.MaxEndurance}", false);
+				state.PlayerManaPercent = MQ.Query<int>("${Me.PctMana}");
+				state.PlayerEndPercent = MQ.Query<int>("${Me.PctEndurance}");
+				state.PlayerExp = MQ.Query<Decimal>("${Me.PctExp}");
+				state.PlayerAAPoints = MQ.Query<int>("${Me.AAPoints}");
+				state.PlayerHPCurrent = MQ.Query<int>("${Me.CurrentHPs}");
+				state.PlayerHPMax = MQ.Query<int>("${Me.MaxHPs}");
+				state.PlayerManaCurrent = MQ.Query<int>("${Me.CurrentMana}");
+				state.PlayerManaMax = MQ.Query<int>("${Me.MaxMana}");
+				state.PlayerEndCurrent = MQ.Query<int>("${Me.CurrentEndurance}");
+				state.PlayerEndMax = MQ.Query<int>("${Me.MaxEndurance}");
 
 
 
@@ -1006,7 +1006,7 @@ namespace E3Core.UI.Windows.Hud
 
 				if (!String.IsNullOrWhiteSpace(activeDisc))
 				{
-					state.ActiveDiscPercentLeft = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}", false) / 10;
+					state.ActiveDiscPercentLeft = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}") / 10;
 				}
 				if (String.IsNullOrWhiteSpace(activeDisc))
 				{
@@ -1032,9 +1032,6 @@ namespace E3Core.UI.Windows.Hud
 			{
 				MQ.WriteDelayed($"Issue in RefreshPlayerInfo. Message:{ex.Message}  Stack:{ex.StackTrace}");
 			}
-
-
-
 		}
 		
 		private static void RefreshTargetInfo()
@@ -1045,7 +1042,7 @@ namespace E3Core.UI.Windows.Hud
 			if (!hub_state.ShowTargetInfo) return;
 			if (!e3util.ShouldCheck(ref state.TargetInfoLastUpdated, state.TargetInfoUpdateInterval)) return;
 
-			Int32 targetID = MQ.Query<Int32>("${Target.ID}", false);
+			Int32 targetID = MQ.Query<Int32>("${Target.ID}");
 
 			if (targetID == 0)
 			{
@@ -1075,7 +1072,7 @@ namespace E3Core.UI.Windows.Hud
 
 
 
-				state.TargetHP = MQ.Query<Int32>("${Target.PctHPs}", false);
+				state.TargetHP = MQ.Query<Int32>("${Target.PctHPs}");
 
 				//if (spawn.Dead) state.TargetHP = 0;
 
@@ -1089,7 +1086,7 @@ namespace E3Core.UI.Windows.Hud
 				state.Display_LevelAndClassString = $"Lvl {spawn.Level} {spawn.ClassShortName}";
 
 				//get my aggro on target
-				Decimal percentAggro = MQ.Query<Decimal>("${Target.PctAggro}", false);
+				Decimal percentAggro = MQ.Query<Decimal>("${Target.PctAggro}");
 
 
 
@@ -1100,9 +1097,9 @@ namespace E3Core.UI.Windows.Hud
 
 		
 
-				Decimal percentAggro2nd = MQ.Query<Decimal>("${Target.SecondaryPctAggro}", false);
+				Decimal percentAggro2nd = MQ.Query<Decimal>("${Target.SecondaryPctAggro}");
 
-				string PersonOn2ndAggro = MQ.Query<String>("${Target.SecondaryAggroPlayer}", false);
+				string PersonOn2ndAggro = MQ.Query<String>("${Target.SecondaryAggroPlayer}");
 				if (PersonOn2ndAggro == "NULL") PersonOn2ndAggro = String.Empty;
 
 
@@ -1136,7 +1133,7 @@ namespace E3Core.UI.Windows.Hud
 
 			state.TargetBuffs.Clear();
 
-			Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}", false);
+			Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}");
 			int maxBuffs = e3util.MaxTempBuffs;
 			if(buffCount>0)
 			{
@@ -1205,7 +1202,7 @@ namespace E3Core.UI.Windows.Hud
 									spellNameQuery = $"${{Spell[{spellID}].Name}}";
 									IntToStringIDRegister("Hub_RenderTargetInfo_BuffName", spellID, spellNameQuery);
 								}
-								string buffName = MQ.Query<string>(spellNameQuery, false);
+								string buffName = MQ.Query<string>(spellNameQuery);
 								buffRow.Name = buffName;
 
 								string targetSpellIcon = String.Empty;
@@ -1214,7 +1211,7 @@ namespace E3Core.UI.Windows.Hud
 									targetSpellIcon = $"${{Spell[{spellID}].SpellIcon}}";
 									IntToStringIDRegister("Hub_RenderTargetInfo_BuffIcon", spellID, targetSpellIcon);
 								}
-								Int32 spellIcon = MQ.Query<Int32>(targetSpellIcon, false);
+								Int32 spellIcon = MQ.Query<Int32>(targetSpellIcon);
 
 								buffRow.iconID = spellIcon;
 								buffRow.SpellType = spellType;
@@ -2199,49 +2196,49 @@ namespace E3Core.UI.Windows.Hud
 
 			try
 			{
-				var state = _state.GetState<State_HubWindow>();
-				if (imgui_Begin_OpenFlagGet(state.WindowName))
+				using (MQ.GetDelayLock())
 				{
-					TryReattachWindowsIfClosed();
-					var buttonState = _state.GetState<State_HotbuttonsWindow>();
-
-
-					RefreshGroupInfo();
-					RefreshBuffInfo();
-					RefreshPetBuffInfo();
-					RefreshPlayerInfo();
-					RefreshTargetInfo();
-					RenderHub_MainWindow();
-
-					var buffState = _state.GetState<State_BuffWindow>();
-					RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true, locked: buffState.Locked);
-					var songState = _state.GetState<State_SongWindow>();
-					RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true, locked: songState.Locked);
-					var petbuffState = _state.GetState<State_PetBuffWindow>();
-					RenderHub_TryDetached(petbuffState.WindowName, petbuffState.Detached, RenderPetBuffTableSimple, petbuffState.WindowAlpha, noTitleBar: true, locked: petbuffState.Locked);
-
-					var playerInfoState = _state.GetState<State_PlayerInfoWindow>();
-					if (state.ShowPlayerInfo)
+					var state = _state.GetState<State_HubWindow>();
+					if (imgui_Begin_OpenFlagGet(state.WindowName))
 					{
-						RenderHub_TryDetached(playerInfoState.WindowName, playerInfoState.Detached, RenderPlayerInfo, playerInfoState.WindowAlpha, noTitleBar: true, locked: playerInfoState.Locked);
-					}
-					var targetInfoState = _state.GetState<State_TargetInfoWindow>();
-					if (state.ShowTargetInfo)
-					{
-						RenderHub_TryDetached(targetInfoState.WindowName, targetInfoState.Detached, RenderTargetInfo, targetInfoState.WindowAlpha, noTitleBar: true, locked: targetInfoState.Locked);
-					}
-					if (state.ShowHotButtons)
-					{
-						RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
-					}
-					var peerAAState = _state.GetState<State_PeerAAWindow>();
-					if (peerAAState.IsOpen)
-					{
-						RenderHub_TryDetached(peerAAState.WindowName, true, RenderPeerAAWindow, peerAAState.WindowAlpha);
-					}
-				
+						TryReattachWindowsIfClosed();
+						var buttonState = _state.GetState<State_HotbuttonsWindow>();
 
 
+						RefreshGroupInfo();
+						RefreshBuffInfo();
+						RefreshPetBuffInfo();
+						RefreshPlayerInfo();
+						RefreshTargetInfo();
+						RenderHub_MainWindow();
+
+						var buffState = _state.GetState<State_BuffWindow>();
+						RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true, locked: buffState.Locked);
+						var songState = _state.GetState<State_SongWindow>();
+						RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true, locked: songState.Locked);
+						var petbuffState = _state.GetState<State_PetBuffWindow>();
+						RenderHub_TryDetached(petbuffState.WindowName, petbuffState.Detached, RenderPetBuffTableSimple, petbuffState.WindowAlpha, noTitleBar: true, locked: petbuffState.Locked);
+
+						var playerInfoState = _state.GetState<State_PlayerInfoWindow>();
+						if (state.ShowPlayerInfo)
+						{
+							RenderHub_TryDetached(playerInfoState.WindowName, playerInfoState.Detached, RenderPlayerInfo, playerInfoState.WindowAlpha, noTitleBar: true, locked: playerInfoState.Locked);
+						}
+						var targetInfoState = _state.GetState<State_TargetInfoWindow>();
+						if (state.ShowTargetInfo)
+						{
+							RenderHub_TryDetached(targetInfoState.WindowName, targetInfoState.Detached, RenderTargetInfo, targetInfoState.WindowAlpha, noTitleBar: true, locked: targetInfoState.Locked);
+						}
+						if (state.ShowHotButtons)
+						{
+							RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
+						}
+						var peerAAState = _state.GetState<State_PeerAAWindow>();
+						if (peerAAState.IsOpen)
+						{
+							RenderHub_TryDetached(peerAAState.WindowName, true, RenderPeerAAWindow, peerAAState.WindowAlpha);
+						}
+					}
 				}
 			}
 			catch (Exception ex)

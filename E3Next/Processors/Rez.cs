@@ -157,14 +157,14 @@ namespace E3Core.Processors
 		{
 			_spawns.RefreshList();
 			string corpseName = E3.CurrentName + "'s corpse";
-		
+
 
 			//we can spend way too much time in here, so just get the ids so we can access via trybyid
 			List<Int32> spawnList = _spawns.GetIDs();
 
 			foreach (var spawnid in spawnList)
 			{
-				if(_spawns.TryByID(spawnid, out var spawn))
+				if (_spawns.TryByID(spawnid, out var spawn))
 				{
 					if (spawn.CleanName.StartsWith(corpseName))
 					{
@@ -218,92 +218,58 @@ namespace E3Core.Processors
 			}
 
 			_corpsesToRemoveFromRecentlyRezzed.Clear();
-
-			bool rezOurself = false;
-			var spawnids = _spawns.GetIDs();
-			//lets find the clerics in range
-			foreach (var spawnid in spawnids)
+			using (MQ.GetDelayLock())
 			{
-				if(_spawns.TryByID(spawnid,out var spawn))
-				{
-					if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead && spawn.ClassShortName == "CLR")
-					{
-						if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
-						{
-							//E3.Bots.Broadcast($"\agSkipping {spawn.CleanName} because i rezzed it < 1 minute ago");
-							continue;
-						}
-						if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
-						{
-							continue;
-						}
-						if (rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}", false)))
-						{
-							continue;
 
-						}
-						if (spawn.DisplayName == E3.CurrentName)
-						{
-							//rez ourself last
-							rezOurself = true;
-							continue;
-						}
-						_corpseList.Add(spawn.ID);
-					}
-				}
-				
-			}
-			foreach (var spawnid in spawnids)
-			{
-				if(_spawns.TryByID(spawnid,out var spawn))
-				{
-					if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
-					{
-						if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
-						{
-							//E3.Bots.Broadcast($"\agSkipping {spawn.CleanName}'s corpse because i rezzed it < 1 minute ago");
-							continue;
-						}
-						if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
-						{
-							continue;
-						}
-						if (rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}",false)))
-						{
-							continue;
 
-						}
-						if (spawn.DisplayName == E3.CurrentName)
-						{
-							//rez ourself last
-							rezOurself = true;
-							continue;
-						}
-						_corpseList.Add(spawn.ID);
-					}
-				}
-				
-			}
-			//everyone else
-			foreach (Int32 spawnid in spawnids)
-			{
-				if(_spawns.TryByID(spawnid,out var spawn))
+				bool rezOurself = false;
+				var spawnids = _spawns.GetIDs();
+				//lets find the clerics in range
+				foreach (var spawnid in spawnids)
 				{
-					if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead)
+					if (_spawns.TryByID(spawnid, out var spawn))
 					{
-						if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
+						if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead && spawn.ClassShortName == "CLR")
 						{
-							//E3.Bots.Broadcast($"\agSkipping {spawn.CleanName}'s corpse because i rezzed it < 1 minute ago");
-							continue;
-						}
-						//lists are super small so contains is fine
-						if (!_corpseList.Contains(spawn.ID))
-						{
+							if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
+							{
+								//E3.Bots.Broadcast($"\agSkipping {spawn.CleanName} because i rezzed it < 1 minute ago");
+								continue;
+							}
 							if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
 							{
 								continue;
 							}
-							if (rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}",false)))
+							if (rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
+							{
+								continue;
+							}
+							if (spawn.DisplayName == E3.CurrentName)
+							{
+								//rez ourself last
+								rezOurself = true;
+								continue;
+							}
+							_corpseList.Add(spawn.ID);
+						}
+					}
+				}
+				foreach (var spawnid in spawnids)
+				{
+					if (_spawns.TryByID(spawnid, out var spawn))
+					{
+						if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead && (spawn.ClassShortName == "DRU" || spawn.ClassShortName == "SHM" || spawn.ClassShortName == "WAR"))
+						{
+							if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
+							{
+								//E3.Bots.Broadcast($"\agSkipping {spawn.CleanName}'s corpse because i rezzed it < 1 minute ago");
+								continue;
+							}
+							if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
+							{
+								continue;
+							}
+							if (rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
 							{
 								continue;
 
@@ -317,31 +283,66 @@ namespace E3Core.Processors
 							_corpseList.Add(spawn.ID);
 						}
 					}
+
 				}
-				
-			}
-			if (rezOurself)
-			{
-				foreach (var spawnid in spawnids)
+				//everyone else
+				foreach (Int32 spawnid in spawnids)
 				{
-					if(_spawns.TryByID(spawnid, out var spawn))
+					if (_spawns.TryByID(spawnid, out var spawn))
 					{
 						if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead)
 						{
+							if (_recentlyRezzed.TryGetValue(spawn.ID, out _))
+							{
+								//E3.Bots.Broadcast($"\agSkipping {spawn.CleanName}'s corpse because i rezzed it < 1 minute ago");
+								continue;
+							}
 							//lists are super small so contains is fine
 							if (!_corpseList.Contains(spawn.ID))
 							{
+								if (rezType == RezType.Group && !E3.Bots.IsMyBot(spawn.DisplayName))
+								{
+									continue;
+								}
+								if (rezType == RezType.GroupOrRaid && !(E3.Bots.IsMyBot(spawn.DisplayName) || MQ.Query<bool>($"${{Raid.Member[{spawn.DisplayName}]}}")))
+								{
+									continue;
+
+								}
 								if (spawn.DisplayName == E3.CurrentName)
 								{
-									_corpseList.Add(spawn.ID);
+									//rez ourself last
+									rezOurself = true;
+									continue;
 								}
+								_corpseList.Add(spawn.ID);
+							}
+						}
+					}
 
+				}
+				if (rezOurself)
+				{
+					foreach (var spawnid in spawnids)
+					{
+						if (_spawns.TryByID(spawnid, out var spawn))
+						{
+							if (spawn.Distance3D < 100 && spawn.DeityID != 0 && spawn.Dead)
+							{
+								//lists are super small so contains is fine
+								if (!_corpseList.Contains(spawn.ID))
+								{
+									if (spawn.DisplayName == E3.CurrentName)
+									{
+										_corpseList.Add(spawn.ID);
+									}
+
+								}
 							}
 						}
 					}
 				}
 			}
-
 		}
 
 		[ClassInvoke(Class.All)]

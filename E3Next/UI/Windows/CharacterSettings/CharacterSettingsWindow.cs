@@ -179,17 +179,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 					{
 						if (window.Begin(_windowName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 						{
-
-							Render_MainWindow_Header();
-							imgui_Separator();
-							Render_MainWindow_CharIniSelector();
-							imgui_Separator();
-							Render_MainWindow_SearchBar();
-							var allPlayersState = _state.GetState<State_AllPlayers>();
-							if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
-							if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
-							if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
-							if (_state.Show_Donate) RenderDonateModal();
+							using (MQ.GetDelayLock())
+							{
+								Render_MainWindow_Header();
+								imgui_Separator();
+								Render_MainWindow_CharIniSelector();
+								imgui_Separator();
+								Render_MainWindow_SearchBar();
+								var allPlayersState = _state.GetState<State_AllPlayers>();
+								if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
+								if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
+								if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
+								if (_state.Show_Donate) RenderDonateModal();
+							}
 						}
 					}
 				}
@@ -1101,7 +1103,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 									Int32 spellID = -1;
 									Int32.TryParse(gemState.Gems[gem], out spellID);
 
-									string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}", false);
+									string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}");
 
 									if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase) && !spellName.Equals("ERROR", StringComparison.OrdinalIgnoreCase))
 									{

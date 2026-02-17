@@ -160,7 +160,7 @@ namespace TestCore
                 return true;
             }
 
-            public T Query<T>(string query, bool delayPossible = true)
+            public T Query<T>(string query)
             {
 
                 if (typeof(T) == typeof(Int32))
@@ -267,6 +267,21 @@ namespace TestCore
 			}
 
 			public unsafe byte* GetTargetBuffDataPtr(Int32 spawnid, out int length)
+			{
+				throw new NotImplementedException();
+			}
+
+			public void DisableDelay()
+			{
+				throw new NotImplementedException();
+			}
+
+			public void EnableDelay()
+			{
+				throw new NotImplementedException();
+			}
+
+			public IMQLock GetDelayLock()
 			{
 				throw new NotImplementedException();
 			}

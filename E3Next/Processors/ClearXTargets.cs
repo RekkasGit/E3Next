@@ -199,21 +199,25 @@ namespace E3Core.Processors
 					}
 					if (MobToAttack<1)
 					{
-						foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
+						using (MQ.GetDelayLock())
 						{
-							//find all mobs that are close
-							if (s.TypeDesc != "NPC") continue;
-							if (s.Dead) continue;
-							if (!s.Targetable) continue;
-							if (!s.Aggressive) continue;
-							if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
-							if (s.CleanName.EndsWith("s pet")) continue;
-							if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}",false)) continue;
-							if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
-													   //its valid to attack!
-							MobToAttack = s.ID;
-							break;
+							foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
+							{
+								//find all mobs that are close
+								if (s.TypeDesc != "NPC") continue;
+								if (s.Dead) continue;
+								if (!s.Targetable) continue;
+								if (!s.Aggressive) continue;
+								if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
+								if (s.CleanName.EndsWith("s pet")) continue;
+								if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+								if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
+															 //its valid to attack!
+								MobToAttack = s.ID;
+								break;
+							}
 						}
+					
 					}
 					if (MobToAttack <=0)
                     {

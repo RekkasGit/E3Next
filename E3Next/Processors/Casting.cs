@@ -1934,6 +1934,12 @@ namespace E3Core.Processors
 		}
 		public static bool InRange(Int32 targetId, Data.Spell spell)
 		{
+
+			if (spell.TargetType == "Group v1")
+			{
+				if (!Basics.GroupMembersInZone.Contains(targetId)) return false;
+			}
+
 			if (!spell.Initialized) spell.ReInit(); 
 
 			if (spell.MyRange == 0) return true;
