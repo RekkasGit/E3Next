@@ -21,6 +21,7 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private State_HubWindow _hubWindowState = new State_HubWindow();
 		private State_BuffWindow _buffWindowState = new State_BuffWindow();
+		private State_PetBuffWindow _petBuffWindowState = new State_PetBuffWindow();
 		private State_DebuffWindow _debuffWindowState = new State_DebuffWindow();
 		private State_SongWindow _songWindowState = new State_SongWindow();
 		private State_HotbuttonsWindow _hotbuttonWindowState = new State_HotbuttonsWindow();
@@ -38,6 +39,10 @@ namespace E3Core.UI.Windows.Hud
 			if (type == typeof(State_BuffWindow))
 			{
 				return (T)(object)_buffWindowState;
+			}
+			if(type==typeof(State_PetBuffWindow))
+			{
+				return (T)(object)(_petBuffWindowState);
 			}
 			if (type == typeof(State_SongWindow))
 			{
@@ -177,6 +182,57 @@ namespace E3Core.UI.Windows.Hud
 		public State_BuffWindow()
 		{
 			FadeRatio = ((double)255) / E3.CharacterSettings.E3Hud_Hub_Buff_FadeTimeInMS;
+			IsDirty = false;
+		}
+
+		public void UpdateSettings_WithoutSaving()
+		{
+			IsDirty = false;
+		}
+	}
+	public class State_PetBuffWindow
+	{
+
+		public ConcurrentDictionary<Int32, BuffCacheEntry> BuffCache = new ConcurrentDictionary<int, BuffCacheEntry>();
+		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_PetBuff_Alpha; set { E3.CharacterSettings.E3Hud_Hub_PetBuff_Alpha = value; IsDirty = true; } }
+		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_PetBuff_Detached; set { E3.CharacterSettings.E3Hud_Hub_PetBuff_Detached = value; IsDirty = true; } }
+		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_PetBuff_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_PetBuff_SelectedFont = value; IsDirty = true; } }
+		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_PetBuff_IconSize; set { E3.CharacterSettings.E3Hud_Hub_PetBuff_IconSize = value; IsDirty = true; } }
+		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_PetBuff_Locked; set { E3.CharacterSettings.E3Hud_Hub_PetBuff_Locked = value; IsDirty = true; } }
+		public bool ListView { get => E3.CharacterSettings.E3Hud_Hub_PetBuff_ListView; set { E3.CharacterSettings.E3Hud_Hub_PetBuff_ListView = value; IsDirty = true; } }
+		public bool ShowProgressBars { get => E3.CharacterSettings.E3Hud_Hub_PetBuff_ShowProgressBars; set { E3.CharacterSettings.E3Hud_Hub_PetBuff_ShowProgressBars = value; IsDirty = true; } }
+
+		public int FadeTimeInMS
+		{
+			get { return E3.CharacterSettings.E3Hud_Hub_PetBuff_FadeTimeInMS; }
+			set
+			{
+				E3.CharacterSettings.E3Hud_Hub_PetBuff_FadeTimeInMS = value;
+				if (fadeTimeInMS < 1) fadeTimeInMS = 1;
+				FadeRatio = ((double)255) / value;
+				IsDirty = true;
+			}
+		}
+		public bool IsDirty = false;
+
+		public HashSet<Int32> PreviousBuffs = new HashSet<Int32>();
+		public Dictionary<Int32, Int64> NewBuffsTimeStamps = new Dictionary<Int32, Int64>();
+		public string PreviousBuffInfo = string.Empty;
+
+		public string WindowName = $"E3 Pet Buff Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+		public Int64 LastUpdated = 0;
+		public Int64 LastUpdateInterval = 500;
+		public List<TableRow_BuffInfo> BuffInfo = new List<TableRow_BuffInfo>();
+		public List<TableRow_BuffInfo> DeBuffInfo = new List<TableRow_BuffInfo>();
+
+		private Int32 iconSize = 40;
+		public Int32 FontSize = 8;
+		private int fadeTimeInMS = 1000;
+		public double FadeRatio = 0;
+
+		public State_PetBuffWindow()
+		{
+			FadeRatio = ((double)255) / E3.CharacterSettings.E3Hud_Hub_PetBuff_FadeTimeInMS;
 			IsDirty = false;
 		}
 

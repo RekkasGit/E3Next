@@ -171,13 +171,7 @@ namespace E3Core.Processors
 
 			},"Have your toon broadcast writes out to the MQ window for a conssolidated view.");
 
-			EventProcessor.RegisterCommand("/e3debug_disablewrites", (x) =>
-			{
-
-				e3util.ToggleBooleanSetting(ref _disableWrites, "Disable Writes", x.args);
-
-
-			}, "Disable writes locally");
+		
 
 		}
 		private static void InitSubSystems()

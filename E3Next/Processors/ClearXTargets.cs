@@ -1,14 +1,11 @@
-﻿using E3Core.Classes;
-using E3Core.Data;
-using E3Core.Settings;
+﻿using E3Core.Settings;
 using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
+using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
+
 
 namespace E3Core.Processors
 {
@@ -131,14 +128,14 @@ namespace E3Core.Processors
         {
             if (Enabled)
             {
-                e3util.YieldToEQ();
-                _spawns.RefreshList();
+                //e3util.YieldToEQ();
+                _spawns.RefreshList(full:true); //force a full refresh
                 if (MobToAttack > 0)
                 {
                     if (_spawns.TryByID(MobToAttack, out var ts))
                     {
                         //is it still alive?
-                        if (ts.TypeDesc == "Corpse") MobToAttack = 0;//its dead jim
+                        if (ts.Dead) MobToAttack = 0;//its dead jim
                     }
                     else
                     {
@@ -156,7 +153,7 @@ namespace E3Core.Processors
 						{
 							if (_spawns.TryByID(targetedMobID, out var tmob))
 							{
-								if (tmob.TypeDesc == "NPC" && tmob.Targetable && tmob.Aggressive)
+								if (!tmob.Dead && tmob.TypeDesc == "NPC" && tmob.Targetable && tmob.Aggressive)
 								{
 									MobToAttack = tmob.ID;
 								}
@@ -165,28 +162,62 @@ namespace E3Core.Processors
 					}
 					if (FindLowestHPTarget)
 					{
-						MobToAttack = e3util.GetXtargetLowestHP();
+						if(Core._MQ2MonoVersion>=0.412m || Debugger.IsAttached)
+						{
+							unsafe
+							{
+								int length;
+								byte* p;
+								p = MQ.GetXtargetDataPtr(out length);
+								ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+								MobToAttack = e3util.GetXtargetLowestHP(data);
+							}
+						}
+						else
+						{
+							MobToAttack = e3util.GetXtargetLowestHP();
+						}
 					}
 					else if (FindHighestHPTarget)
 					{
-						MobToAttack = e3util.GetXtargetHighestHP();
+						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
+						{
+							unsafe
+							{
+								int length;
+								byte* p;
+								p = MQ.GetXtargetDataPtr(out length);
+								ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+								MobToAttack = e3util.GetXtargetHighestHP(data);
+							}
+						}
+						else
+						{
+							MobToAttack = e3util.GetXtargetHighestHP();
+						}
+						
 					}
 					if (MobToAttack<1)
 					{
-						foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
+						using (MQ.GetDelayLock())
 						{
-							//find all mobs that are close
-							if (s.TypeDesc != "NPC") continue;
-							if (!s.Targetable) continue;
-							if (!s.Aggressive) continue;
-							if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
-							if (s.CleanName.EndsWith("s pet")) continue;
-							if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-							if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
-													   //its valid to attack!
-							MobToAttack = s.ID;
-							break;
+							foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
+							{
+								//find all mobs that are close
+								if (s.TypeDesc != "NPC") continue;
+								if (s.Dead) continue;
+								if (!s.Targetable) continue;
+								if (!s.Aggressive) continue;
+								if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
+								if (s.CleanName.EndsWith("s pet")) continue;
+								if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+								if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
+															 //its valid to attack!
+								MobToAttack = s.ID;
+								break;
+							}
 						}
+					
 					}
 					if (MobToAttack <=0)
                     {
@@ -204,7 +235,7 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByID(mobId, out s))
                         {
-                            MQ.Write($"\agClear Targets: \aoIssuing Assist on {s.DisplayName} with id:{s.ID}.");
+                            MQ.Write($"\agClear Targets: \aoIssuing Assist on {s.DisplayName} with id:{s.ID}. who is Dead:{s.Dead}");
                             Assist.AllowControl = true;
                             Assist.AssistOn(s.ID, Zoning.CurrentZone.Id);
                             if (FaceTarget)

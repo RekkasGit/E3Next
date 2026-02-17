@@ -199,7 +199,7 @@ namespace E3Core.Processors
 			{
 				return false;
 			}
-			if (s.TypeDesc == "Corpse")
+			if (s.Dead)
 			{
 				return false;
 			}

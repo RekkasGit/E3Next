@@ -227,6 +227,25 @@ namespace E3Core.Settings
 		[INI_Section("E3Hud_Hub_Buff", "ShowProgressBars")]
 		public bool E3Hud_Hub_Buff_ShowProgressBars = true;
 
+
+
+		[INI_Section("E3Hud_Hub_PetBuff", "SelectedFont")]
+		public string E3Hud_Hub_PetBuff_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_PetBuff", "Detached")]
+		public bool E3Hud_Hub_PetBuff_Detached = false;
+		[INI_Section("E3Hud_Hub_PetBuff", "IconSize")]
+		public int E3Hud_Hub_PetBuff_IconSize = 40;
+		[INI_Section("E3Hud_Hub_PetBuff", "FadeTimeInMS")]
+		public Int32 E3Hud_Hub_PetBuff_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub_PetBuff", "Alpha")]
+		public float E3Hud_Hub_PetBuff_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_PetBuff", "Locked")]
+		public bool E3Hud_Hub_PetBuff_Locked = false;
+		[INI_Section("E3Hud_Hub_PetBuff", "ListView")]
+		public bool E3Hud_Hub_PetBuff_ListView = false;
+		[INI_Section("E3Hud_Hub_PetBuff", "ShowProgressBars")]
+		public bool E3Hud_Hub_PetBuff_ShowProgressBars = true;
+
 		[INI_Section("E3Hud_Hub_Song", "SelectedFont")]
 		public string E3Hud_Hub_Song_SelectedFont = "robo";
 		[INI_Section("E3Hud_Hub_Song", "Detached")]
@@ -902,6 +921,16 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Buff", "ListView", ParsedData, ref E3Hud_Hub_Buff_ListView);
 			LoadKeyData("E3Hud_Hub_Buff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Buff_ShowProgressBars);
 
+
+			LoadKeyData("E3Hud_Hub_PetBuff", "Alpha", ParsedData, ref E3Hud_Hub_PetBuff_Alpha);
+			LoadKeyData("E3Hud_Hub_PetBuff", "Detached", ParsedData, ref E3Hud_Hub_PetBuff_Detached);
+			LoadKeyData("E3Hud_Hub_PetBuff", "IconSize", ParsedData, ref E3Hud_Hub_PetBuff_IconSize);
+			LoadKeyData("E3Hud_Hub_PetBuff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_PetBuff_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_PetBuff", "Locked", ParsedData, ref E3Hud_Hub_PetBuff_Locked);
+			LoadKeyData("E3Hud_Hub_PetBuff", "ListView", ParsedData, ref E3Hud_Hub_PetBuff_ListView);
+			LoadKeyData("E3Hud_Hub_PetBuff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_PetBuff_ShowProgressBars);
+
+
 			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData, ref E3Hud_Hub_Song_Alpha);
 			LoadKeyData("E3Hud_Hub_Song", "Detached", ParsedData, ref E3Hud_Hub_Song_Detached);
 			LoadKeyData("E3Hud_Hub_Song", "IconSize", ParsedData, ref E3Hud_Hub_Song_IconSize);
@@ -1380,6 +1409,16 @@ namespace E3Core.Settings
 
 			newFile.Sections.AddSection("E3Hud_Hub_Buff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Buff");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("IconSize", "40");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ListView", "False");
+			section.Keys.AddKey("ShowProgressBars", "True");
+
+			newFile.Sections.AddSection("E3Hud_Hub_PetBuff");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_PetBuff");
 			section.Keys.AddKey("Alpha", "0.8");
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");

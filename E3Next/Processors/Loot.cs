@@ -2,18 +2,11 @@
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
-using Google.Protobuf.Collections;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Dynamic;
 using System.Linq;
-using System.Net.Configuration;
-using System.ServiceModel.Configuration;
-using System.ServiceModel.PeerResolvers;
-using System.Windows.Forms;
-using System.Xml.Linq;
+
 
 namespace E3Core.Processors
 {
@@ -239,7 +232,7 @@ namespace E3Core.Processors
                                     {
 										e3util.TryMoveToTarget();
 										MQ.Delay(2250, "${Target.Distance} < 10"); // Give Time to get to Corpse 
-										LootCorpse(s, false, true);
+										LootCorpse(s.ID, false, true);
                                     }
 								}
                                 else
@@ -516,7 +509,7 @@ namespace E3Core.Processors
 					{
 						e3util.TryMoveToTarget();
 						MQ.Delay(2250, "${Target.Distance} < 10"); // Give Time to get to Corpse 
-						LootCorpse(c);
+						LootCorpse(c.ID);
                         corpses.PopFront();
 						if (MQ.Query<bool>("${Window[LootWnd].Open}"))
 						{
@@ -543,34 +536,58 @@ namespace E3Core.Processors
             BuffCheck.Check_BlockedBuffs();//to see if we need to remove torpor
 
 
-
+            _log.Write("Trying to loot area");
 			List<Spawn> corpses = new List<Spawn>();
-            foreach (var spawn in _spawns.Get())
-            {
-                //only player corpses have a Deity
-                if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.TypeDesc == "Corpse" )
-                {
-					//is it too far above/below us? ignore it
-					if (Math.Abs(spawn.Z - startZ) > 20) continue;
 
-					if (!Zoning.CurrentZone.IsSafeZone)
-                    {
-                        if (!_unlootableCorpses.Contains(spawn.ID))
-                        {
-                            corpses.Add(spawn);
-                        }
-                    }
-                }
-            }
-            if (corpses.Count==0)
+            List<Int32> currentSpawns = _spawns.GetIDs();
+
+			_log.Write($"Retrieved {currentSpawns.Count} total spawns in zone.");
+
+			foreach (var id in currentSpawns)
             {
-                return;
+
+                if(_spawns.TryByID(id, out var spawn))
+                {
+
+                    //only player corpses have a Deity
+
+
+                    _log.Write($"Checking spawn data: dis:{spawn.Distance3D} god:{spawn.DeityID} typedesc:{spawn.TypeDesc}  dead?:{spawn.Dead}");
+
+                    if (spawn.Distance3D < E3.GeneralSettings.Loot_CorpseSeekRadius && spawn.DeityID == 0 && spawn.Dead)
+					{
+				        
+
+                        //is it too far above/below us? ignore it
+						if (Math.Abs(spawn.Z - startZ) > 20) continue;
+
+						if (!Zoning.CurrentZone.IsSafeZone)
+						{
+							if (!_unlootableCorpses.Contains(spawn.ID))
+							{
+								corpses.Add(spawn);
+							}
+						}
+					}
+				}
+			}
+            if (corpses.Count==0)
+			{
+				_log.Write($"No corpses were found in range.");
+
+				return;
             }
                 //sort all the corpses, removing the ones we cannot loot
              corpses = corpses.OrderBy(x => x.Distance).ToList();
 
             if (corpses.Count > 0)
             {
+                List<Int32> corpseList = new List<int>();
+                foreach (var corpse in corpses)
+                {
+                    corpseList.Add(corpse.ID);
+                }
+                corpses.Clear();//get rid of them, as in general its not safe to keep.
                 MQ.Cmd("/squelch /hidecorpse looted");
                 MQ.Delay(100);
 
@@ -581,7 +598,7 @@ namespace E3Core.Processors
 
                // bool destroyCorpses = false;
 
-                foreach (var c in corpses)
+                foreach (var c in corpseList)
                 {
 					
 					//allow eq time to send the message to us
@@ -607,13 +624,13 @@ namespace E3Core.Processors
 						}
 					}
                    
-                    if (MQ.Query<double>($"${{Spawn[id {c.ID}].Distance3D}}") > E3.GeneralSettings.Loot_CorpseSeekRadius*2)
+                    if (MQ.Query<double>($"${{Spawn[id {c}].Distance3D}}") > E3.GeneralSettings.Loot_CorpseSeekRadius*2)
                     {
-                        E3.Bots.Broadcast($"\arSkipping corpse: {c.ID} because of distance: ${{Spawn[id {c.ID}].Distance3D}}");
+                        E3.Bots.Broadcast($"\arSkipping corpse: {c} because of distance: ${{Spawn[id {c}].Distance3D}}");
                         continue;
                     }
 
-                    Casting.TrueTarget(c.ID);
+                    Casting.TrueTarget(c);
                     //MQ.Delay(2000, "${Target.ID}");
                    
                     if(MQ.Query<bool>("${Target.ID}"))
@@ -638,18 +655,21 @@ namespace E3Core.Processors
         }
         private static bool SafeToLoot()
         {
-			foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
-			{
-				//find all mobs that are close
-				if (s.TypeDesc != "NPC") continue;
-				if (!s.Targetable) continue;
-				if (!s.Aggressive) continue;
-				if (s.CleanName.EndsWith("s pet")) continue;
-				if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-				if (s.Distance3D > 30) break;//mob is too far away, and since it is ordered, kick out.
-                                          
-                return false;
-			}
+            using (MQ.GetDelayLock())
+            {
+                foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
+                {
+                    //find all mobs that are close
+                    if (s.TypeDesc != "NPC") continue;
+                    if (!s.Targetable) continue;
+                    if (!s.Aggressive) continue;
+                    if (s.CleanName.EndsWith("s pet")) continue;
+                    if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+                    if (s.Distance3D > 30) break;//mob is too far away, and since it is ordered, kick out.
+
+                    return false;
+                }
+            }
             return true;
 		}
         public static void DestroyCorpse(Spawn corpse)
@@ -883,7 +903,7 @@ namespace E3Core.Processors
             }
             return false;
         }
-        public static void LootCorpse(Spawn corpse, bool bypassLootSettings = false, bool lootAll = false)
+        public static void LootCorpse(Int32 corspeID, bool bypassLootSettings = false, bool lootAll = false)
         {
             e3util.ClearCursor();
 			Int32 lootTryCount = 0;
@@ -919,10 +939,18 @@ namespace E3Core.Processors
                     {
                         goto tryandLoot;
                     }
-                    MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
-                    if (!_unlootableCorpses.Contains(corpse.ID))
+                    if (_spawns.TryByID(corspeID, out var corpse)) {
+
+						MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corspeID} to ignore corpse list.");
+					}
+                    else
                     {
-                        _unlootableCorpses.Add(corpse.ID);
+						MQ.Write($"\arERROR, Loot Window not opening, adding {corspeID} to ignore corpse list.");
+					}
+
+                    if (!_unlootableCorpses.Contains(corspeID))
+                    {
+                        _unlootableCorpses.Add(corspeID);
                     }
                     return;
 
@@ -1192,7 +1220,7 @@ namespace E3Core.Processors
                     
                     if(MQ.Query<bool>("${Group}"))
                     {
-                        PrintCorpseItems(corpse,corpseItemsCount, itemStates);
+                        PrintCorpseItems(corspeID,corpseItemsCount, itemStates);
 //						PrintLink($"{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID} - ");
 					}
 				}
@@ -1201,7 +1229,7 @@ namespace E3Core.Processors
         }
 
         private static List<string> _printCorpseItemList = new List<string>(10); 
-        private static void PrintCorpseItems(Spawn corpse,Int32 initialCountOfItems,Dictionary<Int32,List<string>> itemstates)
+        private static void PrintCorpseItems(Int32 corspeID,Int32 initialCountOfItems,Dictionary<Int32,List<string>> itemstates)
 		{
             //need the initial count in case items were looted, so that we display all items
 			Int32 corpseItems = initialCountOfItems;
@@ -1230,7 +1258,7 @@ namespace E3Core.Processors
 			}
             if(_printCorpseItemList.Count > 0 )
             {
-				MQ.Cmd($"/{E3.GeneralSettings.Loot_LinkChannel} {corpse.ID}) - {String.Join(",", _printCorpseItemList)}");
+				MQ.Cmd($"/{E3.GeneralSettings.Loot_LinkChannel} {corspeID}) - {String.Join(",", _printCorpseItemList)}");
 				_printCorpseItemList.Clear();//clear out so the values don't live long
 			}
 		}

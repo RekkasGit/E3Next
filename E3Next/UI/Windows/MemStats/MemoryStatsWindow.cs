@@ -1,13 +1,14 @@
-﻿using MonoCore;
+﻿using E3Core.Classes;
+using E3Core.Processors;
+using E3Core.Server;
+using E3Core.Utility;
+using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using static MonoCore.E3ImGUI;
-using E3Core.Classes;
-using E3Core.Processors;
-using E3Core.Utility;
-using E3Core.Server;
 using System.Text;
+using static MonoCore.E3ImGUI;
 
 namespace E3Core.UI.Windows.MemStats
 {
@@ -36,6 +37,7 @@ namespace E3Core.UI.Windows.MemStats
 		[SubSystemInit]
 		public static void Init()
 		{
+			if (Debugger.IsAttached) return;
 			if (Core._MQ2MonoVersion < 0.41m)
 			{
 				E3.MQ.Write("This requires MQ2Mono 0.41 or greater");
@@ -48,61 +50,7 @@ namespace E3Core.UI.Windows.MemStats
 				MemoryStatsWindow.ToggleWindow();
 			}, "toggle memory stats window");
 
-			EventProcessor.RegisterCommand("/e3debug_memory_collect", (x) =>
-			{
-
-				if(x.args.Count>0)
-				{
-					int generation = 0;
-					Int32.TryParse(x.args[0], out generation);
-
-					if (generation < 0)
-					{
-						generation = 0;
-					}
-					else if (generation > 2)
-					{
-						generation = 2;
-					}
-					E3.Bots.Broadcast($"Collecting C# Memory ({generation})");
-					GC.Collect(generation, GCCollectionMode.Forced, false);
-				}
-				else
-				{
-					GC.GetTotalMemory(true);
-					E3.Bots.Broadcast("Collecting C# Memory (All)");
-				}
-
-				
-			}, "toggle memory stats window");
-			EventProcessor.RegisterCommand("/e3debug_memory_counts", (x) =>
-			{
-
-					//events
-				E3.Bots.Broadcast($"Events: MQ:{EventProcessor._mqEventProcessingQueue.Count}, MQC:{EventProcessor._mqCommandProcessingQueue.Count}, E:{EventProcessor._eventProcessingQueue.Count}" +
-				$", FREX:{EventProcessor._filterRegexes.Count}, EL:{EventProcessor.EventList.Count}, CLQ:{EventProcessor.CommandListQueue.Count}");
-				E3.Bots.Broadcast($"PubSub: T:{PubServer._topicMessages.Count}, IM:{PubServer.IncomingChatMessages.Count}, CTS:{PubServer.CommandsToSend.Count}, MQCM:{PubServer.MQChatMessages.Count}");
-				E3.Bots.Broadcast($"Router: TLORequest:{RouterServer._tloRequests.Count}, TLOReponse:{RouterServer._tloResposne.Count}");
-				E3.Bots.Broadcast($"BegForBuffs: Queued Buffs:{BegForBuffs._queuedBuffs.Count}");
-				//NetMQServer.SharedDataClient.TopicUpdates
-				E3.Bots.Broadcast($"Shared Data: UTopics:{NetMQServer.SharedDataClient.TopicUpdates.Count}");
-
-				StringBuilder sb = new StringBuilder();
-
-				bool firstAppend = true;
-				foreach(var pair in NetMQServer.SharedDataClient.TopicUpdates)
-				{
-
-					if (!firstAppend) sb.Append(",");
-					if(firstAppend) firstAppend=false;
-					sb.Append($"{pair.Key}:{pair.Value.Count}");
-					
-				}
-				E3.Bots.Broadcast($"Shared Data user topic Count: UTopics:{NetMQServer.SharedDataClient.TopicUpdates.Count}, Users: {sb.ToString()}");
-
-
-
-			}, "Output collection sizes");
+			
 
 		}
 		public static void ToggleWindow()
@@ -141,7 +89,7 @@ namespace E3Core.UI.Windows.MemStats
 				Double csharpMemory = 0;
 				Double eqPageMemory = 0;
 
-				string startTime = E3.Bots.Query(user, "${Me.Memory_EQStartTime}");
+				string startTime = E3.Bots.Query<string>(user, "${Me.Memory_EQStartTime}");
 
 				E3.Bots.GetMemoryUsage(user, out csharpMemory, out eqPageMemory);
 				var memoryStat = new MemoryStats(user, csharpMemory, eqPageMemory);
@@ -157,6 +105,9 @@ namespace E3Core.UI.Windows.MemStats
 				_memoryStats.Add(memoryStat);
 			}
 		}
+		static Int64 lastGCZeroCount = 0;
+		static Int64 lastGCZeroTimeStamp = 0;
+		static string GCDisplay = $"GC Collect Gen0:({GC.CollectionCount(0)}) Gen0Time:(0) Gen1:({GC.CollectionCount(1)}) Gen2:({GC.CollectionCount(2)})";
 		private static void RenderWindow()
 		{
 			if (!_imguiContextReady) return;
@@ -173,6 +124,23 @@ namespace E3Core.UI.Windows.MemStats
 
 					// Header with refresh button
 					imgui_Text("E3 Memory Statistics by Rekka/Linamas");
+
+					Int64 GCZeroCount = GC.CollectionCount(0);
+					Int64 GCZeroDisplay = 0;
+					Decimal millisecondsSinceLastChange = Core.StopWatch.ElapsedMilliseconds - lastGCZeroTimeStamp;
+
+					if (lastGCZeroCount!=GCZeroCount)
+					{
+						lastGCZeroCount = GCZeroCount;
+						GCZeroDisplay = Core.StopWatch.ElapsedMilliseconds - lastGCZeroTimeStamp;
+						lastGCZeroTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+						GCDisplay = $"GC Collect Gen0:({GCZeroCount}) Gen0Time:({GCZeroDisplay}) Gen1:({GC.CollectionCount(1)}) Gen2:({GC.CollectionCount(2)})";
+					}
+
+				
+
+					imgui_Text(GCDisplay);
+
 					imgui_Separator();
 					using(var child =ImGUIChild.Aquire())
 					{

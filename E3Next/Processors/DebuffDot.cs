@@ -87,23 +87,30 @@ namespace E3Core.Processors
 			using (_log.Trace())
 			{
 				_offAssistFullMobList.Clear();
-				foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
-				{
-					_offAssistFullMobList.Add(s.ID);
-					if (_mobsToOffAsist.Contains(s.ID)) continue;
-					//find all mobs that are close
-					if (s.PctHps < 10) continue;
-					if (s.TypeDesc != "NPC") continue;
-					if (!s.Targetable) continue;
-					if (!s.Aggressive) continue;
-					if (s.CleanName.EndsWith("s pet")) continue;
-					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-					if (s.Distance > 200) break;//mob is too far away, and since it is ordered, kick out.
-											   //its valid to attack!
-                    if(_mobsToIgnoreOffAsist.Contains(s.ID)) continue;
+                using (MQ.GetDelayLock())
+                {
 
-					_mobsToOffAsist.Add(s.ID);
-				}
+
+
+                    foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
+                    {
+                        _offAssistFullMobList.Add(s.ID);
+                        if (_mobsToOffAsist.Contains(s.ID)) continue;
+                        //find all mobs that are close
+                        if (s.PctHps < 10) continue;
+                        if (s.Dead) continue;
+                        if (s.TypeDesc != "NPC") continue;
+                        if (!s.Targetable) continue;
+                        if (!s.Aggressive) continue;
+                        if (s.CleanName.EndsWith("s pet")) continue;
+                        if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+                        if (s.Distance > 200) break;//mob is too far away, and since it is ordered, kick out.
+                                                    //its valid to attack!
+                        if (_mobsToIgnoreOffAsist.Contains(s.ID)) continue;
+
+                        _mobsToOffAsist.Add(s.ID);
+                    }
+                }
 				List<Int64> mobIdsToRemove = new List<Int64>();
 				foreach (var mobid in _mobsToOffAsist)
 				{

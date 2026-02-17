@@ -9,6 +9,7 @@ using MonoCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -69,7 +70,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 		[SubSystemInit]
 		public static void CharacterSettingsWindow_Init()
 		{
-			if (Core._MQ2MonoVersion < 0.35m) return;
+			if (Debugger.IsAttached) return;
+			if (Core._MQ2MonoVersion < 0.412m ) return;
 			_versionInfo = $"nE³xt v{Setup.E3Version} by Rekka | Build {Setup.BuildDate}. Editor by Linamas/Rekka";
 
 			// Load UI theme settings from character INI
@@ -95,7 +97,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			// Toggle the in-game ImGui config window
 			EventProcessor.RegisterCommand("/e3config", (x) =>
 			{
-
+				
 				if (Core._MQ2MonoVersion < 0.41m)
 				{
 					E3.MQ.Write("This requires MQ2Mono 0.41 or greater");
@@ -177,17 +179,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 					{
 						if (window.Begin(_windowName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 						{
-
-							Render_MainWindow_Header();
-							imgui_Separator();
-							Render_MainWindow_CharIniSelector();
-							imgui_Separator();
-							Render_MainWindow_SearchBar();
-							var allPlayersState = _state.GetState<State_AllPlayers>();
-							if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
-							if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
-							if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
-							if (_state.Show_Donate) RenderDonateModal();
+							using (MQ.GetDelayLock())
+							{
+								Render_MainWindow_Header();
+								imgui_Separator();
+								Render_MainWindow_CharIniSelector();
+								imgui_Separator();
+								Render_MainWindow_SearchBar();
+								var allPlayersState = _state.GetState<State_AllPlayers>();
+								if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
+								if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
+								if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
+								if (_state.Show_Donate) RenderDonateModal();
+							}
 						}
 					}
 				}
@@ -202,6 +206,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			// Header bar: version text on left, buttons on right
 
+		
 			using (var table = ImGUITable.Aquire())
 			{
 				if (table.BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(), 0))
@@ -1098,7 +1103,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 									Int32 spellID = -1;
 									Int32.TryParse(gemState.Gems[gem], out spellID);
 
-									string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}", false);
+									string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}");
 
 									if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase) && !spellName.Equals("ERROR", StringComparison.OrdinalIgnoreCase))
 									{

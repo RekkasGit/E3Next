@@ -16,6 +16,7 @@ using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 
@@ -365,6 +366,7 @@ namespace E3Core.Processors
 				}
 
 			});
+			
 			EventProcessor.RegisterEvent("GMBuff", "(.+) A GM has cast (.+) world-wide!", (x) =>
 			{
 				if (x.match.Groups.Count == 3)
@@ -575,6 +577,11 @@ namespace E3Core.Processors
 				{
 					toDesktop = " desktop";
 					x.args.Remove("desktop");
+				}
+				if (x.args.Contains("server"))
+				{
+					toDesktop = " server";
+					x.args.Remove("server");
 				}
 				if (x.args.Count > 0)
 				{
@@ -2075,7 +2082,7 @@ namespace E3Core.Processors
 					{
 						e3util.SetXTargetSlotToAutoHater(x);
 					}
-					else if (s.TypeDesc == "Corpse")
+					else if (s.Dead)
 					{
 						e3util.SetXTargetSlotToAutoHater(x);
 					}
@@ -2312,7 +2319,7 @@ namespace E3Core.Processors
 
 			if (boxSpawn != null)
 			{
-				Loot.LootCorpse(boxSpawn, true);
+				Loot.LootCorpse(boxSpawn.ID, true);
 				MQ.Cmd("/nomodkey /notify LootWnd DoneButton leftmouseup");
 			}
 			else

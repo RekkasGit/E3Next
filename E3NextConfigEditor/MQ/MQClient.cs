@@ -54,7 +54,22 @@ namespace E3NextConfigEditor.MQ
 			throw new NotImplementedException();
 		}
 
+		public void DisableDelay()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void EnableDelay()
+		{
+			throw new NotImplementedException();
+		}
+
 		public bool FeatureEnabled(MQFeature feature)
+		{
+			throw new NotImplementedException();
+		}
+
+		public IMQLock GetDelayLock()
 		{
 			throw new NotImplementedException();
 		}
@@ -69,7 +84,27 @@ namespace E3NextConfigEditor.MQ
 			throw new NotImplementedException();
 		}
 
-		public T Query<T>(string query, bool delayPossible = true)
+		public unsafe byte* GetPetBuffDataPtr(out int length)
+		{
+			throw new NotImplementedException();
+		}
+
+		public unsafe byte* GetSpawns3_DeltaPtr(out int length)
+		{
+			throw new NotImplementedException();
+		}
+
+		public unsafe byte* GetTargetBuffDataPtr(Int32 spawnid,out int length)
+		{
+			throw new NotImplementedException();
+		}
+
+		public unsafe byte* GetXtargetDataPtr(out int length)
+		{
+			throw new NotImplementedException();
+		}
+
+		public T Query<T>(string query)
 		{
 			string mqReturnValue = _tloClient.RequestData(query);
 			//Debug.WriteLine($"[{System.DateTime.Now.ToString()}] {mqReturnValue}");

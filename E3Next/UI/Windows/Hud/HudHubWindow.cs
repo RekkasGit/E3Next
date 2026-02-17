@@ -1,13 +1,22 @@
-﻿using E3Core.Data;
+﻿using CommunityToolkit.HighPerformance;
+using CommunityToolkit.HighPerformance.Buffers;
+using E3Core.Data;
 using E3Core.Processors;
+using E3Core.Server;
 using E3Core.Utility;
 using Google.Protobuf;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using static MonoCore.E3ImGUI;
+using static System.Windows.Forms.AxHost;
 
 namespace E3Core.UI.Windows.Hud
 {
@@ -23,6 +32,7 @@ namespace E3Core.UI.Windows.Hud
 		public static Random rand = new Random();
 
 		private const string IMGUI_DETATCH_BUFFS_ID = FontAwesome.FAExternalLinkSquare + "##detach_buffs";
+		private const string IMGUI_DETATCH_PETBUFFS_ID = FontAwesome.FAExternalLinkSquare + "##detach_petbuffs";
 		private const string IMGUI_DETATCH_SONGS_ID = FontAwesome.FAExternalLinkSquare + "##detach_songs";
 		private const string IMGUI_DETATCH_HOTBUTTON_ID = FontAwesome.FAExternalLinkSquare + "##detach_hotbuttons";
 		private const string IMGUI_DETATCH_PLAYERINFO_ID = FontAwesome.FAExternalLinkSquare + "##detach_playerinfo";
@@ -31,6 +41,39 @@ namespace E3Core.UI.Windows.Hud
 		private const string IMGUI_SETTINGS_TARGETINFO_ID = MaterialFont.settings + "##targetinfo_settings";
 
 		private static string IMGUI_TABLE_GROUP_ID = $"E3HubGroupTable-{E3.CurrentName}-{E3.CurrentClass}-{E3.ServerName}";
+		private static Dictionary<Int32, String> _percentToString = new Dictionary<int, string>();
+
+		private static string PercentString(Int32 value)
+		{
+			if (_percentToString.TryGetValue(value, out var returnValue))
+			{
+				return returnValue;
+			}
+			else
+			{
+				string percentString = value + "%";
+				_percentToString.Add(value, percentString);
+				return percentString;
+			}
+		}
+		private static Dictionary<Decimal, String> _decToIntString = new Dictionary<Decimal, string>();
+
+		private static string DecimalToIntString(Decimal value)
+		{
+			Decimal tempDec = Math.Round(value, 2);
+
+
+			if (_decToIntString.TryGetValue(tempDec, out var returnValue))
+			{
+				return returnValue;
+			}
+			else
+			{
+				string intString = tempDec.ToString("N0");
+				_decToIntString.Add(tempDec, intString);
+				return intString;
+			}
+		}
 
 		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _distanceSeverity = new[]
 		{
@@ -70,6 +113,7 @@ namespace E3Core.UI.Windows.Hud
 		[SubSystemInit]
 		public static void Init()
 		{
+			if (Debugger.IsAttached) return;
 			var state = _state.GetState<State_HubWindow>();
 
 			if (Core._MQ2MonoVersion < 0.41m) return;
@@ -187,13 +231,6 @@ namespace E3Core.UI.Windows.Hud
 
 		static Task UpdateTask;
 
-
-		private static void ProcessUpdates()
-		{
-			RefreshBuffInfo();
-			RefreshGroupInfo();
-		}
-
 		static string _exceptionMessage = String.Empty;
 
 		private static List<TableRow_BuffInfo> RefreshBuffInfo_ParseProtoBuffData(string s)
@@ -220,7 +257,19 @@ namespace E3Core.UI.Windows.Hud
 				counterType = buff.CounterType;
 				counterNumber = buff.CounterNumber;
 
-				var buffRow = new TableRow_BuffInfo(spellid);
+				TableRow_BuffInfo buffRow = null;
+
+				if (_personalBuffInfoCache.TryGetValue(spellid, out var tbi))
+				{
+					buffRow = tbi;
+				}
+				else
+				{
+					buffRow = new TableRow_BuffInfo(spellid);
+					_personalBuffInfoCache.Add(spellid, buffRow);
+				}
+
+
 				buffRow.SpellID = spellid;
 				buffRow.Duration = duration;
 				var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
@@ -231,12 +280,13 @@ namespace E3Core.UI.Windows.Hud
 				buffRow.CounterTypeID = counterType;
 				buffRow.CounterNumberValue = counterNumber;
 				//check if spellid exists
-
-				buffRow.SpellID = spellid;
-
 				if (hitcount > 0)
 				{
 					buffRow.HitCount = hitcount.ToString();
+				}
+				else
+				{
+					buffRow.HitCount = String.Empty;
 				}
 
 				returnValue.Add(buffRow);
@@ -245,8 +295,10 @@ namespace E3Core.UI.Windows.Hud
 			return returnValue;
 		}
 
-		private static List<TableRow_BuffInfo> RefreshBuffInfo_ParseBuffData(string s)
+		private static List<TableRow_BuffInfo> RefreshBuffInfo_ParseBuffData(ArraySegment<char> input, Dictionary<int, TableRow_BuffInfo> infoCache)
 		{
+			ReadOnlySpan<char> s = input;
+
 			int start = 0;
 			int end = 0;
 			char delim = ':';
@@ -267,7 +319,7 @@ namespace E3Core.UI.Windows.Hud
 						end++;
 					//number,number
 					tempBuffer.Clear();
-					string tstring = s.Substring(start, end - start);
+					ReadOnlySpan<char> tstring = s.Slice(start, end - start);
 					e3util.StringsToNumbers(tstring, ',', tempBuffer);
 					spellid = (Int32)tempBuffer[0];
 
@@ -277,21 +329,32 @@ namespace E3Core.UI.Windows.Hud
 					bufftype = (int)tempBuffer[4];
 					counterType = (int)tempBuffer[5];
 					counterNumber = (int)tempBuffer[6];
-					var buffRow = new TableRow_BuffInfo(spellid);
+					TableRow_BuffInfo buffRow = null;
+
+					if (infoCache.TryGetValue(spellid, out var tbi))
+					{
+						buffRow = tbi;
+					}
+					else
+					{
+						buffRow = new TableRow_BuffInfo(spellid);
+						infoCache.Add(spellid, buffRow);
+					}
 					buffRow.BuffType = bufftype;
 					buffRow.CounterNumberValue = counterNumber;
 					buffRow.SpellID = spellid;
 					buffRow.BuffType = bufftype;
 					buffRow.CounterTypeID = counterType;
 					buffRow.CounterNumberValue = counterNumber;
-					var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
 					buffRow.Duration = duration;
-					buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
-					buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 					buffRow.SpellType = (Int32)spelltypeid;
 					if (hitcount > 0)
 					{
 						buffRow.HitCount = hitcount.ToString();
+					}
+					else
+					{
+						buffRow.HitCount = String.Empty;
 					}
 					dataInfo.Add(buffRow);
 					start = end + 1;
@@ -300,63 +363,32 @@ namespace E3Core.UI.Windows.Hud
 			}
 			return dataInfo;
 		}
-		private static void RefreshBuffInfo()
+
+		public static void RefreshPetBuffInfo()
 		{
 
-
-			var buffState = _state.GetState<State_BuffWindow>();
+			var buffState = _state.GetState<State_PetBuffWindow>();
 
 			if (!e3util.ShouldCheck(ref buffState.LastUpdated, buffState.LastUpdateInterval)) return;
-			//using (var RefreshBuffInfoTrace = E3.Log.Trace("RefreshBuffInfo"))
 			{
-				var hubState = _state.GetState<State_HubWindow>();
-				var songState = _state.GetState<State_SongWindow>();
-				var debuffState = _state.GetState<State_DebuffWindow>();
-
-				//try
-				//{
+				buffState.BuffInfo.Clear();
+				buffState.DeBuffInfo.Clear();
 				string userTouse = E3.CurrentName;
+				ShareDataEntry entry = E3.Bots.Query<ShareDataEntry>(userTouse, "${Me.PetBuffInfo}");
 
-				if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+				List<TableRow_BuffInfo> dataInfo = null;
+				lock (entry)
 				{
-					userTouse = hubState.SelectedToonForBuffs;
-				}
-				string buffInfo = E3.Bots.Query(userTouse, "${Me.BuffInfo}");
-
-				if (buffState.PreviousBuffInfo != string.Empty)
-				{
-					if (buffState.PreviousBuffInfo == buffInfo)
+					if (entry.DataLength > 0)
 					{
-						//no difference
-						return;
+						//if (E3.CurrentName != userTouse) return;
+						buffState.BuffInfo.Clear();
+						ArraySegment<char> data = new ArraySegment<char>(entry.Data, 0, entry.DataLength);
+						dataInfo = RefreshBuffInfo_ParseBuffData(data,_petBuffInfoCache);
 					}
-
 				}
-				buffState.PreviousBuffInfo = buffInfo;
-
-				if (!String.IsNullOrWhiteSpace(buffInfo))
+				if (dataInfo != null)
 				{
-					//if (E3.CurrentName != userTouse) return;
-					buffState.BuffInfo.Clear();
-					songState.SongInfo.Clear();
-					debuffState.DebuffInfo.Clear();
-
-					//get the proper data either from the custom string or protobuf
-					List<TableRow_BuffInfo> dataInfo = null;
-
-					//using (var decompressTrace = E3.Log.Trace("BuffDecompress"))
-					{
-						if (e3util.UseProtoBufForBuffs)
-						{
-							dataInfo = RefreshBuffInfo_ParseProtoBuffData(buffInfo);
-						}
-						else
-						{
-							dataInfo = RefreshBuffInfo_ParseBuffData(buffInfo);
-						}
-					}
-
-					//var dataInfo = RefreshBuffInfo_ParseProtoBuffData(buffInfo);
 					//using (var RefreshBuffInfoSetData = E3.Log.Trace("RefreshBuffInfoSetData"))
 					{
 						foreach (var buffRow in dataInfo)
@@ -364,11 +396,11 @@ namespace E3Core.UI.Windows.Hud
 							Int32 spellid = buffRow.SpellID;
 							Int32 duration = buffRow.Duration;
 
-							if(!buffState.BuffCache.ContainsKey(spellid))
+							if (!buffState.BuffCache.ContainsKey(spellid))
 							{
-								string buffName = buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
-								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}", false) * 6 * 1000;
+								string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}");
+								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}");
+								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}") * 6 * 1000;
 								buffState.BuffCache.TryAdd(spellid, new BuffCacheEntry() { Name = buffName, SpellIcon = spellIcon, MaxDuration = maxDuration });
 							}
 
@@ -379,6 +411,146 @@ namespace E3Core.UI.Windows.Hud
 							buffRow.iconID = cacheEntry.SpellIcon;
 							buffRow.MaxDuration_Value = cacheEntry.MaxDuration;
 							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+							buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
+							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
+							{
+								buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
+							}
+							else
+							{
+								buffRow.Spell = null;
+							}
+							if (duration < 0)
+							{
+								buffRow.SimpleDuration = "(p)";
+							}
+							else if (buffTimeSpan.TotalHours >= 1)
+							{
+								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
+							}
+							else if (buffTimeSpan.TotalMinutes >= 1)
+							{
+								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
+							}
+							else
+							{
+								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
+							}
+							if (duration < 160000d)
+							{
+								buffRow.DisplayName = buffRow.Name + $" ( {buffRow.Duration} )";
+							}
+							else
+							{
+								buffRow.DisplayName = buffRow.Name;
+							}
+							//put them into their proper collections
+							
+							if (buffRow.SpellType == 0)
+							{
+								if (buffRow.CounterTypeID == 0) buffRow.CounterType = "Disease";
+								else if (buffRow.CounterTypeID == 1) buffRow.CounterType = "Poison";
+								else if (buffRow.CounterTypeID == 2) buffRow.CounterType = "Curse";
+								else if (buffRow.CounterTypeID == 3) buffRow.CounterType = "Corruption";
+
+								if (buffRow.CounterNumberValue > 0)
+								{
+									buffRow.Display_CounterNumber = buffRow.CounterNumberValue.ToString();
+
+								}
+								buffState.DeBuffInfo.Add(buffRow);
+							}
+							else
+							{
+								buffState.BuffInfo.Add(buffRow);
+							}
+						}
+					}
+
+					//using (var RefreshBuffInfoSetData2 = E3.Log.Trace("RefreshBuffInfoSetData2"))
+					{
+						//okay buff data is all setup, lets put them into the proper collection for the UI to use.
+						if (buffState.PreviousBuffs.Count > 0)
+						{
+							foreach (var buff in buffState.BuffInfo)
+							{
+								if (!buffState.PreviousBuffs.Contains(buff.SpellID))
+								{
+									buffState.NewBuffsTimeStamps[buff.SpellID] = Core.StopWatch.ElapsedMilliseconds;
+								}
+							}
+						
+						}
+						buffState.PreviousBuffs.Clear();
+						foreach (var buff in buffState.BuffInfo)
+						{
+							buffState.PreviousBuffs.Add(buff.SpellID);
+						}
+					}
+
+				}
+			}
+		}
+
+		public static void RefreshBuffInfo()
+		{
+			var buffState = _state.GetState<State_BuffWindow>();
+
+			if (!e3util.ShouldCheck(ref buffState.LastUpdated, buffState.LastUpdateInterval)) return;
+			{
+				var hubState = _state.GetState<State_HubWindow>();
+				var songState = _state.GetState<State_SongWindow>();
+				var debuffState = _state.GetState<State_DebuffWindow>();
+
+				string userTouse = E3.CurrentName;
+
+				if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+				{
+					userTouse = hubState.SelectedToonForBuffs;
+				}
+
+				ShareDataEntry entry = E3.Bots.Query<ShareDataEntry>(userTouse, "${Me.BuffInfo}");
+
+				List<TableRow_BuffInfo> dataInfo = null;
+				lock (entry)
+				{
+					if (entry.DataLength > 0)
+					{
+						//if (E3.CurrentName != userTouse) return;
+						buffState.BuffInfo.Clear();
+						songState.SongInfo.Clear();
+						debuffState.DebuffInfo.Clear();
+						ArraySegment<char> data = new ArraySegment<char>(entry.Data, 0, entry.DataLength);
+						dataInfo = RefreshBuffInfo_ParseBuffData(data,_personalBuffInfoCache);
+					}
+				}
+				if (dataInfo != null)
+				{
+					//using (var RefreshBuffInfoSetData = E3.Log.Trace("RefreshBuffInfoSetData"))
+					{
+						foreach (var buffRow in dataInfo)
+						{
+							Int32 spellid = buffRow.SpellID;
+							Int32 duration = buffRow.Duration;
+
+							if (!buffState.BuffCache.ContainsKey(spellid))
+							{
+								string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}");
+								Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}");
+								Int32 maxDuration = MQ.Query<Int32>($"${{Spell[{spellid}].Duration}}") * 6 * 1000;
+								buffState.BuffCache.TryAdd(spellid, new BuffCacheEntry() { Name = buffName, SpellIcon = spellIcon, MaxDuration = maxDuration });
+							}
+
+
+							var cacheEntry = buffState.BuffCache[spellid];
+
+							buffRow.Name = cacheEntry.Name;
+							buffRow.iconID = cacheEntry.SpellIcon;
+							buffRow.MaxDuration_Value = cacheEntry.MaxDuration;
+							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+							buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
 							{
 								buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
@@ -484,343 +656,384 @@ namespace E3Core.UI.Windows.Hud
 							buffState.PreviousBuffs.Add(buff.SpellID);
 						}
 					}
+
 				}
-				//}
-				//catch (Exception ex)
-				//{
-				//	_exceptionMessage = ex.StackTrace;
-				//}
 			}
+
+		}
+		private static TableRow_GroupInfo RefreshGroupInfo_GetRowDataForPartyMember(string user)
+		{
+			TableRow_GroupInfo row = null;
+
+			if (_groupInfoCache.TryGetValue(user, out var gi))
+			{
+				row = gi;
+			}
+			else
+			{
+				row = new TableRow_GroupInfo();
+
+			}
+
+			int hp = MQ.Query<Int32>($"${{Group.Member[{user}].PctHPs}}");
+
+			row.PetHPPercent = MQ.Query<Int32>($"${{Group.Member[{user}].Spawn.Pet.CurrentHPs}}"); //user;
+			decimal distance = MQ.Query<Decimal>($"${{Group.Member[{user}].Spawn.Distance3D}}");
+			row.Distance = DecimalToIntString(distance);
+
+
+			if (distance == 0)
+			{
+				row.Distance = "--";
+
+			}
+			else
+			{
+				row.Distance = DecimalToIntString(distance);
+				row.DistanceColor = GetDistanceSeverityColor((double)distance);
+			}
+
+			row.DisplayName = user;
+			row.DisplayNameColor = (0.275f, 0.860f, 0.85f, 1);
+			Int32 mana = MQ.Query<Int32>($"${{Group.Member[{user}].PctMana}}");
+			if (mana == 0)
+			{
+				row.Mana = "-";
+			}
+			else
+			{
+				row.Mana = PercentString(mana);
+
+			}
+			row.ManaColor = GetResourceSeverityColor(mana);
+
+			Int32 endurance = MQ.Query<Int32>($"${{Group.Member[{user}].PctEndurance}}");
+			row.Endurance = PercentString(endurance);
+			row.EndColor = GetResourceSeverityColor(endurance);
+			row.HPPercent = hp;
+			row.HP = PercentString(hp);
+			row.HPColor = GetResourceSeverityColor(hp);
+			Int32 aggroPct = MQ.Query<Int32>($"${{Group.Member[{user}].PctAggro}}");
+
+			if (aggroPct > 0)
+			{
+				row.AggroPct = aggroPct.ToString();
+
+			}
+			else
+			{
+				row.AggroPct = "-";
+			}
+			row.AggroColor = GetAggroSeverityColor(aggroPct);
+			row.XtargetAggroPct = "-";
+			row.XtargetMinAggroPct = "-";
+			return row;
+		}
+		private static TableRow_GroupInfo RefreshGroupInfo_GetRowDataForBot(string user)
+		{
+			//if (user == E3.CurrentName) continue;
+
+			string casting = E3.Bots.Query<String>(user, "${Me.Casting}");
+			double x, y, z = 0;
+
+
+			Int32 mana, endurance, hp, aggroPct, aggroPctXtarget, aggroPctMinXtarget, pet_pctHealth;
+			hp = E3.Bots.Query<Int32>(user, "${Me.PctHPs}");
+			mana = E3.Bots.Query<Int32>(user, "${Me.PctMana}");
+			endurance = E3.Bots.Query<Int32>(user, "${Me.PctEndurance}");
+			aggroPct = E3.Bots.Query<Int32>(user, "${Me.PctAggro}");
+
+			aggroPctXtarget = E3.Bots.Query<Int32>(user, "${Me.XTargetMaxAggro}");
+			aggroPctMinXtarget = E3.Bots.Query<Int32>(user, "${Me.XTargetMinAggro}");
+			pet_pctHealth = E3.Bots.Query<Int32>(user, "${Me.Pet.CurrentHPs}");
+
+			x = E3.Bots.Query<Double>(user, "${Me.X}");
+			y = E3.Bots.Query<Double>(user, "${Me.Y}");
+			z = E3.Bots.Query<Double>(user, "${Me.Z}");
+
+			Int32 zoneid = E3.Bots.Query<Int32>(user, "${Me.ZoneID}");
+			string zonename = E3.Bots.Query<string>(user, "${Me.ZoneShortName}");
+			Decimal distance = 0;
+			bool isInvis = false;
+			isInvis = E3.Bots.Query<bool>(user, "${Me.IsInvis}");
+			bool isInvul = false;
+			isInvul = E3.Bots.Query<bool>(user, "${Me.Invulnerable}");
+
+			TableRow_GroupInfo row = null;
+
+			if (_groupInfoCache.TryGetValue(user, out var gi))
+			{
+				row = gi;
+			}
+			else
+			{
+				row = new TableRow_GroupInfo();
+
+			}
+
+			if(row.Name!=String.Empty)
+			{
+				row.Name = user;
+			}
+
+			if (_spawns.TryByName(user, out var spawn, useCurrentCache: true))
+			{
+				x = E3.Loc_X - x;
+				y = E3.Loc_Y - y;
+				z = E3.Loc_Z - z;
+				//we can calculate distance
+				distance = (Decimal)Math.Sqrt(x * x + y * y + z * z);
+				row.InZone = true;
+
+			}
+
+			row.PetHPPercent = pet_pctHealth;
+
+			if (distance< 0.5m)
+			{
+				row.Distance = zonename;
+
+			}
+			else
+			{
+				row.Distance = DecimalToIntString(distance);
+				row.DistanceColor = GetDistanceSeverityColor((double)distance);
+			}
+
+			if (!row.InZone)
+			{
+				row.DisplayName = "<" + user + ">";
+				row.DisplayNameColor = (0.427f, 0.595f, 0.610f, 1); //grayish
+			}
+			else if (isInvis)
+			{
+				row.DisplayName = "(" + user + ")";
+				row.DisplayNameColor = (0.427f, 0.595f, 0.610f, 1); //grayish
+			}
+			else if (isInvul)
+			{
+				row.DisplayName = "[" + user + "]";
+				row.DisplayNameColor = (0.950f, 0.910f, 0.143f, 1); //GOLD
+			}
+			else
+			{
+				row.DisplayName = user;
+				//row.DisplayNameColor = (0.275f, 0.860f, 0.85f,1);
+			}
+			if (mana == 0)
+			{
+				row.Mana = "-";
+			}
+			else
+			{
+				row.Mana = PercentString(mana);
+
+			}
+			row.ManaColor = GetResourceSeverityColor(mana);
+
+
+			row.Endurance = PercentString(endurance);
+			row.EndColor = GetResourceSeverityColor(endurance);
+			row.HPPercent = hp;
+			row.HP = PercentString(hp);
+			row.HPColor = GetResourceSeverityColor(hp);
+
+			if (aggroPct > 0)
+			{
+				row.AggroPct = aggroPct.ToString();
+
+			}
+			else
+			{
+				row.AggroPct = "-";
+			}
+			row.AggroColor = GetAggroSeverityColor(aggroPct);
+
+			if (aggroPctXtarget > 0)
+			{
+				row.XtargetAggroPct = aggroPctXtarget.ToString();
+
+			}
+			else
+			{
+				row.XtargetAggroPct = "-";
+			}
+			row.AggroXTargetColor = GetAggroSeverityColor(aggroPctXtarget);
+			if (aggroPctMinXtarget > 0)
+			{
+				row.XtargetMinAggroPct = aggroPctMinXtarget.ToString();
+
+			}
+			else
+			{
+				row.XtargetMinAggroPct = "-";
+			}
+			row.AggroMinXTargetColor = GetAggroSeverityColor(aggroPctMinXtarget);
+
+			return row;
+
 		}
 		private static void RefreshGroupInfo()
 		{
-			var state = _state.GetState<State_HubWindow>();
-
-			if (!e3util.ShouldCheck(ref state.LastUpdated, state.LastUpdateInterval)) return;
-			state.GroupInfo.Clear();
-			state.GroupMembersAdded.Clear();
-
-			//get the connected bots.
-			List<string> users = E3.Bots.BotsConnected().ToList(); //make a copy as this returns a direct copy of cache
-
-			
-			//users.Sort();
-			if (state.PeerSortOrder == "Me On Top" && users.Remove(E3.CurrentName))
+			try
 			{
-				users.Insert(0, E3.CurrentName);
+				var state = _state.GetState<State_HubWindow>();
+
+				if (!e3util.ShouldCheck(ref state.LastUpdated, state.LastUpdateInterval)) return;
+				state.GroupInfo.Clear();
+				state.GroupMembersAdded.Clear();
+
+				//get the connected bots.
+				List<string> users = E3.Bots.BotsConnected(readOnly: true); //this is a direct cache value, do not edit
+
+
+				//users.Sort();
+				if (state.PeerSortOrder == "Me On Top")
+				{
+					var row = RefreshGroupInfo_GetRowDataForBot(E3.CurrentName);
+					state.GroupInfo.Add(row);
+					state.GroupMembersAdded.Add(E3.CurrentName);
+				}
+				foreach (var user in users)
+				{
+					if (state.GroupMembersAdded.Contains(user)) continue;
+
+					bool inGroupOrRaid = false;
+					if (Basics.GroupMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
+					if (!inGroupOrRaid && Basics.RaidMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
+					if (!inGroupOrRaid) continue;
+					var row = RefreshGroupInfo_GetRowDataForBot(user);
+					state.GroupInfo.Add(row);
+
+					if (!state.GroupMembersAdded.Contains(user)) state.GroupMembersAdded.Add(user);
+				}
+				foreach (var user in Basics.GroupMemberNames)
+				{
+					if (state.GroupMembersAdded.Contains(user)) continue;
+					var row = RefreshGroupInfo_GetRowDataForPartyMember(user);
+					state.GroupInfo.Add(row);
+				}
 			}
-			
-			foreach (var user in users)
+			catch (Exception ex)
 			{
-				//if (user == E3.CurrentName) continue;
-				bool inGroupOrRaid = false;
-				if (Basics.GroupMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
-				if (!inGroupOrRaid && Basics.RaidMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
-				if (!inGroupOrRaid) continue;
-
-
-				
-
-				string casting = E3.Bots.Query(user, "${Me.Casting}");
-				double x, y, z = 0;
-
-				
-				Int32 mana, endurance, hp, aggroPct, aggroPctXtarget, aggroPctMinXtarget, pet_pctHealth;
-				Int32.TryParse(E3.Bots.Query(user, "${Me.PctHPs}"), out hp);
-				
-				Int32.TryParse(E3.Bots.Query(user, "${Me.PctMana}"), out mana);
-				Int32.TryParse(E3.Bots.Query(user, "${Me.PctEndurance}"), out endurance);
-				Int32.TryParse(E3.Bots.Query(user, "${Me.PctAggro}"), out aggroPct);
-				
-				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMaxAggro}"), out aggroPctXtarget);
-				Int32.TryParse(E3.Bots.Query(user, "${Me.XTargetMinAggro}"), out aggroPctMinXtarget);
-				Int32.TryParse(E3.Bots.Query(user, "${Me.Pet.CurrentHPs}"), out pet_pctHealth);
-
-				double.TryParse(E3.Bots.Query(user, "${Me.X}"), out x);
-				double.TryParse(E3.Bots.Query(user, "${Me.Y}"), out y);
-				double.TryParse(E3.Bots.Query(user, "${Me.Z}"), out z);
-				
-
-				string zoneid = E3.Bots.Query(user, "${Me.ZoneID}");
-				string zonename = E3.Bots.Query(user, "${Me.ZoneShortName}");
-				double distance = 0;
-				bool isInvis = false;
-				bool.TryParse(E3.Bots.Query(user, "${Me.IsInvis}"), out isInvis);
-				bool isInvul = false;
-				bool.TryParse(E3.Bots.Query(user, "${Me.Invulnerable}"), out isInvul);
-			
-				var row = new TableRow_GroupInfo(user);
-
-				if (_spawns.TryByName(user, out var spawn, useCurrentCache: true))
-				{
-					x = E3.Loc_X - x;
-					y = E3.Loc_Y - y;
-					z = E3.Loc_Z - z;
-					//we can calculate distance
-					distance = Math.Sqrt(x * x + y * y + z * z);
-					row.InZone = true;
-
-				}
-				
-				row.PetHPPercent = pet_pctHealth;
-
-				if (distance == 0)
-				{
-					row.Distance = zonename;
-
-				}
-				else
-				{
-					row.Distance = distance.ToString("N0");
-					row.DistanceColor = GetDistanceSeverityColor(distance);
-				}
-
-				if (!row.InZone)
-				{
-					row.DisplayName = "<" + user + ">";
-					row.DisplayNameColor = (0.427f, 0.595f, 0.610f, 1); //grayish
-				}
-				else if (isInvis)
-				{
-					row.DisplayName = "(" + user + ")";
-					row.DisplayNameColor = (0.427f, 0.595f, 0.610f, 1); //grayish
-				}
-				else if (isInvul)
-				{
-					row.DisplayName = "[" + user + "]";
-					row.DisplayNameColor = (0.950f, 0.910f, 0.143f, 1); //GOLD
-				}
-				else
-				{
-					row.DisplayName = user;
-					//row.DisplayNameColor = (0.275f, 0.860f, 0.85f,1);
-				}
-				if (mana == 0)
-				{
-					row.Mana = "-";
-				}
-				else
-				{
-					row.Mana = mana.ToString() + "%";
-
-				}
-				row.ManaColor = GetResourceSeverityColor(mana);
-
-				row.Endurance = endurance.ToString() + "%";
-				row.EndColor = GetResourceSeverityColor(endurance);
-				row.HPPercent = hp;
-				row.HP = hp.ToString() + "%";
-				row.HPColor = GetResourceSeverityColor(hp);
-
-				if (aggroPct > 0)
-				{
-					row.AggroPct = aggroPct.ToString();
-
-				}
-				else
-				{
-					row.AggroPct = "-";
-				}
-				row.AggroColor = GetAggroSeverityColor(aggroPct);
-
-				if (aggroPctXtarget > 0)
-				{
-					row.XtargetAggroPct = aggroPctXtarget.ToString();
-
-				}
-				else
-				{
-					row.XtargetAggroPct = "-";
-				}
-				row.AggroXTargetColor = GetAggroSeverityColor(aggroPctXtarget);
-				if (aggroPctMinXtarget > 0)
-				{
-					row.XtargetMinAggroPct = aggroPctMinXtarget.ToString();
-
-				}
-				else
-				{
-					row.XtargetMinAggroPct = "-";
-				}
-				row.AggroMinXTargetColor = GetAggroSeverityColor(aggroPctMinXtarget);
-
-				state.GroupInfo.Add(row);
-
-				if (!state.GroupMembersAdded.Contains(user)) state.GroupMembersAdded.Add(user);
+				MQ.WriteDelayed($"Issue in RefreshGroupInfo. Message:{ex.Message}  Stack:{ex.StackTrace}");
 
 			}
-			foreach (var user in Basics.GroupMemberNames)
-			{
-				if (state.GroupMembersAdded.Contains(user)) continue;
 
-				var row = new TableRow_GroupInfo(user);
-				//MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.Pet.CurrentHPs}}"); //pets
-				//MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}"); //user
-
-				int hp = MQ.Query<Int32>($"${{Group.Member[{user}].PctHPs}}", false);
-
-				row.PetHPPercent = MQ.Query<Int32>($"${{Group.Member[{user}].Spawn.Pet.CurrentHPs}}", false); //user;
-				decimal distance = MQ.Query<Decimal>($"${{Group.Member[{user}].Spawn.Distance3D}}", false);
-				row.Distance = distance.ToString("N0");
-
-
-				if (distance == 0)
-				{
-					row.Distance = "--";
-
-				}
-				else
-				{
-					row.Distance = distance.ToString("N0");
-					row.DistanceColor = GetDistanceSeverityColor((double)distance);
-				}
-
-				row.DisplayName = user;
-				row.DisplayNameColor = (0.275f, 0.860f, 0.85f, 1);
-				Int32 mana = MQ.Query<Int32>($"${{Group.Member[{user}].PctMana}}", false);
-				if (mana == 0)
-				{
-					row.Mana = "-";
-				}
-				else
-				{
-					row.Mana = mana.ToString() + "%";
-
-				}
-				row.ManaColor = GetResourceSeverityColor(mana);
-
-				Int32 endurance = MQ.Query<Int32>($"${{Group.Member[{user}].PctEndurance}}", false);
-				row.Endurance = endurance.ToString() + "%";
-				row.EndColor = GetResourceSeverityColor(endurance);
-				row.HPPercent = hp;
-				row.HP = hp.ToString() + "%";
-				row.HPColor = GetResourceSeverityColor(hp);
-				Int32 aggroPct = MQ.Query<Int32>($"${{Group.Member[{user}].PctAggro}}", false);
-
-				if (aggroPct > 0)
-				{
-					row.AggroPct = aggroPct.ToString();
-
-				}
-				else
-				{
-					row.AggroPct = "-";
-				}
-				row.AggroColor = GetAggroSeverityColor(aggroPct);
-				row.XtargetAggroPct = "-";
-				row.XtargetMinAggroPct = "-";
-				state.GroupInfo.Add(row);
-			}
 
 
 
 		}
 		private static void RefreshPlayerInfo()
 		{
-			var state = _state.GetState<State_PlayerInfoWindow>();
-			var hub_state = _state.GetState<State_HubWindow>();
-			if (!hub_state.ShowPlayerInfo) return;
-			if (!e3util.ShouldCheck(ref state.PlayerInfoLastUpdated, state.PlayerInfoUpdateInterval)) return;
-
-			state.PlayerLevel = MQ.Query<int>("${Me.Level}", false);
-			state.PlayerHPPercent = E3.PctHPs;
-			state.PlayerManaPercent = MQ.Query<int>("${Me.PctMana}", false);
-			state.PlayerEndPercent = MQ.Query<int>("${Me.PctEndurance}", false);
-			state.PlayerExp = MQ.Query<Decimal>("${Me.PctExp}", false);
-			state.PlayerAAPoints = MQ.Query<int>("${Me.AAPoints}", false);
-			state.PlayerHPCurrent = MQ.Query<int>("${Me.CurrentHPs}", false);
-			state.PlayerHPMax = MQ.Query<int>("${Me.MaxHPs}", false);
-			state.PlayerManaCurrent = MQ.Query<int>("${Me.CurrentMana}", false);
-			state.PlayerManaMax = MQ.Query<int>("${Me.MaxMana}", false);
-			state.PlayerEndCurrent = MQ.Query<int>("${Me.CurrentEndurance}", false);
-			state.PlayerEndMax = MQ.Query<int>("${Me.MaxEndurance}", false);
-
-
-
-			state.PlayerHPColor = GetResourceSeverityColor(state.PlayerHPCurrent);
-			state.PlayerManaColor = GetResourceSeverityColor(state.PlayerManaCurrent);
-			state.PlayerEndColor = GetResourceSeverityColor(state.PlayerEndCurrent);
-
-
-
-			if (String.IsNullOrEmpty(state.DisplayPlayerInfo) || state.DisplayPlayerInfo_Level != state.PlayerLevel)
+			try
 			{
-				state.DisplayPlayerInfo = $"{E3.CurrentName} - Lvl:{state.PlayerLevel}";
-				state.DisplayPlayerInfo_Level = state.PlayerLevel;
-			}
+				var state = _state.GetState<State_PlayerInfoWindow>();
+				if (!e3util.ShouldCheck(ref state.PlayerInfoLastUpdated, state.PlayerInfoUpdateInterval)) return;
+
+				var hub_state = _state.GetState<State_HubWindow>();
+				if (!hub_state.ShowPlayerInfo) return;
+			
+				state.PlayerLevel = MQ.Query<int>("${Me.Level}");
+				state.PlayerHPPercent = E3.PctHPs;
+				state.PlayerManaPercent = MQ.Query<int>("${Me.PctMana}");
+				state.PlayerEndPercent = MQ.Query<int>("${Me.PctEndurance}");
+				state.PlayerExp = MQ.Query<Decimal>("${Me.PctExp}");
+				state.PlayerAAPoints = MQ.Query<int>("${Me.AAPoints}");
+				state.PlayerHPCurrent = MQ.Query<int>("${Me.CurrentHPs}");
+				state.PlayerHPMax = MQ.Query<int>("${Me.MaxHPs}");
+				state.PlayerManaCurrent = MQ.Query<int>("${Me.CurrentMana}");
+				state.PlayerManaMax = MQ.Query<int>("${Me.MaxMana}");
+				state.PlayerEndCurrent = MQ.Query<int>("${Me.CurrentEndurance}");
+				state.PlayerEndMax = MQ.Query<int>("${Me.MaxEndurance}");
 
 
-			if (state.ShowHPAsPercent)
-			{
-				state.DisplayHPCurrent = $"{state.PlayerHPPercent}%";
-				state.DisplayHPMax = string.Empty;
-			}
-			else
-			{
-				state.DisplayHPCurrent = $"{state.PlayerHPCurrent:N0}";
-				state.DisplayHPMax = $"{state.PlayerHPMax:N0}";
-			}
 
-			if (state.PlayerManaCurrent > 0)
-			{
-				if (state.ShowManaAsPercent)
+				state.PlayerHPColor = GetResourceSeverityColor(state.PlayerHPCurrent);
+				state.PlayerManaColor = GetResourceSeverityColor(state.PlayerManaCurrent);
+				state.PlayerEndColor = GetResourceSeverityColor(state.PlayerEndCurrent);
+
+
+
+				if (String.IsNullOrEmpty(state.DisplayPlayerInfo) || state.DisplayPlayerInfo_Level != state.PlayerLevel)
 				{
-					state.DisplayManaCurrent = $"{state.PlayerManaPercent}%";
-					state.DisplayManaMax = string.Empty;
+					state.DisplayPlayerInfo = $"{E3.CurrentName} - Lvl:{state.PlayerLevel}";
+					state.DisplayPlayerInfo_Level = state.PlayerLevel;
+				}
+
+
+				if (state.ShowHPAsPercent)
+				{
+					state.DisplayHPCurrent = PercentString(state.PlayerHPPercent);
+					state.DisplayHPMax = string.Empty;
 				}
 				else
 				{
-					state.DisplayManaCurrent = $"{state.PlayerManaCurrent:N0}";
-					state.DisplayManaMax = $"{state.PlayerManaMax:N0}";
+					state.DisplayHPCurrent = $"{state.PlayerHPCurrent:N0}";
+					state.DisplayHPMax = $"{state.PlayerHPMax:N0}";
 				}
-			}
-			if (state.ShowEndAsPercent)
-			{
-				state.DisplayEndCurrent = $"{state.PlayerEndPercent}%";
-				state.DisplayEndMax = string.Empty;
-			}
-			else
-			{
-				state.DisplayEndCurrent = $"{state.PlayerEndCurrent:N0}";
-				state.DisplayEndMax = $"{state.PlayerEndMax:N0}";
-			}
 
-
-			state.DisplayExp = $"{state.PlayerExp:F2}%";
-			state.DisplayAA = $"({state.PlayerAAPoints})";
-
-			string activeDisc = E3.Bots.Query(E3.CurrentName, "${Me.ActiveDisc}");
-			string activeDiscDurationInTicks = E3.Bots.Query(E3.CurrentName, "${Me.ActiveDiscTimeLeft}");
-
-			if (!String.IsNullOrWhiteSpace(activeDisc))
-			{
-				state.ActiveDiscPercentLeft = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}", false) / 10;
-			}
-
-			Int32 durationOfDiscInSeconds = 0;
-			Int32.TryParse(activeDiscDurationInTicks, out durationOfDiscInSeconds);
-			if (String.IsNullOrWhiteSpace(activeDisc))
-			{
-				state.PreviousDisc = string.Empty;
-			}
-			else
-			{
-				string PreviousDisc = state.PreviousDisc;
-				if (PreviousDisc != activeDisc)
+				if (state.PlayerManaCurrent > 0)
 				{
-					state.PreviousDisc = activeDisc;
-					state.PreviousDiscTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+					if (state.ShowManaAsPercent)
+					{
+						state.DisplayManaCurrent = $"{state.PlayerManaPercent}%";
+						state.DisplayManaMax = string.Empty;
+					}
+					else
+					{
+						state.DisplayManaCurrent = $"{state.PlayerManaCurrent:N0}";
+						state.DisplayManaMax = $"{state.PlayerManaMax:N0}";
+					}
+				}
+				if (state.ShowEndAsPercent)
+				{
+					state.DisplayEndCurrent = PercentString(state.PlayerEndPercent);
+					state.DisplayEndMax = string.Empty;
+				}
+				else
+				{
+					state.DisplayEndCurrent = $"{state.PlayerEndCurrent:N0}";
+					state.DisplayEndMax = $"{state.PlayerEndMax:N0}";
+				}
+
+
+				state.DisplayExp = $"{state.PlayerExp:F2}%";
+				state.DisplayAA = $"({state.PlayerAAPoints})";
+
+				string activeDisc = E3.Bots.Query<string>(E3.CurrentName, "${Me.ActiveDisc}");
+				Int32 durationOfDiscInSeconds = E3.Bots.Query<Int32>(E3.CurrentName, "${Me.ActiveDiscTimeLeft}");
+
+				if (!String.IsNullOrWhiteSpace(activeDisc))
+				{
+					state.ActiveDiscPercentLeft = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}") / 10;
+				}
+				if (String.IsNullOrWhiteSpace(activeDisc))
+				{
+					state.PreviousDisc = string.Empty;
+				}
+				else
+				{
+					string PreviousDisc = state.PreviousDisc;
+					if (PreviousDisc != activeDisc)
+					{
+						state.PreviousDisc = activeDisc;
+						state.PreviousDiscTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+					}
+				}
+				state.ActiveDisc = activeDisc;
+				if (!String.IsNullOrEmpty(state.PreviousDisc))
+				{
+					state.Display_ActiveDiscTimeleft = ((((durationOfDiscInSeconds * 1000) + state.PreviousDiscTimeStamp) - Core.StopWatch.ElapsedMilliseconds) / 1000).ToString() + "s";
+
 				}
 			}
-			state.ActiveDisc = activeDisc;
-			if (!String.IsNullOrEmpty(state.PreviousDisc))
+			catch (Exception ex)
 			{
-				state.Display_ActiveDiscTimeleft = ((((durationOfDiscInSeconds * 1000) + state.PreviousDiscTimeStamp) - Core.StopWatch.ElapsedMilliseconds) / 1000).ToString() + "s";
-
+				MQ.WriteDelayed($"Issue in RefreshPlayerInfo. Message:{ex.Message}  Stack:{ex.StackTrace}");
 			}
-
-
 		}
+		
 		private static void RefreshTargetInfo()
 		{
 			var state = _state.GetState<State_TargetInfoWindow>();
@@ -829,7 +1042,7 @@ namespace E3Core.UI.Windows.Hud
 			if (!hub_state.ShowTargetInfo) return;
 			if (!e3util.ShouldCheck(ref state.TargetInfoLastUpdated, state.TargetInfoUpdateInterval)) return;
 
-			Int32 targetID = MQ.Query<Int32>("${Target.ID}", false);
+			Int32 targetID = MQ.Query<Int32>("${Target.ID}");
 
 			if (targetID == 0)
 			{
@@ -844,10 +1057,10 @@ namespace E3Core.UI.Windows.Hud
 				state.NoTargetTextWidth = imgui_CalcTextSizeX(state.NoTargetText);
 			}
 
-		
-			if (_spawns.TryByID(targetID, out var spawn, useCurrentCache:true))
-			{
-				
+
+			if (_spawns.TryByID(targetID, out var spawn, useCurrentCache: true))
+				{
+
 				if (spawn.CleanName != state.TargetName)
 				{
 					state.PreviousTargetName = state.TargetName;
@@ -858,28 +1071,35 @@ namespace E3Core.UI.Windows.Hud
 				}
 
 
-				
-				state.TargetHP = MQ.Query<Int32>("${Target.PctHPs}", false);
+
+				state.TargetHP = MQ.Query<Int32>("${Target.PctHPs}");
+
+				//if (spawn.Dead) state.TargetHP = 0;
+
+
 				state.TargetLevel = spawn.Level;
 				state.TargetClassName = spawn.ClassShortName;
 				state.TargetDistance = spawn.Distance3D;
-				state.TargetDistanceString = spawn.Distance3D.ToString("N0");
+				state.TargetDistanceString = DecimalToIntString(Math.Round((Decimal)spawn.Distance3D, 2));
 				state.TargetNameColor = GetConColorRGB(spawn.ConColorID);
 				state.TargetDistanceColor = GetDistanceSeverityColor(spawn.Distance3D);
 				state.Display_LevelAndClassString = $"Lvl {spawn.Level} {spawn.ClassShortName}";
 
 				//get my aggro on target
-				Decimal percentAggro = MQ.Query<Decimal>("${Target.PctAggro}", false);
+				Decimal percentAggro = MQ.Query<Decimal>("${Target.PctAggro}");
+
+
 
 				if (percentAggro > 0) { state.Display_MyAggroPercent = $"{percentAggro}%"; }
 				else { state.Display_MyAggroPercent = String.Empty; }
 
 				state.MyAggroPercent = percentAggro;
 
+		
 
-				Decimal percentAggro2nd = MQ.Query<Decimal>("${Target.SecondaryPctAggro}", false);
+				Decimal percentAggro2nd = MQ.Query<Decimal>("${Target.SecondaryPctAggro}");
 
-				string PersonOn2ndAggro = MQ.Query<String>("${Target.SecondaryAggroPlayer}", false);
+				string PersonOn2ndAggro = MQ.Query<String>("${Target.SecondaryAggroPlayer}");
 				if (PersonOn2ndAggro == "NULL") PersonOn2ndAggro = String.Empty;
 
 
@@ -900,7 +1120,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				state.Display_CurrentNameSize = imgui_CalcTextSizeX(E3.CurrentName);
 			}
-			
+
 			// Refresh target buffs on a slower cadence, or immediately on target change
 			bool targetChanged = (targetID != state.PreviousTargetID);
 			if (targetChanged)
@@ -913,78 +1133,142 @@ namespace E3Core.UI.Windows.Hud
 
 			state.TargetBuffs.Clear();
 
-			Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}", false);
-			int maxBuffs = Math.Min(buffCount, 30);
-
-			for (int i = 1; i <= maxBuffs; i++)
+			Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}");
+			int maxBuffs = e3util.MaxTempBuffs;
+			if(buffCount>0)
 			{
-				Int32 spellid = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}", false);
-				if (spellid <= 0) continue;
-				Int32 duration = MQ.Query<Int32>($"${{Target.Buff[{i}].Duration}}", false);
-				Int32 spellIcon = MQ.Query<Int32>($"${{Spell[{spellid}].SpellIcon}}", false);
-				string buffName = MQ.Query<string>($"${{Spell[{spellid}].Name}}", false);
-				var buffRow = new TableRow_BuffInfo(spellid);
-				buffRow.Name = buffName;
-				buffRow.iconID = spellIcon;
-				var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
-				buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
-				buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
-				string spellType = MQ.Query<string>($"${{Spell[{spellid}].SpellType}}", false);
+				unsafe
+				{
+					int length;
+					byte* p = E3.MQ.GetTargetBuffDataPtr(targetID, out length);
+					Int32 counter = 0;
+					if (length > 0)
+					{
 
-				Int32 spellTypeID = 0;
-				if (spellType == "Detrimental") spellTypeID = 0;
-				if (spellType == "Beneficial") spellTypeID = 1;
-				if (spellType == "Beneficial(Group)") spellTypeID = 2;
-				buffRow.SpellType = (Int32)spellTypeID;
-				buffRow.SpellID = spellid;
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						int dataStartingLength = data.Length;
+						bool buffsPopulated = false;
+						if (data.Length > 0)
+						{
+							//lets pull out the if buffs are being populated
+							buffsPopulated = MemoryMarshal.Read<Boolean>(data);
+							data = data.Slice(1);
+						}
+						while (data.Length > 0)
+						{
+							counter++;
+							Int32 spellID = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 duration = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 spellType = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 casterNameLength = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
 
-				if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
-				{
-					buffRow.Spell = BuffCheck.BuffInfoCache[spellid];
-				}
-				else
-				{
-					buffRow.Spell = null;
-				}
+							duration = duration * 6 * 1000;//change to ms
 
-				if (duration < 0)
-				{
-					buffRow.SimpleDuration = "(p)";
-				}
-				else if (buffTimeSpan.TotalHours >= 1)
-				{
-					buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
-				}
-				else if (buffTimeSpan.TotalMinutes >= 1)
-				{
-					buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
-				}
-				else
-				{
-					buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
-				}
-				if (duration < 160000d)
-				{
-					buffRow.DisplayName = buffName + $" ( {buffRow.Display_Duration} )";
-				}
-				else
-				{
-					buffRow.DisplayName = buffName;
-				}
-				if (buffName == "NULL") buffName = "Unknown";
+							string CasterName = string.Empty;
 
+							if (casterNameLength > 0)
+							{
+								unsafe
+								{
+									fixed (byte* ptostr = data)
+									{
+										//pull reused strings, without having to allocate them.
+										CasterName = StringPool.Shared.GetOrAdd(data.Slice(0, casterNameLength), Encoding.ASCII);
+									}
+								}
+								data = data.Slice(casterNameLength);
+							}
 
-				if (BuffCheck.BuffInfoCache.TryGetValue(spellid, out var spell))
-				{
-					buffRow.Spell = spell;
+							if (spellID < 1) continue; //blank slot, continue to the next spell
+
+							TableRow_BuffInfo buffRow = null;
+
+							if (_targetBuffInfoCache.TryGetValue(spellID, out var tbi))
+							{
+								buffRow = tbi;
+							}
+							else
+							{
+								buffRow = new TableRow_BuffInfo(spellID);
+								_targetBuffInfoCache.Add(spellID, buffRow);
+
+								string spellNameQuery = String.Empty;
+								if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffName", spellID, out spellNameQuery))
+								{
+									spellNameQuery = $"${{Spell[{spellID}].Name}}";
+									IntToStringIDRegister("Hub_RenderTargetInfo_BuffName", spellID, spellNameQuery);
+								}
+								string buffName = MQ.Query<string>(spellNameQuery);
+								buffRow.Name = buffName;
+
+								string targetSpellIcon = String.Empty;
+								if (!IntToStringIDLookup("Hub_RenderTargetInfo_BuffIcon", spellID, out targetSpellIcon))
+								{
+									targetSpellIcon = $"${{Spell[{spellID}].SpellIcon}}";
+									IntToStringIDRegister("Hub_RenderTargetInfo_BuffIcon", spellID, targetSpellIcon);
+								}
+								Int32 spellIcon = MQ.Query<Int32>(targetSpellIcon);
+
+								buffRow.iconID = spellIcon;
+								buffRow.SpellType = spellType;
+
+							}
+							buffRow.CasterName = CasterName;
+							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);//convert from ticks
+							buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
+
+							if (BuffCheck.BuffInfoCache.ContainsKey(spellID))
+							{
+								buffRow.Spell = BuffCheck.BuffInfoCache[spellID];
+							}
+							else
+							{
+								buffRow.Spell = null;
+							}
+
+							if (duration < 0)
+							{
+								buffRow.SimpleDuration = "(p)";
+							}
+							else if (buffTimeSpan.TotalHours >= 1)
+							{
+								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalHours).ToString() + "h";
+							}
+							else if (buffTimeSpan.TotalMinutes >= 1)
+							{
+								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalMinutes).ToString() + "m";
+							}
+							else
+							{
+								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
+							}
+							if (duration < 160000d)
+							{
+								buffRow.DisplayName = buffRow.Name + $" ( {buffRow.Display_Duration} )";
+							}
+							else
+							{
+								buffRow.DisplayName = buffRow.Name;
+							}
+							if (BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
+							{
+								buffRow.Spell = spell;
+							}
+							else
+							{
+								BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
+							}
+							state.TargetBuffs.Add(buffRow);
+
+						}
+					}
+					
 				}
-				else
-				{
-					BuffCheck.BuffCacheLookupQueue.TryAdd(spellid, spellid);
-				}
-				state.TargetBuffs.Add(buffRow);
-
-
 			}
 		}
 		private static void RefreshPeerAAInfo()
@@ -1003,14 +1287,14 @@ namespace E3Core.UI.Windows.Hud
 			}
 			foreach (var user in users)
 			{
-				string aaPoints = E3.Bots.Query(user, "${Me.AAPoints}");
+				string aaPoints = E3.Bots.Query<string>(user, "${Me.AAPoints}");
 				state.PeerAAInfo.Add((user, aaPoints));
 			}
 		}
 		private static void RenderPeerAAWindow()
 		{
 			var state = _state.GetState<State_PeerAAWindow>();
-
+			RefreshPeerAAInfo();
 			imgui_Text("Peer AA Points");
 			imgui_Separator();
 
@@ -1067,7 +1351,7 @@ namespace E3Core.UI.Windows.Hud
 							font2.PushFont("robo");
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								if (popup.BeginPopupContextItem($"##PlayerInfoDockedSettingsPopup", 1))
+								if (popup.BeginPopupContextItem("##PlayerInfoDockedSettingsPopup", 1))
 								{
 									using (var style = PushStyle.Aquire())
 									{
@@ -1147,7 +1431,7 @@ namespace E3Core.UI.Windows.Hud
 						aaStyle.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 						aaStyle.PushStyleVarVec2((int)ImGuiStyleVar.FramePadding, 0, 0);
 						var peerAAState = _state.GetState<State_PeerAAWindow>();
-						if (imgui_Button($"{state.DisplayAA}##PeerAAToggle"))
+						if (imgui_Button("##PeerAAToggle"))
 						{
 							peerAAState.IsOpen = !peerAAState.IsOpen;
 							imgui_Begin_OpenFlagSet(peerAAState.WindowName, peerAAState.IsOpen);
@@ -1164,7 +1448,7 @@ namespace E3Core.UI.Windows.Hud
 						font2.PushFont("robo");
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
-							if (popup.BeginPopupContextItem($"##PlayerInfoSettingsPopup", 1))
+							if (popup.BeginPopupContextItem("##PlayerInfoSettingsPopup", 1))
 							{
 								if (imgui_MenuItem("Dock"))
 								{
@@ -1308,11 +1592,11 @@ namespace E3Core.UI.Windows.Hud
 						using (var style = PushStyle.Aquire())
 						{
 							style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
-							imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"{state.ActiveDisc}");
+							imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.ActiveDisc);
 							using (var push = Push.Aquire())
 							{
 								push.PushItemWidth(-1);
-								imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 0, 0, $"({state.Display_ActiveDiscTimeleft}) {state.ActiveDiscPercentLeft.ToString("N0")}%");
+								imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 0, 0, $"({state.Display_ActiveDiscTimeleft}) {DecimalToIntString(state.ActiveDiscPercentLeft)}%");
 							}
 						}
 					}
@@ -1476,11 +1760,11 @@ namespace E3Core.UI.Windows.Hud
 									using (var style = PushStyle.Aquire())
 									{
 										style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
-										imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, $"{state.ActiveDisc}");
+										imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.ActiveDisc);
 										using (var push = Push.Aquire())
 										{
 											push.PushItemWidth(-1);
-											imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 0, 0, $"({state.Display_ActiveDiscTimeleft}) {state.ActiveDiscPercentLeft.ToString("N0")}%");
+											imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 0, 0, $"({state.Display_ActiveDiscTimeleft}) {DecimalToIntString(state.ActiveDiscPercentLeft)}%");
 										}
 									}
 								}
@@ -1753,7 +2037,7 @@ namespace E3Core.UI.Windows.Hud
 			{
 				style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.8f, 0.15f, 0.15f, 0.9f);
 				style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-				imgui_ProgressBar((float)state.TargetHP / 100f, 18, widthAvail, $"{state.TargetHP}%");
+				imgui_ProgressBar((float)state.TargetHP / 100f, 18, widthAvail, PercentString(state.TargetHP));
 			}
 
 			// Draw con color border around name + HP bar (mode 2)
@@ -1848,7 +2132,7 @@ namespace E3Core.UI.Windows.Hud
 							imgui_Text($"Spell: {state.TargetBuffs[i].Name}");
 							imgui_Text($"SpellID: {state.TargetBuffs[i].SpellID}");
 							imgui_Text($"Duration: {state.TargetBuffs[i].Display_Duration}");
-
+							imgui_Text($"Caster: {state.TargetBuffs[i].CasterName}");
 							if (state.TargetBuffs[i].Spell != null && state.TargetBuffs[i].Spell.SpellEffects.Count > 0)
 							{
 								imgui_Separator();
@@ -1871,6 +2155,7 @@ namespace E3Core.UI.Windows.Hud
 		{
 			var state = _state.GetState<State_HubWindow>();
 			var buffstate = _state.GetState<State_BuffWindow>();
+			var petbuffState = _state.GetState<State_PetBuffWindow>();
 			var songstate = _state.GetState<State_SongWindow>();
 			var buttonstate = _state.GetState<State_HotbuttonsWindow>();
 			var playerInfoState = _state.GetState<State_PlayerInfoWindow>();
@@ -1928,6 +2213,10 @@ namespace E3Core.UI.Windows.Hud
 							if (!songstate.Detached)
 							{
 								RenderSongTableSimple();
+							}
+							if(!petbuffState.Detached)
+							{
+								RenderPetBuffTableSimple();
 							}
 
 
@@ -2011,50 +2300,61 @@ namespace E3Core.UI.Windows.Hud
 		{
 			if (!_imguiContextReady) return;
 
-
-			var state = _state.GetState<State_HubWindow>();
-			if (imgui_Begin_OpenFlagGet(state.WindowName))
+			try
 			{
-				TryReattachWindowsIfClosed();
-				var buttonState = _state.GetState<State_HotbuttonsWindow>();
-
-
-				RefreshGroupInfo();
-				RefreshBuffInfo();
-				RefreshPlayerInfo();
-				RefreshTargetInfo();
-				RefreshPeerAAInfo();
-
-				RenderHub_MainWindow();
-
-				var buffState = _state.GetState<State_BuffWindow>();
-				RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true, locked: buffState.Locked);
-				var songState = _state.GetState<State_SongWindow>();
-				RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true, locked: songState.Locked);
-
-				var playerInfoState = _state.GetState<State_PlayerInfoWindow>();
-				if (state.ShowPlayerInfo)
+				using (MQ.GetDelayLock())
 				{
-					RenderHub_TryDetached(playerInfoState.WindowName, playerInfoState.Detached, RenderPlayerInfo, playerInfoState.WindowAlpha, noTitleBar: true, locked: playerInfoState.Locked);
-				}
-				var targetInfoState = _state.GetState<State_TargetInfoWindow>();
-				if (state.ShowTargetInfo)
-				{
-					RenderHub_TryDetached(targetInfoState.WindowName, targetInfoState.Detached, RenderTargetInfo, targetInfoState.WindowAlpha, noTitleBar: true, locked: targetInfoState.Locked);
-				}
-				if (state.ShowHotButtons)
-				{
-					RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
-				}
+					var state = _state.GetState<State_HubWindow>();
+					if (imgui_Begin_OpenFlagGet(state.WindowName))
+					{
+						TryReattachWindowsIfClosed();
+						var buttonState = _state.GetState<State_HotbuttonsWindow>();
 
-				var peerAAState = _state.GetState<State_PeerAAWindow>();
-				if (peerAAState.IsOpen)
-				{
-					RenderHub_TryDetached(peerAAState.WindowName, true, RenderPeerAAWindow, peerAAState.WindowAlpha);
+
+						RefreshGroupInfo();
+						RefreshBuffInfo();
+						RefreshPetBuffInfo();
+						RefreshPlayerInfo();
+						RefreshTargetInfo();
+						RenderHub_MainWindow();
+
+						var buffState = _state.GetState<State_BuffWindow>();
+						RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true, locked: buffState.Locked);
+						var songState = _state.GetState<State_SongWindow>();
+						RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true, locked: songState.Locked);
+						var petbuffState = _state.GetState<State_PetBuffWindow>();
+						RenderHub_TryDetached(petbuffState.WindowName, petbuffState.Detached, RenderPetBuffTableSimple, petbuffState.WindowAlpha, noTitleBar: true, locked: petbuffState.Locked);
+
+						var playerInfoState = _state.GetState<State_PlayerInfoWindow>();
+						if (state.ShowPlayerInfo)
+						{
+							RenderHub_TryDetached(playerInfoState.WindowName, playerInfoState.Detached, RenderPlayerInfo, playerInfoState.WindowAlpha, noTitleBar: true, locked: playerInfoState.Locked);
+						}
+						var targetInfoState = _state.GetState<State_TargetInfoWindow>();
+						if (state.ShowTargetInfo)
+						{
+							RenderHub_TryDetached(targetInfoState.WindowName, targetInfoState.Detached, RenderTargetInfo, targetInfoState.WindowAlpha, noTitleBar: true, locked: targetInfoState.Locked);
+						}
+						if (state.ShowHotButtons)
+						{
+							RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
+						}
+						var peerAAState = _state.GetState<State_PeerAAWindow>();
+						if (peerAAState.IsOpen)
+						{
+							RenderHub_TryDetached(peerAAState.WindowName, true, RenderPeerAAWindow, peerAAState.WindowAlpha);
+						}
+					}
 				}
 			}
+			catch (Exception ex)
+			{
+				MQ.WriteDelayed($"Error in UI thread: message:{ex.Message} payload:{ex.StackTrace} ");
+			}
+
 
 		}
+	
 		private static void RenderSongTableSimple()
 		{
 			var hubState = _state.GetState<State_HubWindow>();
@@ -2065,8 +2365,16 @@ namespace E3Core.UI.Windows.Hud
 			Int32 numberOfBuffsPerRow = (int)widthAvail / state.IconSize;
 
 			if (numberOfBuffsPerRow < 1) numberOfBuffsPerRow = 1;
-			imgui_Text($"Songs:({state.SongInfo.Count})");
 
+
+			string songDisplay = String.Empty;
+			Int32 keyCount = state.SongInfo.Count ;
+			if (!IntToStringIDLookup("Hub_SongDisplay", keyCount, out songDisplay))
+			{
+				songDisplay = $"Songs: ({keyCount})";
+				IntToStringIDRegister("Hub_SongDisplay", keyCount, songDisplay);
+			}
+			imgui_Text(songDisplay);
 			if (!state.Detached)
 			{
 				imgui_SameLine(0);
@@ -2088,7 +2396,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem($"##SongWindowSettingsPopup", 1))
+					if (popup.BeginPopupContextItem("##SongWindowSettingsPopup", 1))
 					{
 						if (imgui_MenuItem("Dock"))
 						{
@@ -2123,7 +2431,7 @@ namespace E3Core.UI.Windows.Hud
 						}
 
 
-						string keyForInput = $"##songWindow_alpha_set";
+						string keyForInput = "##songWindow_alpha_set";
 						imgui_SetNextItemWidth(100);
 						if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
 						{
@@ -2265,7 +2573,7 @@ namespace E3Core.UI.Windows.Hud
 							}
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								if (popup.BeginPopupContextItem($"SongTableIconContext-{counter}", 1))
+								if (popup.BeginPopupContextItemPerf("Hub_RenderSongTableSimpleContext", "##row_selected_context_",counter, 1))
 								{
 									using (var style = PushStyle.Aquire())
 									{
@@ -2343,7 +2651,6 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 		}
-
 		private static void RenderHotbuttons()
 		{
 
@@ -2361,7 +2668,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem($"##Hotbutton_WindowSettingsPopup", 1))
+					if (popup.BeginPopupContextItem("##Hotbutton_WindowSettingsPopup", 1))
 					{
 
 						if (imgui_MenuItem("Dock"))
@@ -2535,13 +2842,21 @@ namespace E3Core.UI.Windows.Hud
 						}
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
-							if (popup.BeginPopupContextItem($"##Hotbutton_detach-{counter}", 1))
+							if (popup.BeginPopupContextItemPerf("Hub_HotButtonDetachPopup", "##Hotbutton_detach-",counter,1))
 							{
 								using (var style = PushStyle.Aquire())
 								{
 									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 
-									if (imgui_MenuItem("Pop Out"))
+									if(state.Detached)
+									{
+										if (imgui_MenuItem("Dock"))
+										{
+											state.Detached = false;
+											imgui_Begin_OpenFlagSet(state.WindowName, false);
+										}
+									}
+									else if (imgui_MenuItem("Pop Out"))
 									{
 										state.Detached = true;
 										imgui_Begin_OpenFlagSet(state.WindowName, true);
@@ -2856,6 +3171,418 @@ namespace E3Core.UI.Windows.Hud
 			}
 		}
 
+		private static void RenderPetBuffTableSimple()
+		{
+			var hubState = _state.GetState<State_HubWindow>();
+			var buffState = _state.GetState<State_PetBuffWindow>();
+		
+			float widthAvail = imgui_GetContentRegionAvailX();
+
+			Int32 numberOfBuffsPerRow = (int)widthAvail / buffState.IconSize;
+
+			if (numberOfBuffsPerRow < 1) numberOfBuffsPerRow = 1;
+			if (buffState.DeBuffInfo.Count > 0)
+			{
+				imgui_Text("Pet Debuffs:");
+				using (var table = ImGUITable.Aquire())
+				{
+					int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
+										  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
+										  );
+
+					float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
+					if (table.BeginTable("E3HubPetDebuffTableSimple", 1, tableFlags, 0f, 0))
+					{
+						imgui_TableSetupColumn_Default("Debuffs");
+						List<TableRow_BuffInfo> currentStats = buffState.DeBuffInfo;
+						Int32 counter = 0;
+						foreach (var stats in currentStats)
+						{
+							if (counter % numberOfBuffsPerRow == 0)
+							{
+								imgui_TableNextRow();
+								imgui_TableNextColumn();
+
+							}
+							else
+							{
+								imgui_SameLine(0, 0);
+							}
+							float x = imgui_GetCursorScreenPosX();
+							float y = imgui_GetCursorScreenPosY();
+							imgui_DrawSpellIconByIconIndex(stats.iconID, buffState.IconSize);
+							if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+							{
+								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
+
+
+
+								long alpha = (Int64)(timeDelta * buffState.FadeRatio);
+
+								if (alpha > 255) alpha = 255;
+								imgui_GetWindowDrawList_AddRectFilled(x, y, x + buffState.IconSize, y + buffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
+
+								if (timeDelta > buffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
+
+							}
+							if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
+							{
+								float newX = x + (float)(buffState.IconSize / 2) - (buffState.FontSize);
+								float newY = y + (float)((buffState.IconSize) - (buffState.FontSize * 2));
+
+								imgui_GetWindowDrawList_AddText(newX, newY, GetColor(255, 255, 255, 255), stats.SimpleDuration);
+
+							}
+							if (!String.IsNullOrWhiteSpace(stats.Display_CounterNumber))
+							{
+								imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.Display_CounterNumber);
+
+							}
+							if (imgui_IsItemHovered())
+							{
+								using (var tooltip = ImGUIToolTip.Aquire())
+								{
+									imgui_Text($"Spell: {stats.Name}");
+									imgui_Text($"SpellID: {stats.SpellID}");
+									imgui_Text($"Duration: {stats.Display_Duration}");
+									if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
+									{
+										imgui_Separator();
+										foreach (var effect in stats.Spell.SpellEffects)
+										{
+											if (!string.IsNullOrWhiteSpace(effect))
+											{
+												imgui_Text(effect);
+
+											}
+										}
+									}
+								}
+							}
+							counter++;
+						}
+					}
+				}
+				imgui_Separator();
+			}
+
+			if(buffState.BuffInfo.Count>0)
+			{
+				string buffDisplay = String.Empty;
+				Int32 keyCount = buffState.BuffInfo.Count + buffState.DeBuffInfo.Count;
+				if (!IntToStringIDLookup("PetBuffDisplay", keyCount, out buffDisplay))
+				{
+					buffDisplay = $"Pet Buffs: ({buffState.BuffInfo.Count + buffState.DeBuffInfo.Count})";
+					IntToStringIDRegister("PetBuffDisplay", keyCount, buffDisplay);
+				}
+				imgui_Text(buffDisplay);
+				if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+				{
+					imgui_SameLine(0);
+					imgui_Text(hubState.SelectedToonForBuffs);
+				}
+
+				if (!buffState.Detached)
+				{
+					imgui_SameLine(0);
+					imgui_SetCursorPosX(widthAvail - 20);
+					if (imgui_Button(IMGUI_DETATCH_PETBUFFS_ID))
+					{
+						buffState.Detached = true;
+						imgui_Begin_OpenFlagSet(buffState.WindowName, true);
+					}
+				}
+				if (buffState.Detached)
+				{
+					imgui_SameLine(0);
+					float windowWidth = imgui_GetWindowWidth();
+					imgui_SameLine(0);
+					float availSpace = imgui_GetContentRegionAvailX();
+					if (imgui_InvisibleButton("##PetBuffInfoSettingsInvisButton", availSpace, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
+					{
+					}
+					using (var popup = ImGUIPopUpContext.Aquire())
+					{
+						if (popup.BeginPopupContextItem("##PetBuffgWindowSettingsPopup", 1))
+						{
+							if (imgui_MenuItem("Dock"))
+							{
+								buffState.Detached = false;
+								imgui_Begin_OpenFlagSet(buffState.WindowName, false);
+							}
+
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								if (buffState.Locked)
+								{
+									if (imgui_MenuItem("UnLock"))
+									{
+										buffState.Locked = false;
+									}
+								}
+								else
+								{
+									if (imgui_MenuItem("Lock"))
+									{
+										buffState.Locked = true;
+									}
+								}
+							}
+
+							imgui_Separator();
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Alpha");
+
+							}
+
+							string keyForInput = "##PetBuffWindow_alpha_set";
+							imgui_SetNextItemWidth(100);
+							if (imgui_InputInt(keyForInput, (int)(buffState.WindowAlpha * 255), 1, 20))
+							{
+								int updated = imgui_InputInt_Get(keyForInput);
+
+								if (updated > 255)
+								{
+									updated = 255;
+
+								}
+								if (updated < 0)
+								{
+									updated = 0;
+
+								}
+								buffState.WindowAlpha = ((float)updated) / 255f;
+							}
+							imgui_Separator();
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Icon Size");
+
+							}
+							imgui_SetNextItemWidth(100);
+							if (imgui_InputInt("##PetBuffWindow_icon_set", buffState.IconSize, 1, 20))
+							{
+								int updated = imgui_InputInt_Get("##PetBuffWindow_icon_set");
+
+								if (updated > 100)
+								{
+									updated = 100;
+
+								}
+								if (updated < 25)
+								{
+									updated = 25;
+
+								}
+								buffState.IconSize = updated;
+							}
+							imgui_Separator();
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("View Mode");
+							}
+
+							if (imgui_Checkbox("##buff_listview", buffState.ListView))
+							{
+								buffState.ListView = imgui_Checkbox_Get("##Petbuff_listview");
+							}
+							imgui_SameLine(0);
+							imgui_Text("List View");
+
+							if (buffState.ListView)
+							{
+								imgui_Separator();
+								if (imgui_Checkbox("##petbuff_showprogressbars", buffState.ShowProgressBars))
+								{
+									buffState.ShowProgressBars = imgui_Checkbox_Get("##petbuff_showprogressbars");
+								}
+								imgui_SameLine(0);
+								imgui_Text("Show Progress Bars");
+
+								imgui_Separator();
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Font");
+								}
+
+								using (var combo = ImGUICombo.Aquire())
+								{
+									if (combo.BeginCombo("##Select Font for PetBuffList", buffState.SelectedFont))
+									{
+										foreach (var pair in E3ImGUI.FontList)
+										{
+											bool sel = string.Equals(buffState.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+											if (imgui_Selectable($"{pair.Key}", sel))
+											{
+												buffState.SelectedFont = pair.Key;
+											}
+										}
+									}
+								}
+							}
+
+						}
+					}
+
+				}
+				// Use List View if enabled, otherwise use icon grid
+				if (buffState.ListView)
+				{
+					if (buffState.DeBuffInfo.Count > 0)
+					{
+						RenderBuffListView(buffState.DeBuffInfo, "E3HubPetDeBuffTableListView", buffState.IconSize, buffState.FadeRatio, buffState.FadeTimeInMS, buffState.NewBuffsTimeStamps, buffState.SelectedFont, buffState.ShowProgressBars, buffState.WindowAlpha);
+
+					}
+					RenderBuffListView(buffState.BuffInfo, "E3HubPetBuffTableListView", buffState.IconSize, buffState.FadeRatio, buffState.FadeTimeInMS, buffState.NewBuffsTimeStamps, buffState.SelectedFont, buffState.ShowProgressBars, buffState.WindowAlpha);
+				}
+				else
+				{
+					using (var igFont = IMGUI_Fonts.Aquire())
+					{
+						igFont.PushFont("arial_bold-20");
+
+						using (var table = ImGUITable.Aquire())
+						{
+							int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
+												  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
+												  );
+
+							if (table.BeginTable("E3HubPetBuffTableSimple", 1, tableFlags, 0f, 0))
+							{
+								imgui_TableSetupColumn_Default("Buffs");
+								List<TableRow_BuffInfo> currentStats = buffState.BuffInfo;
+								Int32 counter = 0;
+								foreach (var stats in currentStats)
+								{
+									if (counter % numberOfBuffsPerRow == 0)
+									{
+										imgui_TableNextRow();
+										imgui_TableNextColumn();
+									}
+									else
+									{
+										imgui_SameLine(0, 0);
+									}
+									float x = imgui_GetCursorScreenPosX();
+									float y = imgui_GetCursorScreenPosY();
+									imgui_DrawSpellIconByIconIndex(stats.iconID, buffState.IconSize);
+
+									if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+									{
+										Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
+
+										long alpha = (Int64)(timeDelta * buffState.FadeRatio);
+
+										if (alpha > 255) alpha = 255;
+										imgui_GetWindowDrawList_AddRectFilled(x, y, x + buffState.IconSize, y + buffState.IconSize, GetColor(0, 255, 0, 255 - (uint)alpha));
+
+										if (timeDelta > buffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
+
+									}
+									using (var popup = ImGUIPopUpContext.Aquire())
+									{
+										if (popup.BeginPopupContextItemPerf("HC_RenderPetBuffTableSimpleIconContext", "PetBuffTableIconContext-", counter, 1))
+										{
+											using (var style = PushStyle.Aquire())
+											{
+												style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+												imgui_Text(stats.Name);
+												imgui_Separator();
+												if (imgui_MenuItem("Drop Pet Buff"))
+												{
+													string command = $"/removepetbuff {stats.Name}";
+													if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+													{
+														E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+													}
+													else
+													{
+														E3ImGUI.MQCommandQueue.Enqueue(command);
+													}
+												}
+												if (imgui_MenuItem("Drop Pet buff from group pets"))
+												{
+
+													string command = $"/removepetbuff {stats.Name}";
+
+													E3ImGUI.MQCommandQueue.Enqueue(command);
+													E3.Bots.BroadcastCommandToGroup(command);
+												}
+												if (imgui_MenuItem("Drop pet buff from everyone's pet"))
+												{
+													string command = $"/removepetbuff {stats.Name}";
+													E3ImGUI.MQCommandQueue.Enqueue(command);
+													E3.Bots.BroadcastCommand(command);
+												}
+											}
+
+										}
+									}
+									if (stats.SpellType == 0)
+									{
+										imgui_GetWindowDrawList_AddRectFilled(x, y, x + buffState.IconSize, y + buffState.IconSize, GetColor(255, 0, 0, 125));
+									}
+									if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
+									{
+										float newX = x + (float)(buffState.IconSize / 2) - (buffState.FontSize);
+										float newY = y + (float)((buffState.IconSize) - (buffState.FontSize * 2));
+										imgui_GetWindowDrawList_AddRectFilled(newX, newY, newX + (buffState.FontSize * 2), newY + (buffState.IconSize - (newY - y)), GetColor(0, 0, 0, 100));
+										imgui_GetWindowDrawList_AddText(newX, newY, GetColor(255, 255, 255, 255), stats.SimpleDuration);
+
+									}
+
+									if (!String.IsNullOrWhiteSpace(stats.HitCount))
+									{
+										imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.HitCount);
+
+									}
+
+									if (imgui_IsItemHovered())
+									{
+										using (var tooltip = ImGUIToolTip.Aquire())
+										{
+											imgui_Text($"Spell: {stats.Name}");
+											imgui_Text($"SpellID: {stats.SpellID}");
+											imgui_Text($"Duration: {stats.Display_Duration}");
+
+											if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
+											{
+												imgui_Separator();
+												foreach (var effect in stats.Spell.SpellEffects)
+												{
+													if (!string.IsNullOrWhiteSpace(effect))
+													{
+														imgui_Text(effect);
+
+													}
+												}
+
+											}
+
+										}
+									}
+
+
+									counter++;
+								}
+							}
+
+						}
+
+					}
+				}
+			}
+			
+
+		}
+
 		private static void RenderBuffTableSimple()
 		{
 			var hubState = _state.GetState<State_HubWindow>();
@@ -2867,7 +3594,6 @@ namespace E3Core.UI.Windows.Hud
 			Int32 numberOfBuffsPerRow = (int)widthAvail / buffState.IconSize;
 
 			if (numberOfBuffsPerRow < 1) numberOfBuffsPerRow = 1;
-
 			if (debuffState.DebuffInfo.Count > 0)
 			{
 				imgui_Text("Debuffs:");
@@ -2958,7 +3684,15 @@ namespace E3Core.UI.Windows.Hud
 				imgui_Separator();
 			}
 
-			imgui_Text($"Buffs: ({buffState.BuffInfo.Count + debuffState.DebuffInfo.Count})");
+		
+			string buffDisplay = String.Empty;
+			Int32 keyCount = buffState.BuffInfo.Count + debuffState.DebuffInfo.Count;
+			if (!IntToStringIDLookup("BuffDisplay",keyCount,out buffDisplay))
+			{
+				buffDisplay = $"Buffs: ({buffState.BuffInfo.Count + debuffState.DebuffInfo.Count})";
+				IntToStringIDRegister("BuffDisplay", keyCount, buffDisplay);
+			}
+			imgui_Text(buffDisplay);
 			if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
 			{
 				imgui_SameLine(0);
@@ -2986,7 +3720,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem($"##BuffgWindowSettingsPopup", 1))
+					if (popup.BeginPopupContextItem("##BuffgWindowSettingsPopup", 1))
 					{
 						if (imgui_MenuItem("Dock"))
 						{
@@ -3166,7 +3900,7 @@ namespace E3Core.UI.Windows.Hud
 								}
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
-									if (popup.BeginPopupContextItem($"BuffTableIconContext-{counter}", 1))
+									if (popup.BeginPopupContextItemPerf("HC_RenderBuffTableSimpleIconContext", "BuffTableIconContext-",counter,1))
 									{
 										using (var style = PushStyle.Aquire())
 										{
@@ -3258,8 +3992,6 @@ namespace E3Core.UI.Windows.Hud
 			}
 
 		}
-
-
 		private static void RenderGroupTable()
 		{
 
@@ -3313,7 +4045,8 @@ namespace E3Core.UI.Windows.Hud
 
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								if (popup.BeginPopupContextItem($"##GroupTableHeaderContext-{i}", 1))
+								int flags = 1;
+								if (popup.BeginPopupContextItemPerf("Hud_GroupTableHeaderContext", "##GroupTableHeaderContext-",i, flags))
 								{
 									using (var style = PushStyle.Aquire())
 									{
@@ -3544,7 +4277,13 @@ namespace E3Core.UI.Windows.Hud
 								imgui_TableNextColumn();
 								bool is_row_selected = (state.SelectedRow == rowCount);
 
-								if (imgui_Selectable_WithFlags($"##row_selected_{rowCount}", is_row_selected, (int)(ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags.ImGuiSelectableFlags_AllowOverlap)))
+								string rowID = String.Empty;
+								if(!IntToStringIDLookup("Hub_RenderGroupTable_SelectableRows",rowCount,out rowID))
+								{
+									rowID = $"##row_selected_{rowCount}";
+									IntToStringIDRegister("Hub_RenderGroupTable_SelectableRows", rowCount, rowID);
+								}
+								if (imgui_Selectable_WithFlags(rowID, is_row_selected, (int)(ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags.ImGuiSelectableFlags_AllowOverlap)))
 								{
 									state.SelectedRow = rowCount;
 
@@ -3582,7 +4321,7 @@ namespace E3Core.UI.Windows.Hud
 								}
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
-									if (popup.BeginPopupContextItem($"##row_selected_context_{rowCount}", 1))
+									if (popup.BeginPopupContextItemPerf("Hub_RenderGroupTablePopupRows", "##row_selected_context_",rowCount,1))
 									{
 										state.SelectedToonForBuffs = String.Empty;
 										state.SelectedRow = -1;
@@ -3779,6 +4518,7 @@ namespace E3Core.UI.Windows.Hud
 			public Int32 CounterTypeID = 0;
 			public Int32 CounterNumberValue = 0;
 			public Spell Spell;
+			public string CasterName = String.Empty;
 			public Int32 SpellID = 0;
 			public string Name = String.Empty;
 			public string DisplayName { get; set; }
@@ -3803,6 +4543,12 @@ namespace E3Core.UI.Windows.Hud
 				SpellID = spellid;
 			}
 		}
+		public static Dictionary<string, TableRow_GroupInfo> _groupInfoCache = new Dictionary<string, TableRow_GroupInfo>();
+		public static Dictionary<Int32, TableRow_BuffInfo> _personalBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
+		public static Dictionary<Int32, TableRow_BuffInfo> _petBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
+
+		public static Dictionary<Int32, TableRow_BuffInfo> _targetBuffInfoCache = new Dictionary<int, TableRow_BuffInfo>();
+
 		public class TableRow_GroupInfo
 		{
 

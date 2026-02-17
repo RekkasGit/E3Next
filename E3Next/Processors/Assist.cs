@@ -530,7 +530,7 @@ namespace E3Core.Processors
                 Int32 mobid = MQ.Query<Int32>("${Target.ID}");
                 if (_spawns.TryByID(mobid, out var spawn))
                 {
-                    if (spawn.Aggressive && spawn.TypeDesc != "Corpse")
+                    if (spawn.Aggressive && !spawn.Dead)
                     {
                         Int32 targetHPPct = MQ.Query<Int32>("${Target.PctHPs}");
                         if (targetHPPct > 0 && targetHPPct <= E3.CharacterSettings.Assist_AutoAssistPercent)
@@ -606,7 +606,7 @@ namespace E3Core.Processors
             {
                 MobLifeExpectancy = 1;
 
-				if (s.TypeDesc == "Corpse")
+				if (s.Dead)
                 {
                     E3.Bots.Broadcast("Cannot assist, a corpse");
                     return;
@@ -944,7 +944,7 @@ namespace E3Core.Processors
                    if (Int32.TryParse(x.args[0], out mobid))
                    {
                         //make sure the target is in the same zone we are in
-                       if (Int32.TryParse(x.args[1], out zoneid))
+                       if (x.args.Count>1 && Int32.TryParse(x.args[1], out zoneid))
                        {
                            if (mobid != AssistTargetID)
 						   {
@@ -964,6 +964,10 @@ namespace E3Core.Processors
 						   }
 						   AssistOn(mobid, zoneid);
 
+                       }
+                       else
+                       {
+                           E3.Bots.Broadcast("Please pass in a zoneid to the assist command. /assistme targetid zoneid");
                        }
                    }
                }

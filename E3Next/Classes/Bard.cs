@@ -262,24 +262,28 @@ namespace E3Core.Classes
 			{
 				_autoMezFullMobList.Clear();
 
-				foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
+				//delay lock to prevent releasing back to MQ until done.
+				using (MQ.GetDelayLock())
 				{
-					_autoMezFullMobList.Add(s.ID);
-					if (s.ID == Assist.AssistTargetID) continue;
-					if (_mobsToAutoMez.Contains(s.ID)) continue;
-					//find all mobs that are close
-					if (s.PctHps < 1) continue;
-					if (s.TypeDesc != "NPC") continue;
-					if (!s.Targetable) continue;
-					if (!s.Aggressive) continue;
-					if (s.CleanName.EndsWith("s pet")) continue;
-					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-					if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
-											   //its valid to attack!
-					_mobsToAutoMez.Add(s.ID);
+					foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
+					{
+						_autoMezFullMobList.Add(s.ID);
+						if (s.ID == Assist.AssistTargetID) continue;
+						if (_mobsToAutoMez.Contains(s.ID)) continue;
+						//find all mobs that are close
+						if (s.PctHps < 1) continue;
+						if (s.TypeDesc != "NPC") continue;
+						if (!s.Targetable) continue;
+						if (!s.Aggressive) continue;
+						if (s.CleanName.EndsWith("s pet")) continue;
+						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+						if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
+													 //its valid to attack!
+						_mobsToAutoMez.Add(s.ID);
+					}
 				}
-				
-                List<Int64> mobIdsToRemove = new List<Int64>();
+
+				List<Int64> mobIdsToRemove = new List<Int64>();
                 foreach(var mobid in _mobsToAutoMez)
                 {
                     if(!_autoMezFullMobList.Contains(mobid))
