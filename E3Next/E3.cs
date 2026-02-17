@@ -558,10 +558,11 @@ namespace E3Core.Processors
         }
         private static void RefreshCaches()
         {
-            Casting.RefreshGemCache();
+			Spawns.RefreshList();
+			Casting.RefreshGemCache();
             Basics.RefreshGroupMembers();
 			Basics.RefreshRaidMembers();
-			Spawns.RefreshList();
+			
         }
 		public static void ReInit()
 		{
