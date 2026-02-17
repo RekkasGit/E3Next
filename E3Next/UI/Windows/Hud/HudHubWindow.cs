@@ -1567,6 +1567,24 @@ namespace E3Core.UI.Windows.Hud
 							using (var style = PushStyle.Aquire())
 							{
 								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								if (tiState.ConColorBorder == 0)
+								{
+									if (imgui_MenuItem("Con Color: Name Border")) tiState.ConColorBorder = 1;
+								}
+								else if (tiState.ConColorBorder == 1)
+								{
+									if (imgui_MenuItem("Con Color: Name+HP Border")) tiState.ConColorBorder = 2;
+								}
+								else
+								{
+									if (imgui_MenuItem("Con Color: Text")) tiState.ConColorBorder = 0;
+								}
+							}
+
+							imgui_Separator();
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 								imgui_Text("Alpha");
 							}
 
@@ -1599,6 +1617,9 @@ namespace E3Core.UI.Windows.Hud
 				return;
 			}
 
+			// Capture underlay start position before rendering target info
+			float underlayStartY = imgui_GetCursorScreenPosY();
+
 			imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
 			imgui_SameLine(0, 0);
 			// Center the target name over the HP bar
@@ -1609,7 +1630,14 @@ namespace E3Core.UI.Windows.Hud
 			if (!tiState.Detached)
 			{
 				imgui_SetCursorPosX(centerX);
-				imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.Display_TargetName);
+				if (tiState.ConColorBorder > 0)
+				{
+					imgui_Text(state.Display_TargetName);
+				}
+				else
+				{
+					imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.Display_TargetName);
+				}
 				// Reset cursor and draw detach button at the right edge
 				imgui_SameLine(widthAvail - 20);
 				if (imgui_Button(IMGUI_DETATCH_TARGETINFO_ID))
@@ -1624,7 +1652,14 @@ namespace E3Core.UI.Windows.Hud
 				float contentCenterX = (windowWidth - nameWidth) / 2f;
 				if (contentCenterX < 0) contentCenterX = 0;
 				imgui_SetCursorPosX(contentCenterX);
-				imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.Display_TargetName);
+				if (tiState.ConColorBorder > 0)
+				{
+					imgui_Text(state.Display_TargetName);
+				}
+				else
+				{
+					imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.Display_TargetName);
+				}
 				imgui_SameLine(0);
 				float availSpace = imgui_GetContentRegionAvailX();
 				if (imgui_InvisibleButton("##TargetInfoSettingsInvisButton", availSpace, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
@@ -1658,6 +1693,24 @@ namespace E3Core.UI.Windows.Hud
 						using (var style = PushStyle.Aquire())
 						{
 							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							if (tiState.ConColorBorder == 0)
+							{
+								if (imgui_MenuItem("Con Color: Name Border")) tiState.ConColorBorder = 1;
+							}
+							else if (tiState.ConColorBorder == 1)
+							{
+								if (imgui_MenuItem("Con Color: Name+HP Border")) tiState.ConColorBorder = 2;
+							}
+							else
+							{
+								if (imgui_MenuItem("Con Color: Text")) tiState.ConColorBorder = 0;
+							}
+						}
+
+						imgui_Separator();
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 							imgui_Text("Alpha");
 						}
 
@@ -1674,8 +1727,27 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 
-			// Target HP% progress bar
+			// Draw con color border around name only (mode 1)
+			if (tiState.ConColorBorder == 1 && state.HasTarget)
+			{
+				float pad = 4f;
+				float borderTop = underlayStartY - pad;
+				float borderEndY = imgui_GetCursorScreenPosY();
+				float borderX = imgui_GetWindowPosX() + pad;
+				float borderW = imgui_GetWindowWidth() - (pad * 2);
+				float t = 2f;
+				uint borderColor = GetColor(nc.r, nc.g, nc.b, 0.8f);
+				imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + borderW, borderTop + t, borderColor);
+				imgui_GetWindowDrawList_AddRectFilled(borderX, borderEndY - t, borderX + borderW, borderEndY, borderColor);
+				imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + t, borderEndY, borderColor);
+				imgui_GetWindowDrawList_AddRectFilled(borderX + borderW - t, borderTop, borderX + borderW, borderEndY, borderColor);
+			}
 
+			// Target HP% progress bar
+			if (tiState.ConColorBorder > 0 && state.HasTarget)
+			{
+				imgui_SetCursorPosY(imgui_GetCursorPosY() + 4);
+			}
 
 			using (var style = PushStyle.Aquire())
 			{
@@ -1684,8 +1756,28 @@ namespace E3Core.UI.Windows.Hud
 				imgui_ProgressBar((float)state.TargetHP / 100f, 18, widthAvail, $"{state.TargetHP}%");
 			}
 
+			// Draw con color border around name + HP bar (mode 2)
+			if (tiState.ConColorBorder == 2 && state.HasTarget)
+			{
+				float pad = 4f;
+				float borderTop = underlayStartY - pad;
+				float borderEndY = imgui_GetCursorScreenPosY();
+				float borderX = imgui_GetWindowPosX() + pad;
+				float borderW = imgui_GetWindowWidth() - (pad * 2);
+				float t = 2f;
+				uint borderColor = GetColor(nc.r, nc.g, nc.b, 0.8f);
+				imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + borderW, borderTop + t, borderColor);
+				imgui_GetWindowDrawList_AddRectFilled(borderX, borderEndY - t, borderX + borderW, borderEndY, borderColor);
+				imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + t, borderEndY, borderColor);
+				imgui_GetWindowDrawList_AddRectFilled(borderX + borderW - t, borderTop, borderX + borderW, borderEndY, borderColor);
+			}
+
 
 			// Level & Class (left) + Distance (right)
+			if (tiState.ConColorBorder == 2 && state.HasTarget)
+			{
+				imgui_SetCursorPosY(imgui_GetCursorPosY() + 4);
+			}
 			string leftText = state.Display_LevelAndClassString;
 			imgui_Text(leftText);
 
@@ -1732,7 +1824,21 @@ namespace E3Core.UI.Windows.Hud
 						imgui_SameLine(0, 2);
 					}
 
+					float iconX = imgui_GetCursorScreenPosX();
+					float iconY = imgui_GetCursorScreenPosY();
 					imgui_DrawSpellIconBySpellID(state.TargetBuffs[i].SpellID, iconSize);
+
+					// Draw buff/debuff border: blue for buffs, red for debuffs
+					{
+						float bt = 1f;
+						uint iconBorderColor = state.TargetBuffs[i].SpellType == 0
+							? GetColor(255, 50, 50, 200)   // red for debuffs
+							: GetColor(50, 100, 255, 200);  // blue for buffs
+						imgui_GetWindowDrawList_AddRectFilled(iconX, iconY, iconX + iconSize, iconY + bt, iconBorderColor);
+						imgui_GetWindowDrawList_AddRectFilled(iconX, iconY + iconSize - bt, iconX + iconSize, iconY + iconSize, iconBorderColor);
+						imgui_GetWindowDrawList_AddRectFilled(iconX, iconY, iconX + bt, iconY + iconSize, iconBorderColor);
+						imgui_GetWindowDrawList_AddRectFilled(iconX + iconSize - bt, iconY, iconX + iconSize, iconY + iconSize, iconBorderColor);
+					}
 
 					if (imgui_IsItemHovered())
 					{

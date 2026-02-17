@@ -207,6 +207,8 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_TargetInfo_Detached = false;
 		[INI_Section("E3Hud_Hub_TargetInfo", "Locked")]
 		public bool E3Hud_Hub_TargetInfo_Locked = false;
+		[INI_Section("E3Hud_Hub_TargetInfo", "ConColorBorder")]
+		public int E3Hud_Hub_TargetInfo_ConColorBorder = 0;
 
 		[INI_Section("E3Hud_Hub_Buff", "SelectedFont")]
 		public string E3Hud_Hub_Buff_SelectedFont = "robo";
@@ -890,6 +892,7 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Alpha", ParsedData, ref E3Hud_Hub_TargetInfo_Alpha);
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Detached", ParsedData, ref E3Hud_Hub_TargetInfo_Detached);
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Locked", ParsedData, ref E3Hud_Hub_TargetInfo_Locked);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "ConColorBorder", ParsedData, ref E3Hud_Hub_TargetInfo_ConColorBorder);
 
 			LoadKeyData("E3Hud_Hub_Buff", "Alpha", ParsedData, ref E3Hud_Hub_Buff_Alpha);
 			LoadKeyData("E3Hud_Hub_Buff", "Detached", ParsedData, ref E3Hud_Hub_Buff_Detached);
@@ -1373,6 +1376,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Alpha", "0.8");
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ConColorBorder", "0");
 
 			newFile.Sections.AddSection("E3Hud_Hub_Buff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Buff");

@@ -370,6 +370,8 @@ namespace E3Core.UI.Windows.Hud
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Locked; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Locked = value; IsDirty = true; } }
+		// 0=off (con-colored text), 1=border around name, 2=border around name+HP
+		public int ConColorBorder { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_ConColorBorder; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_ConColorBorder = value; IsDirty = true; } }
 		public bool IsDirty = false;
 		public Int64 TargetInfoLastUpdated = 0;
 		public Int64 TargetInfoUpdateInterval = 100;
