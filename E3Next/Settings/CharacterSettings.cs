@@ -1327,7 +1327,7 @@ namespace E3Core.Settings
 
 		}
 
-		public IniData createNewINIData()
+		public IniData createNewINIData(bool forBrandNewFile)
 		{
 			IniData newFile = new IniData();
 
@@ -1602,7 +1602,11 @@ namespace E3Core.Settings
 			{
 				newFile.Sections.AddSection("Bard");
 				section = newFile.Sections.GetSectionData("Bard");
-				section.Keys.AddKey("MelodyIf", "");
+				if(forBrandNewFile)
+				{
+					section.Keys.AddKey("MelodyIf", "main/Ifs|MainIf");
+					section.Keys.AddKey("MelodyIf", "combat/Ifs|CombatIf");
+				}
 				section.Keys.AddKey("AutoMezSong", "");
 				section.Keys.AddKey("AutoMezSongDuration in seconds", "18");
 				section.Keys.AddKey("Auto-Sonata (On/Off)", "Off");
@@ -1775,6 +1779,23 @@ namespace E3Core.Settings
 
 
 			newFile.Sections.AddSection("Ifs");
+			
+			if(CharacterClass == Class.Bard && forBrandNewFile)
+			{
+				section = newFile.Sections.GetSectionData("Ifs");
+				//add the default melody ifs sections
+				section.Keys.AddKey("MainIf", "!(${InCombat})");
+				section.Keys.AddKey("CombatIf", "${InCombat}");
+
+				newFile.Sections.AddSection("main Meloddy");
+				section = newFile.Sections.GetSectionData("main Melody");
+				section.Keys.AddKey("Song", "");
+				newFile.Sections.AddSection("combat Meloddy");
+				section = newFile.Sections.GetSectionData("combat Melody");
+				section.Keys.AddKey("Song", "");
+
+			}
+			
 
 			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
@@ -1846,11 +1867,11 @@ namespace E3Core.Settings
 			{
 				fileName = fileName.Replace(".ini", "_" + CurrentSet + ".ini");
 			}
-			IniData newFile = createNewINIData();
+			IniData newFile = null; 
 			if (!File.Exists(fileName))
 			{
 				
-
+				newFile = createNewINIData(forBrandNewFile:true);
 				if (!Directory.Exists(_configFolder + _botFolder))
 				{
 					Directory.CreateDirectory(_configFolder + _botFolder);
@@ -1873,7 +1894,7 @@ namespace E3Core.Settings
 				//before we merge, we need to check on hotkey dynamic to see if its set to true or false in the current ini data
 				//this is because there is a filter on createNewINI data
 				LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", tParsedData, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
-				newFile = createNewINIData();
+				newFile = createNewINIData(false);
 
 				if (_mergeUpdates)
 				{
@@ -1904,7 +1925,7 @@ namespace E3Core.Settings
 			var charSettings = e3util.GetSettingsMappedToInI();
 			List<string> transferedKeyComments = new List<string>();
 
-			IniData defaultFile = createNewINIData();
+			IniData defaultFile = createNewINIData(forBrandNewFile:false);
 
 
 

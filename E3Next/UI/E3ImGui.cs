@@ -2479,7 +2479,9 @@ namespace MonoCore
 		public extern static void imgui_ProgressBar(float fraction, float height, float width, string overlay);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float[] imgui_GetItemRectSize();
-	
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float[] imgui_GetStyleColorVec4(int flag);
+
 		#endregion
 
 		private static void PushCommonRounding()
@@ -3387,13 +3389,13 @@ namespace MonoCore
 			#endregion
 		}
 
-		private static Dictionary<string, Dictionary<Int32, string>> _intToStringLookup = new Dictionary<string, Dictionary<int, string>>();
+		private static Dictionary<string, Dictionary<Int64, string>> _intToStringLookup = new Dictionary<string, Dictionary<Int64, string>>();
 
-		public static bool IntToStringIDLookup(string type, Int32 key, out string value)
+		public static bool IntToStringIDLookup(string type, Int64 key, out string value)
 		{
 			if (!_intToStringLookup.ContainsKey(type))
 			{
-				_intToStringLookup.Add(type, new Dictionary<Int32, string>());
+				_intToStringLookup.Add(type, new Dictionary<Int64, string>());
 			}
 			if (!_intToStringLookup[type].TryGetValue(key, out value))
 			{
@@ -3401,11 +3403,11 @@ namespace MonoCore
 			}
 			return true;
 		}
-		public static void IntToStringIDRegister(string type, Int32 key, string value)
+		public static void IntToStringIDRegister(string type, Int64 key, string value)
 		{
 			if (!_intToStringLookup.ContainsKey(type))
 			{
-				_intToStringLookup.Add(type, new Dictionary<Int32, string>());
+				_intToStringLookup.Add(type, new Dictionary<Int64, string>());
 			}
 			_intToStringLookup[type][key] = value;
 		}

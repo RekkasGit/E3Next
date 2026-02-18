@@ -5,6 +5,7 @@ using MonoCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using static E3Core.UI.Windows.Hud.HudHubWindow;
 using static E3Core.UI.Windows.Hud.State_SongWindow;
@@ -29,6 +30,7 @@ namespace E3Core.UI.Windows.Hud
 		private State_TargetInfoWindow _targetInfoWindowState = new State_TargetInfoWindow();
 		private State_PeerAAWindow _peerAAWindowState = new State_PeerAAWindow();
 
+		
 		public T GetState<T>()
 		{
 			var type = typeof(T);
@@ -282,6 +284,9 @@ namespace E3Core.UI.Windows.Hud
 			IsDirty = false;
 		}
 	}
+
+
+
 	public class State_HotbuttonsWindow
 	{	
 		public string WindowName = $"E3 Hotbutton Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";

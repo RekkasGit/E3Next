@@ -5,11 +5,13 @@ using E3Core.Processors;
 using E3Core.Server;
 using E3Core.Utility;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -74,7 +76,22 @@ namespace E3Core.UI.Windows.Hud
 				return intString;
 			}
 		}
-
+		private static float EaseInOutQuad(float t)
+		{
+			return (float) (t < 0.5f ? 2.0f * t * t : 1.0f - Math.Pow(-2.0f * t + 2.0f, 2.0f) / 2.0f);
+		}
+		private static float GetBlinkingFactor(float blinkSpeed = 3.0f)
+		{
+			// 1. Calculate a blinking factor (0.0 to 1.0) using a sine wave
+			return (float)(Math.Sin(((float)(Core.StopWatch.ElapsedMilliseconds / 1000)) * blinkSpeed) + 1.0f) * 0.5f;
+		}
+		//don't copy the structs, just get a reference pointer
+		private static void GetBlinkLerpColor(ref Vector4 bg_color, ref Vector4 blink_color, float blinkFactor, ref Vector4 result)
+		{
+			result.X = bg_color.X + (blink_color.X - bg_color.X) * blinkFactor;
+			result.Y = bg_color.Y + (blink_color.Y - bg_color.Y) * blinkFactor;
+			result.Z = bg_color.Z + (blink_color.Z - bg_color.Z) * blinkFactor;
+		}
 		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _distanceSeverity = new[]
 		{
 			(0d, 100d,  0.25f, 0.85f, 0.25f),
@@ -577,7 +594,7 @@ namespace E3Core.UI.Windows.Hud
 							}
 							if (duration < 160000d)
 							{
-								buffRow.DisplayName = buffRow.Name + $" ( {buffRow.Duration} )";
+								buffRow.DisplayName = buffRow.Name + $" ( {buffRow.SimpleDuration} )";
 							}
 							else
 							{
@@ -2953,7 +2970,8 @@ namespace E3Core.UI.Windows.Hud
 			}
 		}
 		static float[] BuffListView_NameColor = { 1, 1, 1, 1 };
-		static float[] BuffListView_ProgressColor = { 0, 0, 1, 0.4f };
+		static Vector4 BuffListView_ProgressColor = new Vector4 { X=0, Y=0, Z=1,W= 0.4f };
+		static Vector4 BuffListView_ProgressBarBlinkColor = new Vector4{X=0.8f,Y=0.2f,Z=0.2f,W=0.4f};
 		static float[] BuffListView_ProgressBGColor = null;
 		private static void RenderBuffListView(List<TableRow_BuffInfo> buffList, string tableName, int iconSize, double fadeRatio, Int32 fadeTimeInMS, Dictionary<Int32, Int64> newBuffsTimeStamps, string selectedFont, bool showProgressBars, float windowAlpha)
 		{
@@ -2991,30 +3009,35 @@ namespace E3Core.UI.Windows.Hud
 								imgui_DrawSpellIconByIconIndex(stats.iconID, smallIconSize);
 								imgui_TableSetColumnIndex(1);
 
-								// Calculate duration in seconds for color coding
-								int totalSeconds = 0;
-								var durationParts = stats.Display_Duration.Split(' ');
-								foreach (var part in durationParts)
-								{
-									if (part.EndsWith("h") && Int32.TryParse(part.TrimEnd('h'), out int hours))
-										totalSeconds += hours * 3600;
-									else if (part.EndsWith("m") && Int32.TryParse(part.TrimEnd('m'), out int mins))
-										totalSeconds += mins * 60;
-									else if (part.EndsWith("s") && Int32.TryParse(part.TrimEnd('s'), out int secs))
-										totalSeconds += secs;
-								}
-
 								// Yellow text for buffs expiring soon (< 5 minutes)
-								bool expiringSoon = totalSeconds > 0 && totalSeconds < 300;
+								bool expiringSoon = stats.Duration > 0 && stats.Duration < 300000;
 
 								float textPosX, textPosY;
 
 								if (showProgressBars)
 								{
+									
 									using (var style = PushStyle.Aquire())
 									{
-										style.PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressColor[0], BuffListView_ProgressColor[1], BuffListView_ProgressColor[2], BuffListView_ProgressColor[3]);
+										bool show_alternate = (int)(((float)Core.StopWatch.ElapsedMilliseconds/1000f) * 1.0f) % 2 == 0;
+										if (stats.Duration<60000 && show_alternate)
+										{
+											float blinkf = GetBlinkingFactor(5f);
+											float blinkeaseout = EaseInOutQuad(blinkf);
+											Vector4 blinkColor = new Vector4();
+
+
+											GetBlinkLerpColor(ref BuffListView_ProgressColor, ref BuffListView_ProgressBarBlinkColor, blinkeaseout, ref blinkColor);
+											style.PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressBarBlinkColor.X, BuffListView_ProgressBarBlinkColor.Y, BuffListView_ProgressBarBlinkColor.Z, 1);
+										}
+										else
+										{
+								
+											style.PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressColor.X, BuffListView_ProgressColor.Y, BuffListView_ProgressColor.Z, BuffListView_ProgressColor.W);
+
+										}
 										style.PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBGColor[0], BuffListView_ProgressBGColor[1], BuffListView_ProgressBGColor[2], windowAlpha);
+
 
 										float widthOfColumn = imgui_GetContentRegionAvailX();
 										imgui_ProgressBar(((float)stats.Duration / (float)stats.MaxDuration_Value), 20, widthOfColumn, "");
@@ -3043,7 +3066,13 @@ namespace E3Core.UI.Windows.Hud
 										// Draw small inline icon + name (MQ2Switcher style)
 										imgui_SameLine(0, 4);
 										bool selected = false;
-										if (imgui_Selectable_WithFlags($"##RemoveSpell_{stats.SpellID}", selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns))
+										string selectableKey = String.Empty;
+										if(!IntToStringIDLookup("BuffListRemoveSpellContext",stats.SpellID,out selectableKey))
+										{
+											selectableKey = $"##RemoveSpell_{stats.SpellID}";
+											IntToStringIDRegister("BuffListRemoveSpellContext", stats.SpellID, selectableKey);
+										}
+										if (imgui_Selectable_WithFlags(selectableKey, selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns))
 										{
 											// Left-click: remove buff
 											string command = $"/removebuff {stats.Name}";
@@ -3065,7 +3094,13 @@ namespace E3Core.UI.Windows.Hud
 								{
 									imgui_SameLine(0, 4);
 									bool selected = false;
-									if (imgui_Selectable_WithFlags($"##RemoveSpell_{stats.SpellID}", selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns))
+									string selectableKey = String.Empty;
+									if (!IntToStringIDLookup("BuffListRemoveSpellContext", stats.SpellID, out selectableKey))
+									{
+										selectableKey = $"##RemoveSpell_{stats.SpellID}";
+										IntToStringIDRegister("BuffListRemoveSpellContext", stats.SpellID, selectableKey);
+									}
+									if (imgui_Selectable_WithFlags(selectableKey, selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns))
 									{
 										// Left-click: remove buff
 										string command = $"/removebuff {stats.Name}";
@@ -3109,7 +3144,20 @@ namespace E3Core.UI.Windows.Hud
 								// Right-click context menu
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
-									if (popup.BeginPopupContextItem($"{tableName}_Context_{stats.SpellID}", 1))
+									string selectableKey = String.Empty;
+
+									//get the hash of the table name and store it in the
+									//upper parts of the int64, and put the spell id in the lower parts
+									int tableHash = tableName.GetHashCode();
+									Int64 keyToUse = (long)tableHash << 32;
+									keyToUse |= (Int64)(uint)stats.SpellID;
+
+									if (!IntToStringIDLookup("BuffListRemovePopupContext", keyToUse, out selectableKey))
+									{
+										selectableKey = $"{tableName}_Context_{stats.SpellID}";
+										IntToStringIDRegister("BuffListRemovePopupContext", keyToUse, selectableKey);
+									}
+									if (popup.BeginPopupContextItem(selectableKey, 1))
 									{
 										using (var style = PushStyle.Aquire())
 										{
@@ -3156,13 +3204,14 @@ namespace E3Core.UI.Windows.Hud
 										imgui_Separator();
 										imgui_Text("Progress color picker");
 										imgui_SetNextItemWidth(150.0f);
-										if (imgui_ColorPicker4_Float("##BuffListView_ProgressColorPicker", BuffListView_ProgressColor[0], BuffListView_ProgressColor[1], BuffListView_ProgressColor[2], BuffListView_ProgressColor[3], 0))
+										if (imgui_ColorPicker4_Float("##BuffListView_ProgressColorPicker", BuffListView_ProgressColor.X, BuffListView_ProgressColor.Y, BuffListView_ProgressColor.Z, BuffListView_ProgressColor.W, 0))
 										{
 											float[] newColors = imgui_ColorPicker_GetRGBA_Float("##BuffListView_ProgressColorPicker");
-											BuffListView_ProgressColor[0] = newColors[0];
-											BuffListView_ProgressColor[1] = newColors[1];
-											BuffListView_ProgressColor[2] = newColors[2];
-											BuffListView_ProgressColor[3] = newColors[3];
+											BuffListView_ProgressColor.X = newColors[0];
+											BuffListView_ProgressColor.Y = newColors[1];
+											BuffListView_ProgressColor.Z = newColors[2];
+											BuffListView_ProgressColor.W = newColors[3];
+
 
 										}
 									}
