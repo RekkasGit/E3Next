@@ -1062,7 +1062,7 @@ namespace E3Core.Utility
 					//MQ.Write($"ID:{ID} D:{duration}  st:{spellType}");
 					if(spellID>0)
 					{
-						duration = duration * 6 * 1000;
+						if(duration>0)	duration = duration * 6 * 1000;
 						buffInfoStringBuilder.Append(spellID);
 						buffInfoStringBuilder.Append(",");
 						buffInfoStringBuilder.Append(duration);
@@ -1177,7 +1177,8 @@ namespace E3Core.Utility
 
 					if(spellID>0)
 					{
-						duration = duration * 6 * 1000;
+						if (duration > 0) duration = duration * 6 * 1000;
+
 						if (!BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
 						{
 							BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
@@ -1234,7 +1235,7 @@ namespace E3Core.Utility
 						{
 							BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
 						}
-						duration = duration * 6 * 1000;
+						if (duration > 0) duration = duration * 6 * 1000;
 						buffInfoStringBuilder.Append(spellID);
 						buffInfoStringBuilder.Append(",");
 						buffInfoStringBuilder.Append(duration);

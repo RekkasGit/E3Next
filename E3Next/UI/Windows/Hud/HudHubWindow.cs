@@ -428,7 +428,16 @@ namespace E3Core.UI.Windows.Hud
 							buffRow.iconID = cacheEntry.SpellIcon;
 							buffRow.MaxDuration_Value = cacheEntry.MaxDuration;
 							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
-							buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+							if (duration < 0)
+							{
+								buffRow.Display_Duration = "Perminate";
+
+							}
+							else
+							{
+								buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+
+							}
 							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
 							{
@@ -566,7 +575,16 @@ namespace E3Core.UI.Windows.Hud
 							buffRow.iconID = cacheEntry.SpellIcon;
 							buffRow.MaxDuration_Value = cacheEntry.MaxDuration;
 							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
-							buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+							if(duration<0)
+							{
+								buffRow.Display_Duration = "Perminate";
+
+							}
+							else
+							{
+								buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+
+							}
 							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
 							{
@@ -3531,7 +3549,7 @@ namespace E3Core.UI.Windows.Hud
 									}
 									float x = imgui_GetCursorScreenPosX();
 									float y = imgui_GetCursorScreenPosY();
-									if (stats.Duration <= 12000) //if not a song
+									if (stats.Duration <= 12000 && stats.Duration>=0) //if not a song
 									{
 										Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds % 12000;
 										long alpha = (Int64)(timeDelta * buffState.FadeRatio);
