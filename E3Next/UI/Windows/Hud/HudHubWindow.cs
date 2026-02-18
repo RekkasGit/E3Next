@@ -3022,12 +3022,6 @@ namespace E3Core.UI.Windows.Hud
 										bool show_alternate = (int)(((float)Core.StopWatch.ElapsedMilliseconds/1000f) * 1.0f) % 2 == 0;
 										if (stats.Duration<60000 && show_alternate)
 										{
-											float blinkf = GetBlinkingFactor(5f);
-											float blinkeaseout = EaseInOutQuad(blinkf);
-											Vector4 blinkColor = new Vector4();
-
-
-											GetBlinkLerpColor(ref BuffListView_ProgressColor, ref BuffListView_ProgressBarBlinkColor, blinkeaseout, ref blinkColor);
 											style.PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressBarBlinkColor.X, BuffListView_ProgressBarBlinkColor.Y, BuffListView_ProgressBarBlinkColor.Z, 1);
 										}
 										else
