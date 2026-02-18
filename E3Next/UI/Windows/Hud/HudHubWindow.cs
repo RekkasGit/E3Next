@@ -3020,17 +3020,18 @@ namespace E3Core.UI.Windows.Hud
 									using (var style = PushStyle.Aquire())
 									{
 										bool show_alternate = (int)(((float)Core.StopWatch.ElapsedMilliseconds/1000f) * 1.0f) % 2 == 0;
-										if (stats.Duration<60000 && show_alternate)
+										if (stats.Duration<30000 && show_alternate && stats.BuffType!=1) //if not a song
 										{
-											style.PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressBarBlinkColor.X, BuffListView_ProgressBarBlinkColor.Y, BuffListView_ProgressBarBlinkColor.Z, 1);
+											style.PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBarBlinkColor.X, BuffListView_ProgressBarBlinkColor.Y, BuffListView_ProgressBarBlinkColor.Z, windowAlpha);
 										}
 										else
 										{
-								
-											style.PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressColor.X, BuffListView_ProgressColor.Y, BuffListView_ProgressColor.Z, BuffListView_ProgressColor.W);
+											style.PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBGColor[0], BuffListView_ProgressBGColor[1], BuffListView_ProgressBGColor[2], windowAlpha);
+
 
 										}
-										style.PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBGColor[0], BuffListView_ProgressBGColor[1], BuffListView_ProgressBGColor[2], windowAlpha);
+										style.PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressColor.X, BuffListView_ProgressColor.Y, BuffListView_ProgressColor.Z, BuffListView_ProgressColor.W);
+
 
 
 										float widthOfColumn = imgui_GetContentRegionAvailX();
