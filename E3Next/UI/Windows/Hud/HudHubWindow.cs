@@ -3670,21 +3670,30 @@ namespace E3Core.UI.Windows.Hud
 							}
 							float x = imgui_GetCursorScreenPosX();
 							float y = imgui_GetCursorScreenPosY();
-							imgui_DrawSpellIconByIconIndex(stats.iconID, debuffState.IconSize);
-							if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+
+							if (stats.Duration <= 12000) //if not a song
 							{
-								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
+								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds % 12000;
+								long alpha = (Int64)(timeDelta * buffState.FadeRatio);
 
-
-
-								long alpha = (Int64)(timeDelta * debuffState.FadeRatio);
-
-								if (alpha > 255) alpha = 255;
 								imgui_GetWindowDrawList_AddRectFilled(x, y, x + debuffState.IconSize, y + debuffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
-
-								if (timeDelta > debuffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
-
+								imgui_DrawSpellIconByIconIndex(stats.iconID, debuffState.IconSize);
 							}
+							else
+							{
+								imgui_DrawSpellIconByIconIndex(stats.iconID, debuffState.IconSize);
+								if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+								{
+									Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
+									long alpha = (Int64)(timeDelta * debuffState.FadeRatio);
+
+									if (alpha > 255) alpha = 255;
+									imgui_GetWindowDrawList_AddRectFilled(x, y, x + debuffState.IconSize, y + debuffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
+
+									if (timeDelta > debuffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
+								}
+							}
+
 							if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
 							{
 								float newX = x + (float)(debuffState.IconSize / 2) - (debuffState.FontSize);
@@ -3905,7 +3914,7 @@ namespace E3Core.UI.Windows.Hud
 			{
 				using (var igFont = IMGUI_Fonts.Aquire())
 				{
-					igFont.PushFont("arial_bold-20");
+					//igFont.PushFont("EQ-Bold");
 
 					using (var table = ImGUITable.Aquire())
 					{
@@ -3931,20 +3940,36 @@ namespace E3Core.UI.Windows.Hud
 								}
 								float x = imgui_GetCursorScreenPosX();
 								float y = imgui_GetCursorScreenPosY();
-								imgui_DrawSpellIconByIconIndex(stats.iconID, buffState.IconSize);
 
-								if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+								///BLINKING THAT ITS GOING TO DROP OFF
+								//bool show_alternate = true;//(int)(((float)Core.StopWatch.ElapsedMilliseconds / 1000f) * 1.0f) % 2 == 0;
+								if (stats.Duration <= 12000) //if not a song
 								{
-									Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
-
+									Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds %12000;
 									long alpha = (Int64)(timeDelta * buffState.FadeRatio);
 
-									if (alpha > 255) alpha = 255;
-									imgui_GetWindowDrawList_AddRectFilled(x, y, x + buffState.IconSize, y + buffState.IconSize, GetColor(0, 255, 0, 255 - (uint)alpha));
-
-									if (timeDelta > buffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
-
+									imgui_GetWindowDrawList_AddRectFilled(x, y, x + buffState.IconSize, y + buffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
+									imgui_DrawSpellIconByIconIndex(stats.iconID, buffState.IconSize);
 								}
+								else
+								{
+									imgui_DrawSpellIconByIconIndex(stats.iconID, buffState.IconSize);
+
+									if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+									{
+										Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
+
+										long alpha = (Int64)(timeDelta * buffState.FadeRatio);
+
+										if (alpha > 255) alpha = 255;
+										imgui_GetWindowDrawList_AddRectFilled(x, y, x + buffState.IconSize, y + buffState.IconSize, GetColor(0, 255, 0, 255 - (uint)alpha));
+
+										if (timeDelta > buffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
+
+									}
+								}
+
+								
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
 									if (popup.BeginPopupContextItemPerf("HC_RenderBuffTableSimpleIconContext", "BuffTableIconContext-",counter,1))
