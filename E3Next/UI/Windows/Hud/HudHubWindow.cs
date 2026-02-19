@@ -989,7 +989,7 @@ namespace E3Core.UI.Windows.Hud
 				state.PlayerManaMax = MQ.Query<int>("${Me.MaxMana}");
 				state.PlayerEndCurrent = MQ.Query<int>("${Me.CurrentEndurance}");
 				state.PlayerEndMax = MQ.Query<int>("${Me.MaxEndurance}");
-
+				state.InCombat = MQ.Query<bool>("${Me.Combat}");
 
 
 				state.PlayerHPColor = GetResourceSeverityColor(state.PlayerHPCurrent);
@@ -1126,7 +1126,8 @@ namespace E3Core.UI.Windows.Hud
 				state.TargetDistanceString = DecimalToIntString(Math.Round((Decimal)spawn.Distance3D, 2));
 				state.TargetNameColor = GetConColorRGB(spawn.ConColorID);
 				state.TargetDistanceColor = GetDistanceSeverityColor(spawn.Distance3D);
-				state.Display_LevelAndClassString = $"Lvl {spawn.Level} {spawn.ClassShortName}";
+				string bodyDesc = spawn.BodyTypeDesc == "Humanoid" ? spawn.RaceName : spawn.BodyTypeDesc;
+				state.Display_LevelAndClassString = $"{spawn.Level} {bodyDesc} {spawn.ClassShortName}";
 
 				//get my aggro on target
 				Decimal percentAggro = MQ.Query<Decimal>("${Target.PctAggro}");
@@ -1394,8 +1395,13 @@ namespace E3Core.UI.Windows.Hud
 				if (!hub_state.ShowPlayerInfo) return;
 				if (state.PlayerLevel == 0) return;
 
-
+				float pad = 4f;
+				float underlayStartY = imgui_GetCursorScreenPosY();
+				float underlayStartX = imgui_GetCursorPosX();
 				float widthAvail = imgui_GetContentRegionAvailX();
+				float borderX = imgui_GetWindowPosX() + pad;
+				float borderW = imgui_GetWindowWidth() - (pad * 2);
+
 
 				// Detach/Reattach buttons
 				if (!state.Detached)
@@ -1837,6 +1843,33 @@ namespace E3Core.UI.Windows.Hud
 						}
 					}
 				}
+
+				float borderTop = underlayStartY - pad;
+				float borderEndY = imgui_GetCursorScreenPosY();
+				
+				float t = 2f;
+				uint borderColor = GetColor(1, 0, 0, 0.8f);
+
+
+				if (state.InCombat) //if not a song
+				{
+					var buffState = _state.GetState<State_BuffWindow>();
+
+					Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds % 3000;
+					long alpha = (Int64)(timeDelta * buffState.FadeRatio);
+
+					imgui_GetWindowDrawList_AddRect(borderX, borderTop, borderX + borderW - 1, borderEndY, GetColor(255, 0, 0, 255 - (uint)alpha), 0f, 0, 2f);
+
+				}
+				//else
+				//{
+				//	imgui_GetWindowDrawList_AddRect(borderX, borderTop, borderX + borderW - 1, borderEndY, borderColor, 0f, 0, 2f);
+
+				//}
+
+				//imgui_SetCursorPosX(underlayStartX);
+				//imgui_SetCursorPosY(underlayStartY);
+
 			}
 		}
 		private static void RenderTargetInfo()
@@ -2114,6 +2147,7 @@ namespace E3Core.UI.Windows.Hud
 				float borderW = imgui_GetWindowWidth() - (pad * 2);
 				float t = 2f;
 				uint borderColor = GetColor(nc.r, nc.g, nc.b, 0.8f);
+
 
 				imgui_GetWindowDrawList_AddRect(borderX, borderTop, borderX + borderW - 1, borderEndY, borderColor, 0f, 0, 2f);
 
