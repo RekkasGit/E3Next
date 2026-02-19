@@ -188,9 +188,9 @@ namespace E3Core.Server
 
 							if (!string.IsNullOrEmpty(target) && target.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
 							{
-
-								var spells = E3Core.Utility.e3util.ListAllBookSpells();
 								var aas = E3Core.Utility.e3util.ListAllActiveAA();
+								var spells = E3Core.Utility.e3util.ListAllBookSpells();
+								
 								var discs = E3Core.Utility.e3util.ListAllDiscData();
 								var skills = E3Core.Utility.e3util.ListAllActiveSkills();
 								var items = E3Core.Utility.e3util.ListAllItemWithClickyData();

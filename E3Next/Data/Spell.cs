@@ -90,6 +90,13 @@ namespace E3Core.Data
 					}
 				}
 			}
+            else
+            {
+                if(CastTypeOverride!=CastingType.None)
+                {
+					CastType = CastTypeOverride;
+				}
+            }
 			
         }
 

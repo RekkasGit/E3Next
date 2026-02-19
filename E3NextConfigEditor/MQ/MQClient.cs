@@ -69,6 +69,11 @@ namespace E3NextConfigEditor.MQ
 			throw new NotImplementedException();
 		}
 
+		public unsafe byte* GetAAIdsDataPtr(out int length)
+		{
+			throw new NotImplementedException();
+		}
+
 		public IMQLock GetDelayLock()
 		{
 			throw new NotImplementedException();

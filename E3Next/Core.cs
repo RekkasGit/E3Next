@@ -1583,6 +1583,9 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetTargetBuffData(int spawnid, out int length);
 
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetAvailableAAIds(out int length);
+
 		#endregion
 
 		[DllImport("user32.dll")]
@@ -1647,6 +1650,7 @@ namespace MonoCore
 		bool FeatureEnabled(MQFeature feature);
 		string GetFocusedWindowName();
 		string GetHoverWindowName();
+		unsafe byte* GetAAIdsDataPtr(out int length);
 		unsafe byte* GetPetBuffDataPtr(out int length);
 		unsafe byte* GetXtargetDataPtr(out int length);
 		unsafe byte* GetSpawns3_DeltaPtr(out int length);
@@ -1696,6 +1700,14 @@ namespace MonoCore
 			_petBuffDataPtr = Core.mq_GetPetBuffData(out _petBuffDataPtrLength);
 			length = _petBuffDataPtrLength;
 			return _petBuffDataPtr;
+		}
+		private int _getAAListDataPtrLength = 0;
+		private unsafe byte* _getAAListDataPtr;
+		public unsafe byte* GetAAIdsDataPtr(out int length)
+		{
+			_getAAListDataPtr = Core.mq_GetAvailableAAIds(out _getAAListDataPtrLength);
+			length = _getAAListDataPtrLength;
+			return _getAAListDataPtr;
 		}
 
 		private int _getXTargetDataPtrLength = 0;

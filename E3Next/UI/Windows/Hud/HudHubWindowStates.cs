@@ -6,6 +6,7 @@ using MonoCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using static E3Core.UI.Windows.Hud.HudHubWindow;
@@ -19,6 +20,7 @@ namespace E3Core.UI.Windows.Hud
 	{
 		public HudHubWindowStates()
 		{
+			if (Debugger.IsAttached) return;
 			//set all initial windows to not show
 			if (Core._MQ2MonoVersion >= 0.37m) ClearWindows();
 		}
@@ -147,6 +149,8 @@ namespace E3Core.UI.Windows.Hud
 	public class State_BuffWindow
 	{
 
+	
+
 		public ConcurrentDictionary<Int32, BuffCacheEntry> BuffCache = new ConcurrentDictionary<int, BuffCacheEntry>();
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_Buff_Alpha; set { E3.CharacterSettings.E3Hud_Hub_Buff_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_Buff_Detached; set { E3.CharacterSettings.E3Hud_Hub_Buff_Detached = value; IsDirty = true; } }
@@ -167,7 +171,7 @@ namespace E3Core.UI.Windows.Hud
 				IsDirty = true;
 			}
 		}
-		public float[] BuffListView_ProgressBGColor = GetRGBAFloatsFromColor(imgui_GetColorU32((int)ImGuiCol.WindowBg, 1));
+		public float[] BuffListView_ProgressBGColor;
 		public float[] RGBA_ListView_ProgressBarBlinkColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor; }
 		public float[] RGBA_ListView_ProgressBarColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor; }
 		public float[] RGBA_ListView_NameColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_NameColor; }
@@ -190,6 +194,14 @@ namespace E3Core.UI.Windows.Hud
 	
 		public State_BuffWindow()
 		{
+			if (!Debugger.IsAttached)
+			{
+				BuffListView_ProgressBGColor = GetRGBAFloatsFromColor(imgui_GetColorU32((int)ImGuiCol.WindowBg, 1));
+			}
+			else
+			{
+				BuffListView_ProgressBGColor = new float[4] { 0, 0, 0, 0 };
+			}
 			FadeRatio = ((double)255) / E3.CharacterSettings.E3Hud_Hub_Buff_FadeTimeInMS;
 			IsDirty = false;
 		}

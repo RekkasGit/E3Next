@@ -285,6 +285,11 @@ namespace TestCore
 			{
 				throw new NotImplementedException();
 			}
+
+			public unsafe byte* GetAAIdsDataPtr(out int length)
+			{
+				throw new NotImplementedException();
+			}
 		}
 
     }

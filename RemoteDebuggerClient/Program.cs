@@ -349,14 +349,15 @@ namespace MQServerClient
 
 		byte[] _getTargetDataArray = new byte[1024 * 86];
 		GCHandle _getTargetDataHandle;
-
+		byte[] _getAAListDataArray = new byte[1024 * 86];
+		GCHandle _getAAListDataHandle;
 		public NetMQMQ()
         {
 			_getPetBuffDataArrayHandle = GCHandle.Alloc(_getPetBuffDataArray, GCHandleType.Pinned);
 			_getSpawn3_DeltaHandle= GCHandle.Alloc(_getSpawn3_DeltaArray, GCHandleType.Pinned);
 			_getXTargetDataHandle = GCHandle.Alloc(_getXTargetDataArray, GCHandleType.Pinned);
 			_getTargetDataHandle = GCHandle.Alloc(_getTargetDataArray, GCHandleType.Pinned);
-
+			_getAAListDataHandle = GCHandle.Alloc(_getAAListDataArray, GCHandleType.Pinned);
 
 			_requestSocket = new DealerSocket();
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
@@ -1215,7 +1216,64 @@ namespace MQServerClient
 			IntPtr ptr = _getTargetDataHandle.AddrOfPinnedObject();
 			return (byte*)ptr.ToPointer();
 		}
+		public unsafe byte* GetAAIdsDataPtr(out int length)
+		{
+			if (_requestMsg.IsInitialised)
+			{
+				_requestMsg.Close();
+			}
+			_requestMsg.InitEmpty();
+			//send empty frame
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
 
+			_payloadLength = 0;
+
+			_requestMsg.Close();
+
+			//include command+ length in payload
+			_requestMsg.InitPool(_payloadLength + 8);
+			unsafe
+			{
+				fixed (byte* src = _payload)
+				{
+
+					fixed (byte* dest = _requestMsg.Data)
+					{   //4 bytes = commandtype
+						//4 bytes = length
+						//N-bytes = payload
+						byte* tPtr = dest;
+						*((Int32*)tPtr) = 14;//id of the enum on the server
+						tPtr += 4;
+						*(Int32*)tPtr = _payloadLength; //init/modify
+						tPtr += 4;
+						Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+					}
+				}
+			}
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+
+			//recieve the empty frame
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			//data is back, lets parse out the data
+			//first get the length out of the first 4 bytes.
+			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(_requestMsg.Data, 0, _requestMsg.Size);
+			length = _requestMsg.Size;
+			data.CopyTo(_getAAListDataArray);
+			_requestMsg.Close();
+			IntPtr ptr = _getAAListDataHandle.AddrOfPinnedObject();
+			return (byte*)ptr.ToPointer();
+		}
 
 		public void DisableDelay()
 		{
@@ -1229,6 +1287,8 @@ namespace MQServerClient
 		{
             return null;
 		}
+
+		
 	}
 
 }

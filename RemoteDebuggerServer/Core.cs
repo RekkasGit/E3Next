@@ -53,7 +53,8 @@ namespace MonoCore
 		GetPetBuffData,
         GetSpawns3Delta,
         GetXTargetData,
-        GetTargetData
+        GetTargetData,
+        GetAAList
 
 	}
 
@@ -72,7 +73,8 @@ namespace MonoCore
 		GetPetBuffData,
         GetSpawns3Delta,
         GetXTargetData,
-		GetTargetData
+		GetTargetData,
+        GetAAList
 
 	}
 	public static class RemoteDebugServerConfig
@@ -365,6 +367,26 @@ namespace MonoCore
 									message.payloadLength = length;//32bit length at the 1st 4 bytes
 								}
 								RouterServer._responseQueues[(int)ResponseQueueTypes.GetXTargetData].Enqueue(message);
+								foundRequest = true;
+								foundRequestCount++;
+							}
+
+						}
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetAAList];
+						while (q.Count > 0)
+						{
+							RouterMessage message;
+							if (q.TryDequeue(out message))
+							{
+								unsafe
+								{
+									int length = 0;
+									byte* p = MQ.GetAAIdsDataPtr(out length);
+									ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(p, length);
+									span.CopyTo(message.payload);
+									message.payloadLength = length;//32bit length at the 1st 4 bytes
+								}
+								RouterServer._responseQueues[(int)ResponseQueueTypes.GetAAList].Enqueue(message);
 								foundRequest = true;
 								foundRequestCount++;
 							}
@@ -1135,6 +1157,8 @@ namespace MonoCore
 		public static extern byte* mq_GetSpawns3_Delta(out int length);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetXtargetInfo(out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetAvailableAAIds(out int length);
 		#endregion
 		#endregion
 
@@ -1199,6 +1223,7 @@ namespace MonoCore
         unsafe byte* GetSpawns3_DeltaPtr(out int length);
         unsafe byte* GetXtargetDataPtr(out int length);
         unsafe byte* GetTargetBuffDataPtr(Int32 spawnid,out int length);
+		unsafe byte* GetAAIdsDataPtr(out int length);
 
 	}
     public class MQ : IMQ
@@ -1224,6 +1249,15 @@ namespace MonoCore
 			_petBuffDataPtr = Core.mq_GetPetBuffData(out _petBuffDataPtrLength);
 			length = _petBuffDataPtrLength;
 			return _petBuffDataPtr;
+		}
+
+		private int _getAAListDataPtrLength = 0;
+		private unsafe byte* _getAAListDataPtr;
+		public unsafe byte* GetAAIdsDataPtr(out int length)
+		{
+			_getAAListDataPtr = Core.mq_GetAvailableAAIds(out _getAAListDataPtrLength);
+			length = _getAAListDataPtrLength;
+			return _getAAListDataPtr;
 		}
 
 		private int _getSpawns3_DeltaLength;

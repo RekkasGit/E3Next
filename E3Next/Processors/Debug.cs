@@ -224,6 +224,37 @@ namespace E3Core.Processors
 					}
 				}
 			});
+			EventProcessor.RegisterCommand("/e3debug_listaa", x =>
+			{
+
+				using (var trace = _log.Trace("listaa_speedtest"))
+				{
+					unsafe
+					{
+						List<Int32> aaList = new List<int>();
+
+						int length;
+						byte* p = E3.MQ.GetAAIdsDataPtr(out length);
+						Int32 counter = 0;
+						if (length > 0)
+						{
+							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+							//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+							int dataStartingLength = data.Length;
+							while (data.Length > 0)
+							{
+								counter++;
+								Int32 AAID = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								aaList.Add(AAID);
+						
+							}
+							MQ.WriteDelayed($"AAs:{String.Join(",",aaList)}");
+							MQ.WriteDelayed($"AA List Count:{counter}");
+						}
+					}
+				}
+			});
 			EventProcessor.RegisterCommand("/e3debug_check_targetbuffs", x =>
 			{
 
