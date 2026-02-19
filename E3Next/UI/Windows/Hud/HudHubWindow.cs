@@ -86,11 +86,11 @@ namespace E3Core.UI.Windows.Hud
 			return (float)(Math.Sin(((float)(Core.StopWatch.ElapsedMilliseconds / 1000)) * blinkSpeed) + 1.0f) * 0.5f;
 		}
 		//don't copy the structs, just get a reference pointer
-		private static void GetBlinkLerpColor(ref Vector4 bg_color, ref Vector4 blink_color, float blinkFactor, ref Vector4 result)
+		private static void GetBlinkLerpColor(float[] bg_color, float[] blink_color, float blinkFactor,  float[] result)
 		{
-			result.X = bg_color.X + (blink_color.X - bg_color.X) * blinkFactor;
-			result.Y = bg_color.Y + (blink_color.Y - bg_color.Y) * blinkFactor;
-			result.Z = bg_color.Z + (blink_color.Z - bg_color.Z) * blinkFactor;
+			result[0] = bg_color[0] + (blink_color[0] - bg_color[0]) * blinkFactor;
+			result[1] = bg_color[1] + (blink_color[1] - bg_color[1]) * blinkFactor;
+			result[2] = bg_color[2] + (blink_color[2] - bg_color[2]) * blinkFactor;
 		}
 		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _distanceSeverity = new[]
 		{
@@ -803,7 +803,6 @@ namespace E3Core.UI.Windows.Hud
 			else
 			{
 				row = new TableRow_GroupInfo();
-
 			}
 
 			if(row.Name!=String.Empty)
@@ -819,7 +818,6 @@ namespace E3Core.UI.Windows.Hud
 				//we can calculate distance
 				distance = (Decimal)Math.Sqrt(x * x + y * y + z * z);
 				row.InZone = true;
-
 			}
 
 			row.PetHPPercent = pet_pctHealth;
@@ -827,7 +825,6 @@ namespace E3Core.UI.Windows.Hud
 			if (distance< 0.5m)
 			{
 				row.Distance = zonename;
-
 			}
 			else
 			{
@@ -2987,21 +2984,15 @@ namespace E3Core.UI.Windows.Hud
 
 			}
 		}
-		static float[] BuffListView_NameColor = { 1, 1, 1, 1 };
-		static Vector4 BuffListView_ProgressColor = new Vector4 { X=0, Y=0, Z=1,W= 0.4f };
-		static Vector4 BuffListView_ProgressBarBlinkColor = new Vector4{X=0.8f,Y=0.2f,Z=0.2f,W=0.4f};
-		static float[] BuffListView_ProgressBGColor = null;
+		//static float[] BuffListView_NameColor = { 1, 1, 1, 1 };
+		//static Vector4 BuffListView_ProgressColor = new Vector4 { X=0, Y=0, Z=1,W= 0.4f };
+		//static Vector4 BuffListView_ProgressBarBlinkColor = new Vector4{X=0.8f,Y=0.2f,Z=0.2f,W=0.4f};
+		//static float[] BuffListView_ProgressBGColor = null;
 		private static void RenderBuffListView(List<TableRow_BuffInfo> buffList, string tableName, int iconSize, double fadeRatio, Int32 fadeTimeInMS, Dictionary<Int32, Int64> newBuffsTimeStamps, string selectedFont, bool showProgressBars, float windowAlpha)
 		{
 			var hubState = _state.GetState<State_HubWindow>();
 			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp);
-
-
-			if (BuffListView_ProgressBGColor == null)
-			{
-				UInt32 packedColor = imgui_GetColorU32((int)ImGuiCol.WindowBg, 1);
-				BuffListView_ProgressBGColor = GetRGBAFloatsFromColor(packedColor);
-			}
+			var state = _state.GetState<State_BuffWindow>();
 
 			//remove padding between rows
 			using (var stylevar = PushStyle.Aquire())
@@ -3040,15 +3031,15 @@ namespace E3Core.UI.Windows.Hud
 										bool show_alternate = (int)(((float)Core.StopWatch.ElapsedMilliseconds/1000f) * 1.0f) % 2 == 0;
 										if (stats.Duration<30000 && show_alternate && stats.BuffType!=1) //if not a song
 										{
-											style.PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBarBlinkColor.X, BuffListView_ProgressBarBlinkColor.Y, BuffListView_ProgressBarBlinkColor.Z, windowAlpha);
+											style.PushStyleColor((int)ImGuiCol.FrameBg,state.RGBA_ListView_ProgressBarBlinkColor[0], state.RGBA_ListView_ProgressBarBlinkColor[0], state.RGBA_ListView_ProgressBarBlinkColor[0], windowAlpha);
 										}
 										else
 										{
-											style.PushStyleColor((int)ImGuiCol.FrameBg, BuffListView_ProgressBGColor[0], BuffListView_ProgressBGColor[1], BuffListView_ProgressBGColor[2], windowAlpha);
+											style.PushStyleColor((int)ImGuiCol.FrameBg, state.BuffListView_ProgressBGColor[0], state.BuffListView_ProgressBGColor[1], state.BuffListView_ProgressBGColor[2], windowAlpha);
 
 
 										}
-										style.PushStyleColor((int)ImGuiCol.PlotHistogram, BuffListView_ProgressColor.X, BuffListView_ProgressColor.Y, BuffListView_ProgressColor.Z, BuffListView_ProgressColor.W);
+										style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.RGBA_ListView_ProgressBarColor[0], state.RGBA_ListView_ProgressBarColor[1], state.RGBA_ListView_ProgressBarColor[2], state.RGBA_ListView_ProgressBarColor[3]);
 
 
 
@@ -3069,7 +3060,7 @@ namespace E3Core.UI.Windows.Hud
 									textPosX = imgui_GetCursorScreenPosX();
 									textPosY = imgui_GetCursorScreenPosY();
 								}
-								imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(BuffListView_NameColor[0], BuffListView_NameColor[1], BuffListView_NameColor[2], BuffListView_NameColor[3]), stats.DisplayName);
+								imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(state.RGBA_ListView_NameColor[0], state.RGBA_ListView_NameColor[1], state.RGBA_ListView_NameColor[2], state.RGBA_ListView_NameColor[3]), stats.DisplayName);
 
 								if (expiringSoon)
 								{
@@ -3204,26 +3195,28 @@ namespace E3Core.UI.Windows.Hud
 										imgui_Separator();
 										imgui_Text("Name color picker");
 										imgui_SetNextItemWidth(150.0f);
-										if (imgui_ColorPicker4_Float("##BuffListView_NameColorPicker", BuffListView_NameColor[0], BuffListView_NameColor[1], BuffListView_NameColor[2], BuffListView_NameColor[3], 0))
+										if (imgui_ColorPicker4_Float("##BuffListView_NameColorPicker", state.RGBA_ListView_NameColor[0], state.RGBA_ListView_NameColor[1], state.RGBA_ListView_NameColor[2], state.RGBA_ListView_NameColor[3], 0))
 										{
 											float[] newColors = imgui_ColorPicker_GetRGBA_Float("##BuffListView_NameColorPicker");
-											BuffListView_NameColor[0] = newColors[0];
-											BuffListView_NameColor[1] = newColors[1];
-											BuffListView_NameColor[2] = newColors[2];
-											BuffListView_NameColor[3] = newColors[3];
+											state.RGBA_ListView_NameColor[0] = newColors[0];
+											state.RGBA_ListView_NameColor[1] = newColors[1];
+											state.RGBA_ListView_NameColor[2] = newColors[2];
+											state.RGBA_ListView_NameColor[3] = newColors[3];
+											state.IsDirty = true;
 
 										}
 
 										imgui_Separator();
 										imgui_Text("Progress color picker");
 										imgui_SetNextItemWidth(150.0f);
-										if (imgui_ColorPicker4_Float("##BuffListView_ProgressColorPicker", BuffListView_ProgressColor.X, BuffListView_ProgressColor.Y, BuffListView_ProgressColor.Z, BuffListView_ProgressColor.W, 0))
+										if (imgui_ColorPicker4_Float("##BuffListView_ProgressColorPicker", state.RGBA_ListView_ProgressBarColor[0], state.RGBA_ListView_ProgressBarColor[1], state.RGBA_ListView_ProgressBarColor[2], state.RGBA_ListView_ProgressBarColor[3], 0))
 										{
 											float[] newColors = imgui_ColorPicker_GetRGBA_Float("##BuffListView_ProgressColorPicker");
-											BuffListView_ProgressColor.X = newColors[0];
-											BuffListView_ProgressColor.Y = newColors[1];
-											BuffListView_ProgressColor.Z = newColors[2];
-											BuffListView_ProgressColor.W = newColors[3];
+											state.RGBA_ListView_ProgressBarColor[0] = newColors[0];
+											state.RGBA_ListView_ProgressBarColor[1] = newColors[1];
+											state.RGBA_ListView_ProgressBarColor[2] = newColors[2];
+											state.RGBA_ListView_ProgressBarColor[3] = newColors[3];
+											state.IsDirty = true;
 
 
 										}

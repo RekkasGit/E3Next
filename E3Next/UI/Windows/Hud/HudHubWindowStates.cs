@@ -1,4 +1,5 @@
 ﻿using E3Core.Processors;
+using E3Core.Settings;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.SqlServer.Server;
 using MonoCore;
@@ -9,6 +10,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using static E3Core.UI.Windows.Hud.HudHubWindow;
 using static E3Core.UI.Windows.Hud.State_SongWindow;
+using static MonoCore.E3ImGUI;
 using static System.Windows.Forms.AxHost;
 
 namespace E3Core.UI.Windows.Hud
@@ -165,6 +167,11 @@ namespace E3Core.UI.Windows.Hud
 				IsDirty = true;
 			}
 		}
+		public float[] BuffListView_ProgressBGColor = GetRGBAFloatsFromColor(imgui_GetColorU32((int)ImGuiCol.WindowBg, 1));
+		public float[] RGBA_ListView_ProgressBarBlinkColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor; }
+		public float[] RGBA_ListView_ProgressBarColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor; }
+		public float[] RGBA_ListView_NameColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_NameColor; }
+
 		public bool IsDirty = false;
 
 		public HashSet<Int32> PreviousBuffs = new HashSet<Int32>();

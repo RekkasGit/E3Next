@@ -4,6 +4,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 using static E3Core.UI.Windows.Hud.HudCastingWindow;
@@ -172,7 +173,34 @@ namespace E3Core.Settings
 				}
 			}
 		}
-        public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, float[] valueToSet)
+		public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref Vector4 valueToSet)
+		{
+			_log.Write($"{sectionKey} {Key}");
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+				var keyData = section.GetKeyData(Key);
+				if (keyData != null)
+				{
+					foreach (var data in keyData.ValueList)
+					{
+						if (!String.IsNullOrWhiteSpace(data))
+						{
+							//first splace the value via comma
+							string[] dataList = data.Split(',');
+                            if(dataList.Length==4)
+                            {
+                                float.TryParse(dataList[0], out valueToSet.X);
+								float.TryParse(dataList[1], out valueToSet.Y);
+								float.TryParse(dataList[2], out valueToSet.Z);
+								float.TryParse(dataList[3], out valueToSet.W);
+							}
+						}
+					}
+				}
+			}
+		}
+		public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, float[] valueToSet)
         {
             _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];

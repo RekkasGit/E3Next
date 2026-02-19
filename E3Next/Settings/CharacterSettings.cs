@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using static E3Core.UI.Windows.Hud.HudCastingWindow;
@@ -227,6 +228,12 @@ namespace E3Core.Settings
 		[INI_Section("E3Hud_Hub_Buff", "ShowProgressBars")]
 		public bool E3Hud_Hub_Buff_ShowProgressBars = true;
 
+		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor")]
+		public float[] E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor = {0.8f,0.2f, 0.2f, 0.4f };
+		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor")]
+		public float[] E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor ={0,0,1,0.4f };
+		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_NameColor")]
+		public float[] E3Hud_Hub_Buff_RGBA_ListView_NameColor = { 1,1,1,1 };
 
 
 		[INI_Section("E3Hud_Hub_PetBuff", "SelectedFont")]
@@ -921,6 +928,9 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Buff", "ListView", ParsedData, ref E3Hud_Hub_Buff_ListView);
 			LoadKeyData("E3Hud_Hub_Buff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Buff_ShowProgressBars);
 
+			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor);
+			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor);
+			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_NameColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_NameColor);
 
 			LoadKeyData("E3Hud_Hub_PetBuff", "Alpha", ParsedData, ref E3Hud_Hub_PetBuff_Alpha);
 			LoadKeyData("E3Hud_Hub_PetBuff", "Detached", ParsedData, ref E3Hud_Hub_PetBuff_Detached);
@@ -1416,6 +1426,10 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("ListView", "False");
 			section.Keys.AddKey("ShowProgressBars", "True");
+			section.Keys.AddKey("RGBA_ListView_ProgressBarBlinkColor", "0.8,0.2f,0.2f,0.4f");
+			section.Keys.AddKey("RGBA_ListView_ProgressBarColor", "0,1,0.9756098,0.4");
+			section.Keys.AddKey("RGBA_ListView_NameColor", "1,1,1,1");
+
 
 			newFile.Sections.AddSection("E3Hud_Hub_PetBuff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_PetBuff");
