@@ -428,15 +428,28 @@ namespace E3Core.UI.Windows.Hud
 							buffRow.iconID = cacheEntry.SpellIcon;
 							buffRow.MaxDuration_Value = cacheEntry.MaxDuration;
 							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+							var buffMaxSpan = TimeSpan.FromMilliseconds(cacheEntry.MaxDuration);
 							if (duration < 0)
 							{
 								buffRow.Display_Duration = "Perminate";
+								buffRow.HoverOver_Display_Duration = "Perminate";
 
 							}
 							else
 							{
-								buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+								if (buffTimeSpan.TotalHours > 1)
+								{
+									buffRow.Display_Duration = buffTimeSpan.ToString("hh\\:mm\\:ss");
+									buffRow.Display_MaxDuration = buffMaxSpan.ToString("hh\\:mm\\:ss");
+									buffRow.HoverOver_Display_Duration = $"{buffRow.Display_Duration} out of {buffRow.Display_MaxDuration}";
+								}
+								else
+								{
+									buffRow.Display_Duration = buffTimeSpan.ToString("mm\\:ss");
+									buffRow.Display_MaxDuration = buffMaxSpan.ToString("mm\\:ss");
+									buffRow.HoverOver_Display_Duration = $"{buffRow.Display_Duration} out of {buffRow.Display_MaxDuration}";
 
+								}
 							}
 							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
