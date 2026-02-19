@@ -575,6 +575,7 @@ namespace E3Core.UI.Windows.Hud
 							buffRow.iconID = cacheEntry.SpellIcon;
 							buffRow.MaxDuration_Value = cacheEntry.MaxDuration;
 							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);
+							var buffMaxSpan = TimeSpan.FromMilliseconds(cacheEntry.MaxDuration);
 							if(duration<0)
 							{
 								buffRow.Display_Duration = "Perminate";
@@ -582,9 +583,19 @@ namespace E3Core.UI.Windows.Hud
 							}
 							else
 							{
-								buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
-
+								if(buffTimeSpan.TotalHours>1)
+								{
+									buffRow.Display_Duration = buffTimeSpan.ToString("hh\\:mm\\:ss");
+									buffRow.Display_MaxDuration = buffMaxSpan.ToString("hh\\:mm\\:ss");
+								}
+								else
+								{
+									buffRow.Display_Duration = buffTimeSpan.ToString("mm\\:ss");
+									buffRow.Display_MaxDuration = buffMaxSpan.ToString("mm\\:ss");
+								}
 							}
+
+
 							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
 							{
@@ -1251,7 +1262,28 @@ namespace E3Core.UI.Windows.Hud
 							}
 							buffRow.CasterName = CasterName;
 							var buffTimeSpan = TimeSpan.FromMilliseconds(duration);//convert from ticks
-							buffRow.Display_Duration = buffTimeSpan.ToString("h'h 'm'm 's's'");
+
+							string maxDurationQuery = String.Empty;
+							if (!IntToStringIDLookup("Hub_RenderTargetInfo_MaxDuration", spellID, out maxDurationQuery))
+							{
+								maxDurationQuery = $"${{Spell[{spellID}].Duration}}";
+								IntToStringIDRegister("Hub_RenderTargetInfo_MaxDuration", spellID, maxDurationQuery);
+							}
+
+							Int32 maxDuration = MQ.Query<Int32>(maxDurationQuery) * 6 * 1000;
+							
+							var buffMaxSpan = TimeSpan.FromMilliseconds(maxDuration);
+							
+							if (buffTimeSpan.TotalHours > 1)
+							{
+								buffRow.Display_Duration = buffTimeSpan.ToString("hh\\:mm\\:ss");
+								buffRow.Display_MaxDuration = buffMaxSpan.ToString("hh\\:mm\\:ss");
+							}
+							else
+							{
+								buffRow.Display_Duration = buffTimeSpan.ToString("mm\\:ss");
+								buffRow.Display_MaxDuration = buffMaxSpan.ToString("mm\\:ss");
+							}
 							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 
 							if (BuffCheck.BuffInfoCache.ContainsKey(spellID))
@@ -2166,7 +2198,7 @@ namespace E3Core.UI.Windows.Hud
 
 							imgui_Text($"Spell: {state.TargetBuffs[i].Name}");
 							imgui_Text($"SpellID: {state.TargetBuffs[i].SpellID}");
-							imgui_Text($"Duration: {state.TargetBuffs[i].Display_Duration}");
+							imgui_Text($"Duration: {state.TargetBuffs[i].Display_Duration} out of {state.TargetBuffs[i].Display_MaxDuration}");
 							imgui_Text($"Caster: {state.TargetBuffs[i].CasterName}");
 							if (state.TargetBuffs[i].Spell != null && state.TargetBuffs[i].Spell.SpellEffects.Count > 0)
 							{
@@ -2664,7 +2696,7 @@ namespace E3Core.UI.Windows.Hud
 								{
 									imgui_Text($"Spell: {stats.Name}");
 									imgui_Text($"SpellID: {stats.SpellID}");
-									imgui_Text($"Duration: {stats.Display_Duration}");
+									imgui_Text($"Duration: {stats.Display_Duration} out of {stats.Display_MaxDuration}");
 									if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
 									{
 										imgui_Separator();
@@ -3127,7 +3159,7 @@ namespace E3Core.UI.Windows.Hud
 									{
 										imgui_Text($"Spell: {stats.Name}");
 										imgui_Text($"SpellID: {stats.SpellID}");
-										imgui_Text($"Duration: {stats.Display_Duration}");
+										imgui_Text($"Duration: {stats.Display_Duration} out of {stats.Display_MaxDuration}");
 										if (!String.IsNullOrWhiteSpace(stats.CounterType))
 										{
 											imgui_Text($"CounterType: {stats.CounterType}");
@@ -3314,7 +3346,7 @@ namespace E3Core.UI.Windows.Hud
 								{
 									imgui_Text($"Spell: {stats.Name}");
 									imgui_Text($"SpellID: {stats.SpellID}");
-									imgui_Text($"Duration: {stats.Display_Duration}");
+									imgui_Text($"Duration: {stats.Display_Duration} out of {stats.Display_MaxDuration}");
 									if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
 									{
 										imgui_Separator();
@@ -3632,7 +3664,7 @@ namespace E3Core.UI.Windows.Hud
 										{
 											imgui_Text($"Spell: {stats.Name}");
 											imgui_Text($"SpellID: {stats.SpellID}");
-											imgui_Text($"Duration: {stats.Display_Duration}");
+											imgui_Text($"Duration: {stats.Display_Duration} out of {stats.Display_MaxDuration}");
 
 											if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
 											{
@@ -3748,7 +3780,7 @@ namespace E3Core.UI.Windows.Hud
 								{
 									imgui_Text($"Spell: {stats.Name}");
 									imgui_Text($"SpellID: {stats.SpellID}");
-									imgui_Text($"Duration: {stats.Display_Duration}");
+									imgui_Text($"Duration: {stats.Display_Duration} out of {stats.Display_MaxDuration}");
 									if (!String.IsNullOrWhiteSpace(stats.CounterType))
 									{
 										imgui_Text($"CounterType:{stats.CounterType}");
@@ -4069,7 +4101,7 @@ namespace E3Core.UI.Windows.Hud
 									{
 										imgui_Text($"Spell: {stats.Name}");
 										imgui_Text($"SpellID: {stats.SpellID}");
-										imgui_Text($"Duration: {stats.Display_Duration}");
+										imgui_Text($"Duration: {stats.Display_Duration} out of {stats.Display_MaxDuration}");
 
 										if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
 										{
@@ -4634,6 +4666,7 @@ namespace E3Core.UI.Windows.Hud
 			public string Display_Duration { get; set; }
 			public Int32 Duration { get; set; }
 			public Int32 MaxDuration_Value { get; set; }
+			public string Display_MaxDuration { get; set; }
 			public string SimpleDuration { get; set; }
 			public (float r, float g, float b, float a) DurationColor;
 
