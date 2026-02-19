@@ -290,6 +290,11 @@ namespace TestCore
 			{
 				throw new NotImplementedException();
 			}
+
+			public unsafe byte* GetDiscIdsDataPtr(out int length)
+			{
+				throw new NotImplementedException();
+			}
 		}
 
     }

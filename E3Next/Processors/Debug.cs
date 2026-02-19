@@ -224,7 +224,7 @@ namespace E3Core.Processors
 					}
 				}
 			});
-			EventProcessor.RegisterCommand("/e3debug_listaa", x =>
+			EventProcessor.RegisterCommand("/e3debug_list_aa", x =>
 			{
 
 				using (var trace = _log.Trace("listaa_speedtest"))
@@ -251,6 +251,36 @@ namespace E3Core.Processors
 							}
 							MQ.WriteDelayed($"AAs:{String.Join(",",aaList)}");
 							MQ.WriteDelayed($"AA List Count:{counter}");
+						}
+					}
+				}
+			});
+			EventProcessor.RegisterCommand("/e3debug_list_disc", x =>
+			{
+
+				using (var trace = _log.Trace("listdisc_speedtest"))
+				{
+					unsafe
+					{
+						List<Int32> discList = new List<int>();
+
+						int length;
+						byte* p = E3.MQ.GetDiscIdsDataPtr(out length);
+						Int32 counter = 0;
+						if (length > 0)
+						{
+							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+							int dataStartingLength = data.Length;
+							while (data.Length > 0)
+							{
+								counter++;
+								Int32 discID = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								discList.Add(discID);
+
+							}
+							MQ.WriteDelayed($"Discs:{String.Join(",", discList)}");
+							MQ.WriteDelayed($"Discs List Count:{counter}");
 						}
 					}
 				}

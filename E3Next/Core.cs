@@ -1585,7 +1585,10 @@ namespace MonoCore
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetAvailableAAIds(out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetAvilableDiscIds(out int length);
 
+		
 		#endregion
 
 		[DllImport("user32.dll")]
@@ -1655,6 +1658,7 @@ namespace MonoCore
 		unsafe byte* GetXtargetDataPtr(out int length);
 		unsafe byte* GetSpawns3_DeltaPtr(out int length);
 		unsafe byte* GetTargetBuffDataPtr(Int32 spawnId, out int length);
+		unsafe byte* GetDiscIdsDataPtr(out int length);
 		/// <summary>
 		/// delay lock to prevent releasing back to MQ until done.
 		/// </summary>
@@ -1710,6 +1714,15 @@ namespace MonoCore
 			return _getAAListDataPtr;
 		}
 
+		private int _getDiscListDataPtrLength = 0;
+		private unsafe byte* _getDiscListDataPtr;
+		public unsafe byte* GetDiscIdsDataPtr(out int length)
+		{
+			_getDiscListDataPtr = Core.mq_GetAvilableDiscIds(out _getDiscListDataPtrLength);
+			length = _getDiscListDataPtrLength;
+			return _getDiscListDataPtr;
+		}
+		//mq_GetAvilableDiscIds
 		private int _getXTargetDataPtrLength = 0;
 		private unsafe byte* _getXTargetDataPtr;
 		private Int64 _getXTargetDataRefreshInterval = 250;

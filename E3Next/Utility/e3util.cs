@@ -2677,7 +2677,52 @@ namespace E3Core.Utility
 
 		public static List<Data.Spell> ListAllDiscData()
 		{
+
 			List<Data.Spell> returnValue = new List<Data.Spell>();
+
+			if (Core._MQ2MonoVersion >= 0.420m || Debugger.IsAttached)
+			{
+			
+				unsafe
+				{
+			
+					int length;
+					byte* p = E3.MQ.GetDiscIdsDataPtr(out length);
+					Int32 counter = 0;
+					if (length > 0)
+					{
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						int dataStartingLength = data.Length;
+						while (data.Length > 0)
+						{
+							counter++;
+							Int32 discID = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+						
+							string spellName = MQ.Query<String>($"${{Spell[{discID}].Name}}");
+							if (spellName != "NULL")
+							{
+								var spell = new Data.Spell(spellName);
+								if (spell.CastType == CastingType.Disc)
+								{
+									for (Int32 x = 0; x < 12; x++)
+									{
+										string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
+										spell.SpellEffects.Add(teffect);
+									}
+									returnValue.Add(spell);
+								}
+							}
+						}
+						
+					}
+				}
+
+				return returnValue;
+			}
+
+
+
 			Int32 numberSkipped = 0;
 			for (Int32 i = 1; i < 10000; i++)
 			{

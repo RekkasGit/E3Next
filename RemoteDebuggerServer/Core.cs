@@ -54,7 +54,8 @@ namespace MonoCore
         GetSpawns3Delta,
         GetXTargetData,
         GetTargetData,
-        GetAAList
+        GetAAList,
+        GetDiscList
 
 	}
 
@@ -74,7 +75,8 @@ namespace MonoCore
         GetSpawns3Delta,
         GetXTargetData,
 		GetTargetData,
-        GetAAList
+        GetAAList,
+        GetDiscList
 
 	}
 	public static class RemoteDebugServerConfig
@@ -387,6 +389,26 @@ namespace MonoCore
 									message.payloadLength = length;//32bit length at the 1st 4 bytes
 								}
 								RouterServer._responseQueues[(int)ResponseQueueTypes.GetAAList].Enqueue(message);
+								foundRequest = true;
+								foundRequestCount++;
+							}
+
+						}
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetDiscList];
+						while (q.Count > 0)
+						{
+							RouterMessage message;
+							if (q.TryDequeue(out message))
+							{
+								unsafe
+								{
+									int length = 0;
+									byte* p = MQ.GetDiscIdsDataPtr(out length);
+									ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(p, length);
+									span.CopyTo(message.payload);
+									message.payloadLength = length;//32bit length at the 1st 4 bytes
+								}
+								RouterServer._responseQueues[(int)ResponseQueueTypes.GetDiscList].Enqueue(message);
 								foundRequest = true;
 								foundRequestCount++;
 							}
@@ -1159,11 +1181,14 @@ namespace MonoCore
 		public static extern byte* mq_GetXtargetInfo(out int length);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetAvailableAAIds(out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern byte* mq_GetAvilableDiscIds(out int length);
+
 		#endregion
 		#endregion
 
 	}
-    enum ImGuiWindowFlags
+	enum ImGuiWindowFlags
     {
         ImGuiWindowFlags_None = 0,
         ImGuiWindowFlags_NoTitleBar = 1 << 0,   // Disable title-bar
@@ -1224,6 +1249,7 @@ namespace MonoCore
         unsafe byte* GetXtargetDataPtr(out int length);
         unsafe byte* GetTargetBuffDataPtr(Int32 spawnid,out int length);
 		unsafe byte* GetAAIdsDataPtr(out int length);
+        unsafe byte* GetDiscIdsDataPtr(out int length);
 
 	}
     public class MQ : IMQ
@@ -1259,7 +1285,14 @@ namespace MonoCore
 			length = _getAAListDataPtrLength;
 			return _getAAListDataPtr;
 		}
-
+		private int _getDiscListDataPtrLength = 0;
+		private unsafe byte* _getDiscListDataPtr;
+		public unsafe byte* GetDiscIdsDataPtr(out int length)
+		{
+			_getDiscListDataPtr = Core.mq_GetAvilableDiscIds(out _getDiscListDataPtrLength);
+			length = _getDiscListDataPtrLength;
+			return _getDiscListDataPtr;
+		}
 		private int _getSpawns3_DeltaLength;
 		private unsafe byte* _getSpawns3_DeltaPtr;
 		public unsafe byte* GetSpawns3_DeltaPtr(out int length)
