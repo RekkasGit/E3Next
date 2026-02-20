@@ -416,7 +416,6 @@ namespace E3Core.UI.Windows.Hud
 							{
 								buffRow.Display_Duration = "Perminate";
 								buffRow.HoverOver_Display_Duration = "Perminate";
-
 							}
 							else
 							{
@@ -434,6 +433,7 @@ namespace E3Core.UI.Windows.Hud
 
 								}
 							}
+							buffRow.StateType = TableRow_BuffInfo.BuffStateType.Pet;
 							buffRow.DurationColor = GetBuffDurationSeverityColor(duration);
 							if (BuffCheck.BuffInfoCache.ContainsKey(spellid))
 							{
@@ -459,9 +459,10 @@ namespace E3Core.UI.Windows.Hud
 							{
 								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
 							}
-							if (duration < 160000d)
+							if (duration < 160000d && duration > -1)
 							{
-								buffRow.DisplayName = buffRow.Name + $" ( {buffRow.Duration} )";
+								buffRow.DisplayName = buffRow.Name + $" ( {buffRow.SimpleDuration} )";
+
 							}
 							else
 							{
@@ -566,7 +567,7 @@ namespace E3Core.UI.Windows.Hud
 
 
 							var cacheEntry = buffState.BuffCache[spellid];
-
+							buffRow.StateType = TableRow_BuffInfo.BuffStateType.Buff;
 							buffRow.Name = cacheEntry.Name;
 							buffRow.iconID = cacheEntry.SpellIcon;
 							buffRow.MaxDuration_Value = cacheEntry.MaxDuration;
@@ -621,7 +622,7 @@ namespace E3Core.UI.Windows.Hud
 							{
 								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
 							}
-							if (duration < 160000d)
+							if (duration < 160000d && duration > -1)
 							{
 								buffRow.DisplayName = buffRow.Name + $" ( {buffRow.SimpleDuration} )";
 							}
@@ -653,6 +654,8 @@ namespace E3Core.UI.Windows.Hud
 							}
 							else
 							{
+								buffRow.StateType = TableRow_BuffInfo.BuffStateType.Song;
+
 								//this is a song
 								songState.SongInfo.Add(buffRow);
 							}
@@ -1355,7 +1358,7 @@ namespace E3Core.UI.Windows.Hud
 							{
 								buffRow.SimpleDuration = ((int)buffTimeSpan.TotalSeconds).ToString() + "s";
 							}
-							if (duration < 160000d)
+							if (duration < 160000d && duration > -1)
 							{
 								buffRow.DisplayName = buffRow.Name + $" ( {buffRow.Display_Duration} )";
 							}
@@ -3173,11 +3176,10 @@ namespace E3Core.UI.Windows.Hud
 			var hubState = _state.GetState<State_HubWindow>();
 			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp);
 			var state = _state.GetState<State_BuffWindow>();
-
-			using(var font = IMGUI_Fonts.Aquire())
+			//using(var font = IMGUI_Fonts.Aquire())
 			{
-				font.PushFont(selectedFont);
-				font.PushFontSize(selectedFontSize);
+				//font.PushFont(selectedFont);
+				//font.PushFontSize(selectedFontSize);
 				//remove padding between rows
 				using (var stylevar = PushStyle.Aquire())
 				{
@@ -3192,9 +3194,10 @@ namespace E3Core.UI.Windows.Hud
 							using (var igFont = IMGUI_Fonts.Aquire())
 							{
 								igFont.PushFont(selectedFont);
-
+								igFont.PushFontSize(selectedFontSize);
 								foreach (var stats in buffList)
 								{
+
 									imgui_TableNextRow();
 									imgui_TableSetColumnIndex(0);
 
@@ -3213,7 +3216,7 @@ namespace E3Core.UI.Windows.Hud
 										using (var style = PushStyle.Aquire())
 										{
 											bool show_alternate = (int)(((float)Core.StopWatch.ElapsedMilliseconds / 1000f) * 1.0f) % 2 == 0;
-											if (stats.Duration < 30000 && show_alternate && stats.BuffType != 1) //if not a song
+											if (stats.Duration < 30000 && stats.Duration >-1 &&  show_alternate && stats.BuffType != 1) //if not a song
 											{
 												style.PushStyleColor((int)ImGuiCol.FrameBg, state.RGBA_ListView_ProgressBarBlinkColor[0], state.RGBA_ListView_ProgressBarBlinkColor[0], state.RGBA_ListView_ProgressBarBlinkColor[0], windowAlpha);
 											}
@@ -3730,7 +3733,7 @@ namespace E3Core.UI.Windows.Hud
 								imgui_Text("View Mode");
 							}
 
-							if (imgui_Checkbox("##buff_listview", buffState.ListView))
+							if (imgui_Checkbox("##Petbuff_listview", buffState.ListView))
 							{
 								buffState.ListView = imgui_Checkbox_Get("##Petbuff_listview");
 							}
@@ -4220,28 +4223,7 @@ namespace E3Core.UI.Windows.Hud
 							imgui_SameLine(0);
 							imgui_Text("Show Progress Bars");
 
-							imgui_Separator();
-							using (var style = PushStyle.Aquire())
-							{
-								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Font");
-							}
-
-							using (var combo = ImGUICombo.Aquire())
-							{
-								if (combo.BeginCombo("##Select Font for BuffList", buffState.SelectedFont))
-								{
-									foreach (var pair in E3ImGUI.FontList)
-									{
-										bool sel = string.Equals(buffState.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
-
-										if (imgui_Selectable($"{pair.Key}", sel))
-										{
-											buffState.SelectedFont = pair.Key;
-										}
-									}
-								}
-							}
+							
 						}
 
 					}
@@ -4938,6 +4920,14 @@ namespace E3Core.UI.Windows.Hud
 		}
 		public class TableRow_BuffInfo
 		{
+			public enum BuffStateType
+			{ 
+				Buff,
+				Pet,
+				Song
+			}
+
+			public BuffStateType StateType = BuffStateType.Buff;
 			public Int32 BuffType = 0;
 			public Int32 CounterTypeID = 0;
 			public Int32 CounterNumberValue = 0;

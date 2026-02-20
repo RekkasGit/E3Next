@@ -214,6 +214,9 @@ namespace E3Core.UI.Windows.Hud
 			IsDirty = false;
 		}
 	}
+
+	
+
 	public class State_PetBuffWindow
 	{
 
