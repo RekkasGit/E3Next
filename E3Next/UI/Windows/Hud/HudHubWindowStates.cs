@@ -459,7 +459,10 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_TargetInfoWindow
 	{
-	
+		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_IconSize; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_IconSize = value; IsDirty = true; } }
+
+		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_SelectedFont = value; IsDirty = true; } }
+		public Int32 SelectedFontSize { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_SelectedFontSize; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_SelectedFontSize = value; IsDirty = true; } }
 		public string WindowName = $"E3 TargetInfo Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached = value; IsDirty = true; } }
@@ -472,7 +475,6 @@ namespace E3Core.UI.Windows.Hud
 		public bool HasTarget = false;
 		public string TargetName = string.Empty;
 		public string Display_TargetName = String.Empty;
-		public float Display_TargetNameSize = 0;
 		public string PreviousTargetName = String.Empty;
 		public float TargetNameSize = 0;
 		public int TargetHP = 0;

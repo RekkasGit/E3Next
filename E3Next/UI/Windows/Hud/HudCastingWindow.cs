@@ -289,7 +289,7 @@ namespace E3Core.UI.Windows.Hud
 					}
 					keyForInput = $"##CastingHud_fontsize_set";
 					imgui_SetNextItemWidth(100);
-					if (imgui_InputInt(keyForInput, (int)_state.FontSize, 1, 20))
+					if (imgui_InputInt(keyForInput, (int)_state.SelectedFontSize, 1, 20))
 					{
 						int updated = imgui_InputInt_Get(keyForInput);
 
@@ -303,7 +303,8 @@ namespace E3Core.UI.Windows.Hud
 							updated = 1;
 
 						}
-						_state.FontSize = updated;
+						_state.SelectedFontSize = updated;
+					
 						imgui_InputInt_Clear(keyForInput);
 					}
 
@@ -341,7 +342,7 @@ namespace E3Core.UI.Windows.Hud
 			using (var imguiFont = IMGUI_Fonts.Aquire())
 			{
 				imguiFont.PushFont(_state.SelectedFont);
-				imguiFont.PushFontSize(_state.FontSize);
+				imguiFont.PushFontSize(_state.SelectedFontSize);
 				imgui_TextColored(_state.NameColors[0], _state.NameColors[1], _state.NameColors[2], _state.NameColors[3], entry.Name);
 				
 				imgui_SameLine();
@@ -397,7 +398,9 @@ namespace E3Core.UI.Windows.Hud
 			public bool Locked { get => E3.CharacterSettings.E3Hud_Casting_Locked; set { E3.CharacterSettings.E3Hud_Casting_Locked = value; IsDirty = true; } }
 
 			public string SelectedFont { get => E3.CharacterSettings.E3Hud_Casting_SelectedFont; set { E3.CharacterSettings.E3Hud_Casting_SelectedFont = value; IsDirty = true; } }
-			public int FontSize = 16;
+			public Int32 SelectedFontSize { get => E3.CharacterSettings.E3Hud_Casting_SelectedFontSize; set { E3.CharacterSettings.E3Hud_Casting_SelectedFontSize = value; IsDirty = true; } }
+
+			
 
 		}
 

@@ -210,12 +210,18 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Hub_TargetInfo", "Alpha")]
 		public float E3Hud_Hub_TargetInfo_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_TargetInfo", "SelectedFont")]
+		public string E3Hud_Hub_TargetInfo_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_TargetInfo", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_TargetInfo_SelectedFontSize = 16;
 		[INI_Section("E3Hud_Hub_TargetInfo", "Detached")]
 		public bool E3Hud_Hub_TargetInfo_Detached = false;
 		[INI_Section("E3Hud_Hub_TargetInfo", "Locked")]
 		public bool E3Hud_Hub_TargetInfo_Locked = false;
 		[INI_Section("E3Hud_Hub_TargetInfo", "ConColorBorder")]
 		public int E3Hud_Hub_TargetInfo_ConColorBorder = 2;
+		[INI_Section("E3Hud_Hub_TargetInfo", "IconSize")]
+		public int E3Hud_Hub_TargetInfo_IconSize = 40;
 
 		[INI_Section("E3Hud_Hub_Buff", "SelectedFont")]
 		public string E3Hud_Hub_Buff_SelectedFont = "robo";
@@ -944,9 +950,10 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowEndAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowEndAsPercent);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowProgressBars", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowProgressBars);
 
-
-
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Alpha", ParsedData, ref E3Hud_Hub_TargetInfo_Alpha);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "SelectedFont", ParsedData, ref E3Hud_Hub_TargetInfo_SelectedFont);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "SelectedFontSize", ParsedData, ref E3Hud_Hub_TargetInfo_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "IconSize", ParsedData, ref E3Hud_Hub_TargetInfo_IconSize);
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Detached", ParsedData, ref E3Hud_Hub_TargetInfo_Detached);
 			LoadKeyData("E3Hud_Hub_TargetInfo", "Locked", ParsedData, ref E3Hud_Hub_TargetInfo_Locked);
 			LoadKeyData("E3Hud_Hub_TargetInfo", "ConColorBorder", ParsedData, ref E3Hud_Hub_TargetInfo_ConColorBorder);
@@ -1456,7 +1463,11 @@ namespace E3Core.Settings
 
 			newFile.Sections.AddSection("E3Hud_Hub_TargetInfo");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_TargetInfo");
+
 			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("IconSize", "24");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("ConColorBorder", "2");

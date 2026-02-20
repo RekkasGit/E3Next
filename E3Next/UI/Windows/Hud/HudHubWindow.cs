@@ -1112,7 +1112,6 @@ namespace E3Core.UI.Windows.Hud
 					state.PreviousTargetName = state.TargetName;
 					state.TargetName = spawn.CleanName;
 					state.Display_TargetName = $"{state.TargetName} ({targetID})";
-					state.Display_TargetNameSize = imgui_CalcTextSizeX(state.Display_TargetName);
 					state.TargetNameSize = imgui_CalcTextSizeX(state.TargetName);
 				}
 
@@ -1438,6 +1437,7 @@ namespace E3Core.UI.Windows.Hud
 			using (var font = IMGUI_Fonts.Aquire())
 			{
 				font.PushFont(state.SelectedFont);
+				font.PushFontSize(state.SelectedFontSize);
 				if (!hub_state.ShowPlayerInfo) return;
 				if (state.PlayerLevel == 0) return;
 
@@ -1487,6 +1487,32 @@ namespace E3Core.UI.Windows.Hud
 												}
 											}
 										}
+									}
+									imgui_Separator();
+									string keyForInput= "##Select FontSize for Playerinfo Docked";
+									using (var style = PushStyle.Aquire())
+									{
+										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+										imgui_Text("Font Size");
+
+									}
+									imgui_SetNextItemWidth(100);
+									if (imgui_InputInt(keyForInput, state.SelectedFontSize, 1, 20))
+									{
+										int updated = imgui_InputInt_Get(keyForInput);
+
+										if (updated > 100)
+										{
+											updated = 100;
+
+										}
+										if (updated < 1)
+										{
+											updated = 1;
+
+										}
+										state.SelectedFontSize = updated;
+										imgui_InputInt_Clear(keyForInput);
 									}
 									imgui_Separator();
 									using (var style = PushStyle.Aquire())
@@ -1591,6 +1617,16 @@ namespace E3Core.UI.Windows.Hud
 									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 									imgui_Text("Alpha");
 								}
+								imgui_Separator();
+								string keyForInput = "##PlayerInfoWindow_alpha_set";
+								imgui_SetNextItemWidth(100);
+								if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
+								{
+									int updated = imgui_InputInt_Get(keyForInput);
+									if (updated > 255) updated = 255;
+									if (updated < 0) updated = 0;
+									state.WindowAlpha = ((float)updated) / 255f;
+								}
 								using (var style = PushStyle.Aquire())
 								{
 									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -1614,15 +1650,32 @@ namespace E3Core.UI.Windows.Hud
 									}
 								}
 								imgui_Separator();
-								string keyForInput = "##PlayerInfoWindow_alpha_set";
+								keyForInput = "##Select FontSize for Playerinfo";
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Font Size");
+
+								}
 								imgui_SetNextItemWidth(100);
-								if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
+								if (imgui_InputInt(keyForInput, state.SelectedFontSize, 1, 20))
 								{
 									int updated = imgui_InputInt_Get(keyForInput);
-									if (updated > 255) updated = 255;
-									if (updated < 0) updated = 0;
-									state.WindowAlpha = ((float)updated) / 255f;
+
+									if (updated > 100)
+									{
+										updated = 100;
+
+									}
+									if (updated < 1)
+									{
+										updated = 1;
+
+									}
+									state.SelectedFontSize = updated;
+									imgui_InputInt_Clear(keyForInput);
 								}
+							
 								imgui_Separator();
 								using (var style = PushStyle.Aquire())
 								{
@@ -1654,11 +1707,8 @@ namespace E3Core.UI.Windows.Hud
 					}
 				}
 
-
-
-
 				float wdithOfWindow = imgui_GetWindowWidth();
-
+				
 				if (!state.ShowProgressBars)
 				{
 					// Inline text mode: HP, MP, EN all on one line
@@ -1930,22 +1980,202 @@ namespace E3Core.UI.Windows.Hud
 			float widthAvail = imgui_GetContentRegionAvailX();
 			var nc = state.TargetNameColor;
 
-			if (!state.HasTarget)
+			using(var font =IMGUI_Fonts.Aquire())
 			{
-				// No target - render placeholder
-				// Center "No Target" text
-				float noTargetWidth;
+				font.PushFont(state.SelectedFont);
+				font.PushFontSize(state.SelectedFontSize);
+				if (!state.HasTarget)
+				{
+					// No target - render placeholder
+					// Center "No Target" text
+					float noTargetWidth;
 
 
-				noTargetWidth = tiState.NoTargetTextWidth;
+					noTargetWidth = tiState.NoTargetTextWidth;
 
-				float noTargetCenterX = (widthAvail - noTargetWidth) / 2f;
-				if (noTargetCenterX < 0) noTargetCenterX = 0;
+					float noTargetCenterX = (widthAvail - noTargetWidth) / 2f;
+					if (noTargetCenterX < 0) noTargetCenterX = 0;
+
+					if (!tiState.Detached)
+					{
+						imgui_SetCursorPosX(noTargetCenterX);
+						imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, tiState.NoTargetText);
+						imgui_SameLine(widthAvail - 20);
+						if (imgui_Button(IMGUI_DETATCH_TARGETINFO_ID))
+						{
+							tiState.Detached = true;
+							imgui_Begin_OpenFlagSet(tiState.WindowName, true);
+						}
+					}
+					else
+					{
+						float windowWidth = imgui_GetWindowWidth();
+						float contentCenterX = (windowWidth - noTargetWidth) / 2f;
+						if (contentCenterX < 0) contentCenterX = 0;
+						imgui_SetCursorPosX(contentCenterX);
+						imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, tiState.NoTargetText);
+						imgui_SameLine(0);
+						float availSpace = imgui_GetContentRegionAvailX();
+						float buttonWidth = 40;
+						float alignX = imgui_GetCursorPosX() + availSpace - buttonWidth;
+						imgui_SetCursorPosX(alignX);
+						if (imgui_InvisibleButton("##TargetInfoSettingsInvisButton", buttonWidth, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
+						{
+						}
+						using(var nofontSize = IMGUI_Fonts.Aquire())
+						{
+							nofontSize.PushFont(state.SelectedFont);
+							nofontSize.PushFontSize(16);
+							using (var popup = ImGUIPopUpContext.Aquire())
+							{
+								if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", 1))
+								{
+									if (imgui_MenuItem("Dock"))
+									{
+										tiState.Detached = false;
+										imgui_Begin_OpenFlagSet(tiState.WindowName, false);
+									}
+									imgui_Separator();
+									using (var style = PushStyle.Aquire())
+									{
+										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+										if (tiState.Locked)
+										{
+											if (imgui_MenuItem("UnLock")) tiState.Locked = false;
+										}
+										else
+										{
+											if (imgui_MenuItem("Lock")) tiState.Locked = true;
+										}
+
+									}
+
+									imgui_Separator();
+									using (var style = PushStyle.Aquire())
+									{
+										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+										if (tiState.ConColorBorder == 0)
+										{
+											if (imgui_MenuItem("Con Color: Name Border")) tiState.ConColorBorder = 1;
+										}
+										else if (tiState.ConColorBorder == 1)
+										{
+											if (imgui_MenuItem("Con Color: Name+HP Border")) tiState.ConColorBorder = 2;
+										}
+										else
+										{
+											if (imgui_MenuItem("Con Color: Text")) tiState.ConColorBorder = 0;
+										}
+									}
+
+									imgui_Separator();
+									using (var style = PushStyle.Aquire())
+									{
+										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+										imgui_Text("Alpha");
+									}
+
+									string keyForInput = "##TargetInfoWindow_alpha_set";
+									imgui_SetNextItemWidth(100);
+									if (imgui_InputInt(keyForInput, (int)(tiState.WindowAlpha * 255), 1, 20))
+									{
+										int updated = imgui_InputInt_Get(keyForInput);
+										if (updated > 255) updated = 255;
+										if (updated < 0) updated = 0;
+										tiState.WindowAlpha = ((float)updated) / 255f;
+									}
+									using (var style = PushStyle.Aquire())
+									{
+										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+										imgui_Text("Font");
+									}
+
+
+									using (var combo = ImGUICombo.Aquire())
+									{
+										if (combo.BeginCombo("##Select Font for Targetinfo", state.SelectedFont))
+										{
+											foreach (var pair in E3ImGUI.FontList)
+											{
+												bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+												if (imgui_Selectable($"{pair.Key}", sel))
+												{
+													state.SelectedFont = pair.Key;
+												}
+											}
+										}
+									}
+									imgui_Separator();
+									keyForInput = "##Select FontSize for Targetinfo";
+									using (var style = PushStyle.Aquire())
+									{
+										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+										imgui_Text("Font Size");
+
+									}
+									imgui_SetNextItemWidth(100);
+									if (imgui_InputInt(keyForInput, state.SelectedFontSize, 1, 20))
+									{
+										int updated = imgui_InputInt_Get(keyForInput);
+
+										if (updated > 100)
+										{
+											updated = 100;
+
+										}
+										if (updated < 1)
+										{
+											updated = 1;
+
+										}
+										state.SelectedFontSize = updated;
+										imgui_InputInt_Clear(keyForInput);
+									}
+								}
+							}
+						}
+						
+					}
+
+					// Empty HP bar placeholder
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.3f, 0.3f, 0.3f, 0.5f);
+						style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
+						imgui_ProgressBar(0f, 18, widthAvail, String.Empty);
+					}
+
+
+					// Reserve space for level/class + distance line and buff row to prevent layout shifting
+					// Use invisible text to create spacing
+					imgui_Text(" ");
+					imgui_Text(" ");
+					return;
+				}
+
+				// Capture underlay start position before rendering target info
+				float underlayStartY = imgui_GetCursorScreenPosY();
+
+				imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
+				imgui_SameLine(0, 0);
+				// Center the target name over the HP bar
+				float nameWidth = imgui_CalcTextSizeX(state.Display_TargetName); ;
+				float centerX = (widthAvail - nameWidth) / 2f;
+				if (centerX < 0) centerX = 0;
 
 				if (!tiState.Detached)
 				{
-					imgui_SetCursorPosX(noTargetCenterX);
-					imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, tiState.NoTargetText);
+					imgui_SetCursorPosX(centerX);
+					if (tiState.ConColorBorder > 0)
+					{
+						imgui_Text(state.Display_TargetName);
+					}
+					else
+					{
+						imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.Display_TargetName);
+					}
+					// Reset cursor and draw detach button at the right edge
 					imgui_SameLine(widthAvail - 20);
 					if (imgui_Button(IMGUI_DETATCH_TARGETINFO_ID))
 					{
@@ -1956,10 +2186,17 @@ namespace E3Core.UI.Windows.Hud
 				else
 				{
 					float windowWidth = imgui_GetWindowWidth();
-					float contentCenterX = (windowWidth - noTargetWidth) / 2f;
+					float contentCenterX = (windowWidth - nameWidth) / 2f;
 					if (contentCenterX < 0) contentCenterX = 0;
 					imgui_SetCursorPosX(contentCenterX);
-					imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, tiState.NoTargetText);
+					if (tiState.ConColorBorder > 0)
+					{
+						imgui_Text(state.Display_TargetName);
+					}
+					else
+					{
+						imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.Display_TargetName);
+					}
 					imgui_SameLine(0);
 					float availSpace = imgui_GetContentRegionAvailX();
 					float buttonWidth = 40;
@@ -1968,333 +2205,281 @@ namespace E3Core.UI.Windows.Hud
 					if (imgui_InvisibleButton("##TargetInfoSettingsInvisButton", buttonWidth, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
 					{
 					}
-					using (var popup = ImGUIPopUpContext.Aquire())
+					using (var nofontSize = IMGUI_Fonts.Aquire())
 					{
-						if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", 1))
+						nofontSize.PushFont(state.SelectedFont);
+						nofontSize.PushFontSize(16);
+						using (var popup = ImGUIPopUpContext.Aquire())
 						{
-							if (imgui_MenuItem("Dock"))
+							if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", 1))
 							{
-								tiState.Detached = false;
-								imgui_Begin_OpenFlagSet(tiState.WindowName, false);
-							}
-							imgui_Separator();
-							using (var style = PushStyle.Aquire())
-							{
-								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								if (tiState.Locked)
+								if (imgui_MenuItem("Dock"))
 								{
-									if (imgui_MenuItem("UnLock")) tiState.Locked = false;
+									tiState.Detached = false;
+									imgui_Begin_OpenFlagSet(tiState.WindowName, false);
 								}
-								else
+								imgui_Separator();
+								using (var style = PushStyle.Aquire())
 								{
-									if (imgui_MenuItem("Lock")) tiState.Locked = true;
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									if (tiState.Locked)
+									{
+										if (imgui_MenuItem("UnLock")) tiState.Locked = false;
+									}
+									else
+									{
+										if (imgui_MenuItem("Lock")) tiState.Locked = true;
+									}
+
 								}
 
-							}
-
-							imgui_Separator();
-							using (var style = PushStyle.Aquire())
-							{
-								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								if (tiState.ConColorBorder == 0)
+								imgui_Separator();
+								using (var style = PushStyle.Aquire())
 								{
-									if (imgui_MenuItem("Con Color: Name Border")) tiState.ConColorBorder = 1;
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									if (tiState.ConColorBorder == 0)
+									{
+										if (imgui_MenuItem("Con Color: Name Border")) tiState.ConColorBorder = 1;
+									}
+									else if (tiState.ConColorBorder == 1)
+									{
+										if (imgui_MenuItem("Con Color: Name+HP Border")) tiState.ConColorBorder = 2;
+									}
+									else
+									{
+										if (imgui_MenuItem("Con Color: Text")) tiState.ConColorBorder = 0;
+									}
 								}
-								else if (tiState.ConColorBorder == 1)
-								{
-									if (imgui_MenuItem("Con Color: Name+HP Border")) tiState.ConColorBorder = 2;
-								}
-								else
-								{
-									if (imgui_MenuItem("Con Color: Text")) tiState.ConColorBorder = 0;
-								}
-							}
 
-							imgui_Separator();
-							using (var style = PushStyle.Aquire())
-							{
-								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Alpha");
-							}
+								imgui_Separator();
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Alpha");
+								}
 
-							string keyForInput = "##TargetInfoWindow_alpha_set";
-							imgui_SetNextItemWidth(100);
-							if (imgui_InputInt(keyForInput, (int)(tiState.WindowAlpha * 255), 1, 20))
-							{
-								int updated = imgui_InputInt_Get(keyForInput);
-								if (updated > 255) updated = 255;
-								if (updated < 0) updated = 0;
-								tiState.WindowAlpha = ((float)updated) / 255f;
+								string keyForInput = "##TargetInfoWindow_alpha_set";
+								imgui_SetNextItemWidth(100);
+								if (imgui_InputInt(keyForInput, (int)(tiState.WindowAlpha * 255), 1, 20))
+								{
+									int updated = imgui_InputInt_Get(keyForInput);
+									if (updated > 255) updated = 255;
+									if (updated < 0) updated = 0;
+									tiState.WindowAlpha = ((float)updated) / 255f;
+								}
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Font");
+								}
+
+
+								using (var combo = ImGUICombo.Aquire())
+								{
+									if (combo.BeginCombo("##Select Font for Targetinfo", state.SelectedFont))
+									{
+										foreach (var pair in E3ImGUI.FontList)
+										{
+											bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+											if (imgui_Selectable($"{pair.Key}", sel))
+											{
+												state.SelectedFont = pair.Key;
+											}
+										}
+									}
+								}
+								imgui_Separator();
+								keyForInput = "##Select FontSize for Targetinfo";
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Font Size");
+
+								}
+								imgui_SetNextItemWidth(100);
+								if (imgui_InputInt(keyForInput, state.SelectedFontSize, 1, 20))
+								{
+									int updated = imgui_InputInt_Get(keyForInput);
+
+									if (updated > 100)
+									{
+										updated = 100;
+
+									}
+									if (updated < 1)
+									{
+										updated = 1;
+
+									}
+									state.SelectedFontSize = updated;
+									imgui_InputInt_Clear(keyForInput);
+								}
+								imgui_Separator();
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Icon Size");
+
+								}
+								imgui_SetNextItemWidth(100);
+								if (imgui_InputInt("##TargetWindow_icon_set", state.IconSize, 1, 20))
+								{
+									int updated = imgui_InputInt_Get("##TargetWindow_icon_set");
+
+									if (updated > 100)
+									{
+										updated = 100;
+
+									}
+									if (updated < 10)
+									{
+										updated = 10;
+
+									}
+									state.IconSize = updated;
+								}
 							}
 						}
 					}
 				}
 
-				// Empty HP bar placeholder
+				// Draw con color border around name only (mode 1)
+				if (tiState.ConColorBorder == 1 && state.HasTarget)
+				{
+					float pad = 4f;
+					float borderTop = underlayStartY - pad;
+					float borderEndY = imgui_GetCursorScreenPosY();
+					float borderX = imgui_GetWindowPosX() + pad;
+					float borderW = imgui_GetWindowWidth() - (pad * 2);
+
+					float t = 2f;
+					uint borderColor = GetColor(nc.r, nc.g, nc.b, 0.8f);
+
+					imgui_GetWindowDrawList_AddRect(borderX, borderTop, borderX + borderW - 1, borderEndY, borderColor, 0f, 0, 2f);
+
+				}
+
+				// Target HP% progress bar
+				if (tiState.ConColorBorder > 0 && state.HasTarget)
+				{
+					imgui_SetCursorPosY(imgui_GetCursorPosY() + 4);
+				}
+
 				using (var style = PushStyle.Aquire())
 				{
-					style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.3f, 0.3f, 0.3f, 0.5f);
+					style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.8f, 0.15f, 0.15f, 0.9f);
 					style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-					imgui_ProgressBar(0f, 18, widthAvail, String.Empty);
+					imgui_ProgressBar((float)state.TargetHP / 100f, state.SelectedFontSize, widthAvail, PercentString(state.TargetHP));
+				}
+
+				// Draw con color border around name + HP bar (mode 2)
+				if (tiState.ConColorBorder == 2 && state.HasTarget)
+				{
+					float pad = 4f;
+					float borderTop = underlayStartY - pad;
+					float borderEndY = imgui_GetCursorScreenPosY();
+					float borderX = imgui_GetWindowPosX() + pad;
+					float borderW = imgui_GetWindowWidth() - (pad * 2);
+					float t = 2f;
+					uint borderColor = GetColor(nc.r, nc.g, nc.b, 0.8f);
+
+
+					imgui_GetWindowDrawList_AddRect(borderX, borderTop, borderX + borderW - 1, borderEndY, borderColor, 0f, 0, 2f);
+
+					//imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + borderW, borderTop + t, borderColor);
+					//imgui_GetWindowDrawList_AddRectFilled(borderX, borderEndY - t, borderX + borderW, borderEndY, borderColor);
+					//imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + t, borderEndY, borderColor);
+					//imgui_GetWindowDrawList_AddRectFilled(borderX + borderW - t, borderTop, borderX + borderW, borderEndY, borderColor);
 				}
 
 
-				// Reserve space for level/class + distance line and buff row to prevent layout shifting
-				// Use invisible text to create spacing
-				imgui_Text(" ");
-				imgui_Text(" ");
-				return;
-			}
+				// Level & Class (left) + Distance (right)
+				if (tiState.ConColorBorder == 2 && state.HasTarget)
+				{
+					imgui_SetCursorPosY(imgui_GetCursorPosY() + 4);
+				}
+				string leftText = state.Display_LevelAndClassString;
+				imgui_Text(leftText);
 
-			// Capture underlay start position before rendering target info
-			float underlayStartY = imgui_GetCursorScreenPosY();
+				if (!String.IsNullOrEmpty(state.Display_SecondAggroName))
+				{
+					imgui_SameLine(0, 0);
+					float windowWidth = imgui_GetWindowWidth();
+					float contentCenterX = (windowWidth - state.Display_SecondAggroNameSize) / 2f;
+					if (contentCenterX < 0) contentCenterX = 0;
+					imgui_SetCursorPosX(contentCenterX);
+					imgui_TextColored(1, 0, 0, 1.0f, state.Display_SecondAggroName);
 
-			imgui_TextColored(1, 0, 0, 1.0f, state.Display_MyAggroPercent);
-			imgui_SameLine(0, 0);
-			// Center the target name over the HP bar
-			float nameWidth = state.Display_TargetNameSize;
-			float centerX = (widthAvail - nameWidth) / 2f;
-			if (centerX < 0) centerX = 0;
+				}
 
-			if (!tiState.Detached)
-			{
-				imgui_SetCursorPosX(centerX);
-				if (tiState.ConColorBorder > 0)
+				if (state.TargetDistance > 0)
 				{
-					imgui_Text(state.Display_TargetName);
-				}
-				else
-				{
-					imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.Display_TargetName);
-				}
-				// Reset cursor and draw detach button at the right edge
-				imgui_SameLine(widthAvail - 20);
-				if (imgui_Button(IMGUI_DETATCH_TARGETINFO_ID))
-				{
-					tiState.Detached = true;
-					imgui_Begin_OpenFlagSet(tiState.WindowName, true);
-				}
-			}
-			else
-			{
-				float windowWidth = imgui_GetWindowWidth();
-				float contentCenterX = (windowWidth - nameWidth) / 2f;
-				if (contentCenterX < 0) contentCenterX = 0;
-				imgui_SetCursorPosX(contentCenterX);
-				if (tiState.ConColorBorder > 0)
-				{
-					imgui_Text(state.Display_TargetName);
-				}
-				else
-				{
-					imgui_TextColored(nc.r, nc.g, nc.b, 1.0f, state.Display_TargetName);
-				}
-				imgui_SameLine(0);
-				float availSpace = imgui_GetContentRegionAvailX();
-				float buttonWidth = 40;
-				float alignX = imgui_GetCursorPosX() + availSpace - buttonWidth;
-				imgui_SetCursorPosX(alignX);
-				if (imgui_InvisibleButton("##TargetInfoSettingsInvisButton", buttonWidth, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
-				{
-				}
-			
-				using (var popup = ImGUIPopUpContext.Aquire())
-				{
-					if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", 1))
+					string distText = state.TargetDistanceString;
+					float distTextWidth = imgui_CalcTextSizeX(distText);
+					float rightAlignX = widthAvail - distTextWidth;
+					if (rightAlignX > imgui_CalcTextSizeX(leftText) + 10)
 					{
-						if (imgui_MenuItem("Dock"))
-						{
-							tiState.Detached = false;
-							imgui_Begin_OpenFlagSet(tiState.WindowName, false);
-						}
-						imgui_Separator();
-						using (var style = PushStyle.Aquire())
-						{
-							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							if (tiState.Locked)
-							{
-								if (imgui_MenuItem("UnLock")) tiState.Locked = false;
-							}
-							else
-							{
-								if (imgui_MenuItem("Lock")) tiState.Locked = true;
-							}
-
-						}
-
-						imgui_Separator();
-						using (var style = PushStyle.Aquire())
-						{
-							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							if (tiState.ConColorBorder == 0)
-							{
-								if (imgui_MenuItem("Con Color: Name Border")) tiState.ConColorBorder = 1;
-							}
-							else if (tiState.ConColorBorder == 1)
-							{
-								if (imgui_MenuItem("Con Color: Name+HP Border")) tiState.ConColorBorder = 2;
-							}
-							else
-							{
-								if (imgui_MenuItem("Con Color: Text")) tiState.ConColorBorder = 0;
-							}
-						}
-
-						imgui_Separator();
-						using (var style = PushStyle.Aquire())
-						{
-							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							imgui_Text("Alpha");
-						}
-
-						string keyForInput = "##TargetInfoWindow_alpha_set";
-						imgui_SetNextItemWidth(100);
-						if (imgui_InputInt(keyForInput, (int)(tiState.WindowAlpha * 255), 1, 20))
-						{
-							int updated = imgui_InputInt_Get(keyForInput);
-							if (updated > 255) updated = 255;
-							if (updated < 0) updated = 0;
-							tiState.WindowAlpha = ((float)updated) / 255f;
-						}
+						imgui_SameLine(rightAlignX);
 					}
-				}
-			}
-
-			// Draw con color border around name only (mode 1)
-			if (tiState.ConColorBorder == 1 && state.HasTarget)
-			{
-				float pad = 4f;
-				float borderTop = underlayStartY - pad;
-				float borderEndY = imgui_GetCursorScreenPosY();
-				float borderX = imgui_GetWindowPosX() + pad;
-				float borderW = imgui_GetWindowWidth() - (pad * 2);
-				
-				float t = 2f;
-				uint borderColor = GetColor(nc.r, nc.g, nc.b, 0.8f);
-
-				imgui_GetWindowDrawList_AddRect(borderX, borderTop, borderX + borderW - 1, borderEndY, borderColor, 0f, 0, 2f);
-			
-			}
-
-			// Target HP% progress bar
-			if (tiState.ConColorBorder > 0 && state.HasTarget)
-			{
-				imgui_SetCursorPosY(imgui_GetCursorPosY() + 4);
-			}
-
-			using (var style = PushStyle.Aquire())
-			{
-				style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.8f, 0.15f, 0.15f, 0.9f);
-				style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-				imgui_ProgressBar((float)state.TargetHP / 100f, 18, widthAvail, PercentString(state.TargetHP));
-			}
-
-			// Draw con color border around name + HP bar (mode 2)
-			if (tiState.ConColorBorder == 2 && state.HasTarget)
-			{
-				float pad = 4f;
-				float borderTop = underlayStartY - pad;
-				float borderEndY = imgui_GetCursorScreenPosY();
-				float borderX = imgui_GetWindowPosX() + pad;
-				float borderW = imgui_GetWindowWidth() - (pad * 2);
-				float t = 2f;
-				uint borderColor = GetColor(nc.r, nc.g, nc.b, 0.8f);
-
-
-				imgui_GetWindowDrawList_AddRect(borderX, borderTop, borderX + borderW - 1, borderEndY, borderColor, 0f, 0, 2f);
-
-				//imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + borderW, borderTop + t, borderColor);
-				//imgui_GetWindowDrawList_AddRectFilled(borderX, borderEndY - t, borderX + borderW, borderEndY, borderColor);
-				//imgui_GetWindowDrawList_AddRectFilled(borderX, borderTop, borderX + t, borderEndY, borderColor);
-				//imgui_GetWindowDrawList_AddRectFilled(borderX + borderW - t, borderTop, borderX + borderW, borderEndY, borderColor);
-			}
-
-
-			// Level & Class (left) + Distance (right)
-			if (tiState.ConColorBorder == 2 && state.HasTarget)
-			{
-				imgui_SetCursorPosY(imgui_GetCursorPosY() + 4);
-			}
-			string leftText = state.Display_LevelAndClassString;
-			imgui_Text(leftText);
-
-			if (!String.IsNullOrEmpty(state.Display_SecondAggroName))
-			{
-				imgui_SameLine(0, 0);
-				float windowWidth = imgui_GetWindowWidth();
-				float contentCenterX = (windowWidth - state.Display_SecondAggroNameSize) / 2f;
-				if (contentCenterX < 0) contentCenterX = 0;
-				imgui_SetCursorPosX(contentCenterX);
-				imgui_TextColored(1, 0, 0, 1.0f, state.Display_SecondAggroName);
-
-			}
-
-			if (state.TargetDistance > 0)
-			{
-				string distText = state.TargetDistanceString;
-				float distTextWidth = imgui_CalcTextSizeX(distText);
-				float rightAlignX = widthAvail - distTextWidth;
-				if (rightAlignX > imgui_CalcTextSizeX(leftText) + 10)
-				{
-					imgui_SameLine(rightAlignX);
-				}
-				else
-				{
-					imgui_SameLine(0);
-					imgui_Text("  ");
-					imgui_SameLine(0);
-				}
-				var dc = state.TargetDistanceColor;
-				imgui_TextColored(dc.r, dc.g, dc.b, 1.0f, distText);
-			}
-
-			// Target Buff Icons
-			if (state.TargetBuffs.Count > 0)
-			{
-				int iconSize = 24;
-				int iconsPerRow = Math.Max(1, (int)widthAvail / (iconSize + 2));
-
-				for (int i = 0; i < state.TargetBuffs.Count; i++)
-				{
-					if (i > 0 && (i % iconsPerRow) != 0)
+					else
 					{
-						imgui_SameLine(0, 2);
+						imgui_SameLine(0);
+						imgui_Text("  ");
+						imgui_SameLine(0);
 					}
+					var dc = state.TargetDistanceColor;
+					imgui_TextColored(dc.r, dc.g, dc.b, 1.0f, distText);
+				}
 
-					float iconX = imgui_GetCursorScreenPosX();
-					float iconY = imgui_GetCursorScreenPosY();
-					imgui_DrawSpellIconBySpellID(state.TargetBuffs[i].SpellID, iconSize);
+				// Target Buff Icons
+				if (state.TargetBuffs.Count > 0)
+				{
+					int iconSize = state.IconSize;
+					int iconsPerRow = Math.Max(1, (int)widthAvail / (iconSize + 2));
 
-					// Draw buff/debuff border: blue for buffs, red for debuffs
+					for (int i = 0; i < state.TargetBuffs.Count; i++)
 					{
-						float bt = 1f;
-						uint iconBorderColor = state.TargetBuffs[i].SpellType == 0
-							? GetColor(255, 50, 50, 200)   // red for debuffs
-							: GetColor(50, 100, 255, 200);  // blue for buffs
-						imgui_GetWindowDrawList_AddRectFilled(iconX, iconY, iconX + iconSize, iconY + bt, iconBorderColor);
-						imgui_GetWindowDrawList_AddRectFilled(iconX, iconY + iconSize - bt, iconX + iconSize, iconY + iconSize, iconBorderColor);
-						imgui_GetWindowDrawList_AddRectFilled(iconX, iconY, iconX + bt, iconY + iconSize, iconBorderColor);
-						imgui_GetWindowDrawList_AddRectFilled(iconX + iconSize - bt, iconY, iconX + iconSize, iconY + iconSize, iconBorderColor);
-					}
-
-					if (imgui_IsItemHovered())
-					{
-						using (var tooltip = ImGUIToolTip.Aquire())
+						if (i > 0 && (i % iconsPerRow) != 0)
 						{
+							imgui_SameLine(0, 2);
+						}
 
-							imgui_Text($"Spell: {state.TargetBuffs[i].Name}");
-							imgui_Text($"SpellID: {state.TargetBuffs[i].SpellID}");
-							imgui_Text($"Duration: {state.TargetBuffs[i].HoverOver_Display_Duration}");
-							imgui_Text($"Caster: {state.TargetBuffs[i].CasterName}");
-							if (state.TargetBuffs[i].Spell != null && state.TargetBuffs[i].Spell.SpellEffects.Count > 0)
+						float iconX = imgui_GetCursorScreenPosX();
+						float iconY = imgui_GetCursorScreenPosY();
+						imgui_DrawSpellIconBySpellID(state.TargetBuffs[i].SpellID, iconSize);
+
+						// Draw buff/debuff border: blue for buffs, red for debuffs
+						{
+							float bt = 1f;
+							uint iconBorderColor = state.TargetBuffs[i].SpellType == 0
+								? GetColor(255, 50, 50, 200)   // red for debuffs
+								: GetColor(50, 100, 255, 200);  // blue for buffs
+							imgui_GetWindowDrawList_AddRectFilled(iconX, iconY, iconX + iconSize, iconY + bt, iconBorderColor);
+							imgui_GetWindowDrawList_AddRectFilled(iconX, iconY + iconSize - bt, iconX + iconSize, iconY + iconSize, iconBorderColor);
+							imgui_GetWindowDrawList_AddRectFilled(iconX, iconY, iconX + bt, iconY + iconSize, iconBorderColor);
+							imgui_GetWindowDrawList_AddRectFilled(iconX + iconSize - bt, iconY, iconX + iconSize, iconY + iconSize, iconBorderColor);
+						}
+
+						if (imgui_IsItemHovered())
+						{
+							using (var tooltip = ImGUIToolTip.Aquire())
 							{
-								imgui_Separator();
-								foreach (var effect in state.TargetBuffs[i].Spell.SpellEffects)
+
+								imgui_Text($"Spell: {state.TargetBuffs[i].Name}");
+								imgui_Text($"SpellID: {state.TargetBuffs[i].SpellID}");
+								imgui_Text($"Duration: {state.TargetBuffs[i].HoverOver_Display_Duration}");
+								imgui_Text($"Caster: {state.TargetBuffs[i].CasterName}");
+								if (state.TargetBuffs[i].Spell != null && state.TargetBuffs[i].Spell.SpellEffects.Count > 0)
 								{
-									if (!string.IsNullOrWhiteSpace(effect))
+									imgui_Separator();
+									foreach (var effect in state.TargetBuffs[i].Spell.SpellEffects)
 									{
-										imgui_Text(effect);
+										if (!string.IsNullOrWhiteSpace(effect))
+										{
+											imgui_Text(effect);
 
+										}
 									}
 								}
 							}
@@ -2302,6 +2487,8 @@ namespace E3Core.UI.Windows.Hud
 					}
 				}
 			}
+
+			
 		}
 
 		private static void RenderHub_MainWindow()
@@ -2899,14 +3086,14 @@ namespace E3Core.UI.Windows.Hud
 						{
 							int updated = imgui_InputInt_Get(keyForInput);
 
-							if (updated > 255)
+							if (updated > 100)
 							{
-								updated = 255;
+								updated = 100;
 
 							}
-							if (updated < 0)
+							if (updated < 1)
 							{
-								updated = 0;
+								updated = 1;
 
 							}
 							state.SelectedFontSize = updated;
@@ -4571,6 +4758,45 @@ namespace E3Core.UI.Windows.Hud
 									using (var style = PushStyle.Aquire())
 									{
 										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+										imgui_Text("Font Size");
+									}
+
+									string keyForInput = "";
+									ValueStringBuilder sb = new ValueStringBuilder(64);
+									try
+									{
+										sb.Append("##E3Hud_Hub_fontsize_set-");
+										sb.Append(e3util.GetIntStr(i));
+										keyForInput = StringPool.Shared.GetOrAdd(sb.AsSpan());
+									}
+									finally
+									{
+										sb.Dispose();
+									}
+
+									
+									imgui_SetNextItemWidth(100);
+									if (imgui_InputInt(keyForInput, state.SelectedFontSize, 1, 20))
+									{
+										int updated = imgui_InputInt_Get(keyForInput);
+
+										if (updated > 100)
+										{
+											updated = 100;
+
+										}
+										if (updated < 1)
+										{
+											updated = 1;
+
+										}
+										state.SelectedFontSize = updated;
+										imgui_InputInt_Clear(keyForInput);
+									}
+									imgui_Separator();
+									using (var style = PushStyle.Aquire())
+									{
+										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 										imgui_Text("Left Click Action");
 									}
 
@@ -4619,7 +4845,19 @@ namespace E3Core.UI.Windows.Hud
 									}
 
 
-									string keyForInput = $"##E3Hud_Hub_alpha_set-{i}";
+									keyForInput = "";
+									ValueStringBuilder sb2 = new ValueStringBuilder(64);
+									try
+									{
+										sb2.Append("##E3Hud_Hub_alpha_set-");
+										sb2.Append(e3util.GetIntStr(i));
+										keyForInput = StringPool.Shared.GetOrAdd(sb2.AsSpan());
+									}
+									finally
+									{
+										sb2.Dispose();
+									}
+
 									imgui_SetNextItemWidth(100);
 									if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
 									{
@@ -4666,6 +4904,7 @@ namespace E3Core.UI.Windows.Hud
 						using (var imguiFont = IMGUI_Fonts.Aquire())
 						{
 							imguiFont.PushFont(state.SelectedFont);
+							imguiFont.PushFontSize(state.SelectedFontSize);
 							List<TableRow_GroupInfo> currentStats = state.GroupInfo;
 
 							Int32 rowCount = 0;
