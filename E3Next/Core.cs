@@ -3718,6 +3718,77 @@ namespace MonoCore
 					return "Beastlord";
 				case 16:
 					return "Berserker";
+				case 17:
+					return "Mercenary";
+				case 20:
+					return "GM Warrior";
+				case 21:
+					return "GM Cleric";
+				case 22:
+					return "GM Paladin";
+				case 23:
+					return "GM Ranger";
+				case 24:
+					return "GM Shadowknight";
+				case 25:
+					return "GM Druid";
+				case 26:
+					return "GM Monk";
+				case 27:
+					return "GM Bard";
+				case 28:
+					return "GM Rogue";
+				case 29:
+					return "GM Shaman";
+				case 30:
+					return "GM Necromancer";
+				case 31:
+					return "GM Wizard";
+				case 32:
+					return "GM Mage";
+				case 33:
+					return "GM Enchanter";
+				case 34:
+					return "GM Beastlord";
+				case 35:
+					return "GM Berserker";
+				case 40:
+					return "Banker";
+				case 41:
+					return "Merchant";
+				case 58:
+					return "Task Merchant";
+				case 59:
+					return "Pvp Merchant";
+				case 60:
+					return "Adventure";
+				case 61:
+					return "Adventure Merchant";
+				case 62:
+					return "Object";
+				case 63:
+					return "Tribute Master";
+				case 64:
+					return "Guild Tribute Master";
+				case 66:
+					return "Guild Banker";
+				case 67:
+					return "Good Point Merchant";
+				case 68:
+					return "Evil Point Merchant";
+				case 69:
+					return "Fellowship Master";
+				case 70:
+					return "Point Merchant";
+				case 71:
+					return "Mercenary Merchant";
+				case 72:
+					return "Real Estate Merchant";
+				case 73:
+					return "Loyalty Merchant";
+				case 74:
+					return "Tribute Master-v2";
+
 			}
 
 			return String.Empty;

@@ -1144,7 +1144,8 @@ namespace E3Core.UI.Windows.Hud
 				state.TargetNameColor = GetConColorRGB(spawn.ConColorID);
 				state.TargetDistanceColor = GetDistanceSeverityColor(spawn.Distance3D);
 				string bodyDesc = spawn.BodyTypeDesc == "Humanoid" ? spawn.RaceName : spawn.BodyTypeDesc;
-				state.Display_LevelAndClassString = $"{spawn.Level} {bodyDesc} {spawn.ClassShortName}";
+				string className = spawn.ClassShortName == String.Empty ? spawn.ClassName : spawn.ClassShortName;
+				state.Display_LevelAndClassString = $"{spawn.Level} {bodyDesc} {className}";
 
 				//get my aggro on target
 				Decimal percentAggro = MQ.Query<Decimal>("${Target.PctAggro}");
@@ -3389,20 +3390,27 @@ namespace E3Core.UI.Windows.Hud
 
 								}
 							}
-							
-							if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
+
+							using(var font =IMGUI_Fonts.Aquire())
 							{
-								float newX = x + (float)(buffState.IconSize / 2) - (buffState.FontSize);
-								float newY = y + (float)((buffState.IconSize) - (buffState.FontSize * 2));
+								font.PushFont(buffState.SelectedFont);
+								font.PushFontSize(buffState.SelectedFontSize);
 
-								imgui_GetWindowDrawList_AddText(newX, newY, GetColor(255, 255, 255, 255), stats.SimpleDuration);
+								if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
+								{
+									float newX = x + (float)(buffState.IconSize / 2) - (buffState.SelectedFontSize /2);
+									float newY = y + (float)((buffState.IconSize) - (buffState.SelectedFontSize));
 
+									imgui_GetWindowDrawList_AddText(newX, newY, GetColor(255, 255, 255, 255), stats.SimpleDuration);
+
+								}
+								if (!String.IsNullOrWhiteSpace(stats.Display_CounterNumber))
+								{
+									imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.Display_CounterNumber);
+
+								}
 							}
-							if (!String.IsNullOrWhiteSpace(stats.Display_CounterNumber))
-							{
-								imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.Display_CounterNumber);
-
-							}
+								
 							if (imgui_IsItemHovered())
 							{
 								using (var tooltip = ImGUIToolTip.Aquire())
@@ -3549,6 +3557,32 @@ namespace E3Core.UI.Windows.Hud
 							using (var style = PushStyle.Aquire())
 							{
 								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Font Size");
+
+							}
+							keyForInput = $"##CastingHud_fontsize_set";
+							imgui_SetNextItemWidth(100);
+							if (imgui_InputInt(keyForInput, (int)buffState.SelectedFontSize, 1, 20))
+							{
+								int updated = imgui_InputInt_Get(keyForInput);
+
+								if (updated > 100)
+								{
+									updated = 100;
+
+								}
+								if (updated < 1)
+								{
+									updated = 1;
+
+								}
+								buffState.SelectedFontSize = updated;
+								imgui_InputInt_Clear(keyForInput);
+							}
+							imgui_Separator();
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 								imgui_Text("View Mode");
 							}
 
@@ -3591,6 +3625,7 @@ namespace E3Core.UI.Windows.Hud
 										}
 									}
 								}
+								
 							}
 
 						}
@@ -3611,7 +3646,8 @@ namespace E3Core.UI.Windows.Hud
 				{
 					using (var igFont = IMGUI_Fonts.Aquire())
 					{
-						igFont.PushFont("arial_bold-20");
+						igFont.PushFont(buffState.SelectedFont);
+						igFont.PushFontSize(buffState.SelectedFontSize);
 
 						using (var table = ImGUITable.Aquire())
 						{
@@ -3708,9 +3744,9 @@ namespace E3Core.UI.Windows.Hud
 									}
 									if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
 									{
-										float newX = x + (float)(buffState.IconSize / 2) - (buffState.FontSize);
-										float newY = y + (float)((buffState.IconSize) - (buffState.FontSize * 2));
-										imgui_GetWindowDrawList_AddRectFilled(newX, newY, newX + (buffState.FontSize * 2), newY + (buffState.IconSize - (newY - y)), GetColor(0, 0, 0, 100));
+										float newX = x + (float)(buffState.IconSize / 2) - (buffState.SelectedFontSize/2);
+										float newY = y + (float)((buffState.IconSize) - (buffState.SelectedFontSize));
+										imgui_GetWindowDrawList_AddRectFilled(newX, newY, newX + (buffState.SelectedFontSize), newY + (buffState.IconSize - (newY - y)), GetColor(0, 0, 0, 100));
 										imgui_GetWindowDrawList_AddText(newX, newY, GetColor(255, 255, 255, 255), stats.SimpleDuration);
 
 									}

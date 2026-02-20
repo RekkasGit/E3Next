@@ -130,6 +130,8 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Casting", "SelectedFont")]
 		public string E3Hud_Casting_SelectedFont = "robo";
+		[INI_Section("E3Hud_Casting", "SelectedFontSize")]
+		public Int32 E3Hud_Casting_SelectedFontSize = 16;
 		[INI_Section("E3Hud_Casting", "Alpha")]
 		public float E3Hud_Casting_Alpha = 0.8f;
 		[INI_Section("E3Hud_Casting", "Locked")]
@@ -166,6 +168,8 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Hub", "SelectedFont")]
 		public string E3Hud_Hub_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_SelectedFontSize = 16;
 		[INI_Section("E3Hud_Hub", "Locked")]
 		public bool E3Hud_Hub_Locked = false;
 		[INI_Section("E3Hud_Hub", "DisplayHPBar")]
@@ -185,6 +189,8 @@ namespace E3Core.Settings
 		
 		[INI_Section("E3Hud_Hub_PlayerInfo", "SelectedFont")]
 		public string E3Hud_Hub_PlayerInfo_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_PlayerInfo", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_PlayerInfo_SelectedFontSize = 16;
 		[INI_Section("E3Hud_Hub_PlayerInfo", "Alpha")]
 		public float E3Hud_Hub_PlayerInfo_Alpha = 0.8f;
 		[INI_Section("E3Hud_Hub_PlayerInfo", "Detached")]
@@ -213,6 +219,10 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Hub_Buff", "SelectedFont")]
 		public string E3Hud_Hub_Buff_SelectedFont = "robo";
+
+		[INI_Section("E3Hud_Hub_Buff", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_Buff_SelectedFontSize = 16;
+
 		[INI_Section("E3Hud_Hub_Buff", "Detached")]
 		public bool E3Hud_Hub_Buff_Detached = false;
 		[INI_Section("E3Hud_Hub_Buff", "IconSize")]
@@ -238,6 +248,11 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Hub_PetBuff", "SelectedFont")]
 		public string E3Hud_Hub_PetBuff_SelectedFont = "robo";
+
+		[INI_Section("E3Hud_Hub_PetBuff", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_PetBuff_SelectedFontSize = 16;
+
+
 		[INI_Section("E3Hud_Hub_PetBuff", "Detached")]
 		public bool E3Hud_Hub_PetBuff_Detached = false;
 		[INI_Section("E3Hud_Hub_PetBuff", "IconSize")]
@@ -255,6 +270,11 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Hub_Song", "SelectedFont")]
 		public string E3Hud_Hub_Song_SelectedFont = "robo";
+
+		[INI_Section("E3Hud_Hub_Song", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_Song_SelectedFontSize = 16;
+
+
 		[INI_Section("E3Hud_Hub_Song", "Detached")]
 		public bool E3Hud_Hub_Song_Detached = false;
 		[INI_Section("E3Hud_Hub_Song", "IconSize")]
@@ -280,6 +300,9 @@ namespace E3Core.Settings
 		public bool E3Hud_Hub_HotButtons_Detached = false;
 		[INI_Section("E3Hud_Hub_HotButtons", "SelectedFont")]
 		public string E3Hud_Hub_HotButtons_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_HotButtons", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_HotButtons_SelectedFontSize = 16;
+
 		[INI_Section("E3Hud_Hub_HotButtons_UseDefaultDynamicButtons", "UseDefaultDynamicButtons")]
 		public bool E3Hud_Hub_HotButtons_UseDefaultDynamicButtons = true;
 		[INI_Section("E3Hud_Hub_HotButtons", "Locked")]
@@ -290,6 +313,9 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Hub_Debuff", "SelectedFont")]
 		public string E3Hud_Hub_Debuff_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_Debuff", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_Debuff_SelectedFontSize = 16;
+
 		[INI_Section("E3Hud_Hub_Debuff", "Detached")]
 		public bool E3Hud_Hub_Debuff_Detached = false;
 		[INI_Section("E3Hud_Hub_Debuff", "IconSize")]
@@ -886,6 +912,8 @@ namespace E3Core.Settings
 
 
 			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData, ref E3Hud_Hub_SelectedFont);
+			LoadKeyData("E3Hud_Hub", "SelectedFontSize", ParsedData, ref E3Hud_Hub_SelectedFontSize);
+
 			LoadKeyData("E3Hud_Hub", "Locked", ParsedData, ref E3Hud_Hub_Locked);
 			LoadKeyData("E3Hud_Hub", "DisplayHPBar", ParsedData, ref E3Hud_Hub_DisplayHPBar);
 			LoadKeyData("E3Hud_Hub", "LeftClickAction", ParsedData, ref E3Hud_Hub_LeftClickAction);
@@ -898,11 +926,14 @@ namespace E3Core.Settings
 
 
 			LoadKeyData("E3Hud_Casting", "SelectedFont", ParsedData, ref E3Hud_Casting_SelectedFont);
+			LoadKeyData("E3Hud_Casting", "SelectedFontSize", ParsedData, ref E3Hud_Casting_SelectedFontSize);
+
 			LoadKeyData("E3Hud_Casting", "Alpha", ParsedData, ref E3Hud_Casting_Alpha);
 			LoadKeyData("E3Hud_Casting", "Locked", ParsedData, ref E3Hud_Casting_Locked);
 			LoadKeyData("E3Hud_Casting", "RGBA_NameColor", ParsedData, E3Hud_Casting_RGBA_NameColor);
 
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFont", ParsedData, ref E3Hud_Hub_PlayerInfo_SelectedFont);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFontSize", ParsedData, ref E3Hud_Hub_PlayerInfo_SelectedFontSize);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Alpha", ParsedData, ref E3Hud_Hub_PlayerInfo_Alpha);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Locked", ParsedData, ref E3Hud_Hub_PlayerInfo_Locked);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Detached", ParsedData, ref E3Hud_Hub_PlayerInfo_Detached);
@@ -954,6 +985,7 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeX", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeX);
 			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeY", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeY);
 			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFont", ParsedData, ref E3Hud_Hub_HotButtons_SelectedFont);
+			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFontSize", ParsedData, ref E3Hud_Hub_HotButtons_SelectedFontSize);
 			LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", ParsedData, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
 			LoadKeyData("E3Hud_Hub_HotButtons", "Locked", ParsedData, ref E3Hud_Hub_HotButtons_Locked);
 
@@ -1370,6 +1402,7 @@ namespace E3Core.Settings
 			section = newFile.Sections.GetSectionData("E3Hud_Hub");
 			section.Keys.AddKey("Alpha", "0.8");
 			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
 			section.Keys.AddKey("ShowColumnHP", "True");
 			section.Keys.AddKey("ShowColumnEnd", "True");
 			section.Keys.AddKey("ShowColumnMana", "True");
@@ -1394,6 +1427,7 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("E3Hud_Casting");
 			section = newFile.Sections.GetSectionData("E3Hud_Casting");
 			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
 			section.Keys.AddKey("RGBA_NameColor", "0.169f, 1f, 0f, 1f");
 			section.Keys.AddKey("Alpha", "0.8");
 			section.Keys.AddKey("Locked", "False");
@@ -1401,6 +1435,7 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("E3Hud_Hub_PlayerInfo");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_PlayerInfo");
 			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
 			section.Keys.AddKey("Alpha", "0.8");
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("Locked", "False");
@@ -1477,7 +1512,9 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("ButtonSizeX", "50");
 			section.Keys.AddKey("ButtonSizeY", "30");
-			section.Keys.AddKey("SelectedFont", "arial-14");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+
 			section.Keys.AddKey("UseDefaultDynamicButtons", "True");
 			section.Keys.AddKey("Locked", "False");
 
