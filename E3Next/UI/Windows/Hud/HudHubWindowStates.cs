@@ -191,8 +191,7 @@ namespace E3Core.UI.Windows.Hud
 		public Int64 LastUpdateInterval = 500;
 		public List<TableRow_BuffInfo> BuffInfo = new List<TableRow_BuffInfo>();
 
-		private Int32 iconSize = 40;
-		public Int32 FontSize = 8;
+	
 		private int fadeTimeInMS = 1000;
 		public double FadeRatio = 0;
 	

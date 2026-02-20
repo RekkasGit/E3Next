@@ -958,6 +958,9 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Buff", "Locked", ParsedData, ref E3Hud_Hub_Buff_Locked);
 			LoadKeyData("E3Hud_Hub_Buff", "ListView", ParsedData, ref E3Hud_Hub_Buff_ListView);
 			LoadKeyData("E3Hud_Hub_Buff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Buff_ShowProgressBars);
+			LoadKeyData("E3Hud_Hub_Buff", "SelectedFont", ParsedData, ref E3Hud_Hub_Buff_SelectedFont);
+			LoadKeyData("E3Hud_Hub_Buff", "SelectedFontSize", ParsedData, ref E3Hud_Hub_Buff_SelectedFontSize);
+
 
 			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor);
 			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor);
@@ -970,6 +973,8 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_PetBuff", "Locked", ParsedData, ref E3Hud_Hub_PetBuff_Locked);
 			LoadKeyData("E3Hud_Hub_PetBuff", "ListView", ParsedData, ref E3Hud_Hub_PetBuff_ListView);
 			LoadKeyData("E3Hud_Hub_PetBuff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_PetBuff_ShowProgressBars);
+			LoadKeyData("E3Hud_Hub_PetBuff", "SelectedFont", ParsedData, ref E3Hud_Hub_PetBuff_SelectedFont);
+			LoadKeyData("E3Hud_Hub_PetBuff", "SelectedFontSize", ParsedData, ref E3Hud_Hub_PetBuff_SelectedFontSize);
 
 
 			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData, ref E3Hud_Hub_Song_Alpha);
@@ -979,6 +984,8 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Song", "Locked", ParsedData, ref E3Hud_Hub_Song_Locked);
 			LoadKeyData("E3Hud_Hub_Song", "ListView", ParsedData, ref E3Hud_Hub_Song_ListView);
 			LoadKeyData("E3Hud_Hub_Song", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Song_ShowProgressBars);
+			LoadKeyData("E3Hud_Hub_Song", "SelectedFont", ParsedData, ref E3Hud_Hub_Song_SelectedFont);
+			LoadKeyData("E3Hud_Hub_Song", "SelectedFontSize", ParsedData, ref E3Hud_Hub_Song_SelectedFontSize);
 
 			LoadKeyData("E3Hud_Hub_HotButtons", "Alpha", ParsedData, ref E3Hud_Hub_HotButtons_Alpha);
 			LoadKeyData("E3Hud_Hub_HotButtons", "Detached", ParsedData, ref E3Hud_Hub_HotButtons_Detached);
@@ -998,6 +1005,8 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Debuff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Debuff_FadeTimeInMS);
 			LoadKeyData("E3Hud_Hub_Debuff", "Locked", ParsedData, ref E3Hud_Hub_Debuff_Locked);
 			LoadKeyData("E3Hud_Hub_Debuff", "ListView", ParsedData, ref E3Hud_Hub_Debuff_ListView);
+			LoadKeyData("E3Hud_Hub_Debuff", "SelectedFont", ParsedData, ref E3Hud_Hub_Debuff_SelectedFont);
+			LoadKeyData("E3Hud_Hub_Debuff", "SelectedFontSize", ParsedData, ref E3Hud_Hub_Debuff_SelectedFontSize);
 
 
 
@@ -1456,6 +1465,9 @@ namespace E3Core.Settings
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Buff");
 			section.Keys.AddKey("Alpha", "0.8");
 			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("Locked", "False");
@@ -1469,6 +1481,8 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("E3Hud_Hub_PetBuff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_PetBuff");
 			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
@@ -1479,6 +1493,9 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("E3Hud_Hub_Song");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Song");
 			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
@@ -1489,6 +1506,8 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("E3Hud_Hub_Debuff");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_Debuff");
 			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");

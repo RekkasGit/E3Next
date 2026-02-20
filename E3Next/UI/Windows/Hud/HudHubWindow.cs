@@ -2329,7 +2329,7 @@ namespace E3Core.UI.Windows.Hud
 
 						if (window.Begin(state.WindowName, flags))
 						{
-							if (state.IsDirty || buffstate.IsDirty || songstate.IsDirty || buttonstate.IsDirty || playerInfoState.IsDirty || targetInfoState.IsDirty)
+							if (state.IsDirty || buffstate.IsDirty ||petbuffState.IsDirty ||songstate.IsDirty || buttonstate.IsDirty || playerInfoState.IsDirty || targetInfoState.IsDirty)
 							{
 								if (imgui_Button("Save"))
 								{
@@ -2339,6 +2339,7 @@ namespace E3Core.UI.Windows.Hud
 									buttonstate.UpdateSettings_WithoutSaving();
 									playerInfoState.UpdateSettings_WithoutSaving();
 									targetInfoState.UpdateSettings_WithoutSaving();
+									petbuffState.UpdateSettings_WithoutSaving();
 									E3.CharacterSettings.SaveData();
 								}
 							}
@@ -2868,7 +2869,7 @@ namespace E3Core.UI.Windows.Hud
 
 						using (var combo = ImGUICombo.Aquire())
 						{
-							if (combo.BeginCombo("##Select Font for GroupTable", state.SelectedFont))
+							if (combo.BeginCombo("##Select_Font_for_HotWindow", state.SelectedFont))
 							{
 								foreach (var pair in E3ImGUI.FontList)
 								{
@@ -2891,7 +2892,7 @@ namespace E3Core.UI.Windows.Hud
 							
 						}
 						imgui_SetNextItemWidth(100);
-						if (imgui_InputInt(keyForInput, (int)(state.SelectedFontSize * 255), 1, 20))
+						if (imgui_InputInt(keyForInput, state.SelectedFontSize, 1, 20))
 						{
 							int updated = imgui_InputInt_Get(keyForInput);
 
@@ -3675,12 +3676,36 @@ namespace E3Core.UI.Windows.Hud
 							using (var style = PushStyle.Aquire())
 							{
 								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+								imgui_Text("Font");
+							}
+
+
+							using (var combo = ImGUICombo.Aquire())
+							{
+								if (combo.BeginCombo("##Select_Font_for_PetBuffWindow", buffState.SelectedFont))
+								{
+									foreach (var pair in E3ImGUI.FontList)
+									{
+										bool sel = string.Equals(buffState.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+										if (imgui_Selectable($"{pair.Key}", sel))
+										{
+											buffState.SelectedFont = pair.Key;
+										}
+									}
+								}
+							}
+							imgui_Separator();
+							keyForInput = "##PetBuffWindow_fontsize_set";
+
+							using (var style = PushStyle.Aquire())
+							{
+								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 								imgui_Text("Font Size");
 
 							}
-							keyForInput = $"##CastingHud_fontsize_set";
 							imgui_SetNextItemWidth(100);
-							if (imgui_InputInt(keyForInput, (int)buffState.SelectedFontSize, 1, 20))
+							if (imgui_InputInt(keyForInput, buffState.SelectedFontSize, 1, 20))
 							{
 								int updated = imgui_InputInt_Get(keyForInput);
 
@@ -3697,6 +3722,7 @@ namespace E3Core.UI.Windows.Hud
 								buffState.SelectedFontSize = updated;
 								imgui_InputInt_Clear(keyForInput);
 							}
+							
 							imgui_Separator();
 							using (var style = PushStyle.Aquire())
 							{
@@ -3720,29 +3746,6 @@ namespace E3Core.UI.Windows.Hud
 								}
 								imgui_SameLine(0);
 								imgui_Text("Show Progress Bars");
-
-								imgui_Separator();
-								using (var style = PushStyle.Aquire())
-								{
-									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-									imgui_Text("Font");
-								}
-
-								using (var combo = ImGUICombo.Aquire())
-								{
-									if (combo.BeginCombo("##Select Font for PetBuffList", buffState.SelectedFont))
-									{
-										foreach (var pair in E3ImGUI.FontList)
-										{
-											bool sel = string.Equals(buffState.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
-
-											if (imgui_Selectable($"{pair.Key}", sel))
-											{
-												buffState.SelectedFont = pair.Key;
-											}
-										}
-									}
-								}
 								
 							}
 
@@ -3899,19 +3902,14 @@ namespace E3Core.UI.Windows.Hud
 
 										}
 									}
-
-
 									counter++;
 								}
 							}
-
 						}
-
 					}
 				}
 			}
-			
-
+	
 		}
 
 		private static void RenderBuffTableSimple()
@@ -4148,6 +4146,57 @@ namespace E3Core.UI.Windows.Hud
 							buffState.IconSize = updated;
 						}
 						imgui_Separator();
+						
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Font");
+						}
+
+
+						using (var combo = ImGUICombo.Aquire())
+						{
+							if (combo.BeginCombo("##Select_Font_for_BuffWindow", buffState.SelectedFont))
+							{
+								foreach (var pair in E3ImGUI.FontList)
+								{
+									bool sel = string.Equals(buffState.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+									if (imgui_Selectable($"{pair.Key}", sel))
+									{
+										buffState.SelectedFont = pair.Key;
+									}
+								}
+							}
+						}
+						imgui_Separator();
+						keyForInput = "##BuffWindow_fontsize_set";
+
+						using (var style = PushStyle.Aquire())
+						{
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							imgui_Text("Font Size");
+
+						}
+						imgui_SetNextItemWidth(100);
+						if (imgui_InputInt(keyForInput, buffState.SelectedFontSize, 1, 20))
+						{
+							int updated = imgui_InputInt_Get(keyForInput);
+
+							if (updated > 100)
+							{
+								updated = 100;
+
+							}
+							if (updated < 1)
+							{
+								updated = 1;
+
+							}
+							buffState.SelectedFontSize = updated;
+							imgui_InputInt_Clear(keyForInput);
+						}
+						imgui_Separator();
 						using (var style = PushStyle.Aquire())
 						{
 							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -4208,7 +4257,9 @@ namespace E3Core.UI.Windows.Hud
 			{
 				using (var igFont = IMGUI_Fonts.Aquire())
 				{
-					//igFont.PushFont("EQ-Bold");
+					igFont.PushFont(buffState.SelectedFont);
+					igFont.PushFontSize(buffState.SelectedFontSize);
+
 
 					using (var table = ImGUITable.Aquire())
 					{
@@ -4309,9 +4360,9 @@ namespace E3Core.UI.Windows.Hud
 								}
 								if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
 								{
-									float newX = x + (float)(buffState.IconSize / 2) - (buffState.FontSize);
-									float newY = y + (float)((buffState.IconSize) - (buffState.FontSize * 2));
-									imgui_GetWindowDrawList_AddRectFilled(newX, newY, newX + (buffState.FontSize * 2), newY + (buffState.IconSize - (newY - y)), GetColor(0, 0, 0, 100));
+									float newX = x + (float)(buffState.IconSize / 2) - (buffState.SelectedFontSize/2);
+									float newY = y + (float)((buffState.IconSize) - (buffState.SelectedFontSize));
+									imgui_GetWindowDrawList_AddRectFilled(newX, newY, newX + (buffState.SelectedFontSize), newY + (buffState.IconSize - (newY - y)), GetColor(0, 0, 0, 100));
 									imgui_GetWindowDrawList_AddText(newX, newY, GetColor(255, 255, 255, 255), stats.SimpleDuration);
 
 								}
