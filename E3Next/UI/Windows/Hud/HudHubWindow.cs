@@ -1548,10 +1548,14 @@ namespace E3Core.UI.Windows.Hud
 					{
 						imgui_SameLine(widthAvail - detachButtonWidth);
 					}
-					if (imgui_Button(IMGUI_DETATCH_PLAYERINFO_ID))
+					using (var detachFont = IMGUI_Fonts.Aquire())
 					{
-						state.Detached = true;
-						imgui_Begin_OpenFlagSet(state.WindowName, true);
+						detachFont.PushFont("robo");
+						if (imgui_Button(IMGUI_DETATCH_PLAYERINFO_ID))
+						{
+							state.Detached = true;
+							imgui_Begin_OpenFlagSet(state.WindowName, true);
+						}
 					}
 				}
 				else
@@ -2001,10 +2005,15 @@ namespace E3Core.UI.Windows.Hud
 						imgui_SetCursorPosX(noTargetCenterX);
 						imgui_TextColored(0.5f, 0.5f, 0.5f, 1.0f, tiState.NoTargetText);
 						imgui_SameLine(widthAvail - 20);
-						if (imgui_Button(IMGUI_DETATCH_TARGETINFO_ID))
+						using(var dockFont = IMGUI_Fonts.Aquire())
 						{
-							tiState.Detached = true;
-							imgui_Begin_OpenFlagSet(tiState.WindowName, true);
+							dockFont.PushFont("robo");
+							if (imgui_Button(IMGUI_DETATCH_TARGETINFO_ID))
+							{
+								tiState.Detached = true;
+								imgui_Begin_OpenFlagSet(tiState.WindowName, true);
+							}
+
 						}
 					}
 					else
@@ -2177,10 +2186,15 @@ namespace E3Core.UI.Windows.Hud
 					}
 					// Reset cursor and draw detach button at the right edge
 					imgui_SameLine(widthAvail - 20);
-					if (imgui_Button(IMGUI_DETATCH_TARGETINFO_ID))
+					using(var detachFont = IMGUI_Fonts.Aquire())
 					{
-						tiState.Detached = true;
-						imgui_Begin_OpenFlagSet(tiState.WindowName, true);
+						detachFont.PushFont("robo");
+						if (imgui_Button(IMGUI_DETATCH_TARGETINFO_ID))
+						{
+							tiState.Detached = true;
+							imgui_Begin_OpenFlagSet(tiState.WindowName, true);
+						}
+
 					}
 				}
 				else
@@ -2727,10 +2741,14 @@ namespace E3Core.UI.Windows.Hud
 			{
 				imgui_SameLine(0);
 				imgui_SetCursorPosX(widthAvail - 20);
-				if (imgui_Button(IMGUI_DETATCH_SONGS_ID))
+				using (var detachFont = IMGUI_Fonts.Aquire())
 				{
-					state.Detached = true;
-					imgui_Begin_OpenFlagSet(state.WindowName, true);
+					detachFont.PushFont("robo");
+					if (imgui_Button(IMGUI_DETATCH_SONGS_ID))
+					{
+						state.Detached = true;
+						imgui_Begin_OpenFlagSet(state.WindowName, true);
+					}
 				}
 			}
 			if (state.Detached)
@@ -3768,10 +3786,14 @@ namespace E3Core.UI.Windows.Hud
 				{
 					imgui_SameLine(0);
 					imgui_SetCursorPosX(widthAvail - 20);
-					if (imgui_Button(IMGUI_DETATCH_PETBUFFS_ID))
+					using (var detachFont = IMGUI_Fonts.Aquire())
 					{
-						buffState.Detached = true;
-						imgui_Begin_OpenFlagSet(buffState.WindowName, true);
+						detachFont.PushFont("robo");
+						if (imgui_Button(IMGUI_DETATCH_PETBUFFS_ID))
+						{
+							buffState.Detached = true;
+							imgui_Begin_OpenFlagSet(buffState.WindowName, true);
+						}
 					}
 				}
 				if (buffState.Detached)
@@ -4238,10 +4260,14 @@ namespace E3Core.UI.Windows.Hud
 			{
 				imgui_SameLine(0);
 				imgui_SetCursorPosX(widthAvail - 20);
-				if (imgui_Button(IMGUI_DETATCH_BUFFS_ID))
+				using (var detachFont = IMGUI_Fonts.Aquire())
 				{
-					buffState.Detached = true;
-					imgui_Begin_OpenFlagSet(buffState.WindowName, true);
+					detachFont.PushFont("robo");
+					if (imgui_Button(IMGUI_DETATCH_BUFFS_ID))
+					{
+						buffState.Detached = true;
+						imgui_Begin_OpenFlagSet(buffState.WindowName, true);
+					}
 				}
 			}
 			if (buffState.Detached)
