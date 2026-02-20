@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.HighPerformance;
+using CommunityToolkit.HighPerformance.Buffers;
 using E3Core.Processors;
 using E3Core.Utility;
 using NetMQ;
@@ -3001,25 +3002,9 @@ namespace MonoCore
 			//bodytype desc
 			int slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
-			//to prevent GC from chruning from destroying long lived string, keep a small collection of them
-			//change to byte key based dictionary for even better?
-			string tstring = String.Empty;
-			if (BodyTypeDesc == String.Empty)
-			{
-				unsafe
-				{
-					fixed (byte* p = data)
-					{
-						tstring = Encoding.ASCII.GetString(p, slength);
-					}
-				}
-				if (!_stringLookup.TryGetValue(tstring, out BodyTypeDesc))
-				{
-					_stringLookup.Add(tstring, tstring);
-					BodyTypeDesc = tstring;
-				}
-
-			}
+			
+			BodyTypeDesc = StringPool.Shared.GetOrAdd(data.Slice(0,slength), Encoding.ASCII);
+				
 			data = data.Slice(slength);
 			Buyer = MemoryMarshal.Read<Boolean>(data);
 			data = data.Slice(1);
@@ -3028,21 +3013,8 @@ namespace MonoCore
 			//cleanname
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
-			if (CleanName == string.Empty)
-			{
-				unsafe
-				{
-					fixed (byte* p = data)
-					{
-						tstring = Encoding.ASCII.GetString(p, slength);
-					}
-				}
-				if (!_stringLookup.TryGetValue(tstring, out CleanName))
-				{
-					_stringLookup.Add(tstring, tstring);
-					CleanName = tstring;
-				}
-			}
+
+			CleanName = StringPool.Shared.GetOrAdd(data.Slice(0,slength), Encoding.ASCII);
 
 			data = data.Slice(slength);
 
@@ -3061,22 +3033,7 @@ namespace MonoCore
 			//displayname
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
-			if (DisplayName == String.Empty)
-			{
-
-				unsafe
-				{
-					fixed (byte* p = data)
-					{
-						tstring = Encoding.ASCII.GetString(p, slength);
-					}
-				}
-				if (!_stringLookup.TryGetValue(tstring, out DisplayName))
-				{
-					_stringLookup.Add(tstring, tstring);
-					DisplayName = tstring;
-				}
-			}
+			DisplayName = StringPool.Shared.GetOrAdd(data.Slice(0,slength), Encoding.ASCII);
 
 			data = data.Slice(slength);
 
@@ -3124,24 +3081,8 @@ namespace MonoCore
 			//name
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
-
-			if (Name == String.Empty)
-			{
-				unsafe
-				{
-					fixed (byte* p = data)
-					{
-						tstring = Encoding.ASCII.GetString(p, slength);
-					}
-				}
-				if (!_stringLookup.TryGetValue(tstring, out Name))
-				{
-					_stringLookup.Add(tstring, tstring);
-					Name = tstring;
-				}
-
-			}
-
+			Name = StringPool.Shared.GetOrAdd(data.Slice(0, slength), Encoding.ASCII);
+	
 			data = data.Slice(slength);
 
 			Named = MemoryMarshal.Read<Boolean>(data);
@@ -3161,21 +3102,8 @@ namespace MonoCore
 			//RaceName
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
-			if (RaceName == String.Empty)
-			{
-				unsafe
-				{
-					fixed (byte* p = data)
-					{
-						tstring = Encoding.ASCII.GetString(p, slength);
-					}
-				}
-				if (!_stringLookup.TryGetValue(tstring, out RaceName))
-				{
-					_stringLookup.Add(tstring, tstring);
-					RaceName = tstring;
-				}
-			}
+			RaceName = StringPool.Shared.GetOrAdd(data.Slice(0, slength), Encoding.ASCII);
+			
 
 			data = data.Slice(slength);
 
@@ -3192,23 +3120,8 @@ namespace MonoCore
 			//Suffix
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
-			if (Suffix == String.Empty)
-			{
-				unsafe
-				{
-					fixed (byte* p = data)
-					{
-						tstring = Encoding.ASCII.GetString(p, slength);
-					}
-				}
-				if (!_stringLookup.TryGetValue(tstring, out Suffix))
-				{
-					_stringLookup.Add(tstring, tstring);
-					Suffix = tstring;
-				}
-
-			}
-
+			Suffix = StringPool.Shared.GetOrAdd(data.Slice(0, slength), Encoding.ASCII);
+		
 			data = data.Slice(slength);
 
 			Targetable = MemoryMarshal.Read<Boolean>(data);
@@ -3220,23 +3133,8 @@ namespace MonoCore
 			//TypeDesc
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
-			if (TypeDesc == String.Empty)
-			{
-				unsafe
-				{
-					fixed (byte* p = data)
-					{
-						tstring = Encoding.ASCII.GetString(p, slength);
-					}
-				}
-				if (!_stringLookup.TryGetValue(tstring, out TypeDesc))
-				{
-					_stringLookup.Add(tstring, tstring);
-					TypeDesc = tstring;
-				}
-			}
+			TypeDesc = StringPool.Shared.GetOrAdd(data.Slice(0, slength), Encoding.ASCII);
 			data = data.Slice(slength);
-
 			Underwater = MemoryMarshal.Read<Boolean>(data);
 			data = data.Slice(1);
 			X = MemoryMarshal.Read<float>(data);
@@ -3253,7 +3151,6 @@ namespace MonoCore
 			data = data.Slice(4);
 			DeityID = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
-
 
 		}
 		public void Init(byte[] data, Int32 length)
