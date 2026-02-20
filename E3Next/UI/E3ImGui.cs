@@ -1,5 +1,7 @@
+using CommunityToolkit.HighPerformance.Buffers;
 using E3Core.Data;
 using E3Core.Processors;
+using E3Core.Utility;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -3071,11 +3073,18 @@ namespace MonoCore
 			public bool BeginPopupContextItemPerf(string type,string idString,Int32 id, int flags)
 			{
 				string rowID = String.Empty;
-				if (!IntToStringIDLookup(type, id, out rowID))
+				ValueStringBuilder sb = new ValueStringBuilder();
+				try
 				{
-					rowID = $"{idString}{id}";
-					IntToStringIDRegister(type, id, rowID);
+					sb.Append(idString);
+					sb.Append(e3util.GetIntStr(id));
+					rowID = StringPool.Shared.GetOrAdd(sb.AsSpan());
 				}
+				finally
+				{
+					sb.Dispose();
+				}
+				
 				IsOpen = imgui_BeginPopupContextItem(rowID, flags);
 				return IsOpen;
 			}
@@ -3391,25 +3400,5 @@ namespace MonoCore
 
 		private static Dictionary<string, Dictionary<Int64, string>> _intToStringLookup = new Dictionary<string, Dictionary<Int64, string>>();
 
-		public static bool IntToStringIDLookup(string type, Int64 key, out string value)
-		{
-			if (!_intToStringLookup.ContainsKey(type))
-			{
-				_intToStringLookup.Add(type, new Dictionary<Int64, string>());
-			}
-			if (!_intToStringLookup[type].TryGetValue(key, out value))
-			{
-				return false;
-			}
-			return true;
-		}
-		public static void IntToStringIDRegister(string type, Int64 key, string value)
-		{
-			if (!_intToStringLookup.ContainsKey(type))
-			{
-				_intToStringLookup.Add(type, new Dictionary<Int64, string>());
-			}
-			_intToStringLookup[type][key] = value;
-		}
 	}
 }

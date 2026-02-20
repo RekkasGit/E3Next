@@ -317,7 +317,6 @@ namespace E3Core.UI.Windows.Hud
 	public class State_HotbuttonsWindow
 	{	
 		public string WindowName = $"E3 Hotbutton Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
-		public Int32 FontSize = 8;
 		public bool IsDirty = false;
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_Alpha; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_Detached; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_Detached = value; IsDirty = true; } }

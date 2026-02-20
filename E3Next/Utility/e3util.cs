@@ -2534,6 +2534,20 @@ namespace E3Core.Utility
 			}
 
 		}
+		private static readonly ConcurrentDictionary<int, string> _getIntStrCache = new ConcurrentDictionary<int, string>();
+
+		public static string GetIntStr(int value)
+		{
+			return _getIntStrCache.GetOrAdd(value, i => i.ToString());
+		}
+		private static ConcurrentDictionary<Decimal, String> _decToIntString = new ConcurrentDictionary<Decimal, string>();
+
+		public static string GetDecimalString(Decimal value)
+		{
+			//only store 2 after the decimal, else there are far too many possible values.
+			Decimal tempDec = Math.Round(value, 2);
+			return _decToIntString.GetOrAdd(tempDec, i => i.ToString("N0"));
+		}
 		public static void ToggleBooleanSetting(ref bool booleanObject, string Name, List<string> args)
 		{
 			if (args.Count > 0)
