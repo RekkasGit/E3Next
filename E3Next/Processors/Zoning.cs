@@ -38,15 +38,32 @@ namespace E3Core.Processors
 
         public static void Zoned(Int32 zoneId)
         {
-            // add our new zone to the zone lookup if necessary
-            if (!ZoneLookup.TryGetValue(zoneId, out CurrentZone))
-            {
-                CurrentZone = new Zone(zoneId);
-                ZoneLookup.Add(zoneId, new Zone(zoneId));
-            }
-
-            TributeDataFile.ToggleTribute();
-            Rez.TurnOffAutoRezSkip();
+			bool zoneChanged = false;
+			if(CurrentZone!=null)
+			{
+				if (zoneId != CurrentZone.Id)
+				{
+					//our zone has changed or is going to change
+					zoneChanged=true;
+				}
+			}
+			else
+			{
+				//doesn't exist, so we count this as a change.
+				zoneChanged = true;
+			}
+			// add our new zone to the zone lookup if necessary
+			if (!ZoneLookup.TryGetValue(zoneId, out CurrentZone))
+			{
+				CurrentZone = new Zone(zoneId);
+				ZoneLookup.Add(zoneId, new Zone(zoneId));
+			}
+			if(zoneChanged)
+			{
+				TributeDataFile.ToggleTribute();
+				Rez.TurnOffAutoRezSkip();
+			}
+           
         }
 		public static Boolean IsZoned()
 		{

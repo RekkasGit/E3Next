@@ -455,17 +455,17 @@ namespace E3Core.Processors
 				{
 					if (Core._MQ2MonoVersion < 0.420m)
 					{
-					if (x.match.Groups.Count > 1)
-					{
-						//sometimes we have effects that also use "you have entered" IE:
-						//an area where levitation effects do not function
-						if (x.match.Groups[1].Value.Contains("an area "))
+						if (x.match.Groups.Count > 1)
 						{
-							return;
+							//sometimes we have effects that also use "you have entered" IE:
+							//an area where levitation effects do not function
+							if (x.match.Groups[1].Value.Contains("an area "))
+							{
+								return;
+							}
 						}
-					}
-					Zoning.SetProcessZone();
-					Zoning.ProcessZoneIfNeeded();
+						Zoning.SetProcessZone();
+						Zoning.ProcessZoneIfNeeded();
 					}
 				});
 			

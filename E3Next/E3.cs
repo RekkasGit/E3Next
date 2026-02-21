@@ -564,7 +564,13 @@ namespace E3Core.Processors
            
         }
         private static void RefreshCaches()
-        {
+		{
+			//sometimes the zoning doesn't update like it should
+			//making super sure zone changes are caught.
+			var currentZone = MQ.Query<Int32>("${Zone.ID}");
+			Zoning.Zoned(currentZone);
+			////////////
+
 			Zoning.ProcessZoneIfNeeded();
 			Spawns.RefreshList();
 			Casting.RefreshGemCache();

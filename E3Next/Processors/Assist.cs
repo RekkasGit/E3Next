@@ -591,10 +591,14 @@ namespace E3Core.Processors
         public static void AssistOn(Int32 mobID, Int32 zoneId)
         {
 
-            if (zoneId != Zoning.CurrentZone.Id) return;
-			//clear in case its not reset by other means
-			//or you want to attack in enrage
-			_assistIsEnraged = false;
+            if (zoneId != Zoning.CurrentZone.Id)
+            {
+                E3.Bots.Broadcast("Will not assist, not in the same zone.");
+                return;
+            }
+            //clear in case its not reset by other means
+            //or you want to attack in enrage
+            _assistIsEnraged = false;
             if (mobID == 0)
             {
                 //something wrong with the assist, kickout
@@ -602,7 +606,16 @@ namespace E3Core.Processors
                 return;
             }
             Spawn s;
-            if (_spawns.TryByID(mobID, out s))
+
+            if (!_spawns.TryByID(mobID, out s))
+            {
+                E3.Bots.Broadcast("Assistme: Cannot find spawn to assist on, refreshing spawn data as a fail safe.");
+                _spawns.RefreshList(full: true);
+
+
+            }
+
+			if (_spawns.TryByID(mobID, out s))
             {
                 MobLifeExpectancy = 1;
 
@@ -797,6 +810,10 @@ namespace E3Core.Processors
                     }
                 }
             }
+            else
+            {
+                E3.Bots.Broadcast($"Assist: \arCannot find spawnid: \aw{mobID}\ar to assist on!");
+            }
         }
 
         
@@ -872,6 +889,7 @@ namespace E3Core.Processors
            EventProcessor.RegisterCommand("/assistme", (x) =>
            {
 
+          
                //don't process assist if paused.
                if(Basics.IsPaused) {
                    E3.Bots.Broadcast("\arNot assisting! \agI am paused!");
@@ -937,8 +955,10 @@ namespace E3Core.Processors
 
                }
                else if (!e3util.FilterMe(x))
-               {
-                   Int32 mobid;
+			   {
+				   MQ.WriteDelayed("Assist me command Recieved from the network");
+
+				   Int32 mobid;
                    Int32 zoneid;
 
                    if (Int32.TryParse(x.args[0], out mobid))
