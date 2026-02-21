@@ -448,36 +448,28 @@ namespace E3Core.Processors
 				}
 			});
 
-			EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) =>
-			{
-				if (x.match.Groups.Count > 1)
+			///this is now handled via the Zoning.ProcessZoneIfneeded
+			/// and the OnZone event.
+			
+				EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) =>
 				{
-					//sometimes we have effects that also use "you have entered" IE:
-					//an area where levitation effects do not function
-					if (x.match.Groups[1].Value.Contains("an area "))
+					if (Core._MQ2MonoVersion < 0.420m)
 					{
-						return;
+					if (x.match.Groups.Count > 1)
+					{
+						//sometimes we have effects that also use "you have entered" IE:
+						//an area where levitation effects do not function
+						if (x.match.Groups[1].Value.Contains("an area "))
+						{
+							return;
+						}
 					}
-				}
-
-				//means we have zoned.
-				_spawns.RefreshList(full:true);//make sure we get a new refresh of this zone.
-				Loot.Reset();
-				Movement.ResetKeepFollow();
-				Assist.Reset();
-				Pets.Reset();
-				Nukes.Reset();
-				BuffCheck.AddToBuffCheckTimer(5000);
-
-				//clear out the timers as the ID's are no longer valid
-				BuffCheck.Reset();
-				Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
-				E3.StateUpdates();
-				foreach (var command in E3.CharacterSettings.ZoningCommands)
-				{
-					MQ.Cmd(command);
-				}
-			});
+					Zoning.SetProcessZone();
+					Zoning.ProcessZoneIfNeeded();
+					}
+				});
+			
+			
 			EventProcessor.RegisterEvent("Summoned", @"You have been summoned!", (x) =>
 			{
 				return;

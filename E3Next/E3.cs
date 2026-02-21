@@ -558,6 +558,7 @@ namespace E3Core.Processors
         }
         private static void RefreshCaches()
         {
+			Zoning.ProcessZoneIfNeeded();
 			Spawns.RefreshList();
 			Casting.RefreshGemCache();
             Basics.RefreshGroupMembers();

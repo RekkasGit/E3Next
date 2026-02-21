@@ -26,6 +26,9 @@ namespace E3Core.Processors
 		private static string _recordingFileName = String.Empty;
 		private static Int32 _recordingZoneID = 0;
 		private static IMQ MQ = E3.MQ;
+		private static volatile bool ShouldProcessZone = false;
+		private static object ShouldProcessZoneLock = new object();
+		
 
         [SubSystemInit]
         public static void Zoning_Init()
@@ -45,8 +48,50 @@ namespace E3Core.Processors
             TributeDataFile.ToggleTribute();
             Rez.TurnOffAutoRezSkip();
         }
+		public static void SetProcessZone()
+		{
+			lock (ShouldProcessZoneLock)
+			{
+				ShouldProcessZone = true;
+			}
+		}
+		public static void ProcessZoneIfNeeded()
+		{
+			bool shouldProcess = false;
+			lock(ShouldProcessZoneLock)
+			{
+				if (ShouldProcessZone)
+				{
+					shouldProcess = true;
+				}
+			}
+			//don't do work inside of the lock, just set a variable that is local to the thread then check on it.
+			if (shouldProcess)
+			{
+				ShouldProcessZone = false;
+				E3.MQ.WriteDelayed("Processing zoning events");
+				using (E3.MQ.GetDelayLock())
+				{
+					//means we have zoned.
+					_spawns.RefreshList(full: true);//make sure we get a new refresh of this zone.
+					Loot.Reset();
+					Movement.ResetKeepFollow();
+					Assist.Reset();
+					Pets.Reset();
+					Nukes.Reset();
+					BuffCheck.AddToBuffCheckTimer(5000);
 
-	
+					//clear out the timers as the ID's are no longer valid
+					BuffCheck.Reset();
+					Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
+					E3.StateUpdates();
+					foreach (var command in E3.CharacterSettings.ZoningCommands)
+					{
+						MQ.Cmd(command);
+					}
+				}
+			}
+		}
 		private static void InitZoneLookup()
         {
             TributeDataFile.LoadData();

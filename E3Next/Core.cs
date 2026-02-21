@@ -12,6 +12,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.ServiceModel.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -1364,7 +1365,14 @@ namespace MonoCore
 			}
 			EventProcessor.ProcessEvent(line);
 		}
-
+		public static void OnZoned()
+		{
+			
+			Zoning.SetProcessZone();
+			
+			
+			
+		}
 		public static void OnSpawnAdd()
 		{
 			if (!IsProcessing)
@@ -2811,7 +2819,7 @@ namespace MonoCore
 							}
 							foreach (var spawnid in _refershSpawnIdsToDelete)
 							{
-								E3.MQ.WriteDelayed($"Spawn Data:Deleting spawnid:{spawnid}");
+								//E3.MQ.WriteDelayed($"Spawn Data:Deleting spawnid:{spawnid}");
 
 								if (SpawnsByID.TryGetValue(spawnid, out var spawn))
 								{
