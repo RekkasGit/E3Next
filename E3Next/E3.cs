@@ -50,6 +50,8 @@ namespace E3Core.Processors
 			//update all states, important.
 
 			StateUpdates();
+
+			//zoning stuff happens here no iszoned checks should be done before this point.
 			RefreshCaches();
 			
 			//don't eat stat food even if paused!
@@ -74,6 +76,7 @@ namespace E3Core.Processors
 			//if true, adv settings will stop processing for this loop.
 			ActionTaken = false;
 			BeforeAdvancedSettingsCalls();
+			if (Zoning.IsZoned()) return;
 
 			if (!_amIDead)
 			{
@@ -98,6 +101,7 @@ namespace E3Core.Processors
 
         private static void BeforeAdvancedSettingsCalls()
 		{
+
 			if (PctHPs < 98)
 			{
 				Heals.Check_LifeSupport();
@@ -136,6 +140,7 @@ namespace E3Core.Processors
 				{
 					foreach (var methodName in _methodsToInvokeAsStrings)
 					{
+						if (Zoning.IsZoned()) return;
 						Burns.UseBurns();
 						//if an action was taken, start over
 						if (ActionTaken)
@@ -158,6 +163,7 @@ namespace E3Core.Processors
 		
 		private static void AfterAdvancedSettingsCalls()
 		{
+			if (Zoning.IsZoned()) return;
 			EventProcessor.ProcessEventsInQueues("/backoff");
 			EventProcessor.ProcessEventsInQueues("/assistme");
 
@@ -188,6 +194,7 @@ namespace E3Core.Processors
 				//lets do our class methods, this is last because of bards
 				foreach (var kvp in AdvancedSettings.ClassMethodLookup)
 				{
+					if (Zoning.IsZoned()) return;
 					Burns.UseBurns();
 					//using (Log.Trace($"ClassMethodCalls-{kvp.Key}-Main"))
 					{
@@ -207,8 +214,8 @@ namespace E3Core.Processors
 		private static void FinalCalls()
 		{
 
-
-			if(!_amIDead)
+			if (Zoning.IsZoned()) return;
+			if (!_amIDead)
 			{
 				using (Log.Trace("LootProcessing"))
 				{
@@ -392,7 +399,7 @@ namespace E3Core.Processors
 		public static void ProcessExternalCommands()
 		{
 			NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
-			//e3util.ProcessE3BCCommands(); //send out data we may have queued up for /e3bc commands
+			e3util.ProcessE3BCCommands(); //send out data we may have queued up for /e3bc commands
 			RouterServer.ProcessRequests();//process any tlo request from the UI, or anything really.
 			////process any commands we need to process from the UI
 			PubClient.ProcessRequests();

@@ -48,6 +48,13 @@ namespace E3Core.Processors
             TributeDataFile.ToggleTribute();
             Rez.TurnOffAutoRezSkip();
         }
+		public static Boolean IsZoned()
+		{
+			lock (ShouldProcessZoneLock)
+			{
+				return ShouldProcessZone;
+			}
+		}
 		public static void SetProcessZone()
 		{
 			lock (ShouldProcessZoneLock)

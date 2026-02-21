@@ -244,6 +244,8 @@ namespace E3Core.Processors
 					while (IsCasting())
 					{
 						MQ.Delay(50);
+						//we are set to process a zone, kick out
+						if (Zoning.IsZoned()) return CastReturn.CAST_INTERRUPTED;
 
 						if (!isEmergency && Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana))
 						{
@@ -443,7 +445,9 @@ namespace E3Core.Processors
 							}
 							if (!TrueTarget(targetID))
 							{
+
 								E3.Bots.Broadcast($"Spell Target failure for targetid:{targetID} for spell {spell.SpellName}");
+								E3.Spawns.RefreshList(full: true);
 								return CastReturn.CAST_NOTARGET;
 							}
 						}
@@ -1939,7 +1943,6 @@ namespace E3Core.Processors
 			{
 				if (!Basics.GroupMembersInZone.Contains(targetId)) return false;
 			}
-
 			if (!spell.Initialized) spell.ReInit(); 
 
 			if (spell.MyRange == 0) return true;
@@ -1947,6 +1950,14 @@ namespace E3Core.Processors
 			Spawn s;
 			if (_spawns.TryByID(targetId, out s))
 			{
+				if (s.Level == 1)
+				{
+					//this is a level 1 pet, most likely a familiar
+					if (s.Name.Contains("_familiar"))
+					{
+						return false;
+					}
+				}
 				double targetDistance = s.Distance;
 				if (targetDistance <= spell.MyRange)
 				{
