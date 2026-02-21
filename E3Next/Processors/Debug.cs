@@ -472,6 +472,13 @@ namespace E3Core.Processors
 
 			});
 
+			EventProcessor.RegisterCommand("/e3debug_refresh_spawns", x =>
+			{
+				E3.Bots.Broadcast("Refreshing spawn list");
+				E3.Spawns.RefreshList(full: true);
+
+			});
+
 			EventProcessor.RegisterCommand("/e3debug_spawns_refresh", x =>
 			{
 

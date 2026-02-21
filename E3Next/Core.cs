@@ -1589,7 +1589,7 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetAvilableDiscIds(out int length);
 
-		
+
 		#endregion
 
 		[DllImport("user32.dll")]
@@ -2147,7 +2147,7 @@ namespace MonoCore
 			{
 
 				this.CallBackDispose = null;
-			
+
 			}
 			~MQLock()
 			{
@@ -2580,14 +2580,14 @@ namespace MonoCore
 				}
 
 			}
-			
+
 			return SpawnsByID.TryGetValue(id, out s);
 		}
 		public bool TryByName(string name, out Spawn s, Boolean useCurrentCache = false)
 		{
 			if (!useCurrentCache) RefreshListIfNeeded();
-			
-			if(_spawns.Count==0)
+
+			if (_spawns.Count == 0)
 			{
 				lock (_spawns)
 				{
@@ -2612,7 +2612,7 @@ namespace MonoCore
 			lock (_spawns)
 			{
 				//update what we have
-				if (SpawnsByID.TryGetValue(spawn.ID,out var cspawn))
+				if (SpawnsByID.TryGetValue(spawn.ID, out var cspawn))
 				{
 					//E3.MQ.WriteDelayed($"Trying to add spawn {spawn.ID} but it already exists, updating values. name before:{cspawn.Name} name after {spawn.Name}");
 					//update what we have and dipose of the new one
@@ -2713,7 +2713,7 @@ namespace MonoCore
 						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 						int dataStartingLength = data.Length;
 
-						if(dataStartingLength<=0) needsToDoRefresh=true;
+						if (dataStartingLength <= 0) needsToDoRefresh = true;
 
 						while (data.Length > 0 && !needsToDoRefresh)
 						{
@@ -2783,7 +2783,7 @@ namespace MonoCore
 								{
 									//we don't have the OnAddSpawn stuff wired up befre this, do a full refresh
 									//spawn doesn't exist in our delta, will have to do a full refresh. 
-									//E3.MQ.WriteDelayed("Refreshing spawn delta: Missing spawn data, doing full refresh");
+									E3.MQ.WriteDelayed("Refreshing spawn delta: Missing spawn data, doing full refresh");
 
 									needsToDoRefresh = true;
 									break;
@@ -2811,7 +2811,7 @@ namespace MonoCore
 							}
 							foreach (var spawnid in _refershSpawnIdsToDelete)
 							{
-								//E3.MQ.WriteDelayed($"Refreshing spawn delta: Deleting spawnid:{spawnid}");
+								E3.MQ.WriteDelayed($"Spawn Data:Deleting spawnid:{spawnid}");
 
 								if (SpawnsByID.TryGetValue(spawnid, out var spawn))
 								{
@@ -2838,43 +2838,43 @@ namespace MonoCore
 						}
 					}
 				}
-
-				if (full)
-				{
-					E3.MQ.WriteDelayed($"Refreshing spawn data full");
-				}
-
-
-				//time to blow it all away
-				EmptyLists();
-				//request new spawns!
-				if (Core._MQ2MonoVersion >= 0.412m)
-				{
-					Core.mq_GetSpawns3();
-				}
-				else if (Core._MQ2MonoVersion > 0.23m)
-				{
-					Core.mq_GetSpawns2();
-				}
-				else
-				{
-					Core.mq_GetSpawns();
-				}
-				foreach (var spawn in _spawns)
-				{
-					if (spawn.TypeDesc == "PC")
-					{
-						if (!_spawnsByName.ContainsKey(spawn.Name))
-						{
-							_spawnsByName.TryAdd(spawn.Name, spawn);
-						}
-					}
-					SpawnsByID.TryAdd(spawn.ID, spawn);
-				}
-				//clear the dictionaries and rebuild.
-				//_spawns should have fresh data now!
-				_lastRefesh = Core.StopWatch.ElapsedMilliseconds;
 			}
+			if (full)
+			{
+				E3.MQ.WriteDelayed($"Refreshing spawn data full");
+			}
+
+
+			//time to blow it all away
+			EmptyLists();
+			//request new spawns!
+			if (Core._MQ2MonoVersion >= 0.412m)
+			{
+				Core.mq_GetSpawns3();
+			}
+			else if (Core._MQ2MonoVersion > 0.23m)
+			{
+				Core.mq_GetSpawns2();
+			}
+			else
+			{
+				Core.mq_GetSpawns();
+			}
+			foreach (var spawn in _spawns)
+			{
+				if (spawn.TypeDesc == "PC")
+				{
+					if (!_spawnsByName.ContainsKey(spawn.Name))
+					{
+						_spawnsByName.TryAdd(spawn.Name, spawn);
+					}
+				}
+				SpawnsByID.TryAdd(spawn.ID, spawn);
+			}
+			//clear the dictionaries and rebuild.
+			//_spawns should have fresh data now!
+			_lastRefesh = Core.StopWatch.ElapsedMilliseconds;
+
 		}
 		public List<Int32> GetIDs()
 		{
@@ -3002,9 +3002,9 @@ namespace MonoCore
 			//bodytype desc
 			int slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
-			
-			BodyTypeDesc = StringPool.Shared.GetOrAdd(data.Slice(0,slength), Encoding.ASCII);
-				
+
+			BodyTypeDesc = StringPool.Shared.GetOrAdd(data.Slice(0, slength), Encoding.ASCII);
+
 			data = data.Slice(slength);
 			Buyer = MemoryMarshal.Read<Boolean>(data);
 			data = data.Slice(1);
@@ -3014,7 +3014,7 @@ namespace MonoCore
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
 
-			CleanName = StringPool.Shared.GetOrAdd(data.Slice(0,slength), Encoding.ASCII);
+			CleanName = StringPool.Shared.GetOrAdd(data.Slice(0, slength), Encoding.ASCII);
 
 			data = data.Slice(slength);
 
@@ -3033,7 +3033,7 @@ namespace MonoCore
 			//displayname
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
-			DisplayName = StringPool.Shared.GetOrAdd(data.Slice(0,slength), Encoding.ASCII);
+			DisplayName = StringPool.Shared.GetOrAdd(data.Slice(0, slength), Encoding.ASCII);
 
 			data = data.Slice(slength);
 
@@ -3082,7 +3082,7 @@ namespace MonoCore
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
 			Name = StringPool.Shared.GetOrAdd(data.Slice(0, slength), Encoding.ASCII);
-	
+
 			data = data.Slice(slength);
 
 			Named = MemoryMarshal.Read<Boolean>(data);
@@ -3103,7 +3103,7 @@ namespace MonoCore
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
 			RaceName = StringPool.Shared.GetOrAdd(data.Slice(0, slength), Encoding.ASCII);
-			
+
 
 			data = data.Slice(slength);
 
@@ -3121,7 +3121,7 @@ namespace MonoCore
 			slength = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
 			Suffix = StringPool.Shared.GetOrAdd(data.Slice(0, slength), Encoding.ASCII);
-		
+
 			data = data.Slice(slength);
 
 			Targetable = MemoryMarshal.Read<Boolean>(data);

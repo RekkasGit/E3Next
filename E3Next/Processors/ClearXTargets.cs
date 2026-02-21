@@ -128,25 +128,27 @@ namespace E3Core.Processors
         {
             if (Enabled)
             {
-                //e3util.YieldToEQ();
-                _spawns.RefreshList(full:true); //force a full refresh
-                if (MobToAttack > 0)
+				//e3util.YieldToEQ();
+				if (MobToAttack > 0)
                 {
                     if (_spawns.TryByID(MobToAttack, out var ts))
                     {
                         //is it still alive?
                         if (ts.Dead) MobToAttack = 0;//its dead jim
-                    }
+					}
                     else
                     {
                         MobToAttack = 0;
                     }
                 }
-                //lets see if we have anything on xtarget that is valid
-                if (MobToAttack == 0)
-                {
+			
+				//lets see if we have anything on xtarget that is valid
+				if (MobToAttack == 0)
+				{
+					_spawns.RefreshList(full: true);
+
 					//first check to see if our driver already has a target
-					if(UseMyTarget)
+					if (UseMyTarget)
 					{
 						Int32 targetedMobID = MQ.Query<Int32>("${Target.ID}");
 						if (targetedMobID > 0)
@@ -162,7 +164,7 @@ namespace E3Core.Processors
 					}
 					if (FindLowestHPTarget)
 					{
-						if(Core._MQ2MonoVersion>=0.412m || Debugger.IsAttached)
+						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
 						{
 							unsafe
 							{
@@ -195,9 +197,9 @@ namespace E3Core.Processors
 						{
 							MobToAttack = e3util.GetXtargetHighestHP();
 						}
-						
+
 					}
-					if (MobToAttack<1)
+					if (MobToAttack < 1)
 					{
 						using (MQ.GetDelayLock())
 						{
@@ -217,45 +219,45 @@ namespace E3Core.Processors
 								break;
 							}
 						}
-					
-					}
-					if (MobToAttack <=0)
-                    {
-                        //we are done, stop killing
-                        Enabled = false;
-                        MQ.Write("\agClear Targets complete.");
-                        return;
-                    }
 
-                    //mobs to attack will be sorted by distance.
-                    if (MobToAttack > 0)
-                    {
-                        //pop it off and start assisting.
-                        Int32 mobId = MobToAttack;
-                        Spawn s;
-                        if (_spawns.TryByID(mobId, out s))
-                        {
-                            MQ.Write($"\agClear Targets: \aoIssuing Assist on {s.DisplayName} with id:{s.ID}. who is Dead:{s.Dead}");
-                            Assist.AllowControl = true;
-                            Assist.AssistOn(s.ID, Zoning.CurrentZone.Id);
-                            if (FaceTarget)
-                            {
-                                if(e3util.IsEQLive())
-                                {
-									MQ.Cmd("/face",500);
+					}
+					if (MobToAttack <= 0)
+					{
+						//we are done, stop killing
+						Enabled = false;
+						MQ.Write("\agClear Targets complete.");
+						return;
+					}
+
+					//mobs to attack will be sorted by distance.
+					if (MobToAttack > 0)
+					{
+						//pop it off and start assisting.
+						Int32 mobId = MobToAttack;
+						Spawn s;
+						if (_spawns.TryByID(mobId, out s))
+						{
+							MQ.Write($"\agClear Targets: \aoIssuing Assist on {s.DisplayName} with id:{s.ID}. who is Dead:{s.Dead}");
+							Assist.AllowControl = true;
+							Assist.AssistOn(s.ID, Zoning.CurrentZone.Id);
+							if (FaceTarget)
+							{
+								if (e3util.IsEQLive())
+								{
+									MQ.Cmd("/face", 500);
 								}
-                                else
-                                {
+								else
+								{
 									MQ.Cmd("/face fast");
 								}
-                               
-                            }
-                            if (StickTarget)
-                            {
+
+							}
+							if (StickTarget)
+							{
 								//MQ.Write($"Setting stick with :/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
-                                MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
-                            }
-                            MQ.Delay(500);
+								MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
+							}
+							MQ.Delay(500);
 
 							if (!String.Equals(E3.CharacterSettings.Assist_Type, "Off", StringComparison.OrdinalIgnoreCase))
 							{
@@ -263,35 +265,35 @@ namespace E3Core.Processors
 							}
 
 							if (HasAllFlag)
-                            {
-                                if (Filters.Count > 0)
-                                {
-                                    E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
-                                }
-                                else
-                                {
-                                    E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id}");
-                                }
-                            }
-                            else
-                            {
-                                if (Filters.Count > 0)
-                                {
-                                    E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
-                                }
-                                else
-                                {
-                                    E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
-                                }
-                            }
+							{
+								if (Filters.Count > 0)
+								{
+									E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
+								}
+								else
+								{
+									E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id}");
+								}
+							}
+							else
+							{
+								if (Filters.Count > 0)
+								{
+									E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
+								}
+								else
+								{
+									E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
+								}
+							}
 
-                        }
-                        else
-                        {
-                            MobToAttack = 0;
-                        }
-                    }
-                }
+						}
+						else
+						{
+							MobToAttack = 0;
+						}
+					}
+				}
 
 
             }
