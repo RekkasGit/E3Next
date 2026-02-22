@@ -35,7 +35,7 @@ namespace E3Core.Utility
 		public static Int32 MaxBuffSlots = 42;
 		public static Int32 MaxSongSlots = 30;
 		public static Int32 MaxPetBuffSlots = 30;
-		public static Int32 MobMaxDebuffSlots = 55;
+		public static Int32 MobMaxDebuffSlots = 60; //default of titanium EQ client, this is higher on RoF2, up to 97
 		public static Int32 MaxTempBuffs = 55;
 		public static Int32 MaxNPCBuffSlots = 97; //42 + 55
 		public static Int32 XtargetMax = 13;

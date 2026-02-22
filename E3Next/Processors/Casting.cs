@@ -1,4 +1,5 @@
-﻿using E3Core.Data;
+﻿using CommunityToolkit.HighPerformance.Buffers;
+using E3Core.Data;
 using E3Core.Server;
 using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
@@ -2854,22 +2855,83 @@ namespace E3Core.Processors
 		public static Int64 TimeLeftOnMySpell(Data.Spell spell)
 		{
 
-			for (Int32 i = 1; i < (e3util.MobMaxDebuffSlots+1); i++)
+			if (Core._MQ2MonoVersion >= 0.420m || Debugger.IsAttached)
 			{
-				Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");
-
-				if (spell.SpellID == buffID)
+				unsafe
 				{
-					//check if its mine
-					string casterName = MQ.Query<string>($"${{Target.Buff[{i}].Caster}}");
-					if (E3.CurrentName == casterName)
+					Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+					int length;
+					byte* p = E3.MQ.GetTargetBuffDataPtr(targetID, out length);
+					Int32 counter = 0;
+					if (length > 0)
 					{
-						//its my spell!
-						Int64 millisecondsLeft = MQ.Query<Int64>($"${{Target.BuffDuration[{i}]}}");
-						return millisecondsLeft;
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						int dataStartingLength = data.Length;
+						bool buffsPopulated = false;
+						if (data.Length > 0)
+						{
+							//lets pull out the if buffs are being populated
+							buffsPopulated = MemoryMarshal.Read<Boolean>(data);
+							data = data.Slice(1);
+						}
+						while (data.Length > 0)
+						{
+							counter++;
+							Int32 spellID = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 duration = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 spellType = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 casterNameLength = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							string CasterName = string.Empty;
+							if (casterNameLength > 0)
+							{
+								unsafe
+								{
+									fixed (byte* ptostr = data)
+									{
+										//pull reused strings, without having to allocate them.
+										CasterName = StringPool.Shared.GetOrAdd(data.Slice(0, casterNameLength), Encoding.ASCII);
+									}
+								}
+								data = data.Slice(casterNameLength);
+							}
+							if (spell.SpellID == spellID)
+							{
+								//check if its mine
+								if (E3.CurrentName == CasterName)
+								{
+									//its my spell!
+									Int64 millisecondsLeft = duration * 6 * 1000;
+									return millisecondsLeft;
+								}
+							}
+						}
 					}
 				}
 			}
+			else
+			{
+				for (Int32 i = 1; i <= (e3util.MobMaxDebuffSlots); i++)
+				{
+					Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");
+
+					if (spell.SpellID == buffID)
+					{
+						//check if its mine
+						string casterName = MQ.Query<string>($"${{Target.Buff[{i}].Caster}}");
+						if (E3.CurrentName == casterName)
+						{
+							//its my spell!
+							Int64 millisecondsLeft = MQ.Query<Int64>($"${{Target.BuffDuration[{i}]}}");
+							return millisecondsLeft;
+						}
+					}
+				}
+			}
+				
 			return 0;
 		}
 		public static Int64 TimeLeftOnTargetBuff(Data.Spell spell)
