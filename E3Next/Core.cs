@@ -2624,8 +2624,7 @@ namespace MonoCore
 						spawn.Dispose();
 						continue;
 					}
-				//	E3.MQ.WriteDelayed($"Adding new spawn {spawn.ID}: {spawn.CleanName}");
-
+					//E3.MQ.WriteDelayed($"Adding new spawn {spawn.ID}: {spawn.CleanName}");
 					//its new, so add it to the collections
 					_spawns.Add(spawn);
 					SpawnsByID.TryAdd(spawn.ID, spawn);
@@ -2667,6 +2666,8 @@ namespace MonoCore
 
 		private void RefreshListIfNeeded()
 		{
+			ProcessNewSpawns();
+
 			if (_spawns.Count == 0)
 			{
 				RefreshList();
