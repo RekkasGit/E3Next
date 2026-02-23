@@ -2666,14 +2666,13 @@ namespace MonoCore
 
 		private void RefreshListIfNeeded()
 		{
-			ProcessNewSpawns();
-
+		
 			if (_spawns.Count == 0)
 			{
 				RefreshList();
 				return;
 			}
-			
+			ProcessNewSpawns();
 			Int64 delta = Core.StopWatch.ElapsedMilliseconds - _lastRefesh;
 			if (delta > RefreshTimePeriodInMS)
 			{
