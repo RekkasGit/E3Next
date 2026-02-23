@@ -2480,6 +2480,50 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_ProgressBar(float fraction, float height, float width, string overlay);
 		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_ProgressBarGradient(float fraction, float height, float width, uint color_start,uint color_end,int percent_breaks=0);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_GetWindowDrawList_AddRectFilledMultiColor(float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint col_upr_left, uint col_upr_right,uint col_bot_right, uint col_bot_left);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddQuad(float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint col, float thickness);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddQuadFilled(float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint col);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddTriangle(float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint col, float thickness);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddTriangleFilled(float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint col);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddCircle(float center_x, float center_y, float radius, uint col, int num_segments, float thickness);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddCircleFilled(float center_x, float center_y, float radius, uint col, int num_segments);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddNgon(float center_x, float center_y, float radius, uint col, int num_segments, float thickness);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddNgonFilled(float center_x, float center_y, float radius, uint col, int num_segments);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddEllipse(float center_x, float center_y, float radius_x, float radius_y, uint col, float rot, int num_segments, float thickness);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddEllipseFilled(float center_x, float center_y, float radius_x, float radius_y, uint col, float rot, int num_segments);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddBezierCubic(float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint col, float thickness, int num_segments);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetWindowDrawList_AddBezierQuadratic(float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint col, float thickness, int num_segments);
+
+
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float[] imgui_GetItemRectSize();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float[] imgui_GetStyleColorVec4(int flag);

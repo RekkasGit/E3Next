@@ -1195,7 +1195,7 @@ namespace MonoCore
 
 			if (!_isInit)
 			{
-				IsProcessing = true;
+			
 				if (mqInstance == null)
 				{
 					mqInstance = new MQ();
@@ -1206,7 +1206,7 @@ namespace MonoCore
 				}
 				logInstance = new Logging(mqInstance);
 				StopWatch.Start();
-				//do all necessary setups here
+				IsProcessing = true;
 				MainProcessor.Init();
 				//isProcessing needs to be true before the event processor has started
 				EventProcessor.Init();
@@ -1369,7 +1369,12 @@ namespace MonoCore
 		}
 		public static void OnZoned()
 		{
-			
+			if (!IsProcessing)
+			{
+				return;
+			}
+
+			if (!E3.IsInit) return;
 			Zoning.SetProcessZone();
 			
 			
@@ -1381,6 +1386,9 @@ namespace MonoCore
 			{
 				return;
 			}
+			if (!E3.IsInit) return;
+
+
 			byte* array = mq_GetOnAddSpawnsBuffer(out var length);
 			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(array, length);
 			Int32 ID = MemoryMarshal.Read<Int32>(data);

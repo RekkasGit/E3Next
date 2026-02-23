@@ -92,7 +92,11 @@ namespace E3Core.Processors
 			//don't do work inside of the lock, just set a variable that is local to the thread then check on it.
 			if (shouldProcess)
 			{
-				ShouldProcessZone = false;
+				lock (ShouldProcessZoneLock)
+				{
+					ShouldProcessZone = false;
+				}
+
 				E3.MQ.WriteDelayed("Processing zoning events");
 				using (E3.MQ.GetDelayLock())
 				{

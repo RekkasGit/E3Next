@@ -1830,6 +1830,31 @@ namespace E3Core.UI.Windows.Hud
 										{
 											push.PushItemWidth(-1);
 											imgui_ProgressBar((float)state.PlayerHPPercent / 100f, 0, 0, state.PlayerHPPercent.ToString());
+											//imgui_ProgressBarGradient((float)state.PlayerHPPercent / 100f, 0, 0, GetColor(255,0,0,255),GetColor(0,255,0,255),10);
+
+											/*
+											 // Calculate text position and render it
+	// RenderTextClipped centers the text within the bounding box 'bb'
+	char overlay_text[32];
+	sprintf(overlay_text, "%.0f%%", progress * 100 + 0.01f);
+	ImGui::RenderTextClipped(bb.Min, bb.Max, overlay_text, NULL, NULL, ImVec2(0.5f, 0.5f));
+												if (line_break_percent > 0)
+												{
+													int numberOfLoops = 100 / line_break_percent;
+													float percentJump = line_break_percent / static_cast < float>(100); //20% into 0.2f
+													for (int i = 1; i < numberOfLoops; i++) {
+														float tick_x = bb.Min.x + size.x * (i * percentJump);
+														// Draw a 1-pixel wide vertical line from top to bottom of the bar
+														window->DrawList->AddLine(
+															ImVec2(tick_x, bb.Min.y),
+															ImVec2(tick_x, bb.Max.y),
+															ImGui::GetColorU32(ImGuiCol_Separator), // Use theme's separator color
+															1.f                                    // Thickness
+														);
+													}
+												}
+											 */
+
 										}
 
 									}
