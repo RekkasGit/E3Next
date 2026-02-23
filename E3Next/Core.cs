@@ -18,6 +18,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.UI;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
 
 
 /// <summary>
@@ -1389,7 +1391,7 @@ namespace MonoCore
 			{
 				//if (!Spawns.SpawnsByID.TryGetValue(ID, out s))
 				{
-
+					
 					var spawn = Spawn.Aquire();
 					try
 					{
@@ -2576,19 +2578,15 @@ namespace MonoCore
 		public static Int64 _lastRefesh = 0;
 		public static Int64 RefreshTimePeriodInMS = 500;
 		private static List<Int32> _refershSpawnIdsToDelete = new List<Int32>();
+
+		private static ConcurrentQueue<Spawn> _addedSpawns = new ConcurrentQueue<Spawn>();
+
 		public bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false)
 		{
 			if (refresh && !useCurrentCache) RefreshListIfNeeded();
 
-			if (_spawns.Count == 0)
-			{
-				lock (_spawns)
-				{
-					if (_spawns.Count == 0) RefreshList();
-				}
-
-			}
-
+			if (_spawns.Count == 0) RefreshList();
+		
 			return SpawnsByID.TryGetValue(id, out s);
 		}
 		public bool TryByName(string name, out Spawn s, Boolean useCurrentCache = false)
@@ -2597,11 +2595,7 @@ namespace MonoCore
 
 			if (_spawns.Count == 0)
 			{
-				lock (_spawns)
-				{
-					if (_spawns.Count == 0) RefreshList();
-				}
-
+				if (_spawns.Count == 0) RefreshList();
 			}
 			return _spawnsByName.TryGetValue(name, out s);
 		}
@@ -2615,32 +2609,41 @@ namespace MonoCore
 			}
 			return 0;
 		}
-		public void AddSpawn(Spawn spawn)
-		{
-			lock (_spawns)
-			{
-				//update what we have
-				if (SpawnsByID.TryGetValue(spawn.ID, out var cspawn))
-				{
-					//E3.MQ.WriteDelayed($"Trying to add spawn {spawn.ID} but it already exists, updating values. name before:{cspawn.Name} name after {spawn.Name}");
-					//update what we have and dipose of the new one
-					cspawn.Init(spawn);
-					spawn.Dispose();
-					return;
-				}
 
-				//its new, so add it to the collections
-				_spawns.Add(spawn);
-				SpawnsByID.TryAdd(spawn.ID, spawn);
-				if (spawn.TypeDesc == "PC")
+		private void ProcessNewSpawns()
+		{
+			while (_addedSpawns.Count > 0)
+			{
+				if(_addedSpawns.TryDequeue(out var spawn))
 				{
-					if (_spawnsByName.ContainsKey(spawn.Name))
+					if (SpawnsByID.TryGetValue(spawn.ID, out var cspawn))
 					{
-						_spawnsByName.TryRemove(spawn.Name, out var _);
+				//		E3.MQ.WriteDelayed($"Trying to add spawn {spawn.ID} but it already exists, updating values. name before:{cspawn.Name} name after {spawn.Name}");
+						//update what we have and dipose of the new one
+						cspawn.Init(spawn);
+						spawn.Dispose();
+						continue;
 					}
-					_spawnsByName.TryAdd(spawn.Name, spawn);
+				//	E3.MQ.WriteDelayed($"Adding new spawn {spawn.ID}: {spawn.CleanName}");
+
+					//its new, so add it to the collections
+					_spawns.Add(spawn);
+					SpawnsByID.TryAdd(spawn.ID, spawn);
+					if (spawn.TypeDesc == "PC")
+					{
+						if (_spawnsByName.ContainsKey(spawn.Name))
+						{
+							_spawnsByName.TryRemove(spawn.Name, out var _);
+						}
+						_spawnsByName.TryAdd(spawn.Name, spawn);
+					}
 				}
 			}
+		}
+
+		public void AddSpawn(Spawn spawn)
+		{
+			_addedSpawns.Enqueue(spawn);
 		}
 		public bool Contains(string name)
 		{
@@ -2664,16 +2667,12 @@ namespace MonoCore
 
 		private void RefreshListIfNeeded()
 		{
-			Int32 spawnCount = 0;
-			lock (_spawns)
-			{
-				spawnCount = _spawns.Count;
-			}
 			if (_spawns.Count == 0)
 			{
 				RefreshList();
 				return;
 			}
+			
 			Int64 delta = Core.StopWatch.ElapsedMilliseconds - _lastRefesh;
 			if (delta > RefreshTimePeriodInMS)
 			{
@@ -2690,14 +2689,11 @@ namespace MonoCore
 			_spawnsByName.Clear();
 			SpawnsByID.Clear();
 			foreach (var spawn in _spawns) { spawn.Dispose(); }
-			lock (_spawns)
-			{
-				_spawns.Clear();
-			}
-
+			_spawns.Clear();
 		}
 		public void RefreshList(bool full = false)
 		{
+			ProcessNewSpawns();
 			_refershSpawnIdsToDelete.Clear();
 			//need to mark everything not dirty so we know what get spawns gets us.
 			foreach (var spawn in _spawns)
@@ -2826,14 +2822,9 @@ namespace MonoCore
 									if (spawn.TypeDesc == "PC")
 									{
 										_spawnsByName.TryRemove(spawn.Name, out _);
-
 									}
 									SpawnsByID.TryRemove(spawn.ID, out _);
-									lock (_spawns)
-									{
-										_spawns.Remove(spawn);
-
-									}
+									_spawns.Remove(spawn);
 									spawn.Dispose();
 								}
 							}
@@ -2868,6 +2859,9 @@ namespace MonoCore
 			{
 				Core.mq_GetSpawns();
 			}
+
+			ProcessNewSpawns();
+
 			foreach (var spawn in _spawns)
 			{
 				if (spawn.TypeDesc == "PC")

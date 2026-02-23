@@ -1951,7 +1951,7 @@ namespace E3Core.Processors
 			Spawn s;
 			if (_spawns.TryByID(targetId, out s))
 			{
-				if (s.Level == 1)
+				if (s.Level == 1 || s.BodyTypeDesc== "Untargetable")
 				{
 					//this is a level 1 pet, most likely a familiar
 					if (s.Name.Contains("_familiar"))

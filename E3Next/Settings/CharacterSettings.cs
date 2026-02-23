@@ -1540,8 +1540,8 @@ namespace E3Core.Settings
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons");
 			section.Keys.AddKey("Alpha", "0.8");
 			section.Keys.AddKey("Detached", "False");
-			section.Keys.AddKey("ButtonSizeX", "50");
-			section.Keys.AddKey("ButtonSizeY", "30");
+			section.Keys.AddKey("ButtonSizeX", "80");
+			section.Keys.AddKey("ButtonSizeY", "25");
 			section.Keys.AddKey("SelectedFont", "robo");
 			section.Keys.AddKey("SelectedFontSize", "16");
 
