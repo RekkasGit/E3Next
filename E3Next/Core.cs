@@ -1345,6 +1345,7 @@ namespace MonoCore
 			{
 				return;
 			}
+
 			EventProcessor.ProcessMQEvent(line);
 		}
 		public static void OnCommand(string commandLine)
@@ -1353,6 +1354,7 @@ namespace MonoCore
 			{
 				return;
 			}
+			if (!E3.IsInit) return;
 			if (E3.CharacterSettings.Misc_EchoCommandReceived)
 			{
 				mq_Echo("command received:" + commandLine);
