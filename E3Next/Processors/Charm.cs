@@ -145,7 +145,7 @@ namespace E3Core.Processors
 
 			MQ.Cmd("/dropinvis");
 			MQ.Cmd($"/face fast id {_charmTargetId}");
-			MQ.Cmd("/beep");
+			e3util.Beep();
 			if (E3.CharacterSettings.Charm_PeelTank != String.Empty)
 			{
 				E3.Bots.BroadcastCommandToPerson(E3.CharacterSettings.Charm_PeelTank, "/popup Charm Break!");
@@ -219,7 +219,7 @@ namespace E3Core.Processors
 				
 				// it's dead jim
 				E3.Bots.Broadcast($"\arDisabling charm; {_charmTargetId} is no longer a valid npc");
-				MQ.Cmd("/beep");
+				e3util.Beep();
 				_charmTargetId = 0;
 				return;
 			}

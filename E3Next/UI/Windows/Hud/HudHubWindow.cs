@@ -729,7 +729,7 @@ namespace E3Core.UI.Windows.Hud
 				row.Distance = e3util.GetDecimalString(distance);
 				row.DistanceColor = GetDistanceSeverityColor((double)distance);
 			}
-
+			row.Name = user;	
 			row.DisplayName = user;
 			row.DisplayNameColor = (0.275f, 0.860f, 0.85f, 1);
 			Int32 mana = MQ.Query<Int32>($"${{Group.Member[{user}].PctMana}}");
@@ -5018,7 +5018,23 @@ namespace E3Core.UI.Windows.Hud
 												string command = $"/target id {spawns.ID}";
 												E3ImGUI.MQCommandQueue.Enqueue(command);
 											}
-											break;
+											else
+											{
+												//need to check if they have a corpse in zone
+												string corpseName = stats.Name + "'s corpse";
+												List<Int32> spawnList = _spawns.GetIDs();
+												foreach (var spawnid in spawnList)
+												{
+													if (_spawns.TryByID(spawnid, out var spawn))
+													{
+														if (spawn.CleanName.StartsWith(corpseName))
+														{
+															string command = $"/target id {spawns.ID}";
+														}
+													}
+												}
+											}
+												break;
 									}
 
 								}
