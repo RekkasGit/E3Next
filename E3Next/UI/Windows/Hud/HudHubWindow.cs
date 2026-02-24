@@ -1774,7 +1774,7 @@ namespace E3Core.UI.Windows.Hud
 
 						using (var table = ImGUITable.Aquire())
 						{
-							float sizeOfHPText = imgui_CalcTextSizeX(state.DisplayHPCurrent) + imgui_CalcTextSizeX(state.DisplayHPMax) + imgui_CalcTextSizeX("HP:/");
+							float sizeOfHPText = (imgui_CalcTextSizeX(state.DisplayHPMax)*2) + imgui_CalcTextSizeX("HP:/");//bit more for disc information
 							Int32 numOfColumns = (int)wdithOfWindow / (int)sizeOfHPText;
 
 							if (numOfColumns < 1) numOfColumns = 1;
@@ -1820,7 +1820,7 @@ namespace E3Core.UI.Windows.Hud
 											push.PushItemWidth(-1);
 
 											uint colorStart = GetColor(100, 0, 0, 255);
-											uint colorEnd =  GetColor(255, 0, 0, 100);
+											uint colorEnd =  GetColor(255, 50, 50, 100);
 											E3ImGUI.ProgressBarGradient((float)state.PlayerHPPercent / 100f, sizeOfHPText, 0, colorStart, colorEnd);
 											//imgui_ProgressBar((float)state.PlayerHPPercent / 100f, 0, 0, state.PlayerHPPercent.ToString());
 											
@@ -1883,7 +1883,7 @@ namespace E3Core.UI.Windows.Hud
 											{
 												push.PushItemWidth(-1);
 												uint colorStart = GetColor(0, 0, 100, 255);
-												uint colorEnd = GetColor(0, 0, 255, 100);
+												uint colorEnd = GetColor(50, 50, 255, 100);
 												if (numOfColumns > 1)
 												{
 
@@ -1940,7 +1940,7 @@ namespace E3Core.UI.Windows.Hud
 												push.PushItemWidth(-1);
 												uint colorStart = GetColor(140, 165, 0, 255);
 												uint colorEnd = GetColor(255, 255, 0, 100);
-												E3ImGUI.ProgressBarGradient((float)state.PlayerEndPercent / 100f, 0, 0, colorStart, colorEnd, showpercent: false);
+												E3ImGUI.ProgressBarGradient((float)state.PlayerEndPercent / 100f, sizeOfHPText, 0, colorStart, colorEnd, showpercent: false);
 
 												//imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 0, 0, state.PlayerEndPercent.ToString());
 											}
@@ -1950,23 +1950,45 @@ namespace E3Core.UI.Windows.Hud
 								}
 								if (columnSections[i] == "disc")
 								{
-									if (numOfColumns == 3)
-									{
-										imgui_SetCursorPosY(imgui_GetCursorPosY() - 5);
+									//if (numOfColumns == 3)
+									//{
+									//	imgui_SetCursorPosY(imgui_GetCursorPosY() - 5);
 
-									}
-									else
-									{
-										imgui_SetCursorPosY(imgui_GetCursorPosY() + 5);
-									}
+									//}
+									//else
+									//{
+									//	imgui_SetCursorPosY(imgui_GetCursorPosY() + 5);
+									//}
 									using (var style = PushStyle.Aquire())
 									{
 										style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
-										imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.ActiveDisc);
+
+										float activeDiscSize = imgui_CalcTextSizeX(state.ActiveDisc);
+										int currentFontSize = state.SelectedFontSize;
+										using(var discFont = IMGUI_Fonts.Aquire())
+										{
+											while (activeDiscSize > sizeOfHPText)
+											{
+												currentFontSize--;
+												discFont.PushFontSize(currentFontSize);
+												activeDiscSize = imgui_CalcTextSizeX(state.ActiveDisc);
+											}
+
+											imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, state.ActiveDisc);
+
+										}
 										using (var push = Push.Aquire())
 										{
 											push.PushItemWidth(-1);
-											imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 0, 0, $"({state.Display_ActiveDiscTimeleft}) {e3util.GetDecimalString(state.ActiveDiscPercentLeft)}%");
+											uint colorStart = GetColor(140, 165, 0, 255);
+											uint colorEnd = GetColor(255, 255, 50, 100);
+
+											float x = imgui_GetCursorScreenPosX();
+											float y = imgui_GetCursorScreenPosY();
+											E3ImGUI.ProgressBarGradient((float)state.ActiveDiscPercentLeft / 100f, sizeOfHPText, 0, colorStart, colorEnd, showpercent: true);
+											imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), state.Display_ActiveDiscTimeleft);
+
+											//imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 0, 0, $"({state.Display_ActiveDiscTimeleft}) {e3util.GetDecimalString(state.ActiveDiscPercentLeft)}%");
 										}
 									}
 								}
