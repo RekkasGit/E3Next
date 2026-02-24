@@ -10,6 +10,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -43,21 +44,8 @@ namespace E3Core.UI.Windows.Hud
 		private const string IMGUI_SETTINGS_TARGETINFO_ID = MaterialFont.settings + "##targetinfo_settings";
 
 		private static string IMGUI_TABLE_GROUP_ID = $"E3HubGroupTable-{E3.CurrentName}-{E3.CurrentClass}-{E3.ServerName}";
-		private static Dictionary<Int32, String> _percentToString = new Dictionary<int, string>();
-
-		private static string PercentString(Int32 value)
-		{
-			if (_percentToString.TryGetValue(value, out var returnValue))
-			{
-				return returnValue;
-			}
-			else
-			{
-				string percentString = value + "%";
-				_percentToString.Add(value, percentString);
-				return percentString;
-			}
-		}
+		
+	
 		
 		private static float EaseInOutQuad(float t)
 		{
@@ -1434,6 +1422,7 @@ namespace E3Core.UI.Windows.Hud
 		{
 			var hub_state = _state.GetState<State_HubWindow>();
 			var state = _state.GetState<State_PlayerInfoWindow>();
+
 			using (var font = IMGUI_Fonts.Aquire())
 			{
 				font.PushFont(state.SelectedFont);
@@ -1785,8 +1774,8 @@ namespace E3Core.UI.Windows.Hud
 
 						using (var table = ImGUITable.Aquire())
 						{
-
-							Int32 numOfColumns = (int)wdithOfWindow / (int)(imgui_CalcTextSizeX(state.DisplayHPCurrent) + imgui_CalcTextSizeX(state.DisplayHPMax) + imgui_CalcTextSizeX("HP:/"));
+							float sizeOfHPText = imgui_CalcTextSizeX(state.DisplayHPCurrent) + imgui_CalcTextSizeX(state.DisplayHPMax) + imgui_CalcTextSizeX("HP:/");
+							Int32 numOfColumns = (int)wdithOfWindow / (int)sizeOfHPText;
 
 							if (numOfColumns < 1) numOfColumns = 1;
 							if (numOfColumns > columnSections.Count) numOfColumns = columnSections.Count;
@@ -1798,7 +1787,7 @@ namespace E3Core.UI.Windows.Hud
 
 							for (Int32 i = 0; i < numOfColumns; i++)
 							{
-								//imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 150.0f);
+								imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, sizeOfHPText + 15);
 							}
 
 							for (Int32 i = 0; i < columnSections.Count; i++)
@@ -1829,7 +1818,12 @@ namespace E3Core.UI.Windows.Hud
 										using (var push = Push.Aquire())
 										{
 											push.PushItemWidth(-1);
-											imgui_ProgressBar((float)state.PlayerHPPercent / 100f, 0, 0, state.PlayerHPPercent.ToString());
+
+											uint colorStart = GetColor(100, 0, 0, 255);
+											uint colorEnd =  GetColor(255, 0, 0, 100);
+											E3ImGUI.ProgressBarGradient((float)state.PlayerHPPercent / 100f, sizeOfHPText, 0, colorStart, colorEnd);
+											//imgui_ProgressBar((float)state.PlayerHPPercent / 100f, 0, 0, state.PlayerHPPercent.ToString());
+											
 											//imgui_ProgressBarGradient((float)state.PlayerHPPercent / 100f, 0, 0, GetColor(255,0,0,255),GetColor(0,255,0,255),10);
 
 											/*
@@ -1861,16 +1855,15 @@ namespace E3Core.UI.Windows.Hud
 								}
 								if (columnSections[i] == "resource")
 								{
-									if (numOfColumns > 1)
-									{
-										imgui_SetCursorPosY(imgui_GetCursorPosY() - 3);//to deal with a bug in the table with padding on the 2nd clumn
-									}
-									else
-									{
-										imgui_SetCursorPosY(imgui_GetCursorPosY() + 5);
-									}
+									
 									if (state.PlayerManaMax > 0)
 									{
+										if (numOfColumns > 1)
+										{
+
+											//imgui_Text("");
+											//imgui_SameLine(20);
+										}
 										var mana = state.PlayerManaColor;
 										imgui_Text("MP:");
 										imgui_SameLine(0, 2);
@@ -1889,8 +1882,16 @@ namespace E3Core.UI.Windows.Hud
 											using (var push = Push.Aquire())
 											{
 												push.PushItemWidth(-1);
+												uint colorStart = GetColor(0, 0, 100, 255);
+												uint colorEnd = GetColor(0, 0, 255, 100);
+												if (numOfColumns > 1)
+												{
 
-												imgui_ProgressBar((float)state.PlayerManaPercent / 100f, 0, 0, state.PlayerManaPercent.ToString());
+													//imgui_Text("");
+													//imgui_SameLine(20);
+												}
+												E3ImGUI.ProgressBarGradient((float)state.PlayerManaPercent / 100f, sizeOfHPText, 0, colorStart, colorEnd);
+												//imgui_ProgressBar((float)state.PlayerManaPercent / 100f, 0, 0, state.PlayerManaPercent.ToString());
 											}
 										}
 										float[] barPos = imgui_GetItemRectMin();
@@ -1909,8 +1910,10 @@ namespace E3Core.UI.Windows.Hud
 												using (var push = Push.Aquire())
 												{
 													push.PushItemWidth(-1);
-
-													imgui_ProgressBar(((float)state.PlayerEndPercent / (float)100), 5, 0, "");
+													uint colorStart = GetColor(140, 165, 0, 255);
+													uint colorEnd = GetColor(255, 255, 0, 100);
+													E3ImGUI.ProgressBarGradient((float)state.PlayerEndPercent / 100f, sizeOfHPText, 5, colorStart, colorEnd, showpercent: false);
+													//imgui_ProgressBar(((float)state.PlayerEndPercent / (float)100), 5, 0, "");
 												}
 											}
 										}
@@ -1935,7 +1938,11 @@ namespace E3Core.UI.Windows.Hud
 											using (var push = Push.Aquire())
 											{
 												push.PushItemWidth(-1);
-												imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 0, 0, state.PlayerEndPercent.ToString());
+												uint colorStart = GetColor(140, 165, 0, 255);
+												uint colorEnd = GetColor(255, 255, 0, 100);
+												E3ImGUI.ProgressBarGradient((float)state.PlayerEndPercent / 100f, 0, 0, colorStart, colorEnd, showpercent: false);
+
+												//imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 0, 0, state.PlayerEndPercent.ToString());
 											}
 										}
 									}

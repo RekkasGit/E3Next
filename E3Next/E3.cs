@@ -681,7 +681,7 @@ namespace E3Core.Processors
         public static bool Following = false;
         public static long StartTimeStamp;
 		[ExposedData("Core", "IsInit")]
-		public static bool IsInit = false;
+		public static volatile bool IsInit = false;
 		public static bool IsBadState = false;
         public static IMQ MQ = Core.mqInstance;
         public static Logging Log = Core.logInstance;

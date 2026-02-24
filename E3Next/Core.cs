@@ -977,6 +977,7 @@ namespace MonoCore
 
 		public static bool RegisterCommand(string commandName, Action<CommandMatch> method, string description = "", [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
 		{
+		
 			CommandListItem c = new CommandListItem();
 			c.command = commandName;
 			c.commandwithSpace = c.command + " ";
@@ -989,7 +990,7 @@ namespace MonoCore
 			bool returnvalue = Core.mqInstance.AddCommand(commandName);
 
 			if (returnvalue)
-			{
+			{  // E3.MQ.Write($"Registered command command:{commandName}");
 				if (CommandList.TryAdd(commandName, c))
 				{
 					//now to register the command over.
@@ -1354,7 +1355,7 @@ namespace MonoCore
 			{
 				return;
 			}
-			if (!E3.IsInit) return;
+			//character settings should be created before regsiter command is called. 
 			if (E3.CharacterSettings.Misc_EchoCommandReceived)
 			{
 				mq_Echo("command received:" + commandLine);

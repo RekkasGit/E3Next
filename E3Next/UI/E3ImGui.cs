@@ -1838,6 +1838,23 @@ namespace MonoCore
 			DarkOrange,    // Orange accent variant
 			DarkGreen      // Green accent variant
 		}
+		enum ImDrawFlags
+		{
+			None = 0,
+			Closed = 1 << 0, // PathStroke(), AddPolyline(): specify that shape should be closed (Important: this is always == 1 for legacy reason)
+			RoundCornersTopLeft = 1 << 4, // AddRect(), AddRectFilled(), PathRect(): enable rounding top-left corner only (when rounding > 0.0f, we default to all corners). Was 0x01.
+			RoundCornersTopRight = 1 << 5, // AddRect(), AddRectFilled(), PathRect(): enable rounding top-right corner only (when rounding > 0.0f, we default to all corners). Was 0x02.
+			RoundCornersBottomLeft = 1 << 6, // AddRect(), AddRectFilled(), PathRect(): enable rounding bottom-left corner only (when rounding > 0.0f, we default to all corners). Was 0x04.
+			RoundCornersBottomRight = 1 << 7, // AddRect(), AddRectFilled(), PathRect(): enable rounding bottom-right corner only (when rounding > 0.0f, we default to all corners). Wax 0x08.
+			RoundCornersNone = 1 << 8, // AddRect(), AddRectFilled(), PathRect(): disable rounding on all corners (when rounding > 0.0f). This is NOT zero, NOT an implicit flag!
+			RoundCornersTop = RoundCornersTopLeft | RoundCornersTopRight,
+			RoundCornersBottom = RoundCornersBottomLeft | RoundCornersBottomRight,
+			RoundCornersLeft = RoundCornersBottomLeft | RoundCornersTopLeft,
+			RoundCornersRight = RoundCornersBottomRight | RoundCornersTopRight,
+			RoundCornersAll = RoundCornersTopLeft | RoundCornersTopRight | RoundCornersBottomLeft | RoundCornersBottomRight,
+			RoundCornersDefault_ = RoundCornersAll, // Default to ALL corners if none of the _RoundCornersXX flags are specified.
+			RoundCornersMask_ = RoundCornersAll | RoundCornersNone,
+		};
 		public enum ImGuiWindowFlags
 		{
 			ImGuiWindowFlags_None = 0,
@@ -2399,9 +2416,9 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetFrameHeight();
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_GetWindowDrawList_AddRectFilled(float x1, float y1, float x2, float y2, uint color);
+		public extern static void imgui_GetWindowDrawList_AddRectFilled(float x1, float y1, float x2, float y2, uint color, float rounding = 0.0f, int rounding_corners_flags = (int)ImDrawFlags.RoundCornersAll);
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_GetWindowDrawList_AddRect(float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint color, float rounding, int rounding_corners_flags, float thickness);
+		public extern static void imgui_GetWindowDrawList_AddRect(float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint color, float rounding = 0.0f, int rounding_corners_flags = (int)ImDrawFlags.RoundCornersAll, float thickness=1.0f);
 	
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_GetWindowDrawList_AddText(float x, float y, uint color, string text);
@@ -2480,10 +2497,10 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_ProgressBar(float fraction, float height, float width, string overlay);
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_ProgressBarGradient(float fraction, float height, float width, uint color_start,uint color_end,int percent_breaks=0);
+		public extern static void imgui_ProgressBarGradient(float fraction, float height, float width, uint color_start,uint color_end);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_GetWindowDrawList_GetWindowDrawList_AddRectFilledMultiColor(float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint col_upr_left, uint col_upr_right,uint col_bot_right, uint col_bot_left);
+		public extern static void imgui_GetWindowDrawList_AddRectFilledMultiColor(float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint col_upr_left, uint col_upr_right,uint col_bot_right, uint col_bot_left);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_GetWindowDrawList_AddQuad(float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint col, float thickness);
@@ -2521,12 +2538,27 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_GetWindowDrawList_AddBezierQuadratic(float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint col, float thickness, int num_segments);
 
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_GetStyleVarVec2(int which, out int x, out int y);
 
 
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float[] imgui_GetItemRectSize();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float[] imgui_GetStyleColorVec4(int flag);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float[] imgui_GetWindowDrawList_AddLine(float x, float y, float x_end, float y_end, uint color, float thickness = 1.0f);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_Internal_ItemSize(float x, float y, float text_baseline_y=1f);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_Internal_ItemAdd(float x, float y, float x2, float y2);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_Internal_CalcItemSize(float x, float y, float default_w, out float r_x, out float r_y);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetStyleVarFloat(int which);
 
 		#endregion
 
@@ -3441,8 +3473,56 @@ namespace MonoCore
 
 			#endregion
 		}
+		private static Dictionary<Int32, String> _percentToString = new Dictionary<int, string>();
 
-		private static Dictionary<string, Dictionary<Int64, string>> _intToStringLookup = new Dictionary<string, Dictionary<Int64, string>>();
+		public static string PercentString(Int32 value)
+		{
+			if (_percentToString.TryGetValue(value, out var returnValue))
+			{
+				return returnValue;
+			}
+			else
+			{
+				string percentString = value + "%";
+				_percentToString.Add(value, percentString);
+				return percentString;
+			}
+		}
 
+		public static void ProgressBarGradient(float progress, float width, float height, uint color_start, uint color_end, bool showpercent = true)
+		{
+
+
+			float x = imgui_GetCursorScreenPosX();
+			float y = imgui_GetCursorScreenPosY();
+
+			float availX = imgui_GetContentRegionAvailX();
+			float size_x = 0;
+			float size_y = 0;
+
+			float styleRounding = imgui_GetStyleVarFloat((int)ImGuiStyleVar.FrameRounding);
+			imgui_Internal_CalcItemSize(width,height, availX,out size_x,out size_y);
+			imgui_Internal_ItemSize(size_x, size_y, 1f);
+			imgui_Internal_ItemAdd(x, y, (x + size_x), (y + size_y));
+
+			uint bgColor = imgui_GetColorU32((int)ImGuiCol.FrameBg, 1);
+			float progress_x = x + size_x * progress;
+			//imgui_Text($"x:{x},y:{y},size_x:{size_x},size_y:{size_y}, bgcolor:{bgColor} progress_x:{progress_x}");
+
+			string pecentString = PercentString((int)(progress * 100));
+			var sizeOfPercent= imgui_CalcTextSize(pecentString);
+			imgui_GetWindowDrawList_AddRectFilled(x, y, (x + size_x), (y + size_y), bgColor);
+			if (progress_x > 0)
+			{
+
+				imgui_GetWindowDrawList_AddRectFilledMultiColor(x, y, progress_x, (y + size_y), color_start, color_end, color_end, color_start);
+			
+				if (showpercent) imgui_GetWindowDrawList_AddText(x+(size_x/2 - (sizeOfPercent[0] / 2)), y, GetColor(255, 255, 255, 255), pecentString);
+			}
+			else
+			{
+				if (showpercent) imgui_GetWindowDrawList_AddText(x+(size_x/2 - (sizeOfPercent[0]/2)), y, GetColor(255, 255, 255, 255), "0%");
+			}
+		}
 	}
 }

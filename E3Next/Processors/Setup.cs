@@ -109,14 +109,12 @@ namespace E3Core.Processors
 				ServerSpecific.SeverSpecific_Init();
 
 				GetExposedDataMappedToDictionary();
-
-
-
-
+				
 				foreach (var command in E3.CharacterSettings.StartupCommands)
                 {
-                    MQ.Cmd(command);
-                }
+				//	MQ.Write($"Startup command:{command}");
+                    MQ.Cmd(command,delayed:true);
+			    }
                 _inventoryDataFile = new InventoryDataFile();
 				//needed for IsMyGuild(namn), to supply a user generated list of guild members
 				_guildListFilePath = Settings.BaseSettings.GetSettingsFilePath("GuildList.txt");
