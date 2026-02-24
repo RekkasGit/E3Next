@@ -502,7 +502,10 @@ namespace E3Core.Settings
 		public bool Alerts_RampageMessages = true;
 		[INI_Section("Alerts", "Reflect Messages(On/Off)")]
 		public bool Alerts_ReflectMessages = true;
+		[INI_Section("Alerts", "Buff Stack Messages(On/Off)")]
+		public bool Alerts_BuffStackMessages = true;
 
+		//Buff Stack Messages(On/Off)
 		//debuffs
 		[INI_Section("Debuffs", "Debuff on Assist")]
 		public List<Spell> Debuffs_OnAssist = new List<Spell>();
@@ -1020,6 +1023,7 @@ namespace E3Core.Settings
 			LoadKeyData("Alerts", "Rampage Messages(On/Off)", ParsedData, ref Alerts_RampageMessages);
 			LoadKeyData("Alerts", "Damage Messages(On/Off)", ParsedData, ref Alerts_DamageMessages);
 			LoadKeyData("Alerts", "Reflect Messages(On/Off)", ParsedData, ref Alerts_ReflectMessages);
+			LoadKeyData("Alerts", "Buff Stack Messages(On/Off)", ParsedData, ref Alerts_BuffStackMessages);
 
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
@@ -1563,6 +1567,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Rampage Messages(On/Off)", "On");
 			section.Keys.AddKey("Damage Messages(On/Off)", "On");
 			section.Keys.AddKey("Reflect Messages(On/Off)", "On");
+			section.Keys.AddKey("Buff Stack Messages(On/Off)", "On");
 
 
 			newFile.Sections.AddSection("Assist Settings");

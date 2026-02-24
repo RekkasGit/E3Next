@@ -1268,8 +1268,26 @@ namespace E3Core.Processors
 							{
 								UpdateBuffTimers(s.ID, spell, 15000, 15000, true);
 
-								MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\aw because of stacking issues. \agTrying agian in 15 seconds");
+								//loop over the targets buffs and do stacks with checks. 
 
+								if(E3.CharacterSettings.Alerts_BuffStackMessages)
+								{
+									for (Int32 i = 1; i <= (e3util.MaxBuffSlots); i++)
+									{
+										Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");
+										if (buffID > 0)
+										{
+											string buffName = MQ.Query<String>($"${{Target.Buff[{i}]}}");
+											bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spell.SpellID}].StacksWith[{buffID}]}}");
+											if (!stacksWith)
+											{
+												MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay because of stacking issues with \aw{buffName}\ay. \agTrying again in 15 seconds");
+												break;
+											}
+										}
+									}
+
+								}
 								return BuffBots_ReturnType.Continue;
 							}
 						recastSpell:
@@ -1362,8 +1380,23 @@ namespace E3Core.Processors
 								{
 									//won't stack don't check back for awhile
 									UpdateBuffTimers(s.ID, spell, 30 * 1000, -1, true);
-									MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\aw because of stacking issues. \agTrying agian in 30 seconds");
-
+									//loop over the targets buffs and do stacks with checks. 
+									if (E3.CharacterSettings.Alerts_BuffStackMessages)
+									{
+										for (Int32 i = 1; i <= (e3util.MaxBuffSlots); i++)
+										{
+											Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");
+											if (buffID > 0)
+											{
+												string buffName = MQ.Query<String>($"${{Target.Buff[{i}]}}");
+												bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spell.SpellID}].StacksWith[{buffID}]}}");
+												if (!stacksWith)
+												{
+													MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay because of stacking issues with \aw{buffName}\ay. \agTrying again in 30 seconds");
+												}
+											}
+										}
+									}
 								}
 							}
 							//double ifs check, so if their if included Target, we have it
