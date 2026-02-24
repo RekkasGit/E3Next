@@ -5030,6 +5030,8 @@ namespace E3Core.UI.Windows.Hud
 														if (spawn.CleanName.StartsWith(corpseName))
 														{
 															string command = $"/target id {spawns.ID}";
+															E3ImGUI.MQCommandQueue.Enqueue(command);
+															break;
 														}
 													}
 												}
