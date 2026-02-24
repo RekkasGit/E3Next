@@ -2798,7 +2798,7 @@ namespace MonoCore
 								{
 									//we don't have the OnAddSpawn stuff wired up befre this, do a full refresh
 									//spawn doesn't exist in our delta, will have to do a full refresh. 
-									E3.MQ.WriteDelayed("Refreshing spawn delta: Missing spawn data, doing full refresh");
+									//E3.MQ.WriteDelayed("Refreshing spawn delta: Missing spawn data, doing full refresh");
 
 									needsToDoRefresh = true;
 									break;
