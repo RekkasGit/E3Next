@@ -2093,6 +2093,7 @@ namespace E3Core.Processors
 			if (Casting.SpellBookWndOpen()) return;
 			if (e3util.IsManualControl()) return;
 			if (Casting.IsCasting() && E3.CurrentClass != Class.Bard) return;
+			if (MQ.Query<bool>("${Me.Feigning}")) return; //don't stand up /sit if we are feign
 
 			bool isCasterOrPriest = (E3.CurrentClass & Class.Caster) == E3.CurrentClass || (E3.CurrentClass & Class.Priest) == E3.CurrentClass;
 			//check to see if enabled, and if override ws enabled

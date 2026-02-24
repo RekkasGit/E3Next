@@ -5013,9 +5013,9 @@ namespace E3Core.UI.Windows.Hud
 											break;
 										case "Target":
 										default:
-											if (_spawns.TryByName(stats.Name, out var spawns, useCurrentCache: true))
+											if (_spawns.TryByName(stats.Name, out var targertspawn, useCurrentCache: true))
 											{
-												string command = $"/target id {spawns.ID}";
+												string command = $"/target id {targertspawn.ID}";
 												E3ImGUI.MQCommandQueue.Enqueue(command);
 											}
 											else
@@ -5025,18 +5025,18 @@ namespace E3Core.UI.Windows.Hud
 												List<Int32> spawnList = _spawns.GetIDs();
 												foreach (var spawnid in spawnList)
 												{
-													if (_spawns.TryByID(spawnid, out var spawn))
+													if (_spawns.TryByID(spawnid, out var corpseSpawn,useCurrentCache:true))
 													{
-														if (spawn.CleanName.StartsWith(corpseName))
+														if (corpseSpawn.CleanName.StartsWith(corpseName))
 														{
-															string command = $"/target id {spawns.ID}";
+															string command = $"/target id {corpseSpawn.ID}";
 															E3ImGUI.MQCommandQueue.Enqueue(command);
 															break;
 														}
 													}
 												}
 											}
-												break;
+										break;
 									}
 
 								}

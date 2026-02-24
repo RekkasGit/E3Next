@@ -1428,11 +1428,11 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ShowColumnAggroXTarget", "True");
 			section.Keys.AddKey("ShowColumnAggroMinXTarget", "False");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
-			section.Keys.AddKey("RGBA_NameColor", "0.95,0.85,0.35,1.00");
-			section.Keys.AddKey("RGBA_HealthBar", "1,0,0,0.4");
-			section.Keys.AddKey("RGBA_PetHealthBar", "0,1,0,0.4");
+			section.Keys.AddKey("RGBA_NameColor", "0.9486451,0.9714931,0.9768786,1");
+			section.Keys.AddKey("RGBA_HealthBar", "0.9843137,0,0.1686275,0.4509804");
+			section.Keys.AddKey("RGBA_PetHealthBar", "0.2980392,0.9960784,0,0.4901961");
 			section.Keys.AddKey("Locked", "False");
-			section.Keys.AddKey("DisplayHPBar", "False");
+			section.Keys.AddKey("DisplayHPBar", "True");
 			section.Keys.AddKey("LeftClickAction", "Target");
 			section.Keys.AddKey("ShowTickTimer", "False");
 			section.Keys.AddKey("ShowHotButtons", "True");

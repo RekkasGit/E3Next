@@ -1267,6 +1267,9 @@ namespace E3Core.Processors
 							if (!willStack)
 							{
 								UpdateBuffTimers(s.ID, spell, 15000, 15000, true);
+
+								MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\aw because of stacking issues. \agTrying agian in 15 seconds");
+
 								return BuffBots_ReturnType.Continue;
 							}
 						recastSpell:
@@ -1359,6 +1362,8 @@ namespace E3Core.Processors
 								{
 									//won't stack don't check back for awhile
 									UpdateBuffTimers(s.ID, spell, 30 * 1000, -1, true);
+									MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\aw because of stacking issues. \agTrying agian in 30 seconds");
+
 								}
 							}
 							//double ifs check, so if their if included Target, we have it

@@ -398,12 +398,13 @@ namespace E3Core.Processors
 		}
 		public static void ProcessExternalCommands()
 		{
+			if (!e3util.ShouldCheck(ref _processCommandsTimeStamp, _processCommandsInterval)) return;
 			NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
-			e3util.ProcessE3BCCommands(); //send out data we may have queued up for /e3bc commands
+			//e3util.ProcessE3BCCommands(); //send out data we may have queued up for /e3bc commands
+			EventProcessor.ProcessEventsInQueues();
 			RouterServer.ProcessRequests();//process any tlo request from the UI, or anything really.
 			////process any commands we need to process from the UI
 			PubClient.ProcessRequests();
-			
 		}
 		public static void StateUpdates()
         {
@@ -676,7 +677,8 @@ namespace E3Core.Processors
 			if (!e3util.ShouldCheck(ref _lastGCCollect, 300000)) return;
 			GC.GetTotalMemory(true);
 		}
-
+		public static Int64 _processCommandsInterval = 500;
+		public static Int64 _processCommandsTimeStamp = 0;
         public static bool ActionTaken = false;
         public static bool Following = false;
         public static long StartTimeStamp;
