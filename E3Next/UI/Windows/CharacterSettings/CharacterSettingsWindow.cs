@@ -2523,7 +2523,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_InlineHelpButton("SpellEditor_MinManaHelp", "Require at least this mana percent before the entry can fire.");
 					Render_TwoColumn_TableInt("##SpellEditor_MinEnd", "Min End:", currentSpell.MinEnd, (u) => { currentSpell.MinEnd = u; });
 					Render_InlineHelpButton("SpellEditor_MinEndHelp", "Minimum endurance percent needed to allow this ability to cast.");
-					Render_TwoColumn_TableInt("##SpellEditor_MinPctHP", "Min HP%:", currentSpell.MinHP, (u) => { currentSpell.MinEnd = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_MinPctHP", "Min HP%:", currentSpell.MinHP, (u) => { currentSpell.MinHP = u; });
 					Render_InlineHelpButton("SpellEditor_MinHPPctHelp", "Require your HP percent to be at least this value before casting (handy for cannibalization rules).");
 					Render_TwoColumn_TableInt("##SpellEditor_MinHPTotal", "Min HP Total:", currentSpell.MinHPTotal, (u) => { currentSpell.MinHPTotal = u; });
 					Render_InlineHelpButton("SpellEditor_MinHPTotalHelp", "Minimum absolute HP value you must have before the entry is eligible. Mainly for Shaman Canni");
