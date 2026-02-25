@@ -2608,7 +2608,22 @@ namespace MonoCore
 			{
 				if (_spawns.Count == 0) RefreshList();
 			}
-			return _spawnsByName.TryGetValue(name, out s);
+			if(_spawnsByName.TryGetValue(name, out var tspawn))
+			{
+				if (!tspawn.Dead)
+				{ 
+					s = tspawn;
+					return true;
+				}
+				else
+				{
+					//they are dead remove their name
+					_spawnsByName.TryRemove(name, out _);
+
+				}
+			}
+			s = null;
+			return false;
 		}
 		public Int32 GetIDByName(string name)
 		{
@@ -2635,17 +2650,18 @@ namespace MonoCore
 						spawn.Dispose();
 						continue;
 					}
-					//E3.MQ.WriteDelayed($"Adding new spawn {spawn.ID}: {spawn.CleanName}");
+					//E3.MQ.WriteDelayed($"Adding new spawn {spawn.ID}: {spawn.CleanName} TD:{spawn.TypeDesc}");
 					//its new, so add it to the collections
 					_spawns.Add(spawn);
 					SpawnsByID.TryAdd(spawn.ID, spawn);
-					if (spawn.TypeDesc == "PC")
+					if (spawn.TypeDesc == "PC" && !spawn.Dead)
 					{
-						if (_spawnsByName.ContainsKey(spawn.Name))
+						//E3.MQ.WriteDelayed($"Trying to add Add Spawnid:{spawn.ID} name:{spawn.Name} cname:{spawn.CleanName} to the name collection");
+						if (_spawnsByName.ContainsKey(spawn.CleanName))
 						{
-							_spawnsByName.TryRemove(spawn.Name, out var _);
+							_spawnsByName.TryRemove(spawn.CleanName, out var _);
 						}
-						_spawnsByName.TryAdd(spawn.Name, spawn);
+						_spawnsByName.TryAdd(spawn.CleanName, spawn);
 					}
 				}
 			}
@@ -2791,6 +2807,17 @@ namespace MonoCore
 								spawn.playerZ = p_z;
 								spawn.isDirty = true;
 
+								if(spawn.Dead)
+								{
+									//make sure the spawn in the name collection isn't this one as dead people shouldn't be in there.
+									if (_spawnsByName.TryGetValue(spawn.CleanName, out var nspawn))
+									{
+										if(nspawn.ID == spawn.ID)
+										{
+											_spawnsByName.TryRemove(spawn.CleanName, out var _);
+										}
+									}
+								}
 							}
 							else
 							{
@@ -2832,7 +2859,13 @@ namespace MonoCore
 								{
 									if (spawn.TypeDesc == "PC")
 									{
-										_spawnsByName.TryRemove(spawn.Name, out _);
+										if(_spawnsByName.TryGetValue(spawn.Name, out var dspawn))
+										{
+											if(dspawn.ID == spawn.ID)
+											{
+												_spawnsByName.TryRemove(spawn.Name, out var _);
+											}
+										}
 									}
 									SpawnsByID.TryRemove(spawn.ID, out _);
 									_spawns.Remove(spawn);

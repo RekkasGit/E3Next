@@ -459,19 +459,7 @@ namespace E3Core.Processors
 				}
 			});
 
-			EventProcessor.RegisterCommand("/e3debug_spawns_list", x =>
-			{
-
-				foreach (var spawnid in _spawns.GetIDs().OrderBy(y => y).ToList())
-				{
-					if (_spawns.TryByID(spawnid, out var spawn))
-					{
-						MQ.Write($"ID:{spawn.ID} TD:{spawn.TypeDesc} Dead:{spawn.Dead} X:{spawn.X} Y:{spawn.Y} Z:{spawn.Z} N:{spawn.Name}");
-					}
-				}
-
-			});
-
+			
 			EventProcessor.RegisterCommand("/e3debug_refresh_spawns", x =>
 			{
 				E3.Bots.Broadcast("Refreshing spawn list");
@@ -484,6 +472,26 @@ namespace E3Core.Processors
 
 				_spawns.RefreshList(full: true);
 
+			});
+			EventProcessor.RegisterCommand("/e3debug_spawns_list", x =>
+			{
+
+				foreach (var spawnid in _spawns.GetIDs().OrderBy(y => y).ToList())
+				{
+					if (_spawns.TryByID(spawnid, out var spawn))
+					{
+						MQ.Write($"ID:{spawn.ID} TD:{spawn.TypeDesc} Dead:{spawn.Dead} X:{spawn.X} Y:{spawn.Y} Z:{spawn.Z} N:{spawn.Name} CN:{spawn.CleanName}");
+					}
+				}
+
+			});
+			EventProcessor.RegisterCommand("/e3debug_spawns_list_names", x =>
+			{
+				foreach (var pair in Spawns._spawnsByName)
+				{
+					var spawn = pair.Value;
+					MQ.Write($"Key: {pair.Key} ID:{spawn.ID} TD:{spawn.TypeDesc} Dead:{spawn.Dead} X:{spawn.X} Y:{spawn.Y} Z:{spawn.Z} N:{spawn.Name} CN: {spawn.CleanName}");
+				}
 			});
 		}
 

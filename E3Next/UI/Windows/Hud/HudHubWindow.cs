@@ -4685,11 +4685,11 @@ namespace E3Core.UI.Windows.Hud
 				int columnCount = 1;
 
 				if (state.ShowColumnAggro) { columnCount++; state.ColumNameBuffer.Add("A"); }
+				if (state.ShowColumnAggroXTarget) { columnCount++; state.ColumNameBuffer.Add("AX"); }
 				if (state.ShowColumnHP) { columnCount++; state.ColumNameBuffer.Add("HP"); }
 				if (state.ShowColumnEnd) { columnCount++; state.ColumNameBuffer.Add("End"); }
 				if (state.ShowColumnMana) { columnCount++; state.ColumNameBuffer.Add("Mana"); }
 				if (state.ShowColumnDistance) { columnCount++; state.ColumNameBuffer.Add("Dist"); }
-				if (state.ShowColumnAggroXTarget) { columnCount++; state.ColumNameBuffer.Add("AX"); }
 				if (state.ShowColumnAggroMinXTarget) { columnCount++; state.ColumNameBuffer.Add("AMX"); }
 				using (var stylevar = PushStyle.Aquire())
 				{
