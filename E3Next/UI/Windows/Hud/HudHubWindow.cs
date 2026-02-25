@@ -2573,7 +2573,7 @@ namespace E3Core.UI.Windows.Hud
 				//E3ImGUI.PushCurrentTheme();
 				try
 				{
-					imgui_SetNextWindowSizeWithCond(400, 300, (int)ImGuiCond.FirstUseEver);
+					imgui_SetNextWindowSizeWithCond(400, 600, (int)ImGuiCond.FirstUseEver);
 					using (var window = ImGUIWindow.Aquire())
 					{
 						imgui_SetNextWindowBgAlpha(state.WindowAlpha);
