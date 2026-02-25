@@ -5201,6 +5201,13 @@ namespace E3Core.UI.Windows.Hud
 									imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.AggroPct);
 
 								}
+								if (state.ShowColumnAggroXTarget)
+								{
+									imgui_TableNextColumn();
+									c = stats.AggroColor;
+									imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.XtargetAggroPct);
+
+								}
 								if (state.ShowColumnHP)
 								{
 									imgui_TableNextColumn();
@@ -5232,13 +5239,7 @@ namespace E3Core.UI.Windows.Hud
 										imgui_Text(stats.Distance);
 									}
 								}
-								if (state.ShowColumnAggroXTarget)
-								{
-									imgui_TableNextColumn();
-									c = stats.AggroColor;
-									imgui_TextColored(c.r, c.g, c.b, 1.0f, stats.XtargetAggroPct);
-
-								}
+								
 								if (state.ShowColumnAggroMinXTarget)
 								{
 									imgui_TableNextColumn();
