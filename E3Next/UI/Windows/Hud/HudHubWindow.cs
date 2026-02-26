@@ -999,7 +999,7 @@ namespace E3Core.UI.Windows.Hud
 				if (state.ShowHPAsPercent)
 				{
 					state.DisplayHPCurrent = PercentString(state.PlayerHPPercent);
-					state.DisplayHPMax = string.Empty;
+					state.DisplayHPMax = $"{state.PlayerHPMax:N0}";
 				}
 				else
 				{
@@ -1012,7 +1012,7 @@ namespace E3Core.UI.Windows.Hud
 					if (state.ShowManaAsPercent)
 					{
 						state.DisplayManaCurrent = $"{state.PlayerManaPercent}%";
-						state.DisplayManaMax = string.Empty;
+						state.DisplayManaMax = $"{state.PlayerManaMax:N0}";
 					}
 					else
 					{
@@ -1023,7 +1023,7 @@ namespace E3Core.UI.Windows.Hud
 				if (state.ShowEndAsPercent)
 				{
 					state.DisplayEndCurrent = PercentString(state.PlayerEndPercent);
-					state.DisplayEndMax = string.Empty;
+					state.DisplayEndMax = $"{state.PlayerEndMax:N0}";
 				}
 				else
 				{
@@ -1801,15 +1801,17 @@ namespace E3Core.UI.Windows.Hud
 								{
 									var hp = state.PlayerHPColor;
 									float startHPLocationX = imgui_GetCursorPosX();
-									imgui_Text("HP:");
-									imgui_SameLine(0, 2);
-									imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, state.DisplayHPCurrent);
+									
 									if (!state.ShowHPAsPercent)
 									{
+										imgui_Text("HP:");
+										imgui_SameLine(0, 2);
+										imgui_TextColored(hp.r, hp.g, hp.b, 1.0f, state.DisplayHPCurrent);
 										imgui_SameLine(0, 0); imgui_Text("/");
 										imgui_SameLine(0, 0);
 										imgui_TextColored(0, 1, 0, 1.0f, state.DisplayHPMax);
 									}
+									
 									float endHPLocationX = imgui_GetCursorPosX();
 									using (var style = PushStyle.Aquire())
 									{
@@ -1839,11 +1841,12 @@ namespace E3Core.UI.Windows.Hud
 											//imgui_SameLine(20);
 										}
 										var mana = state.PlayerManaColor;
-										imgui_Text("MP:");
-										imgui_SameLine(0, 2);
-										imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, state.DisplayManaCurrent);
+									
 										if (!state.ShowManaAsPercent)
 										{
+											imgui_Text("MP:");
+											imgui_SameLine(0, 2);
+											imgui_TextColored(mana.r, mana.g, mana.b, 1.0f, state.DisplayManaCurrent);
 											imgui_SameLine(0, 0); imgui_Text("/");
 											imgui_SameLine(0, 0);
 											imgui_TextColored(0, 1, 0, 1.0f, state.DisplayManaMax);
@@ -1889,11 +1892,12 @@ namespace E3Core.UI.Windows.Hud
 									{
 
 										var end = state.PlayerEndColor;
-										imgui_Text("EN:");
-										imgui_SameLine(0, 2);
-										imgui_TextColored(end.r, end.g, end.b, 1.0f, state.DisplayEndCurrent);
+									
 										if (!state.ShowEndAsPercent)
 										{
+											imgui_Text("EN:");
+											imgui_SameLine(0, 2);
+											imgui_TextColored(end.r, end.g, end.b, 1.0f, state.DisplayEndCurrent);
 											imgui_SameLine(0, 0); imgui_Text("/");
 											imgui_SameLine(0, 0);
 											imgui_TextColored(0, 1, 0, 1.0f, state.DisplayEndMax);
