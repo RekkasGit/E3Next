@@ -116,6 +116,11 @@ namespace E3NextConfigEditor.Client
 			return 100;
 		}
 
+		public int PctPetHealth(string name)
+		{
+			return 100;
+		}
+
 		public List<int> PetBuffList(string name)
 		{
 			return new List<int>();

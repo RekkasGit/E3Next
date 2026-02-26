@@ -738,8 +738,17 @@ namespace E3Core.Processors
 							if (invulnerable) continue; //can't heal people who are invulnerable
 
 							//they are a bot and they are in zone
-							Int32 pctHealth = E3.Bots.PctHealth(name);
-						
+
+							Func<String, Int32> findHealth;
+							if (healPets)
+							{
+								findHealth = E3.Bots.PctPetHealth;
+							}
+							else
+							{
+								findHealth = E3.Bots.PctHealth;
+							}
+							Int32 pctHealth = findHealth(name);
 							foreach (var spell in spells)
 							{
 								if (!spell.Enabled) continue;

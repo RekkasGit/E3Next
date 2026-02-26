@@ -21,6 +21,7 @@ namespace E3Core.Processors
        
      //   Boolean InZone(string Name);
         Int32 PctHealth(string name);
+		Int32 PctPetHealth(string name);
 		Boolean InCombat(string name);
 		List<string> BotsInCombat();
 		Int32 PctMana(string name);
@@ -1061,7 +1062,45 @@ namespace E3Core.Processors
 
 			return sharedInfo.Data;
 		}
-        Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
+
+		//${Me.Pet.CurrentHPs}
+		Dictionary<string, SharedNumericDataInt32> _pctPetHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int PctPetHealth(string name)
+		{
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				return 100; //dunno just say full health
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string keyToUse = "${Me.Pet.CurrentHPs}";
+			if (!userTopics.ContainsKey(keyToUse))
+			{
+				//don't have the data yet kick out and assume everything is ok.
+				return 100;//dunno just say full health
+			}
+			if (!_pctPetHealthCollection.ContainsKey(name))
+			{
+				_pctPetHealthCollection.Add(name, new SharedNumericDataInt32 { Data = 100 });
+			}
+			var sharedInfo = _pctPetHealthCollection[name];
+			var entry = userTopics[keyToUse];
+			lock (entry)
+			{
+				if (entry.LastUpdate > sharedInfo.LastUpdate)
+				{
+					if (e3util.Int32TryParse(entry.GetData(), out var result))
+					{
+						sharedInfo.Data = result;
+						sharedInfo.LastUpdate = entry.LastUpdate;
+					}
+				}
+			}
+
+			return sharedInfo.Data;
+		}
+		Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
 		public int PctHealth(string name)
 		{
 			//register the user to get their buff data if its not already there
