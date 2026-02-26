@@ -3404,7 +3404,7 @@ namespace E3Core.UI.Windows.Hud
 					{
 						if (table.BeginTable(tableName, 2, tableFlags, 0f, 0))
 						{
-							imgui_TableSetupColumn("Icon", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 22);
+							imgui_TableSetupColumn("Icon", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, selectedFontSize+8);
 							imgui_TableSetupColumn_Default("Name");
 
 							using (var igFont = IMGUI_Fonts.Aquire())
@@ -3417,7 +3417,7 @@ namespace E3Core.UI.Windows.Hud
 									imgui_TableNextRow();
 									imgui_TableSetColumnIndex(0);
 
-									int smallIconSize = 18;
+									int smallIconSize = selectedFontSize;
 									imgui_DrawSpellIconByIconIndex(stats.iconID, smallIconSize);
 									imgui_TableSetColumnIndex(1);
 
@@ -3447,7 +3447,7 @@ namespace E3Core.UI.Windows.Hud
 
 
 											float widthOfColumn = imgui_GetContentRegionAvailX();
-											imgui_ProgressBar(((float)stats.Duration / (float)stats.MaxDuration_Value), 20, widthOfColumn, "");
+											imgui_ProgressBar(((float)stats.Duration / (float)stats.MaxDuration_Value), selectedFontSize+8, widthOfColumn, "");
 										}
 
 										float[] barPos = imgui_GetItemRectMin();
@@ -3456,7 +3456,7 @@ namespace E3Core.UI.Windows.Hud
 										//this centers the text
 										//float textPosX = barPos[0] + (barSize[0] - textSize[0]) * 0.5f;
 										textPosX = barPos[0];
-										textPosY = barPos[1] + (barSize[1] - 20) * 0.5f;
+										textPosY = barPos[1] + (barSize[1] - selectedFontSize + 8) * 0.5f;
 									}
 									else
 									{
@@ -4149,99 +4149,107 @@ namespace E3Core.UI.Windows.Hud
 			if (debuffState.DebuffInfo.Count > 0)
 			{
 				imgui_Text("Debuffs:");
-				using (var table = ImGUITable.Aquire())
+				if (buffState.ListView)
 				{
-					int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
-										  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
-										  );
-
-					float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
-					if (table.BeginTable("E3HubDebuffTableSimple", 1, tableFlags, 0f, 0))
+					RenderBuffListView(debuffState.DebuffInfo, "E3HubDebuffTableListView", buffState.IconSize, buffState.FadeRatio, buffState.FadeTimeInMS, buffState.NewBuffsTimeStamps, buffState.SelectedFont, buffState.ShowProgressBars, buffState.WindowAlpha, buffState.SelectedFontSize);
+				}
+				else
+				{
+					using (var table = ImGUITable.Aquire())
 					{
-						imgui_TableSetupColumn_Default("Debuffs");
-						List<TableRow_BuffInfo> currentStats = debuffState.DebuffInfo;
-						Int32 counter = 0;
-						foreach (var stats in currentStats)
+						int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit |
+											  ImGuiTableFlags.ImGuiTableFlags_BordersOuter
+											  );
+
+						float tableHeight = Math.Max(150f, imgui_GetContentRegionAvailY());
+						if (table.BeginTable("E3HubDebuffTableSimple", 1, tableFlags, 0f, 0))
 						{
-							if (counter % numberOfBuffsPerRow == 0)
+							imgui_TableSetupColumn_Default("Debuffs");
+							List<TableRow_BuffInfo> currentStats = debuffState.DebuffInfo;
+							Int32 counter = 0;
+							foreach (var stats in currentStats)
 							{
-								imgui_TableNextRow();
-								imgui_TableNextColumn();
-
-							}
-							else
-							{
-								imgui_SameLine(0, 0);
-							}
-							float x = imgui_GetCursorScreenPosX();
-							float y = imgui_GetCursorScreenPosY();
-
-							if (stats.Duration <= 12000) //if not a song
-							{
-								Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds % 12000;
-								long alpha = (Int64)(timeDelta * buffState.FadeRatio);
-
-								imgui_GetWindowDrawList_AddRectFilled(x, y, x + debuffState.IconSize, y + debuffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
-								imgui_DrawSpellIconByIconIndex(stats.iconID, debuffState.IconSize);
-							}
-							else
-							{
-								imgui_DrawSpellIconByIconIndex(stats.iconID, debuffState.IconSize);
-								if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+								if (counter % numberOfBuffsPerRow == 0)
 								{
-									Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
-									long alpha = (Int64)(timeDelta * debuffState.FadeRatio);
+									imgui_TableNextRow();
+									imgui_TableNextColumn();
 
-									if (alpha > 255) alpha = 255;
-									imgui_GetWindowDrawList_AddRectFilled(x, y, x + debuffState.IconSize, y + debuffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
-
-									if (timeDelta > debuffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
 								}
-							}
-
-							if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
-							{
-								float newX = x + (float)(debuffState.IconSize / 2) - (debuffState.FontSize);
-								float newY = y + (float)((debuffState.IconSize) - (debuffState.FontSize * 2));
-
-								imgui_GetWindowDrawList_AddText(newX, newY, GetColor(255, 255, 255, 255), stats.SimpleDuration);
-
-							}
-							if (!String.IsNullOrWhiteSpace(stats.Display_CounterNumber))
-							{
-								imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.Display_CounterNumber);
-
-							}
-							if (imgui_IsItemHovered())
-							{
-								using (var tooltip = ImGUIToolTip.Aquire())
+								else
 								{
-									imgui_Text($"Spell: {stats.Name}");
-									imgui_Text($"SpellID: {stats.SpellID}");
-									imgui_Text($"Duration: {stats.HoverOver_Display_Duration}");
-									if (!String.IsNullOrWhiteSpace(stats.CounterType))
-									{
-										imgui_Text($"CounterType:{stats.CounterType}");
-										imgui_Text($"CounterNumber:{stats.Display_CounterNumber}");
-									}
-									if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
-									{
-										imgui_Separator();
-										foreach (var effect in stats.Spell.SpellEffects)
-										{
-											if (!string.IsNullOrWhiteSpace(effect))
-											{
-												imgui_Text(effect);
+									imgui_SameLine(0, 0);
+								}
+								float x = imgui_GetCursorScreenPosX();
+								float y = imgui_GetCursorScreenPosY();
 
+								if (stats.Duration <= 12000) //if not a song
+								{
+									Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds % 12000;
+									long alpha = (Int64)(timeDelta * buffState.FadeRatio);
+
+									imgui_GetWindowDrawList_AddRectFilled(x, y, x + debuffState.IconSize, y + debuffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
+									imgui_DrawSpellIconByIconIndex(stats.iconID, debuffState.IconSize);
+								}
+								else
+								{
+									imgui_DrawSpellIconByIconIndex(stats.iconID, debuffState.IconSize);
+									if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
+									{
+										Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
+										long alpha = (Int64)(timeDelta * debuffState.FadeRatio);
+
+										if (alpha > 255) alpha = 255;
+										imgui_GetWindowDrawList_AddRectFilled(x, y, x + debuffState.IconSize, y + debuffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
+
+										if (timeDelta > debuffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
+									}
+								}
+
+								if (!String.IsNullOrWhiteSpace(stats.SimpleDuration))
+								{
+									float newX = x + (float)(debuffState.IconSize / 2) - (debuffState.FontSize);
+									float newY = y + (float)((debuffState.IconSize) - (debuffState.FontSize * 2));
+
+									imgui_GetWindowDrawList_AddText(newX, newY, GetColor(255, 255, 255, 255), stats.SimpleDuration);
+
+								}
+								if (!String.IsNullOrWhiteSpace(stats.Display_CounterNumber))
+								{
+									imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.Display_CounterNumber);
+
+								}
+								if (imgui_IsItemHovered())
+								{
+									using (var tooltip = ImGUIToolTip.Aquire())
+									{
+										imgui_Text($"Spell: {stats.Name}");
+										imgui_Text($"SpellID: {stats.SpellID}");
+										imgui_Text($"Duration: {stats.HoverOver_Display_Duration}");
+										if (!String.IsNullOrWhiteSpace(stats.CounterType))
+										{
+											imgui_Text($"CounterType:{stats.CounterType}");
+											imgui_Text($"CounterNumber:{stats.Display_CounterNumber}");
+										}
+										if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
+										{
+											imgui_Separator();
+											foreach (var effect in stats.Spell.SpellEffects)
+											{
+												if (!string.IsNullOrWhiteSpace(effect))
+												{
+													imgui_Text(effect);
+
+												}
 											}
 										}
 									}
 								}
+								counter++;
 							}
-							counter++;
 						}
 					}
 				}
+	
 				imgui_Separator();
 			}
 

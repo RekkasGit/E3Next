@@ -1956,7 +1956,21 @@ namespace MonoCore
 			//needed to deal with certain lock situations and just keeps things simple. 
 			if (E3Core.Processors.Setup._broadcastWrites) E3.Bots.Broadcast(query);
 
-			Core.mq_Echo($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss.fff")} \aw- {query}");
+			ValueStringBuilder sb = new ValueStringBuilder(256);
+			try
+			{
+				sb.Append("\a#336699[");
+				sb.Append(MainProcessor.ApplicationName);
+				sb.Append("]\a-w");
+				sb.Append(System.DateTime.Now.ToString("HH:mm:ss.fff"));
+				sb.Append(" \aw- ");
+				sb.Append(query);
+				Core.mq_Echo(sb.ToString());
+			}
+			finally
+			{
+				sb.Dispose();
+			}
 			return;
 		}
 		public void WriteDelayed(string query, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
@@ -1964,8 +1978,21 @@ namespace MonoCore
 			if (E3Core.Processors.Setup._disableWrites) return;
 			//delay the write until we are in the C# area and the MQ thread are haulted to prevent crashes
 			if (E3Core.Processors.Setup._broadcastWrites) E3.Bots.Broadcast(query);
-
-			DelayedWrites.Enqueue($"\a#336699[{MainProcessor.ApplicationName}]\a-w{System.DateTime.Now.ToString("HH:mm:ss.fff")} \aw- {query}");
+			ValueStringBuilder sb = new ValueStringBuilder(256);
+			try
+			{
+				sb.Append("\a#336699[");
+				sb.Append(MainProcessor.ApplicationName);
+				sb.Append("]\a-w");
+				sb.Append(System.DateTime.Now.ToString("HH:mm:ss.fff"));
+				sb.Append(" \aw- ");
+				sb.Append(query);
+				DelayedWrites.Enqueue(sb.ToString());
+			}
+			finally
+			{
+				sb.Dispose();
+			}
 			return;
 		}
 		public void TraceStart(string methodName)
@@ -2884,7 +2911,7 @@ namespace MonoCore
 			}
 			if (full)
 			{
-				E3.MQ.WriteDelayed($"Refreshing spawn data full");
+				E3.MQ.WriteDelayed("Refreshing spawn data full");
 			}
 
 

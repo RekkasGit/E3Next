@@ -1442,7 +1442,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ShowHotButtons", "True");
 			section.Keys.AddKey("ShowPlayerInfo", "True");
 			section.Keys.AddKey("ShowTargetInfo", "True");
-			section.Keys.AddKey("PeerSortOrder", "Alphabetical");
+			section.Keys.AddKey("PeerSortOrder", "Me On Top");
 
 			newFile.Sections.AddSection("E3Hud_Casting");
 			section = newFile.Sections.GetSectionData("E3Hud_Casting");
