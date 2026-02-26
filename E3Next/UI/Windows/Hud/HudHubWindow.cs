@@ -1822,33 +1822,7 @@ namespace E3Core.UI.Windows.Hud
 											uint colorStart = GetColor(100, 0, 0, 255);
 											uint colorEnd =  GetColor(255, 50, 50, 100);
 											E3ImGUI.ProgressBarGradient((float)state.PlayerHPPercent / 100f, sizeOfHPText, 0, colorStart, colorEnd);
-											//imgui_ProgressBar((float)state.PlayerHPPercent / 100f, 0, 0, state.PlayerHPPercent.ToString());
-											
-											//imgui_ProgressBarGradient((float)state.PlayerHPPercent / 100f, 0, 0, GetColor(255,0,0,255),GetColor(0,255,0,255),10);
-
-											/*
-											 // Calculate text position and render it
-	// RenderTextClipped centers the text within the bounding box 'bb'
-	char overlay_text[32];
-	sprintf(overlay_text, "%.0f%%", progress * 100 + 0.01f);
-	ImGui::RenderTextClipped(bb.Min, bb.Max, overlay_text, NULL, NULL, ImVec2(0.5f, 0.5f));
-												if (line_break_percent > 0)
-												{
-													int numberOfLoops = 100 / line_break_percent;
-													float percentJump = line_break_percent / static_cast < float>(100); //20% into 0.2f
-													for (int i = 1; i < numberOfLoops; i++) {
-														float tick_x = bb.Min.x + size.x * (i * percentJump);
-														// Draw a 1-pixel wide vertical line from top to bottom of the bar
-														window->DrawList->AddLine(
-															ImVec2(tick_x, bb.Min.y),
-															ImVec2(tick_x, bb.Max.y),
-															ImGui::GetColorU32(ImGuiCol_Separator), // Use theme's separator color
-															1.f                                    // Thickness
-														);
-													}
-												}
-											 */
-
+										
 										}
 
 									}
@@ -1884,14 +1858,7 @@ namespace E3Core.UI.Windows.Hud
 												push.PushItemWidth(-1);
 												uint colorStart = GetColor(0, 0, 100, 255);
 												uint colorEnd = GetColor(50, 50, 255, 100);
-												if (numOfColumns > 1)
-												{
-
-													//imgui_Text("");
-													//imgui_SameLine(20);
-												}
 												E3ImGUI.ProgressBarGradient((float)state.PlayerManaPercent / 100f, sizeOfHPText, 0, colorStart, colorEnd);
-												//imgui_ProgressBar((float)state.PlayerManaPercent / 100f, 0, 0, state.PlayerManaPercent.ToString());
 											}
 										}
 										float[] barPos = imgui_GetItemRectMin();
@@ -1913,7 +1880,6 @@ namespace E3Core.UI.Windows.Hud
 													uint colorStart = GetColor(140, 165, 0, 255);
 													uint colorEnd = GetColor(255, 255, 0, 100);
 													E3ImGUI.ProgressBarGradient((float)state.PlayerEndPercent / 100f, sizeOfHPText, 5, colorStart, colorEnd, showpercent: false);
-													//imgui_ProgressBar(((float)state.PlayerEndPercent / (float)100), 5, 0, "");
 												}
 											}
 										}
@@ -1939,10 +1905,8 @@ namespace E3Core.UI.Windows.Hud
 											{
 												push.PushItemWidth(-1);
 												uint colorStart = GetColor(140, 165, 0, 255);
-												uint colorEnd = GetColor(255, 255, 0, 100);
+												uint colorEnd = GetColor(255, 255, 50, 100);
 												E3ImGUI.ProgressBarGradient((float)state.PlayerEndPercent / 100f, sizeOfHPText, 0, colorStart, colorEnd, showpercent: false);
-
-												//imgui_ProgressBar((float)state.PlayerEndPercent / 100f, 0, 0, state.PlayerEndPercent.ToString());
 											}
 										}
 									}
@@ -1950,15 +1914,6 @@ namespace E3Core.UI.Windows.Hud
 								}
 								if (columnSections[i] == "disc")
 								{
-									//if (numOfColumns == 3)
-									//{
-									//	imgui_SetCursorPosY(imgui_GetCursorPosY() - 5);
-
-									//}
-									//else
-									//{
-									//	imgui_SetCursorPosY(imgui_GetCursorPosY() + 5);
-									//}
 									using (var style = PushStyle.Aquire())
 									{
 										style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.DiscProgressBarColor[0], state.DiscProgressBarColor[1], state.DiscProgressBarColor[2], state.DiscProgressBarColor[3]);
@@ -1987,8 +1942,6 @@ namespace E3Core.UI.Windows.Hud
 											float y = imgui_GetCursorScreenPosY();
 											E3ImGUI.ProgressBarGradient((float)state.ActiveDiscPercentLeft / 100f, sizeOfHPText, 0, colorStart, colorEnd, showpercent: true);
 											imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), state.Display_ActiveDiscTimeleft);
-
-											//imgui_ProgressBar((((float)state.ActiveDiscPercentLeft) / (float)100), 0, 0, $"({state.Display_ActiveDiscTimeleft}) {e3util.GetDecimalString(state.ActiveDiscPercentLeft)}%");
 										}
 									}
 								}
