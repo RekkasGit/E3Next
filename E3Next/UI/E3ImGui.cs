@@ -2414,6 +2414,8 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetTextLineHeightWithSpacing();
 		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetTextLineHeight();
+		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetFrameHeight();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_GetWindowDrawList_AddRectFilled(float x1, float y1, float x2, float y2, uint color, float rounding = 0.0f, int rounding_corners_flags = (int)ImDrawFlags.RoundCornersAll);

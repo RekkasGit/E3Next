@@ -109,7 +109,7 @@ namespace E3Core.UI.Windows.Hud
 
 			EventProcessor.RegisterCommand("/e3hud_hub", (x) =>
 			{
-				if (Core._MQ2MonoVersion < 0.421m)
+				if (Core._MQ2MonoVersion < 0.422m)
 				{
 					MQ.Write("This requires MQ2Mono 0.421 or greater");
 					return;
@@ -3442,12 +3442,20 @@ namespace E3Core.UI.Windows.Hud
 
 
 											}
-											style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.RGBA_ListView_ProgressBarColor[0], state.RGBA_ListView_ProgressBarColor[1], state.RGBA_ListView_ProgressBarColor[2], state.RGBA_ListView_ProgressBarColor[3]);
+											//style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.RGBA_ListView_ProgressBarColor[0], state.RGBA_ListView_ProgressBarColor[1], state.RGBA_ListView_ProgressBarColor[2], state.RGBA_ListView_ProgressBarColor[3]);
 
 
 
 											float widthOfColumn = imgui_GetContentRegionAvailX();
-											imgui_ProgressBar(((float)stats.Duration / (float)stats.MaxDuration_Value), selectedFontSize+8, widthOfColumn, "");
+											float progress = (float)stats.Duration / (float)stats.MaxDuration_Value;
+											uint colorStart = GetColor(state.RGBA_ListView_ProgressBarColor[0], state.RGBA_ListView_ProgressBarColor[1], state.RGBA_ListView_ProgressBarColor[2], state.RGBA_ListView_ProgressBarColor[3]);
+											uint colorEnd = GetColor(state.RGBA_ListView_ProgressBarColor[0], state.RGBA_ListView_ProgressBarColor[1], state.RGBA_ListView_ProgressBarColor[2], state.RGBA_ListView_ProgressBarColor[3]);
+
+
+											float textHeight =imgui_GetTextLineHeight();
+										
+											ProgressBarGradient(progress, widthOfColumn, (float)textHeight, colorStart, colorEnd, false);
+											//imgui_ProgressBar(((float)stats.Duration / (float)stats.MaxDuration_Value), selectedFontSize, widthOfColumn, "");
 										}
 
 										float[] barPos = imgui_GetItemRectMin();
@@ -3456,7 +3464,7 @@ namespace E3Core.UI.Windows.Hud
 										//this centers the text
 										//float textPosX = barPos[0] + (barSize[0] - textSize[0]) * 0.5f;
 										textPosX = barPos[0];
-										textPosY = barPos[1] + (barSize[1] - selectedFontSize + 8) * 0.5f;
+										textPosY = barPos[1] + (barSize[1] - selectedFontSize) * 0.5f;
 									}
 									else
 									{
