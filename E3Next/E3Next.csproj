@@ -125,6 +125,7 @@
     <Compile Include="Data\Skills.cs" />
     <Compile Include="Data\SpellRequest.cs" />
     <Compile Include="Data\SpellTimer.cs" />
+    <Compile Include="Data\TaskDataCollector.cs" />
     <Compile Include="Data\Zone.cs" />
     <Compile Include="Processors\BaseProcessor.cs" />
     <Compile Include="Processors\Bots.cs" />
@@ -197,6 +198,7 @@
     <Compile Include="UI\Windows\Hud\HudCastingWindow.cs" />
     <Compile Include="UI\Windows\MemStats\MemoryStatsWindow.cs" />
     <Compile Include="UI\Windows\NetworkingStats\NetStatWindow.cs" />
+    <Compile Include="UI\Windows\Tasks\E3Tasks.cs" />
     <Compile Include="Utility\ArrayBufferPool.cs" />
     <Compile Include="Utility\ByteArrayComparer.cs" />
     <Compile Include="Utility\e3util.cs" />
