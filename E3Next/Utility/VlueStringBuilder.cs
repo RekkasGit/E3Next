@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Google.Protobuf.WellKnownTypes;
+using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 
 namespace E3Core.Utility
@@ -91,6 +93,17 @@ namespace E3Core.Utility
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		private string DebuggerDisplay => AsSpan().ToString();
 
+		public void Append(char[] data, int offset, int length)
+		{
+			Append(data.AsSpan().Slice(offset, length));
+		}
+		public unsafe char[] ReturnCopyBufferFromPool(out Int32 length)
+		{
+			char[] returnValue = ArrayPool<char>.Shared.Rent(_pos);
+			_chars.CopyTo(returnValue.AsSpan());
+			length = _pos;
+			return returnValue;
+		}
 		public override string ToString()
 		{
 			string s = _chars.Slice(0, _pos).ToString();

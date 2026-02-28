@@ -26,6 +26,8 @@ namespace E3Core.Server
         {
             public string topic;
             public string message;
+			public char[] payload;
+			public Int32 payloadLength = 0;
             private topicMessagePair()
             {
                 //do not let others instance us
@@ -43,6 +45,9 @@ namespace E3Core.Server
 			{
                 topic = string.Empty;
                 message = string.Empty;
+				if(payload!=null) ArrayPool<char>.Shared.Return(payload);
+				payload = null;
+				payloadLength = 0;
 				StaticObjectPool.Push(this);
 			}
 			~topicMessagePair()
@@ -132,7 +137,25 @@ namespace E3Core.Server
 				}
 			}
         }
-        private void Process(string filePath)
+
+		public static void AddTopicMessage(string topic, char[] payload,Int32 length)
+		{
+			topicMessagePair t = topicMessagePair.Aquire();
+			t.topic = topic;
+			t.payload = payload;
+			t.payloadLength = length;
+			
+			_topicMessages.Enqueue(t);
+
+			if (_topicMessages.Count > 500)
+			{
+				if (e3util.ShouldCheck(ref _topicBackupMessageTimestamp, _topicBackupMessageInterval))
+				{
+					MQ.Write($"\arTopic messages backed up count:\ag{_topicMessages.Count}");
+				}
+			}
+		}
+		private void Process(string filePath)
         {
 			//need to do this so double parses work in other languages
 			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
@@ -152,16 +175,24 @@ namespace E3Core.Server
                             //using so that we put it back into the memory pool
                             using(value)
                             {
-                                ValueStringBuilder sb = new ValueStringBuilder(1024);
+								ValueStringBuilder sb = new ValueStringBuilder(1024);
                                 try
                                 {
                                     sb.Append(E3.CurrentName);
                                     sb.Append(":");
                                     sb.Append(E3.ServerName);
                                     sb.Append(":");
-                                    sb.Append(value.message);
-								//	pubSocket.SendMoreFrame(value.topic).SendFrame(sb.ToString());
-                                    ReadOnlySpan<char> charSpan = sb.AsSpan();
+									if (value.payloadLength > 0)
+									{
+										sb.Append(value.payload,0, value.payloadLength);
+									}
+									else
+									{
+										sb.Append(value.message);
+
+									}
+									//	pubSocket.SendMoreFrame(value.topic).SendFrame(sb.ToString());
+									ReadOnlySpan<char> charSpan = sb.AsSpan();
 
 									//.net framework doesn't have a lot of the span stuff
 									// in the framework itself, so we have to drop into unsafe code.

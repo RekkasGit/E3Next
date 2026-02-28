@@ -122,7 +122,12 @@ namespace E3Core.Processors
 
 			});
 		}
-
+		public static void Reset()
+		{
+			ClearXTargets.Enabled = false;
+			ClearXTargets.Filters.Clear();
+			ClearXTargets.HasAllFlag = false;
+		}
 		[ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()
         {

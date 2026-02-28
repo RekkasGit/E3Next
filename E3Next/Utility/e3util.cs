@@ -1033,60 +1033,70 @@ namespace E3Core.Utility
 		}
 
 
-		private static string GetPetBuffDataForPubSubHighPerf()
+		public static char[] GetPetBuffDataForPubSubHighPerf(out Int32 returnLength)
 		{
 			unsafe
 			{
-				buffInfoStringBuilder.Clear();
-
-				int length;
-				byte* p = MQ.GetPetBuffDataPtr(out length);
-
-				if (length == 0)
+				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder();
+				try
 				{
-					//	MQ.Write("No Buffs or buffs not found yet");
-					return String.Empty;
+					int length;
+					byte* p = MQ.GetPetBuffDataPtr(out length);
+
+					if (length == 0)
+					{
+						//	MQ.Write("No Buffs or buffs not found yet");
+						returnLength = 0;
+						return null;
+					}
+					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+					int dataStartingLength = data.Length;
+					for (int i = 0; i < e3util.MaxTempBuffs; i++)
+					{
+						Int32 spellID = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 duration = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 spellType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+
+						//MQ.Write($"ID:{ID} D:{duration}  st:{spellType}");
+						if (spellID > 0)
+						{
+							if (duration > 0) duration = duration * 6 * 1000;
+							buffInfoStringBuilder.Append(GetIntStr(spellID));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(duration));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(-1));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(spellType));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(0)); //0 for buff
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(-1));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(-1));
+							buffInfoStringBuilder.Append(":");
+						}
+						if (dataStartingLength - data.Length >= length)
+						{
+							//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+							break;
+						}
+
+					}
+					return buffInfoStringBuilder.ReturnCopyBufferFromPool(out returnLength);
+
 				}
-				ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
-				//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
-				int dataStartingLength = data.Length;
-				for (int i = 0; i < e3util.MaxTempBuffs; i++)
+				finally
 				{
-					Int32 spellID = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 duration = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 spellType = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-
-					//MQ.Write($"ID:{ID} D:{duration}  st:{spellType}");
-					if (spellID > 0)
-					{
-						if (duration > 0) duration = duration * 6 * 1000;
-						buffInfoStringBuilder.Append(spellID);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(duration);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(-1);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(spellType);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(0); //0 for buff
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(-1);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(-1);
-						buffInfoStringBuilder.Append(":");
-					}
-					if (dataStartingLength - data.Length >= length)
-					{
-						//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
-						break;
-					}
-
+					buffInfoStringBuilder.Dispose();
 				}
+				
 			}
-			return buffInfoStringBuilder.ToString();
+			
 		}
 		private static void GetTargetBuffData()
 		{
@@ -1141,128 +1151,135 @@ namespace E3Core.Utility
 				}
 			}
 		}
-		private static string GetBuffDataForPubSubHighPerf()
+		public static char[] GetBuffDataForPubSubHighPerf(out int returnLength)
 		{
 			unsafe
 			{
-				buffInfoStringBuilder.Clear();
-
-				int length;
-				byte* p = Core.mq_GetBuffData(out length);
-				ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
-				//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
-				int dataStartingLength = data.Length;
-				for (int i = 0; i < e3util.MaxBuffSlots; i++)
+				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder();
+				try
 				{
-					Int32 spellID = MemoryMarshal.Read<Int32>(data);
-
-
-
-					data = data.Slice(4);
-					Int32 casterId = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 duration = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-
-					Int32 hitcount = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 spellType = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 counterType = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					bool IsSong = MemoryMarshal.Read<bool>(data);
-					data = data.Slice(1);
-
-					if (spellID > 0)
+					int length;
+					byte* p = Core.mq_GetBuffData(out length);
+					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+					int dataStartingLength = data.Length;
+					for (int i = 0; i < e3util.MaxBuffSlots; i++)
 					{
-						if (duration > 0) duration = duration * 6 * 1000;
+						Int32 spellID = MemoryMarshal.Read<Int32>(data);
 
-						if (!BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
+
+
+						data = data.Slice(4);
+						Int32 casterId = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 duration = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+
+						Int32 hitcount = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 spellType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 counterType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						bool IsSong = MemoryMarshal.Read<bool>(data);
+						data = data.Slice(1);
+
+						if (spellID > 0)
 						{
-							BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
+							if (duration > 0) duration = duration * 6 * 1000;
+
+							if (!BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
+							{
+								BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
+							}
+							buffInfoStringBuilder.Append(GetIntStr(spellID));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(duration));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(hitcount));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(spellType));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(0)); //0 for buff
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(counterType));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(counterTotal));
+							buffInfoStringBuilder.Append(":");
 						}
-						buffInfoStringBuilder.Append(spellID);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(duration);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(hitcount);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(spellType);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(0); //0 for buff
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(counterType);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(counterTotal);
-						buffInfoStringBuilder.Append(":");
+
+
+						if (dataStartingLength - data.Length >= length)
+						{
+							//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+							break;
+						}
+						//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
 					}
-
-
-					if (dataStartingLength - data.Length >= length)
+					for (int i = 0; i < e3util.MaxSongSlots; i++)
 					{
-						//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
-						break;
+						Int32 spellID = MemoryMarshal.Read<Int32>(data);
+
+						data = data.Slice(4);
+						Int32 casterId = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 duration = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 hitcount = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 spellType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 counterType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						bool IsSong = MemoryMarshal.Read<bool>(data);
+						data = data.Slice(1);
+						//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
+						if (spellID > 0)
+						{
+							if (!BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
+							{
+								BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
+							}
+							if (duration > 0) duration = duration * 6 * 1000;
+							buffInfoStringBuilder.Append(GetIntStr(spellID));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(duration));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(hitcount));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(spellType));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(1)); //0 for buff
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(-1));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(-1));
+							buffInfoStringBuilder.Append(":");
+						}
+
+						if (dataStartingLength - data.Length >= length)
+						{
+							//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+							break;
+						}
 					}
-					//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
+
+					return buffInfoStringBuilder.ReturnCopyBufferFromPool(out returnLength);
 
 				}
-				for (int i = 0; i < e3util.MaxSongSlots; i++)
+				finally
 				{
-					Int32 spellID = MemoryMarshal.Read<Int32>(data);
-
-					data = data.Slice(4);
-					Int32 casterId = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 duration = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 hitcount = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 spellType = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 counterType = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					bool IsSong = MemoryMarshal.Read<bool>(data);
-					data = data.Slice(1);
-					//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
-
-					if (spellID > 0)
-					{
-						if (!BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
-						{
-							BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
-						}
-						if (duration > 0) duration = duration * 6 * 1000;
-						buffInfoStringBuilder.Append(spellID);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(duration);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(hitcount);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(spellType);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(1); //0 for buff
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(-1);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(-1);
-						buffInfoStringBuilder.Append(":");
-					}
-
-					if (dataStartingLength - data.Length >= length)
-					{
-						//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
-						break;
-					}
+					buffInfoStringBuilder.Dispose();
 				}
 			}
-			return buffInfoStringBuilder.ToString();
 		}
-
-
 		static System.Text.StringBuilder buffInfoStringBuilder = new StringBuilder();
 		//this is accessed about 1 per second, to publish out buff info, while we are here we will populate the buff cache.
 		public class BuffInfoCacheEntry
@@ -1274,10 +1291,10 @@ namespace E3Core.Utility
 		public static Dictionary<Int32, BuffInfoCacheEntry> _buffInfoCache = new Dictionary<Int32, BuffInfoCacheEntry>();
 		public static string GenerateBuffInfoForPubSub()
 		{
-			if (Core._MQ2MonoVersion >= 0.411m && !Debugger.IsAttached)
-			{
-				return GetBuffDataForPubSubHighPerf();
-			}
+			//if (Core._MQ2MonoVersion >= 0.411m && !Debugger.IsAttached)
+			//{
+			//	return GetBuffDataForPubSubHighPerf();
+			//}
 
 			//using (_log.Trace())
 			{
@@ -1521,10 +1538,10 @@ namespace E3Core.Utility
 		{
 			//using (_log.Trace())
 			{
-				if (Core._MQ2MonoVersion > 0.411m && !Debugger.IsAttached)
-				{
-					return GetPetBuffDataForPubSubHighPerf();
-				}
+				//if (Core._MQ2MonoVersion > 0.411m && !Debugger.IsAttached)
+				//{
+				//	return GetPetBuffDataForPubSubHighPerf();
+				//}
 
 				buffInfoStringBuilder.Clear();
 				//lets look for a partial match.

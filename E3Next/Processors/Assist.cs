@@ -917,6 +917,8 @@ namespace E3Core.Processors
                if (x.args.Count == 0)
                {
 
+                   ClearXTargets.Reset();//turn off clear targets so it doesn't rip away if the clear target mob dies.
+
                    Int32 targetID = MQ.Query<Int32>("${Target.ID}");
 
                    if (targetID == E3.CurrentId)

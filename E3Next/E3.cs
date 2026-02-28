@@ -355,16 +355,20 @@ namespace E3Core.Processors
 		}
 		public static void StateUpdates_Misc()
 		{
-			string combatString = Basics.InCombat(skipBotCheck: true).ToString();
+			bool inCombat =Basics.InCombat(skipBotCheck: true);
+			string combatString = inCombat ? "True" : "False";
+			
 			PubServer.AddTopicMessage("${InCombat}", combatString);
 			PubServer.AddTopicMessage("${Me.InCombat}", combatString);
 			bool invulnerable = MQ.Query<bool>("${Me.Invulnerable}");
-			PubServer.AddTopicMessage("${Me.Invulnerable}", invulnerable.ToString());
+			string invulnerableString = invulnerable ? "True" : "False";
+
+			PubServer.AddTopicMessage("${Me.Invulnerable}", invulnerableString);
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 			//PubServer.AddTopicMessage("${EQ.CurrentHoveredWindowName}", MQ.GetHoverWindowName());
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
 			ZoneID = MQ.Query<Int32>("${Zone.ID}");
-			PubServer.AddTopicMessage("${Me.ZoneID}", ZoneID.ToString());
+			PubServer.AddTopicMessage("${Me.ZoneID}", e3util.GetIntStr(ZoneID));
 			PubServer.AddTopicMessage("${Me.ZoneShortName}", MQ.Query<string>("${Zone.ShortName}"));
 			PubServer.AddTopicMessage("${Me.Instance}", MQ.Query<string>("${Me.Instance}"));
 			
@@ -376,18 +380,30 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.PctMana}", mana);
 			string endurance = MQ.Query<string>("${Me.PctEndurance}");
 			PubServer.AddTopicMessage("${Me.PctEndurance}", endurance);
-			string hps = PctHPs.ToString();
+			string hps = e3util.GetIntStr(PctHPs);
 			PubServer.AddTopicMessage("${Me.PctHPs}", hps);
 			PubServer.AddTopicMessage("${Me.CurrentHPs}", MQ.Query<string>("${Me.CurrentHPs}"));
 			PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
 			PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
 			Int32 pet_hps = MQ.Query<Int32>("${Me.Pet.CurrentHPs}");
-			PubServer.AddTopicMessage("${Me.Pet.CurrentHPs}", pet_hps.ToString());
+			PubServer.AddTopicMessage("${Me.Pet.CurrentHPs}", e3util.GetIntStr(pet_hps));
 		}
 		public static void StateUpdates_BuffInformation()
 		{
-			PubServer.AddTopicMessage("${Me.BuffInfo}", e3util.GenerateBuffInfoForPubSub());
-			PubServer.AddTopicMessage("${Me.PetBuffInfo}", e3util.GeneratePetBuffInfoForPubSub());
+			if (Core._MQ2MonoVersion >= 0.411m && !Debugger.IsAttached)
+			{
+				Int32 length = 0;
+				char[] payload = e3util.GetBuffDataForPubSubHighPerf(out length);
+				PubServer.AddTopicMessage("${Me.BuffInfo}", payload, length);
+				payload = e3util.GetPetBuffDataForPubSubHighPerf(out length);
+				PubServer.AddTopicMessage("${Me.PetBuffInfo}", payload,length);
+			}
+			else
+			{
+				PubServer.AddTopicMessage("${Me.BuffInfo}", e3util.GenerateBuffInfoForPubSub());
+				PubServer.AddTopicMessage("${Me.PetBuffInfo}", e3util.GeneratePetBuffInfoForPubSub());
+
+			}
 		}
 		public static void StateUpdates_AAInformation()
 		{
@@ -459,10 +475,10 @@ namespace E3Core.Processors
 							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 							Int32 xtargetMaxAggro = e3util.GetXTargetMaxAggro(data);
 							if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
-							PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", xtargetMaxAggro.ToString());
+							PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", e3util.GetIntStr(xtargetMaxAggro));
 							Int32 xtargetMinAggro = e3util.GetXTargetMinAggro(data);
 							if (xtargetMinAggro < 0) xtargetMinAggro = 0;
-							PubServer.AddTopicMessage("${Me.XTargetMinAggro}", xtargetMinAggro.ToString());
+							PubServer.AddTopicMessage("${Me.XTargetMinAggro}", e3util.GetIntStr(xtargetMinAggro));
 						}
 
 					}
@@ -470,10 +486,10 @@ namespace E3Core.Processors
 					{
 						Int32 xtargetMaxAggro = e3util.GetXtargetMaxAggro();
 						if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
-						PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", xtargetMaxAggro.ToString());
+						PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", e3util.GetIntStr(xtargetMaxAggro));
 						Int32 xtargetMinAggro = e3util.GetXtargetMinAggro();
 						if (xtargetMinAggro < 0) xtargetMinAggro = 0;
-						PubServer.AddTopicMessage("${Me.XTargetMinAggro}", xtargetMinAggro.ToString());
+						PubServer.AddTopicMessage("${Me.XTargetMinAggro}", e3util.GetIntStr(xtargetMinAggro));
 					}
 
 					
@@ -489,14 +505,14 @@ namespace E3Core.Processors
 						activeDisc = "";
 					}
 					PubServer.AddTopicMessage("${Me.ActiveDisc}", activeDisc);
-					PubServer.AddTopicMessage("${Me.ActiveDiscTimeLeft}", (timeInTicksForDisc * 6).ToString());
+					PubServer.AddTopicMessage("${Me.ActiveDiscTimeLeft}", e3util.GetIntStr(timeInTicksForDisc * 6));
 					Decimal discPercentage = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}");
-					PubServer.AddTopicMessage("${Me.ActiveDiscPerentTimeLeft}", discPercentage.ToString());
+					PubServer.AddTopicMessage("${Me.ActiveDiscPerentTimeLeft}", e3util.GetDecimalString(discPercentage));
 					PubServer.AddTopicMessage("${Me.IsInvis}", IsInvis ? "true" : "false");
 
 					Int32 pctAggr = MQ.Query<Int32>("${Me.PctAggro}");
 					if (pctAggr < 0) pctAggr = 0;
-					PubServer.AddTopicMessage("${Me.PctAggro}", pctAggr.ToString());
+					PubServer.AddTopicMessage("${Me.PctAggro}", e3util.GetIntStr(pctAggr));
 
 					string loc_x = MQ.Query<string>("${Me.X}");
 					string loc_y = MQ.Query<string>("${Me.Y}");
