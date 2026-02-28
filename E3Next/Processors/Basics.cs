@@ -1541,12 +1541,22 @@ namespace E3Core.Processors
 				IsPaused = true;
 				E3.Bots.Broadcast("\arPAUSING E3!");
 
-
+				if (Movement.FollowTargetName != String.Empty || Movement.ChaseTargetName != string.Empty)
+				{
+					Movement.PauseMovement();
+				}
 			}
 			else if (!on && IsPaused == true)
 			{
 				IsPaused = false;
 				E3.Bots.Broadcast("\agRunning E3 again!");
+
+				if(Movement.FollowTargetName!=String.Empty || Movement.ChaseTargetName !=string.Empty)
+				{
+					Movement.Following = false;
+
+				}
+
 			}
 		}
 		private static void PrintE3TReportEntries()
