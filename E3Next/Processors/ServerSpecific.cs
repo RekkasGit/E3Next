@@ -14,7 +14,7 @@ namespace E3Core.Processors
 
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
-		
+
 		//Note you can override commands and regex's using
 		//OverrideRegisteredEvent
 		//OverrideCommandMethod
@@ -28,7 +28,7 @@ namespace E3Core.Processors
 				MQ.Write("Loading EQ_Might specific code!");
 				Init_EQMight();
 			}
-			else if(E3.ServerName=="Lazarus")
+			else if (E3.ServerName == "Lazarus")
 			{
 				MQ.Write("Loading Project Lazarus specific code!");
 
@@ -49,9 +49,9 @@ namespace E3Core.Processors
 				"Obsidian Chalice","the crimson dice","death quill","mirror of the last gaze","Scythe of Silence","Quill of Tomorrow","Ancient Alpha Skull","charred obulus relic"};
 
 				Int32 totalCount = 0;
-				foreach(string item in items)
+				foreach (string item in items)
 				{
-					totalCount+=Inventory.FindItemCompact(item);
+					totalCount += Inventory.FindItemCompact(item);
 
 				}
 				E3.Bots.Broadcast($"Total NV Count: {totalCount}");
@@ -158,6 +158,8 @@ namespace E3Core.Processors
 			EventProcessor.RegisterEvent("EQ_Might_EquipPet", equipPetEvents, (x) =>
 			{
 				string _petrequester;
+				// disable beeps until we finish
+				E3.GeneralSettings.General_BeepNotifications = false;
 
 				if (x.match.Groups.Count <= 1)
 				{
@@ -197,6 +199,14 @@ namespace E3Core.Processors
 					if (_spawns.TryByName(_petrequester, out var requesterSpawn))
 					{
 						var theirPetId = requesterSpawn.PetID;
+						var myPetId = MQ.Query<int>("${Me.Pet.ID}");
+
+						if (myPetId == theirPetId)
+						{
+
+							return;
+						}
+
 						if (theirPetId < 0)
 						{
 							MQ.Cmd($"/t {_petrequester} You don't have a pet to equip!");
@@ -233,64 +243,137 @@ namespace E3Core.Processors
 							var currentX = MQ.Query<double>("${Me.X}");
 							var currentY = MQ.Query<double>("${Me.Y}");
 							var currentZ = MQ.Query<double>("${Me.Z}");
+
 							//give them the mask
-							string thingToAask = "mask of mardu";
-							
-							if(MQ.Query<bool>($"${{FindItem[{thingToAask}]}}"))
+							int my_level = int.Parse(MQ.Query<string>("${Me.Level}"));
+							string thingToAask = String.Empty;
+
+							if (MQ.Query<bool>("${Me.ItemReady[Mightforged Mask of Mowcha]}") && (my_level > 68))
+							{
+								thingToAask = "Mightforged Mask of Mowcha";
+							}
+							else if (MQ.Query<bool>("${Me.ItemReady[Ancient Mask of Mowcha]}") && (my_level > 68))
+							{
+								thingToAask = "Ancient Mask of Mowcha";
+							}
+							else if (MQ.Query<bool>("${Me.ItemReady[Legendary Mask of Mowcha]}") && (my_level > 68))
+							{
+								thingToAask = "Legendary Mask of Mowcha";
+							}
+							else if (MQ.Query<bool>("${Me.ItemReady[Miranda's Mask]}"))
+							{
+								thingToAask = "Miranda's Mask";
+							}
+							else
+							{ thingToAask = "mask of mardu"; }
+
+
+							if (MQ.Query<bool>($"${{FindItem[{thingToAask}]}}"))
 							{
 								string MessagetoAask = string.Concat("/useitem ", thingToAask);
 								MQ.Cmd($"{MessagetoAask}");
 								MQ.Delay(500);
+								//Add a 3 second delay if the clicky is mask of mowcha
+								if ((thingToAask == "Mightforged Mask of Mowcha")
+								|| (thingToAask == "Legendary Mask of Mowcha")
+								|| (thingToAask == "Ancient Mask of Mowcha"))
+								{
+									MQ.Delay(1000);
+									MQ.Delay(1000);
+									MQ.Delay(1000);
+								}
+								Casting.TrueTarget(theirPetId);
+								MQ.Delay(200);
 								e3util.GiveItemOnCursorToTarget(false, false);
 								MQ.Delay(1000);
 
 							}
 
-							if (E3.CurrentClass != Class.Enchanter)
+							else if ((my_level > 69) && (E3.CurrentClass == Class.Magician))
 							{
-								//Give them weapons
-								string thingToAask2 = "Legendary Toxic Edge Earring";
-								string MessagetoAask2 = string.Concat("/useitem ", thingToAask2);
-								if (MQ.Query<bool>($"${{FindItem[{thingToAask2}]}}"))
-								{
-									MQ.Cmd($"{MessagetoAask2}");
-									MQ.Delay(500);
-									e3util.GiveItemOnCursorToTarget(false, false);
-									MQ.Delay(1000);
+								MQ.Cmd("/cast \"Summon Muzzle of Mowcha\"");
 
-									//Give them a second weapon
-									MQ.Cmd($"{MessagetoAask2}");
-									MQ.Delay(500);
-									e3util.GiveItemOnCursorToTarget(false, false);
-									MQ.Delay(1000);
+								MQ.Delay(1000);
+								while (Casting.IsCasting())
+								{
+									MQ.Delay(50);
 								}
-								
+								Casting.TrueTarget(theirPetId);
+								MQ.Delay(200);
+								e3util.GiveItemOnCursorToTarget(false, false);
+								MQ.Delay(1000);
 							}
-							if (E3.CurrentClass == Class.Enchanter)
+
+
+							//Give them weapons
+							string thingToAask2 = "Artifact of Toxic Edge";
+							//  if (MQ.Query<bool>($"${{FindItem[{thingToAask2}]}}"))
+							if (MQ.Query<bool>("${Me.ItemReady[Artifact of Toxic Edge]}"))
 							{
-								//Give them weapons
-								string thingToAask2 = "Artifact of Toxic Edge";
-								string MessagetoAask2 = string.Concat("/useitem ", thingToAask2);
-
-								if (MQ.Query<bool>($"${{FindItem[{thingToAask2}]}}"))
-								{
-									MQ.Cmd($"{MessagetoAask2}");
-									MQ.Delay(500);
-									e3util.GiveItemOnCursorToTarget(false, false);
-									MQ.Delay(1000);
-
-									//Give them a second weapon
-									MQ.Cmd($"{MessagetoAask2}");
-									MQ.Delay(500);
-									e3util.GiveItemOnCursorToTarget(false, false);
-									MQ.Delay(1000);
-								}
-							
+								thingToAask2 = "Artifact of Toxic Edge";
 							}
+							else if (MQ.Query<bool>("${Me.ItemReady[Legendary Toxic Edge Earring]}"))
+							{
+								thingToAask2 = "Legendary Toxic Edge Earring";
+							}
+							else if (MQ.Query<bool>("${Me.ItemReady[Toxic Edge Earring]}"))
+							{
+
+								thingToAask2 = "Toxic Edge Earring";
+							}
+							else if (MQ.Query<bool>("${Me.ItemReady[Artifact of Baat]}"))
+							{
+								thingToAask2 = "Artifact of Baat";
+							}
+
+							else if (MQ.Query<bool>("${Me.ItemReady[Legendary Gloves of Strongboom]}"))
+							{
+								thingToAask2 = "Legendary Gloves of Strongboom";
+							}
+
+							else if (MQ.Query<bool>("${Me.ItemReady[Gloves of Strongboom]}"))
+							{
+								thingToAask2 = "Gloves of Strongboom";
+							}
+							else
+							{ thingToAask2 = "Gloves of Ixiblat"; }
+
+
+
+
+							string MessagetoAask2 = string.Concat("/useitem ", thingToAask2);
+
+
+							if (MQ.Query<bool>($"${{FindItem[{thingToAask2}]}}"))
+							{
+								MQ.Cmd($"{MessagetoAask2}");
+								MQ.Delay(500);
+								e3util.GiveItemOnCursorToTarget(false, false);
+								MQ.Delay(1000);
+
+								//Give them a second weapon
+								MQ.Cmd($"{MessagetoAask2}");
+								MQ.Delay(500);
+								e3util.GiveItemOnCursorToTarget(false, false);
+								MQ.Delay(1000);
+							}
+
+
+
 
 
 							//give them the belt
 							string thingToAask3 = "Legendary Goblin Mask of Stability";
+
+							if (MQ.Query<bool>("${Me.ItemReady[Legendary Goblin Mask of Stability]}"))
+							{
+								thingToAask3 = "Legendary Goblin Mask of Stability";
+							}
+							else
+							{ thingToAask3 = "Goblin Mask of Stability"; }
+
+
+
 							string MessagetoAask3 = string.Concat("/useitem ", thingToAask3);
 
 							if (MQ.Query<bool>($"${{FindItem[{thingToAask3}]}}"))
@@ -300,7 +383,40 @@ namespace E3Core.Processors
 								e3util.GiveItemOnCursorToTarget(false, false);
 								MQ.Delay(1000);
 							}
-								
+
+							//Give them Mage Armor items
+							string thingToAask4 = "Ancestral Girdle of the High Summoner";
+
+							if (MQ.Query<bool>("${Me.ItemReady[Ancestral Girdle of the High Summoner]}"))
+							{
+								thingToAask4 = "Ancestral Girdle of the High Summoner";
+							}
+							else if (MQ.Query<bool>("${Me.ItemReady[Ancient Girdle of the High Summoner]}"))
+							{
+								thingToAask4 = "Ancient Girdle of the High Summoner";
+							}
+
+							else if (MQ.Query<bool>("${Me.ItemReady[Girdle of the High Summoner]}"))
+							{
+								thingToAask4 = "Girdle of the High Summoner";
+							}
+
+
+
+							string MessagetoAask4 = string.Concat("/useitem ", thingToAask4);
+
+							if (MQ.Query<bool>($"${{FindItem[{thingToAask4}]}}"))
+							{
+								MQ.Cmd($"{MessagetoAask4}");
+								MQ.Delay(500);
+								while (Casting.IsCasting())
+								{
+									MQ.Delay(50);
+								}
+								e3util.GiveItemOnCursorToTarget(false, false);
+								MQ.Delay(1000);
+							}
+
 							MQ.Cmd($"/t {_petrequester} Pet equipped! You're good to go!");
 
 							//At the end, move back to starting loc
@@ -313,6 +429,13 @@ namespace E3Core.Processors
 						MQ.Cmd($"/t {_petrequester} Sorry, I am not currently accepting requests for pet weapons even from Guild Mates");
 						return;
 					}
+
+					//re-enable beeps at the end
+					E3.GeneralSettings.General_BeepNotifications = true;
+
+					//delete the mage armor bag if it is still on cursor
+					MQ.Cmd($"/if (${{Select[${{Cursor.ID}},17310]}}>0) /destroy");
+
 				}
 			});
 
@@ -332,18 +455,126 @@ namespace E3Core.Processors
 					if (Casting.TrueTarget(myPetId))
 					{
 						//give them the mask
-						string thingToAask = "mask of mardu";
-						string MessagetoAask = string.Concat("/useitem ", thingToAask);
-						MQ.Cmd($"{MessagetoAask}");
-						MQ.Delay(500);
-						e3util.GiveItemOnCursorToTarget(false, false);
-						MQ.Delay(1000);
 
-						if (E3.CurrentClass != Class.Enchanter)
+						int my_level = int.Parse(MQ.Query<string>("${Me.Level}"));
+						string thingToAask = "Mightforged Mask of Mowcha";
+						int mask_found = 0;
+
+						if (MQ.Query<bool>("${Me.ItemReady[Mightforged Mask of Mowcha]}") && (my_level > 68))
 						{
-							//Give them weapons
-							string thingToAask2 = "Legendary Toxic Edge Earring";
-							string MessagetoAask2 = string.Concat("/useitem ", thingToAask2);
+							mask_found = 1;
+
+						}
+
+						else if (MQ.Query<bool>("${Me.ItemReady[Ancient Mask of Mowcha]}") && (my_level > 68))
+						{
+							mask_found = 1;
+							thingToAask = "Ancient Mask of Mowcha";
+						}
+
+						else if (MQ.Query<bool>("${Me.ItemReady[Legendary Mask of Mowcha]}") && (my_level > 68))
+						{
+							mask_found = 1;
+							thingToAask = "Legendary Mask of Mowcha";
+						}
+
+						else if (MQ.Query<bool>("${Me.ItemReady[Miranda's Mask]}"))
+						{
+							mask_found = 1;
+							thingToAask = "Miranda's Mask";
+						}
+						else
+						{ thingToAask = "mask of mardu"; }
+
+
+						string _MuzzleSpell = "Summon Muzzle of Mowcha";
+
+						if (MQ.Query<bool>($"${{FindItem[{thingToAask}]}}"))
+						{
+							string MessagetoAask = string.Concat("/useitem ", thingToAask);
+							MQ.Cmd($"{MessagetoAask}");
+							//Add a 3 second delay if the clicky is mask of mowcha
+							if ((thingToAask == "Mightforged Mask of Mowcha")
+							|| (thingToAask == "Legendary Mask of Mowcha")
+							|| (thingToAask == "Ancient Mask of Mowcha"))
+							{
+								MQ.Delay(1000);
+								while (Casting.IsCasting())
+								{
+									MQ.Delay(50);
+								}
+							}
+							MQ.Delay(1000);
+							e3util.GiveItemOnCursorToTarget(false, false);
+							MQ.Delay(1000);
+
+						}
+
+						else if ((my_level > 69) && (E3.CurrentClass == Class.Magician))
+						{
+							MQ.Cmd("/cast \"Summon Muzzle of Mowcha\"");
+
+							MQ.Delay(1000);
+
+							while (Casting.IsCasting())
+							{
+								MQ.Delay(50);
+							}
+							Casting.TrueTarget(myPetId);
+							MQ.Delay(1000);
+							e3util.GiveItemOnCursorToTarget(false, false);
+							MQ.Delay(1000);
+						}
+
+
+						//Give them weapons
+						int weapon_found = 0;
+						string thingToAask2 = "Artifact of Toxic Edge";
+						//  if (MQ.Query<bool>($"${{FindItem[{thingToAask2}]}}"))
+						if (MQ.Query<bool>("${Me.ItemReady[Artifact of Toxic Edge]}"))
+						{
+							weapon_found = 1;
+							thingToAask2 = "Artifact of Toxic Edge";
+						}
+
+
+						else if ((weapon_found == 0) && MQ.Query<bool>("${Me.ItemReady[Legendary Toxic Edge Earring]}"))
+						{
+							weapon_found = 1;
+							thingToAask2 = "Legendary Toxic Edge Earring";
+						}
+
+						else if ((weapon_found == 0) && MQ.Query<bool>("${Me.ItemReady[Toxic Edge Earring]}"))
+						{
+							weapon_found = 1;
+							thingToAask2 = "Toxic Edge Earring";
+						}
+
+
+						else if ((weapon_found == 0) && MQ.Query<bool>("${Me.ItemReady[Artifact of Baat]}"))
+						{
+							weapon_found = 1;
+							thingToAask2 = "Artifact of Baat";
+						}
+
+						else if ((weapon_found == 0) && MQ.Query<bool>("${Me.ItemReady[Legendary Gloves of Strongboom]}"))
+						{
+							weapon_found = 1;
+							thingToAask2 = "Legendary Gloves of Strongboom";
+						}
+
+						else if ((weapon_found == 0) && MQ.Query<bool>("${Me.ItemReady[Gloves of Strongboom]}"))
+						{
+							weapon_found = 1;
+							thingToAask2 = "Gloves of Strongboom";
+						}
+
+						else
+						{ thingToAask2 = "Gloves of Ixiblat"; }
+
+						string MessagetoAask2 = string.Concat("/useitem ", thingToAask2);
+						if (MQ.Query<bool>($"${{FindItem[{thingToAask2}]}}"))
+						{
 							MQ.Cmd($"{MessagetoAask2}");
 							MQ.Delay(500);
 							e3util.GiveItemOnCursorToTarget(false, false);
@@ -354,39 +585,68 @@ namespace E3Core.Processors
 							MQ.Delay(500);
 							e3util.GiveItemOnCursorToTarget(false, false);
 							MQ.Delay(1000);
-
 						}
-						if (E3.CurrentClass == Class.Enchanter)
-						{
-							//Give them weapons
-							string thingToAask2 = "Artifact of Toxic Edge";
-							string MessagetoAask2 = string.Concat("/useitem ", thingToAask2);
-							MQ.Cmd($"{MessagetoAask2}");
-							MQ.Delay(500);
-							e3util.GiveItemOnCursorToTarget(false, false);
-							MQ.Delay(1000);
 
-							//Give them a second weapon
-							MQ.Cmd($"{MessagetoAask2}");
-							MQ.Delay(500);
-							e3util.GiveItemOnCursorToTarget(false, false);
-							MQ.Delay(1000);
-
-						}
 						//give them the belt
 						string thingToAask3 = "Legendary Goblin Mask of Stability";
+						if (MQ.Query<bool>("${Me.ItemReady[Legendary Goblin Mask of Stability]}"))
+						{
+							thingToAask3 = "Legendary Goblin Mask of Stability";
+						}
+						else
+						{ thingToAask3 = "Goblin Mask of Stability"; }
+
+
+
 						string MessagetoAask3 = string.Concat("/useitem ", thingToAask3);
-						MQ.Cmd($"{MessagetoAask3}");
-						MQ.Delay(500);
-						Casting.TrueTarget(myPetId);
-						e3util.GiveItemOnCursorToTarget(false, false);
-						MQ.Delay(1000);
+
+						if (MQ.Query<bool>($"${{FindItem[{thingToAask3}]}}"))
+						{
+							MQ.Cmd($"{MessagetoAask3}");
+							MQ.Delay(500);
+							e3util.GiveItemOnCursorToTarget(false, false);
+							MQ.Delay(1000);
+						}
+
+						//Give them Mage Armor items
+						string thingToAask4 = "Ancestral Girdle of the High Summoner";
+
+						if (MQ.Query<bool>("${Me.ItemReady[Ancestral Girdle of the High Summoner]}"))
+						{
+							thingToAask4 = "Ancestral Girdle of the High Summoner";
+						}
+						else if (MQ.Query<bool>("${Me.ItemReady[Ancient Girdle of the High Summoner]}"))
+						{
+							thingToAask4 = "Ancient Girdle of the High Summoner";
+						}
+						else if (MQ.Query<bool>("${Me.ItemReady[Girdle of the High Summoner]}"))
+						{
+							thingToAask4 = "Girdle of the High Summoner";
+						}
+
+
+
+						string MessagetoAask4 = string.Concat("/useitem ", thingToAask4);
+
+						if (MQ.Query<bool>($"${{FindItem[{thingToAask4}]}}"))
+						{
+							MQ.Cmd($"{MessagetoAask4}");
+							MQ.Delay(500);
+							while (Casting.IsCasting())
+							{
+								MQ.Delay(50);
+							}
+							e3util.GiveItemOnCursorToTarget(false, false);
+							MQ.Delay(1000);
+						}
+
+						//delete the mage armor bag if it is still on cursor
+						MQ.Cmd($"/if (${{Select[${{Cursor.ID}},17310]}}>0) /destroy");
 
 
 					}
 				}
 			});
-
 		}
 	}
 }
