@@ -2933,28 +2933,7 @@ namespace E3Core.UI.Windows.Hud
 							imgui_SameLine(0);
 							imgui_Text("Show Progress Bars");
 
-							imgui_Separator();
-							using (var style = PushStyle.Aquire())
-							{
-								style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-								imgui_Text("Font");
-							}
-
-							using (var combo = ImGUICombo.Aquire())
-							{
-								if (combo.BeginCombo("##Select Font for SongList", state.SelectedFont))
-								{
-									foreach (var pair in E3ImGUI.FontList)
-									{
-										bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
-
-										if (imgui_Selectable($"{pair.Key}", sel))
-										{
-											state.SelectedFont = pair.Key;
-										}
-									}
-								}
-							}
+							
 						}
 
 					}
