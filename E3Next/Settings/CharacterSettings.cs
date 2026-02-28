@@ -1534,6 +1534,8 @@ namespace E3Core.Settings
 
 			if(E3Hud_Hub_HotButtons_UseDefaultDynamicButtons)
 			{
+				section.Keys.AddKey("Invite", "/invite");
+				section.Keys.AddKey("Disband", "/disband");
 				section.Keys.AddKey("Follow Me", "/followme");
 				section.Keys.AddKey("Follow off", "/followoff");
 				section.Keys.AddKey("Click It", "/clickit");
