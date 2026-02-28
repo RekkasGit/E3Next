@@ -1910,7 +1910,7 @@ namespace E3Core.UI.Windows.Hud
 												push.PushItemWidth(-1);
 												uint colorStart = GetColor(140, 165, 0, 255);
 												uint colorEnd = GetColor(255, 255, 50, 100);
-												E3ImGUI.ProgressBarGradient((float)state.PlayerEndPercent / 100f, sizeOfHPText, 0, colorStart, colorEnd, showpercent: false);
+												E3ImGUI.ProgressBarGradient((float)state.PlayerEndPercent / 100f, sizeOfHPText, 0, colorStart, colorEnd, showpercent: true);
 											}
 										}
 									}
