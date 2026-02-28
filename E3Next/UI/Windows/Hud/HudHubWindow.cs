@@ -4283,21 +4283,21 @@ namespace E3Core.UI.Windows.Hud
 									Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds % 12000;
 									long alpha = (Int64)(timeDelta * buffState.FadeRatio);
 
-									imgui_GetWindowDrawList_AddRectFilled(x, y, x + debuffState.IconSize, y + debuffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
-									imgui_DrawSpellIconByIconIndex(stats.iconID, debuffState.IconSize);
+									imgui_GetWindowDrawList_AddRectFilled(x, y, x + buffState.IconSize, y + buffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
+									imgui_DrawSpellIconByIconIndex(stats.iconID, buffState.IconSize);
 								}
 								else
 								{
-									imgui_DrawSpellIconByIconIndex(stats.iconID, debuffState.IconSize);
+									imgui_DrawSpellIconByIconIndex(stats.iconID, buffState.IconSize);
 									if (buffState.NewBuffsTimeStamps.TryGetValue(stats.SpellID, out var ts))
 									{
 										Int64 timeDelta = Core.StopWatch.ElapsedMilliseconds - ts;
-										long alpha = (Int64)(timeDelta * debuffState.FadeRatio);
+										long alpha = (Int64)(timeDelta * buffState.FadeRatio);
 
 										if (alpha > 255) alpha = 255;
-										imgui_GetWindowDrawList_AddRectFilled(x, y, x + debuffState.IconSize, y + debuffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
+										imgui_GetWindowDrawList_AddRectFilled(x, y, x + buffState.IconSize, y + buffState.IconSize, GetColor(255, 0, 0, 255 - (uint)alpha));
 
-										if (timeDelta > debuffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
+										if (timeDelta > buffState.FadeTimeInMS) buffState.NewBuffsTimeStamps.Remove(stats.SpellID);
 									}
 								}
 
