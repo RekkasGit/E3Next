@@ -1086,10 +1086,10 @@ namespace E3Core.UI.Windows.Hud
 
 			state.HasTarget = true;
 
-			if (state.NoTargetTextWidth == 0)
-			{
-				state.NoTargetTextWidth = imgui_CalcTextSizeX(state.NoTargetText);
-			}
+			//if (state.NoTargetTextWidth == 0)
+			//{
+			//	state.NoTargetTextWidth = imgui_CalcTextSizeX(state.NoTargetText);
+			//}
 
 
 			if (_spawns.TryByID(targetID, out var spawn, useCurrentCache: true))
@@ -2006,7 +2006,7 @@ namespace E3Core.UI.Windows.Hud
 					float noTargetWidth;
 
 
-					noTargetWidth = tiState.NoTargetTextWidth;
+					noTargetWidth = imgui_CalcTextSizeX(state.NoTargetText);
 
 					float noTargetCenterX = (widthAvail - noTargetWidth) / 2f;
 					if (noTargetCenterX < 0) noTargetCenterX = 0;
