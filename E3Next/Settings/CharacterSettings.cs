@@ -1878,10 +1878,10 @@ namespace E3Core.Settings
 				section.Keys.AddKey("MainIf", "!(${InCombat})");
 				section.Keys.AddKey("CombatIf", "${InCombat}");
 
-				newFile.Sections.AddSection("main Meloddy");
+				newFile.Sections.AddSection("main Melody");
 				section = newFile.Sections.GetSectionData("main Melody");
 				section.Keys.AddKey("Song", "");
-				newFile.Sections.AddSection("combat Meloddy");
+				newFile.Sections.AddSection("combat Melody");
 				section = newFile.Sections.GetSectionData("combat Melody");
 				section.Keys.AddKey("Song", "");
 
