@@ -227,7 +227,6 @@ namespace E3Core.Processors
 			}
 			
             if (targetId != AssistTargetID && manualControl) return;
-            _spawns.RefreshList();
             if (_spawns.TryByID(AssistTargetID, out s))
             {
                 //if range/melee
@@ -531,7 +530,7 @@ namespace E3Core.Processors
                 Int32 mobid = MQ.Query<Int32>("${Target.ID}");
                 if (_spawns.TryByID(mobid, out var spawn))
                 {
-                    if (spawn.Aggressive && spawn.TypeDesc != "Corpse")
+                    if (spawn.Aggressive && !spawn.Dead)
                     {
                         Int32 targetHPPct = MQ.Query<Int32>("${Target.PctHPs}");
                         if (targetHPPct > 0 && targetHPPct <= E3.CharacterSettings.Assist_AutoAssistPercent)
@@ -592,10 +591,14 @@ namespace E3Core.Processors
         public static void AssistOn(Int32 mobID, Int32 zoneId)
         {
 
-            if (zoneId != Zoning.CurrentZone.Id) return;
-			//clear in case its not reset by other means
-			//or you want to attack in enrage
-			_assistIsEnraged = false;
+            if (zoneId != Zoning.CurrentZone.Id)
+            {
+                E3.Bots.Broadcast("Will not assist, not in the same zone.");
+                return;
+            }
+            //clear in case its not reset by other means
+            //or you want to attack in enrage
+            _assistIsEnraged = false;
             if (mobID == 0)
             {
                 //something wrong with the assist, kickout
@@ -603,11 +606,20 @@ namespace E3Core.Processors
                 return;
             }
             Spawn s;
-            if (_spawns.TryByID(mobID, out s))
+
+            if (!_spawns.TryByID(mobID, out s))
+            {
+                E3.Bots.Broadcast("Assistme: Cannot find spawn to assist on, refreshing spawn data as a fail safe.");
+                _spawns.RefreshList(full: true);
+
+
+            }
+
+			if (_spawns.TryByID(mobID, out s))
             {
                 MobLifeExpectancy = 1;
 
-				if (s.TypeDesc == "Corpse")
+				if (s.Dead)
                 {
                     E3.Bots.Broadcast("Cannot assist, a corpse");
                     return;
@@ -766,14 +778,16 @@ namespace E3Core.Processors
                 }
                 else if (_rangeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (!MQ.Query<bool>("${Me.AutoFire}"))
+                    if ((E3.CurrentClass & Class.Caster) != E3.CurrentClass  && (E3.CurrentClass & Class.Priest) != E3.CurrentClass)
                     {
-                        MQ.Delay(1000);
-                        MQ.Cmd("/autofire");
-                        MQ.Delay(1000);
-                    }
-
-                    if (!AllowControl && E3.CharacterSettings.Assist_Type.Equals("Ranged"))
+						if (!MQ.Query<bool>("${Me.AutoFire}"))
+						{
+							MQ.Delay(1000);
+							MQ.Cmd("/autofire");
+							MQ.Delay(1000);
+						}
+					}
+					if (!AllowControl && E3.CharacterSettings.Assist_Type.Equals("Ranged"))
                     {
                         if (E3.CharacterSettings.Assist_RangeDistance.Equals("Clamped"))
                         {   //so we don't calc multiple times
@@ -795,6 +809,10 @@ namespace E3Core.Processors
                         }
                     }
                 }
+            }
+            else
+            {
+                E3.Bots.Broadcast($"Assist: \arCannot find spawnid: \aw{mobID}\ar to assist on!");
             }
         }
 
@@ -871,6 +889,7 @@ namespace E3Core.Processors
            EventProcessor.RegisterCommand("/assistme", (x) =>
            {
 
+          
                //don't process assist if paused.
                if(Basics.IsPaused) {
                    E3.Bots.Broadcast("\arNot assisting! \agI am paused!");
@@ -897,6 +916,8 @@ namespace E3Core.Processors
                //Rez.Reset();
                if (x.args.Count == 0)
                {
+
+                   ClearXTargets.Reset();//turn off clear targets so it doesn't rip away if the clear target mob dies.
 
                    Int32 targetID = MQ.Query<Int32>("${Target.ID}");
 
@@ -936,14 +957,16 @@ namespace E3Core.Processors
 
                }
                else if (!e3util.FilterMe(x))
-               {
-                   Int32 mobid;
+			   {
+				   MQ.WriteDelayed("Assist me command Recieved from the network");
+
+				   Int32 mobid;
                    Int32 zoneid;
 
                    if (Int32.TryParse(x.args[0], out mobid))
                    {
                         //make sure the target is in the same zone we are in
-                       if (Int32.TryParse(x.args[1], out zoneid))
+                       if (x.args.Count>1 && Int32.TryParse(x.args[1], out zoneid))
                        {
                            if (mobid != AssistTargetID)
 						   {
@@ -963,6 +986,10 @@ namespace E3Core.Processors
 						   }
 						   AssistOn(mobid, zoneid);
 
+                       }
+                       else
+                       {
+                           E3.Bots.Broadcast("Please pass in a zoneid to the assist command. /assistme targetid zoneid");
                        }
                    }
                }

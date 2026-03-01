@@ -160,7 +160,7 @@ namespace TestCore
                 return true;
             }
 
-            public T Query<T>(string query, bool delayPossible = true)
+            public T Query<T>(string query)
             {
 
                 if (typeof(T) == typeof(Int32))
@@ -247,6 +247,53 @@ namespace TestCore
 			public string GetHoverWindowName()
 			{
 				return "NULL";
+			}
+
+			public unsafe byte* GetPetBuffDataPtr(out int length)
+			{
+                length = 0;
+                return null;
+			}
+
+			public unsafe byte* GetSpawns3_DeltaPtr(out int length)
+			{
+                length = 0;
+                return null;
+			}
+
+			public unsafe byte* GetXtargetDataPtr(out int length)
+			{
+				throw new NotImplementedException();
+			}
+
+			public unsafe byte* GetTargetBuffDataPtr(Int32 spawnid, out int length)
+			{
+				throw new NotImplementedException();
+			}
+
+			public void DisableDelay()
+			{
+				throw new NotImplementedException();
+			}
+
+			public void EnableDelay()
+			{
+				throw new NotImplementedException();
+			}
+
+			public IMQLock GetDelayLock()
+			{
+				throw new NotImplementedException();
+			}
+
+			public unsafe byte* GetAAIdsDataPtr(out int length)
+			{
+				throw new NotImplementedException();
+			}
+
+			public unsafe byte* GetDiscIdsDataPtr(out int length)
+			{
+				throw new NotImplementedException();
 			}
 		}
 

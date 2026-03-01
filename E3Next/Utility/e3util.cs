@@ -7,6 +7,7 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.PerformanceData;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -18,6 +19,8 @@ using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Text;
 using static MonoCore.EventProcessor;
+using Google.Protobuf;
+using System.Collections.Concurrent;
 
 namespace E3Core.Utility
 {
@@ -28,19 +31,138 @@ namespace E3Core.Utility
 		public static Logging _log = E3.Log;
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
-
+		public static bool UseProtoBufForBuffs = false;
 		public static Int32 MaxBuffSlots = 42;
 		public static Int32 MaxSongSlots = 30;
 		public static Int32 MaxPetBuffSlots = 30;
-		public static Int32 MobMaxDebuffSlots = 55;
+		public static Int32 MobMaxDebuffSlots = 60; //default of titanium EQ client, this is higher on RoF2, up to 97
+		public static Int32 MaxTempBuffs = 55;
+		public static Int32 MaxNPCBuffSlots = 97; //42 + 55
 		public static Int32 XtargetMax = 13;
 
 		//share this as we can reuse as its only 1 thread
 		private static StringBuilder _resultStringBuilder = new StringBuilder(1024);
 		//modified from https://stackoverflow.com/questions/6275980/string-replace-ignoring-case
+		private static ConcurrentDictionary<string, Dictionary<Int32, string>> _intToStringLookup = new ConcurrentDictionary<string, Dictionary<int, string>>();
+		public static bool IntToStringIDLookup(string type, Int32 key, out string value)
+		{
+			if (!_intToStringLookup.ContainsKey(type))
+			{
+				_intToStringLookup.TryAdd(type, new Dictionary<Int32, string>());
+			}
+			if (!_intToStringLookup[type].TryGetValue(key, out value))
+			{
+				return false;
+			}
+			return true;
+		}
+		public static void IntToStringIDRegister(string type, Int32 key, string value)
+		{
+			if (!_intToStringLookup.ContainsKey(type))
+			{
+				_intToStringLookup.TryAdd(type, new Dictionary<Int32, string>());
+			}
+			_intToStringLookup[type][key] = value;
+		}
+		public static bool EqualsIgnoreCase(ReadOnlySpan<char> span1, ReadOnlySpan<char> span2)
+		{
+			if (span1.Length != span2.Length) return false;
 
+			for (int i = 0; i < span1.Length; i++)
+			{
+				if (char.ToUpperInvariant(span1[i]) != char.ToUpperInvariant(span2[i]))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		public static bool DoubleTryParse(ReadOnlySpan<char> span, out double result)
+		{
+			result = 0.0;
+			if (span.IsEmpty) return false;
 
+			int i = 0;
+			bool isNegative = false;
 
+			// 1. Sign handling
+			if (span[0] == '-') { isNegative = true; i++; }
+			else if (span[0] == '+') { i++; }
+
+			// 2. Parse numbers
+			bool hasDigits = false;
+			double tempResult = 0.0;
+
+			// Integer part
+			while (i < span.Length && char.IsDigit(span[i]))
+			{
+				tempResult = tempResult * 10 + (span[i] - '0');
+				i++;
+				hasDigits = true;
+			}
+
+			// Decimal part
+			if (i < span.Length && span[i] == '.')
+			{
+				i++;
+				double divisor = 10;
+				while (i < span.Length && char.IsDigit(span[i]))
+				{
+					tempResult += (span[i] - '0') / divisor;
+					divisor *= 10;
+					i++;
+					hasDigits = true;
+				}
+			}
+
+			// 3. Final validation
+			if (!hasDigits || i < span.Length) return false;
+
+			result = isNegative ? -tempResult : tempResult;
+			return true;
+		}
+		public static bool Int32TryParse(ReadOnlySpan<char> span, out int result)
+		{
+			bool isNegative = false;
+
+			if (span[0] == '-') isNegative = true;
+
+			result = 0;
+			Int32 digits = 0;
+			foreach (char c in span)
+			{
+				if (digits == 0 && (c == '-' || c == '+'))
+				{
+					continue;
+				}
+				if (c < '0' || c > '9') return false;
+				result = result * 10 + (c - '0');
+				digits++;
+			}
+			if (isNegative) result = -result;
+			return true;
+		}
+		public static bool Int64TryParse(ReadOnlySpan<char> span, out Int64 result)
+		{
+			bool isNegative = false;
+			if (span[0] == '-') isNegative = true;
+
+			result = 0;
+			Int32 digits = 0;
+			foreach (char c in span)
+			{
+				if (digits == 0 && (c == '-' || c == '+'))
+				{
+					continue;
+				}
+				if (c < '0' || c > '9') return false;
+				result = result * 10 + (c - '0');
+			}
+
+			if (isNegative) result = -result;
+
+			return true;
+		}
 		public static Int32 Latency()
 		{
 			Int32 returnValue = 0;
@@ -82,11 +204,11 @@ namespace E3Core.Utility
 			{
 				string className = MQ.Query<String>($"${{Raid.Member[{x}].Class.ShortName}}");
 
-				if(className=="SHD"|| className=="WAR" || className=="PAL")
+				if (className == "SHD" || className == "WAR" || className == "PAL")
 				{
 					string raidMemberName = MQ.Query<String>($"${{Raid.Member[{x}].Name}}");
 
-					if (Basics.GroupMemberNames.Contains(raidMemberName,StringComparer.OrdinalIgnoreCase)) continue;
+					if (Basics.GroupMemberNames.Contains(raidMemberName, StringComparer.OrdinalIgnoreCase)) continue;
 
 					_raidTanks.Add(raidMemberName);
 				}
@@ -103,10 +225,10 @@ namespace E3Core.Utility
 
 				if (!MQ.Query<bool>($"${{Me.XTarget[{x}].TargetType.Equal[Specific PC]}}")) continue;
 				string name = MQ.Query<String>($"${{Me.XTarget[{x}].CleanName}}");
-			
-				if (name!="NULL")
+
+				if (name != "NULL")
 				{
-					_xtargetPlayers.Add(name,x);
+					_xtargetPlayers.Add(name, x);
 				}
 			}
 			return _xtargetPlayers;
@@ -138,7 +260,7 @@ namespace E3Core.Utility
 			var myPetID = MQ.Query<Int32>("${Me.Pet.ID}");
 
 			//if manual control and its another mob, don't put target back
-			if(currentTargetID>0 && targetType != "PC"  && currentTargetID != myPetID && e3util.IsManualControl())
+			if (currentTargetID > 0 && targetType != "PC" && currentTargetID != myPetID && e3util.IsManualControl())
 			{
 				return;
 			}
@@ -277,7 +399,7 @@ namespace E3Core.Utility
 
 					e3util.NavToSpawnID(targetID);
 					return;
-					
+
 				}
 			}
 
@@ -374,6 +496,16 @@ namespace E3Core.Utility
 			}
 			//check for guildlist.txt if it exists
 			if (Setup.GuildListMembers.Count > 0 && Setup.GuildListMembers.Contains(person, StringComparer.OrdinalIgnoreCase))
+			{
+				return true;
+			}
+
+			return false;
+		}
+		public static bool InMyRaid(string person)
+		{
+			//check for guildlist.txt if it exists
+			if (Basics.RaidMemberNames.Count > 0 && Basics.RaidMemberNames.Contains(person, StringComparer.OrdinalIgnoreCase))
 			{
 				return true;
 			}
@@ -503,7 +635,7 @@ namespace E3Core.Utility
 
 		private static bool FilterReturnCheck(List<string> inputs, ref bool returnValue, bool inputSetValue)
 		{
-			
+
 			if (inputs.Contains(E3.CurrentName, StringComparer.OrdinalIgnoreCase))
 			{
 				return inputSetValue;
@@ -606,9 +738,9 @@ namespace E3Core.Utility
 			return _resultStringBuilder.ToString();
 
 		}
-		public static void StringsToNumbers(string s, char delim, List<Int32> list)
+		public static void StringsToNumbers(ReadOnlySpan<char> s, char delim, List<Int64> list)
 		{
-			List<int> result = list;
+			List<Int64> result = list;
 			int start = 0;
 			int end = 0;
 			foreach (char x in s)
@@ -617,7 +749,9 @@ namespace E3Core.Utility
 				{
 					if (end == s.Length - 1 && x != delim)
 						end++;
-					result.Add(int.Parse(s.Substring(start, end - start)));
+					Int64 valueTOAdd = 0;
+					e3util.Int64TryParse(s.Slice(start, end - start), out valueTOAdd);
+					result.Add(valueTOAdd);
 					start = end + 1;
 				}
 				end++;
@@ -642,30 +776,42 @@ namespace E3Core.Utility
 			}
 
 		}
+
 		private static List<Int64> _buffInfoTempList = new List<Int64>();
-		public static void BuffInfoToDictonary(string s, Dictionary<Int32, Int64> list, char delim = ':')
+		public static void BuffInfoToDictonary(ReadOnlySpan<char> s, Dictionary<Int32, Int64> list, char delim = ':')
 		{
 			list.Clear();
 			Dictionary<Int32, Int64> result = list;
 
-			int start = 0;
-			int end = 0;
-			foreach (char x in s)
+			if (UseProtoBufForBuffs)
 			{
-				if (x == delim || end == s.Length - 1)
+				BuffDataList bufflist = new BuffDataList();
+				bufflist.MergeFrom(ByteString.FromBase64(s.ToString()));
+				foreach (var buff in bufflist.Data)
 				{
-					if (end == s.Length - 1 && x != delim)
-						end++;
-					//number,number
-					_buffInfoTempList.Clear();
-					string tstring = s.Substring(start, end - start);
-					StringsToNumbers(tstring, ',', _buffInfoTempList);
-					result[(int)_buffInfoTempList[0]] = _buffInfoTempList[1];
-					start = end + 1;
+					result[buff.SpellID] = buff.Duration;
 				}
-				end++;
 			}
-
+			else
+			{
+				int start = 0;
+				int end = 0;
+				foreach (char x in s)
+				{
+					if (x == delim || end == s.Length - 1)
+					{
+						if (end == s.Length - 1 && x != delim)
+							end++;
+						//number,number
+						_buffInfoTempList.Clear();
+						ReadOnlySpan<char> tstring = s.Slice(start, end - start);
+						StringsToNumbers(tstring, ',', _buffInfoTempList);
+						result[(int)_buffInfoTempList[0]] = _buffInfoTempList[1];
+						start = end + 1;
+					}
+					end++;
+				}
+			}
 		}
 		public static List<string> StringsToList(string s, char delim)
 		{
@@ -837,7 +983,7 @@ namespace E3Core.Utility
 			if (ClearCursor())
 			{
 				bool foundItem = MQ.Query<bool>($"${{Bool[${{FindItem[={itemName}]}}]}}");
-			
+
 				if (!foundItem) return;
 
 				Int32 foundItemID = MQ.Query<Int32>($"${{FindItem[={itemName}].ID}}");
@@ -885,52 +1031,524 @@ namespace E3Core.Utility
 				}
 			}
 		}
+
+
+		public static char[] GetPetBuffDataForPubSubHighPerf(out Int32 returnLength)
+		{
+			unsafe
+			{
+				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder();
+				try
+				{
+					int length;
+					byte* p = MQ.GetPetBuffDataPtr(out length);
+
+					if (length == 0)
+					{
+						//	MQ.Write("No Buffs or buffs not found yet");
+						returnLength = 0;
+						return null;
+					}
+					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+					int dataStartingLength = data.Length;
+					for (int i = 0; i < e3util.MaxTempBuffs; i++)
+					{
+						Int32 spellID = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 duration = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 spellType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+
+						//MQ.Write($"ID:{ID} D:{duration}  st:{spellType}");
+						if (spellID > 0)
+						{
+							if (duration > 0) duration = duration * 6 * 1000;
+							buffInfoStringBuilder.Append(GetIntStr(spellID));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(duration));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(-1));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(spellType));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(0)); //0 for buff
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(-1));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(-1));
+							buffInfoStringBuilder.Append(":");
+						}
+						if (dataStartingLength - data.Length >= length)
+						{
+							//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+							break;
+						}
+
+					}
+					return buffInfoStringBuilder.ReturnCopyBufferFromPool(out returnLength);
+
+				}
+				finally
+				{
+					buffInfoStringBuilder.Dispose();
+				}
+				
+			}
+			
+		}
+		private static void GetTargetBuffData()
+		{
+			unsafe
+			{
+				Int32 targetid = MQ.Query<Int32>("${Target.ID}");
+
+				if (targetid < 0)
+				{
+					MQ.Write("Need valid target");
+				}
+
+				int length;
+				byte* p = Core.mq_GetTargetBuffData(targetid, out length);
+
+				if (length == 0)
+				{
+					MQ.Write("No Buffs or buffs not found yet");
+					return;
+				}
+				ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+				//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+				int dataStartingLength = data.Length;
+				for (int i = 0; i < e3util.MaxNPCBuffSlots; i++)
+				{
+					Int32 ID = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 duration = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 spellType = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 nameLength = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					string casterName = String.Empty;
+					unsafe
+					{
+						fixed (byte* d = data)
+						{
+							casterName = Encoding.ASCII.GetString(d, nameLength);
+						}
+					}
+					data = data.Slice(nameLength);
+
+
+
+					MQ.Write($"ID:{ID} CName:{casterName} D:{duration}  st:{spellType}");
+					if (dataStartingLength - data.Length >= length)
+					{
+						MQ.Write($"End of array at {dataStartingLength - data.Length}");
+						break;
+					}
+				}
+			}
+		}
+		public static char[] GetBuffDataForPubSubHighPerf(out int returnLength)
+		{
+			unsafe
+			{
+				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder();
+				try
+				{
+					int length;
+					byte* p = Core.mq_GetBuffData(out length);
+					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+					int dataStartingLength = data.Length;
+					for (int i = 0; i < e3util.MaxBuffSlots; i++)
+					{
+						Int32 spellID = MemoryMarshal.Read<Int32>(data);
+
+
+
+						data = data.Slice(4);
+						Int32 casterId = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 duration = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+
+						Int32 hitcount = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 spellType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 counterType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						bool IsSong = MemoryMarshal.Read<bool>(data);
+						data = data.Slice(1);
+
+						if (spellID > 0)
+						{
+							if (duration > 0) duration = duration * 6 * 1000;
+
+							if (!BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
+							{
+								BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
+							}
+							buffInfoStringBuilder.Append(GetIntStr(spellID));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(duration));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(hitcount));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(spellType));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(0)); //0 for buff
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(counterType));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(counterTotal));
+							buffInfoStringBuilder.Append(":");
+						}
+
+
+						if (dataStartingLength - data.Length >= length)
+						{
+							//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+							break;
+						}
+						//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
+					}
+					for (int i = 0; i < e3util.MaxSongSlots; i++)
+					{
+						Int32 spellID = MemoryMarshal.Read<Int32>(data);
+
+						data = data.Slice(4);
+						Int32 casterId = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 duration = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 hitcount = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 spellType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 counterType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						bool IsSong = MemoryMarshal.Read<bool>(data);
+						data = data.Slice(1);
+						//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
+						if (spellID > 0)
+						{
+							if (!BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
+							{
+								BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
+							}
+							if (duration > 0) duration = duration * 6 * 1000;
+							buffInfoStringBuilder.Append(GetIntStr(spellID));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(duration));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(hitcount));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(spellType));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(1)); //0 for buff
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(-1));
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(GetIntStr(-1));
+							buffInfoStringBuilder.Append(":");
+						}
+
+						if (dataStartingLength - data.Length >= length)
+						{
+							//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+							break;
+						}
+					}
+
+
+					return buffInfoStringBuilder.ReturnCopyBufferFromPool(out returnLength);
+
+				}
+				finally
+				{
+					buffInfoStringBuilder.Dispose();
+				}
+			}
+		}
 		static System.Text.StringBuilder buffInfoStringBuilder = new StringBuilder();
+		//this is accessed about 1 per second, to publish out buff info, while we are here we will populate the buff cache.
+		public class BuffInfoCacheEntry
+		{
+			public BuffInfoCacheEntry() { }
+			public string SpellType;
+			public string CounterType;
+		}
+		public static Dictionary<Int32, BuffInfoCacheEntry> _buffInfoCache = new Dictionary<Int32, BuffInfoCacheEntry>();
 		public static string GenerateBuffInfoForPubSub()
 		{
-			using (_log.Trace())
+			//if (Core._MQ2MonoVersion >= 0.411m && !Debugger.IsAttached)
+			//{
+			//	return GetBuffDataForPubSubHighPerf();
+			//}
+
+			//using (_log.Trace())
 			{
 				//incase this changes at runtime
-				MaxBuffSlots = MQ.Query<Int32>("${Me.MaxBuffSlots}");
+				//MaxBuffSlots = MQ.Query<Int32>("${Me.MaxBuffSlots}");
 
 				buffInfoStringBuilder.Clear();
 				//lets look for a partial match.
+				BuffDataList buffDataList = null;
+				if (UseProtoBufForBuffs) buffDataList = new BuffDataList();
 				for (Int32 i = 1; i <= MaxBuffSlots; i++)
 				{
-					string spellID = MQ.Query<string>($"${{Me.Buff[{i}].Spell.ID}}");
+					string spellIDQuery = String.Empty;
+
+					if (!IntToStringIDLookup("GenerateBuffInfoForPubSub_Buff_SpellID", i, out spellIDQuery))
+					{
+						spellIDQuery = $"${{Me.Buff[{i}].Spell.ID}}";
+						IntToStringIDRegister("GenerateBuffInfoForPubSub_Buff_SpellID", i, spellIDQuery);
+					}
+
+					string spellID = MQ.Query<string>(spellIDQuery);
 					if (spellID != "NULL")
 					{
-						string duration = MQ.Query<string>($"${{Me.Buff[{i}].Duration}}");
-						buffInfoStringBuilder.Append(spellID);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(duration);
-						buffInfoStringBuilder.Append(":");
+						Int32 spell_id = 0;
+						if (Int32.TryParse(spellID, out spell_id))
+						{
+							if (!BuffCheck.BuffInfoCache.TryGetValue(spell_id, out var spell))
+							{
+								BuffCheck.BuffCacheLookupQueue.TryAdd(spell_id, spell_id);
+							}
+
+							string spellType = String.Empty;
+							string counterType = String.Empty;
+							if (_buffInfoCache.TryGetValue(spell_id, out var entry))
+							{
+								spellType = entry.SpellType;
+								counterType = entry.CounterType;
+							}
+							else
+							{
+								spellType = MQ.Query<String>($"${{Me.Buff[{i}].SpellType}}");
+								counterType = MQ.Query<String>($"${{Me.Buff[{i}].CounterType}}");
+								_buffInfoCache.Add(spell_id, new BuffInfoCacheEntry() { SpellType = spellType, CounterType = counterType });
+							}
+
+							string buffDurationQuery = String.Empty;
+							if (!IntToStringIDLookup("GenerateBuffInfoForPubSub_Buff_Duration", i, out buffDurationQuery))
+							{
+								buffDurationQuery = $"${{Me.Buff[{i}].Duration}}";
+								IntToStringIDRegister("GenerateBuffInfoForPubSub_Buff_Duration", i, buffDurationQuery);
+							}
+							Int32 duration = MQ.Query<Int32>(buffDurationQuery);
+							string hitCountQuery = String.Empty;
+							if (!IntToStringIDLookup("GenerateBuffInfoForPubSub_Buff_HitCount", i, out hitCountQuery))
+							{
+								hitCountQuery = $"${{Me.Buff[{i}].HitCount}}";
+								IntToStringIDRegister("GenerateBuffInfoForPubSub_Buff_HitCount", i, hitCountQuery);
+							}
+							Int32 hitcount = MQ.Query<Int32>(hitCountQuery);
+
+
+							Int32 counterTypeID = -1;
+							if (counterType == "Disease") counterTypeID = 0;
+							else if (counterType == "Poison") counterTypeID = 1;
+							else if (counterType == "Curse") counterTypeID = 2;
+							else if (counterType == "Corruption") counterTypeID = 3;
+
+							/*	SpellType_Detrimental = 0,
+								SpellType_Beneficial = 1,
+								SpellType_BeneficialGroupOnly = 2
+							*/
+							Int32 spellTypeID = 0;
+							if (spellType == "Detrimental") spellTypeID = 0;
+							if (spellType == "Beneficial") spellTypeID = 1;
+							if (spellType == "Beneficial(Group)") spellTypeID = 2;
+
+
+							Int32 counterNumber = 0;
+
+							if (spellTypeID == 0)
+							{
+								string counterNumberQuery = String.Empty;
+								if (!IntToStringIDLookup("GenerateBuffInfoForPubSub_Buff_CounterNumber", i, out counterNumberQuery))
+								{
+									counterNumberQuery = $"${{Me.Buff[{i}].CounterNumber}}";
+									IntToStringIDRegister("GenerateBuffInfoForPubSub_Buff_CounterNumber", i, counterNumberQuery);
+								}
+								counterNumber = MQ.Query<Int32>(counterNumberQuery);
+							}
+
+
+							if (UseProtoBufForBuffs)
+							{
+								BuffData buffData = new BuffData();
+
+								buffData.SpellID = spell_id;
+								buffData.Duration = duration;
+								buffData.Hitcount = hitcount;
+								buffData.CounterType = counterTypeID;
+								buffData.BuffType = 0;//buff
+								buffData.CounterNumber = counterNumber;
+								buffData.SpellTypeID = spellTypeID;
+								buffDataList.Data.Add(buffData);
+
+							}
+							else
+							{
+								buffInfoStringBuilder.Append(spellID);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(duration);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(hitcount);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(spellTypeID);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(0); //0 for buff
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(counterTypeID);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(counterNumber);
+								buffInfoStringBuilder.Append(":");
+							}
+						}
+
 					}
 				}
 				for (Int32 i = 1; i <= MaxSongSlots; i++)
 				{
-					string spellID = MQ.Query<String>($"${{Me.Song[{i}].Spell.ID}}");
+					string songIDQuery = String.Empty;
+					if (!IntToStringIDLookup("GenerateSongInfoForPubSub_SpellID", i, out songIDQuery))
+					{
+						songIDQuery = $"${{Me.Song[{i}].Spell.ID}}";
+						IntToStringIDRegister("GenerateSongInfoForPubSub_SpellID", i, songIDQuery);
+					}
+					string spellID = MQ.Query<String>(songIDQuery);
 
 					if (spellID != "NULL")
 					{
-						string duration = MQ.Query<string>($"${{Me.Song[{i}].Duration}}");
-						buffInfoStringBuilder.Append(spellID);
-						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(duration);
-						buffInfoStringBuilder.Append(":");
+						Int32 spell_id = 0;
+						if (Int32.TryParse(spellID, out spell_id))
+						{
+
+							if (!BuffCheck.BuffInfoCache.ContainsKey(spell_id))
+							{
+								var spell = new Data.Spell(spellID);
+								if (spell.CastType == CastingType.Spell || spell.CastType == CastingType.AA)
+								{
+									for (Int32 inc = 0; inc < 12; inc++)
+									{
+										string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), inc);
+										if (!String.IsNullOrEmpty(teffect))
+										{
+											spell.SpellEffects.Add(teffect);
+										}
+									}
+								}
+								BuffCheck.BuffInfoCache.TryAdd(spell_id, spell);
+							}
+						}
+						string buffDurationQuery = String.Empty;
+						if (!IntToStringIDLookup("GenerateBuffInfoForPubSub_Song_Duration", i, out buffDurationQuery))
+						{
+							buffDurationQuery = $"${{Me.Song[{i}].Duration}}";
+							IntToStringIDRegister("GenerateBuffInfoForPubSub_Song_Duration", i, buffDurationQuery);
+						}
+						Int32 duration = MQ.Query<Int32>(buffDurationQuery);
+						string hitCountQuery = String.Empty;
+						if (!IntToStringIDLookup("GenerateBuffInfoForPubSub_Song_HitCount", i, out hitCountQuery))
+						{
+							hitCountQuery = $"${{Me.Song[{i}].HitCount}}";
+							IntToStringIDRegister("GenerateBuffInfoForPubSub_Song_HitCount", i, hitCountQuery);
+						}
+						Int32 hitcount = MQ.Query<Int32>(hitCountQuery);
+
+						string spellType = String.Empty;
+						if (_buffInfoCache.TryGetValue(spell_id, out var entry))
+						{
+							spellType = entry.SpellType;
+						}
+						else
+						{
+							spellType = MQ.Query<String>($"${{Me.Song[{i}].SpellType}}");
+							_buffInfoCache.Add(spell_id, new BuffInfoCacheEntry() { SpellType = spellType, CounterType = String.Empty });
+						}
+						Int32 spellTypeID = 0;
+						if (spellType == "Detrimental") spellTypeID = 0;
+						if (spellType == "Beneficial") spellTypeID = 1;
+						if (spellType == "Beneficial(Group)") spellTypeID = 2;
+
+						if (UseProtoBufForBuffs)
+						{
+							BuffData buffData = new BuffData();
+
+							buffData.SpellID = spell_id;
+							buffData.Duration = duration;
+							buffData.Hitcount = hitcount;
+							buffData.CounterType = -1;
+							buffData.BuffType = 1;//song
+							buffData.CounterNumber = -1;
+							buffData.SpellTypeID = spellTypeID;
+							buffDataList.Data.Add(buffData);
+						}
+						else
+						{
+
+							buffInfoStringBuilder.Append(spellID);
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(duration);
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(hitcount);
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(spellTypeID);
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(1); //1 for song
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(-1);
+							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(-1);
+							buffInfoStringBuilder.Append(":");
+						}
 					}
 				}
-				return buffInfoStringBuilder.ToString();
+
+				if (UseProtoBufForBuffs)
+				{
+					string base64EncodedString = Convert.ToBase64String(buffDataList.ToByteArray());
+					return base64EncodedString;
+
+				}
+				else
+				{
+					return buffInfoStringBuilder.ToString();
+				}
+
+
 
 			}
 
 		}
 		public static string GeneratePetBuffInfoForPubSub()
 		{
-			using (_log.Trace())
+			//using (_log.Trace())
 			{
+				//if (Core._MQ2MonoVersion > 0.411m && !Debugger.IsAttached)
+				//{
+				//	return GetPetBuffDataForPubSubHighPerf();
+				//}
+
 				buffInfoStringBuilder.Clear();
 				//lets look for a partial match.
+
+				BuffDataList buffDataList = null;
+				if (UseProtoBufForBuffs) buffDataList = new BuffDataList();
+
 				if (MQ.Query<bool>("${Me.Pet.ID}"))
 				{
 					for (Int32 i = 1; i <= MaxPetBuffSlots; i++)
@@ -938,15 +1556,76 @@ namespace E3Core.Utility
 						string spellID = MQ.Query<string>($"${{Me.Pet.Buff[{i}].ID}}");
 						if (spellID != "NULL")
 						{
-							string duration = MQ.Query<string>($"${{Me.Pet.Buff[{i}].Duration}}");
-							buffInfoStringBuilder.Append(spellID);
-							buffInfoStringBuilder.Append(",");
-							buffInfoStringBuilder.Append(duration);
-							buffInfoStringBuilder.Append(":");
+							Int32 duration = MQ.Query<Int32>($"${{Me.Pet.Buff[{i}].Duration}}");
+							string spellType = MQ.Query<String>($"${{Me.Pet.Buff[{i}].SpellType}}");
+							string counterType = MQ.Query<String>($"${{Me.Pet.Buff[{i}].CounterType}}");
+							Int32 counterNumber = MQ.Query<Int32>($"${{Me.Pet.Buff[{i}].CounterNumber}}");
+							Int32 counterTypeID = -1;
+							if (counterType == "Disease") counterTypeID = 0;
+							else if (counterType == "Poison") counterTypeID = 1;
+							else if (counterType == "Curse") counterTypeID = 2;
+							else if (counterType == "Corruption") counterTypeID = 3;
+
+							/*	SpellType_Detrimental = 0,
+								SpellType_Beneficial = 1,
+								SpellType_BeneficialGroupOnly = 2
+							*/
+							Int32 spellTypeID = 0;
+							if (spellType == "Detrimental") spellTypeID = 0;
+							if (spellType == "Beneficial") spellTypeID = 1;
+							if (spellType == "Beneficial(Group)") spellTypeID = 2;
+
+
+							if (UseProtoBufForBuffs)
+							{
+								BuffData buffData = new BuffData();
+
+								buffData.SpellID = Int32.Parse(spellID);
+								buffData.Duration = duration;
+								buffData.CounterType = counterTypeID;
+								buffData.BuffType = 0;//buff
+								buffData.CounterNumber = counterNumber;
+								buffData.SpellTypeID = spellTypeID;
+								buffDataList.Data.Add(buffData);
+							}
+							else
+							{
+								buffInfoStringBuilder.Append(spellID.ToString());
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(duration.ToString());
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(-1);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(spellTypeID);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(0); //0 for buff
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(counterTypeID);
+								buffInfoStringBuilder.Append(",");
+								buffInfoStringBuilder.Append(counterNumber.ToString());
+								buffInfoStringBuilder.Append(":");
+
+							}
+
+
+
+
+
+
 						}
 					}
 				}
-				return buffInfoStringBuilder.ToString();
+
+				if (UseProtoBufForBuffs)
+				{
+					string base64EncodedString = Convert.ToBase64String(buffDataList.ToByteArray());
+					return base64EncodedString;
+
+				}
+				else
+				{
+					return buffInfoStringBuilder.ToString();
+				}
 			}
 
 		}
@@ -969,7 +1648,7 @@ namespace E3Core.Utility
 			if (EventProcessor.CommandListQueueHasCommand("/nowcast"))
 			{
 				List<CommandMatch> reinsertList = new List<CommandMatch>();
-				
+
 				Int32 CommandListQueueCount = EventProcessor.CommandListQueue.Count;
 
 				List<CommandMatch> nowcastsToExecute = new List<CommandMatch>();
@@ -988,7 +1667,7 @@ namespace E3Core.Utility
 						}
 					}
 				}
-				foreach (var line in nowcastsToExecute) 
+				foreach (var line in nowcastsToExecute)
 				{
 					EventProcessor.CommandList["/nowcast"].method.Invoke(line);
 				}
@@ -1001,7 +1680,7 @@ namespace E3Core.Utility
 			double currentY = MQ.Query<double>("${Me.Y}");
 			double currentZ = MQ.Query<double>("${Me.Z}");
 			TryMoveToTarget();
-			
+
 			Int32 tryTradeCount = 0;
 		tryTrade:
 			MQ.Cmd("/click left target");
@@ -1013,7 +1692,7 @@ namespace E3Core.Utility
 			bool windowOpen = MQ.Query<bool>(windowOpenQuery);
 			if (!windowOpen)
 			{
-				if (tryTradeCount <5)
+				if (tryTradeCount < 5)
 				{
 					Int32 randomSleepTime = E3.Random.Next(500, 2000);
 					MQ.Write($"\arTrade failed, retrying in \ag{randomSleepTime} milliseconds");
@@ -1088,6 +1767,116 @@ namespace E3Core.Utility
 			return false;
 		}
 
+		public unsafe static Int32 GetXTargetMinAggro(ReadOnlySpan<byte> input_data)
+		{
+
+			ReadOnlySpan<byte> data = input_data;
+			Int32 currentAggro = 0;
+			Int32 tempMinAggro = 101;
+			while (data.Length > 0)
+			{
+				XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+
+				Int32 mobId = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+
+
+				if (targetTypes != XTargetTypes.XTARGET_AUTO_HATER) continue;
+
+				if (mobId > 0)
+				{
+					Spawn s;
+					//if (_spawns.TryByID(mobId, out s))
+					{
+						//if (s.Aggressive)
+						{
+							currentAggro = aggroPct;
+							if (tempMinAggro > currentAggro)
+							{
+								tempMinAggro = currentAggro;
+							}
+						}
+					}
+				}
+
+			}
+			if (tempMinAggro == 101) return 0;
+
+			return tempMinAggro;
+		}
+		public unsafe static Int32 GetXTargetMaxAggro(ReadOnlySpan<byte> input_data)
+		{
+			ReadOnlySpan<byte> data = input_data;
+			Int32 currentAggro = 0;
+			Int32 tempMaxAggro = 0;
+			while (data.Length > 0)
+			{
+				XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+
+				Int32 mobId = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				if (targetTypes != XTargetTypes.XTARGET_AUTO_HATER) continue;
+				if (mobId > 0)
+				{
+					Spawn s;
+					//if (_spawns.TryByID(mobId, out s))
+					{
+						//if (s.Aggressive)
+						{
+							currentAggro = aggroPct;
+							if (tempMaxAggro < currentAggro)
+							{
+								tempMaxAggro = currentAggro;
+
+								if (tempMaxAggro == 100) return tempMaxAggro;
+							}
+						}
+					}
+				}
+			}
+			return tempMaxAggro;
+		}
+		public static Int32 GetXtargetMinAggro()
+		{
+			Int32 currentAggro = 0;
+			Int32 tempMinAggro = 101;
+
+			for (Int32 i = 1; i <= 13; i++)
+			{
+				bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
+				if (!autoHater) continue;
+				Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
+				if (mobId > 0)
+				{
+					Spawn s;
+					//if (_spawns.TryByID(mobId, out s))
+					{
+						//if (s.Aggressive)
+						{
+							currentAggro = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctAggro}}");
+							if (tempMinAggro > currentAggro)
+							{
+								tempMinAggro = currentAggro;
+							}
+						}
+					}
+				}
+			}
+
+			if (tempMinAggro == 101) return 0;
+
+			return tempMinAggro;
+		}
 		public static Int32 GetXtargetMaxAggro()
 		{
 			Int32 currentAggro = 0;
@@ -1110,7 +1899,7 @@ namespace E3Core.Utility
 							{
 								tempMaxAggro = currentAggro;
 
-								if(tempMaxAggro==100) return tempMaxAggro;
+								if (tempMaxAggro == 100) return tempMaxAggro;
 							}
 						}
 					}
@@ -1118,6 +1907,51 @@ namespace E3Core.Utility
 			}
 
 			return tempMaxAggro;
+		}
+		public unsafe static Int32 GetXtargetLowestHP(ReadOnlySpan<byte> input_data)
+		{
+			ReadOnlySpan<byte> data = input_data;
+			Int32 tempLowestHP = 100;
+			Int32 currentLowestHP = 100;
+			Int32 lowstHPMob = -1;
+			while (data.Length > 0)
+			{
+				XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+
+				Int32 mobId = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				if (targetTypes != XTargetTypes.XTARGET_AUTO_HATER) continue;
+				if (mobId > 0)
+				{
+
+					Spawn s;
+					if (_spawns.TryByID(mobId, out s))
+					{
+						if (s.TypeDesc != "NPC") continue;
+						if (!s.Targetable) continue;
+						if (!s.Aggressive) continue;
+						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
+						if (s.CleanName.EndsWith("s pet")) continue;
+						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+						if (s.Distance3D > 60) continue;
+
+						tempLowestHP = pctHPs;
+						if (tempLowestHP > 0 && tempLowestHP < currentLowestHP)
+						{
+							currentLowestHP = tempLowestHP;
+							lowstHPMob = mobId;
+						}
+
+					}
+				}
+			}
+			MQ.Write($"Lowest HP is mob:{lowstHPMob} with percent of {currentLowestHP}");
+			return lowstHPMob;
 		}
 		public static Int32 GetXtargetLowestHP()
 		{
@@ -1142,19 +1976,64 @@ namespace E3Core.Utility
 						if (s.CleanName.EndsWith("s pet")) continue;
 						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
 						if (s.Distance3D > 60) continue;
-						
+
 						tempLowestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
-						if (tempLowestHP >0 && tempLowestHP < currentLowestHP)
+						if (tempLowestHP > 0 && tempLowestHP < currentLowestHP)
 						{
 							currentLowestHP = tempLowestHP;
 							lowstHPMob = mobId;
 						}
-						
+
 					}
 				}
 			}
 			MQ.Write($"Lowest HP is mob:{lowstHPMob} with percent of {currentLowestHP}");
 			return lowstHPMob;
+		}
+		public unsafe static Int32 GetXtargetHighestHP(ReadOnlySpan<byte> input_data)
+		{
+			ReadOnlySpan<byte> data = input_data;
+			Int32 tempHighestHP = 100;
+			Int32 currentHighestHP = 0;
+			Int32 highestHPMob = -1;
+			while (data.Length > 0)
+			{
+				XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+
+				Int32 mobId = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+				data = data.Slice(4);
+				if (targetTypes != XTargetTypes.XTARGET_AUTO_HATER) continue;
+				if (mobId > 0)
+				{
+					Spawn s;
+					if (_spawns.TryByID(mobId, out s))
+					{
+						if (s.TypeDesc != "NPC") continue;
+						if (!s.Targetable) continue;
+						if (!s.Aggressive) continue;
+						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
+						if (s.CleanName.EndsWith("s pet")) continue;
+						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+						if (s.Distance3D > 60) continue;
+
+						tempHighestHP = pctHPs;
+						if (tempHighestHP > 0 && tempHighestHP > currentHighestHP)
+						{
+							currentHighestHP = tempHighestHP;
+							highestHPMob = mobId;
+							if (currentHighestHP == 100) break;
+						}
+
+					}
+				}
+			}
+			MQ.Write($"Hiest HP is mob:{highestHPMob} with percent of {currentHighestHP}");
+			return highestHPMob;
 		}
 		public static Int32 GetXtargetHighestHP()
 		{
@@ -1172,7 +2051,7 @@ namespace E3Core.Utility
 					Spawn s;
 					if (_spawns.TryByID(mobId, out s))
 					{
-						
+
 						if (s.TypeDesc != "NPC") continue;
 						if (!s.Targetable) continue;
 						if (!s.Aggressive) continue;
@@ -1180,7 +2059,7 @@ namespace E3Core.Utility
 						if (s.CleanName.EndsWith("s pet")) continue;
 						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
 						if (s.Distance3D > 60) continue;
-						
+
 						tempHighestHP = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctHPs}}");
 						if (tempHighestHP > 0 && tempHighestHP > currentHighestHP)
 						{
@@ -1188,44 +2067,14 @@ namespace E3Core.Utility
 							highestHPMob = mobId;
 							if (currentHighestHP == 100) break;
 						}
-						
+
 					}
 				}
 			}
 			MQ.Write($"Hiest HP is mob:{highestHPMob} with percent of {currentHighestHP}");
 			return highestHPMob;
 		}
-		public static Int32 GetXtargetMinAggro()
-		{
-			Int32 currentAggro = 0;
-			Int32 tempMinAggro = 101;
 
-			for (Int32 i = 1; i <= 13; i++)
-			{
-				bool autoHater = MQ.Query<bool>($"${{Me.XTarget[{i}].TargetType.Equal[Auto Hater]}}");
-				if (!autoHater) continue;
-				Int32 mobId = MQ.Query<Int32>($"${{Me.XTarget[{i}].ID}}");
-				if (mobId > 0)
-				{
-					Spawn s;
-					if (_spawns.TryByID(mobId, out s))
-					{
-						if (s.Aggressive)
-						{
-							currentAggro = MQ.Query<Int32>($"${{Me.XTarget[{i}].PctAggro}}");
-							if (tempMinAggro > currentAggro)
-							{
-								tempMinAggro = currentAggro;
-							}
-						}
-					}
-				}
-			}
-
-			if (tempMinAggro == 101) return 0;
-
-			return tempMinAggro;
-		}
 		public static void YieldToEQ()
 		{
 			MQ.Delay(0);
@@ -1370,7 +2219,7 @@ namespace E3Core.Utility
 				{
 					return "Shaman";
 				}
-				if (String.Equals(className, "Archer", StringComparison.OrdinalIgnoreCase))	
+				if (String.Equals(className, "Archer", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Ranger";
 				}
@@ -1402,7 +2251,7 @@ namespace E3Core.Utility
 				{
 					return "Wizard";
 				}
-				if(String.Equals(className, "OCCULTIST", StringComparison.OrdinalIgnoreCase))
+				if (String.Equals(className, "OCCULTIST", StringComparison.OrdinalIgnoreCase))
 				{
 					return "Wizard";
 				}
@@ -1414,11 +2263,11 @@ namespace E3Core.Utility
 				{
 					return "Druid";
 				}
-				
+
 			}
 
-			
-			
+
+
 			return className;
 		}
 		public static string FormatServerName(string serverName)
@@ -1440,7 +2289,7 @@ namespace E3Core.Utility
 			fileIniData.Parser.Configuration.OverrideDuplicateKeys = true;// so that the other ones will be put into a collection
 			fileIniData.Parser.Configuration.AssigmentSpacer = "";
 			fileIniData.Parser.Configuration.CaseInsensitive = true;
-	
+
 			return fileIniData;
 		}
 		/// <summary>
@@ -1614,6 +2463,7 @@ namespace E3Core.Utility
 			TryMoveToTarget();
 			MQ.Cmd("/click right target");
 			MQ.Delay(2000, "${Merchant.ItemsReceived}");
+			MQ.Delay(1000);
 			return true;
 		}
 		public static bool OpenBank()
@@ -1656,7 +2506,7 @@ namespace E3Core.Utility
 		public static bool IsRezDiaglogBoxOpen()
 		{
 			bool dialogBoxOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
-			if(dialogBoxOpen)
+			if (dialogBoxOpen)
 			{
 				string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
 				if ((message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
@@ -1701,6 +2551,20 @@ namespace E3Core.Utility
 			}
 
 		}
+		private static readonly ConcurrentDictionary<int, string> _getIntStrCache = new ConcurrentDictionary<int, string>();
+
+		public static string GetIntStr(int value)
+		{
+			return _getIntStrCache.GetOrAdd(value, i => i.ToString());
+		}
+		private static ConcurrentDictionary<Decimal, String> _decToIntString = new ConcurrentDictionary<Decimal, string>();
+
+		public static string GetDecimalString(Decimal value)
+		{
+			//only store 2 after the decimal, else there are far too many possible values.
+			Decimal tempDec = Math.Round(value, 2);
+			return _decToIntString.GetOrAdd(tempDec, i => i.ToString("N0"));
+		}
 		public static void ToggleBooleanSetting(ref bool booleanObject, string Name, List<string> args)
 		{
 			if (args.Count > 0)
@@ -1733,10 +2597,49 @@ namespace E3Core.Utility
 		}
 		public static List<Data.Spell> ListAllActiveAA()
 		{
-			//using (_log.Trace("AA List Call"))
+			List<Data.Spell> returnValue = new List<Data.Spell>();
+
+			if (Core._MQ2MonoVersion >= 0.419m || Debugger.IsAttached)
 			{
-				List<Data.Spell> returnValue = new List<Data.Spell>();
-				for (Int32 i = 0; i < 20000; i++)
+
+				unsafe
+				{
+					int length;
+					byte* p = E3.MQ.GetAAIdsDataPtr(out length);
+					Int32 counter = 0;
+					if (length > 0)
+					{
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+						int dataStartingLength = data.Length;
+						while (data.Length > 0)
+						{
+							counter++;
+							Int32 AAID = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+
+							if (AAID > 0)
+							{
+								string spellName = MQ.Query<String>($"${{Me.AltAbility[{AAID}].Name}}");
+								var spell = new Data.Spell(spellName);
+								if (spell.CastType == CastingType.AA)
+								{
+									for (Int32 x = 0; x < 12; x++)
+									{
+										string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
+										spell.SpellEffects.Add(teffect);
+									}
+									returnValue.Add(spell);
+								}
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+
+				for (Int32 i = 0; i < 50000; i++)
 				{
 					string spellName = MQ.Query<String>($"${{Me.AltAbility[{i}].Name}}");
 					if (spellName != "NULL")
@@ -1754,8 +2657,9 @@ namespace E3Core.Utility
 						}
 					}
 				}
-				return returnValue;
 			}
+			return returnValue;
+
 		}
 
 		public static List<Data.Spell> ListAllActiveSkills()
@@ -1804,7 +2708,52 @@ namespace E3Core.Utility
 
 		public static List<Data.Spell> ListAllDiscData()
 		{
+
 			List<Data.Spell> returnValue = new List<Data.Spell>();
+
+			if (Core._MQ2MonoVersion >= 0.420m || Debugger.IsAttached)
+			{
+			
+				unsafe
+				{
+			
+					int length;
+					byte* p = E3.MQ.GetDiscIdsDataPtr(out length);
+					Int32 counter = 0;
+					if (length > 0)
+					{
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						int dataStartingLength = data.Length;
+						while (data.Length > 0)
+						{
+							counter++;
+							Int32 discID = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+						
+							string spellName = MQ.Query<String>($"${{Spell[{discID}].Name}}");
+							if (spellName != "NULL")
+							{
+								var spell = new Data.Spell(spellName);
+								if (spell.CastType == CastingType.Disc)
+								{
+									for (Int32 x = 0; x < 12; x++)
+									{
+										string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
+										spell.SpellEffects.Add(teffect);
+									}
+									returnValue.Add(spell);
+								}
+							}
+						}
+						
+					}
+				}
+
+				return returnValue;
+			}
+
+
+
 			Int32 numberSkipped = 0;
 			for (Int32 i = 1; i < 10000; i++)
 			{
@@ -1828,7 +2777,7 @@ namespace E3Core.Utility
 				else
 				{
 					numberSkipped++;
-					if(numberSkipped>20)
+					if (numberSkipped > 20)
 					{
 						//no more discs
 						break;

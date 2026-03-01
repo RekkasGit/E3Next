@@ -1,12 +1,16 @@
-﻿using E3Core.Data;
+﻿using CommunityToolkit.HighPerformance.Buffers;
+using E3Core.Data;
 using E3Core.Server;
+using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.ServiceModel.Dispatcher;
 using System.Text;
@@ -19,6 +23,7 @@ namespace E3Core.Processors
 	{
 
 		public static string _lastSuccesfulCast = String.Empty;
+		public static Decimal _lastSuccesfulCast_RecoveryTime = 0;
 		public static Logging _log = E3.Log;
 		private static IMQ MQ = E3.MQ;
 		public static Dictionary<Int32, Int64> _gemRecastLockForMem = new Dictionary<int, long>();
@@ -124,7 +129,9 @@ namespace E3Core.Processors
 					}
 				
 					MQ.Cmd($"/alt activate {spell.CastID}");
-					MQ.Delay(300); //necessary to keep things... in order
+
+					if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
+					//MQ.Delay(300); //necessary to keep things... in order
 					AfterSpellCheck(spell, targetID);
 					AfterEventCheck(spell);
 					UpdateAAInCooldown(spell);
@@ -174,7 +181,7 @@ namespace E3Core.Processors
 							MQ.Cmd($"/doability \"{spell.CastName}\"");
 							spell.LastCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 							spell.LastAssistTimeStampForCast = Assist.LastAssistStartedTimeStamp;
-							if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+							if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 							if (spell.AfterCastCompletedDelay > 0)
 							{
 								MQ.Delay(spell.AfterCastCompletedDelay);
@@ -189,7 +196,7 @@ namespace E3Core.Processors
 							MQ.Cmd($"/alt activate {spell.CastID}");
 							spell.LastCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 							spell.LastAssistTimeStampForCast = Assist.LastAssistStartedTimeStamp;
-							if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+							if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 							UpdateAAInCooldown(spell);
 							if (spell.AfterCastCompletedDelay > 0)
 							{
@@ -238,12 +245,8 @@ namespace E3Core.Processors
 					while (IsCasting())
 					{
 						MQ.Delay(50);
-
-						//if (E3.IsPaused())
-						//{
-						//	Interrupt();
-						//	return CastReturn.CAST_INTERRUPTED;
-						//}
+						//we are set to process a zone, kick out
+						if (Zoning.IsZoned()) return CastReturn.CAST_INTERRUPTED;
 
 						if (!isEmergency && Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana))
 						{
@@ -443,7 +446,9 @@ namespace E3Core.Processors
 							}
 							if (!TrueTarget(targetID))
 							{
+
 								E3.Bots.Broadcast($"Spell Target failure for targetid:{targetID} for spell {spell.SpellName}");
+								E3.Spawns.RefreshList(full: true);
 								return CastReturn.CAST_NOTARGET;
 							}
 						}
@@ -630,7 +635,7 @@ namespace E3Core.Processors
 									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									MQ.Cmd($"/cast \"{spell.CastName}\"");
-									if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+									if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 									//give time for the casting bar to actulaly appear
 									if (spell.MyCastTime > 500)
 									{
@@ -650,7 +655,7 @@ namespace E3Core.Processors
 										MQ.Cmd($"/alt activate {spell.AAID}");
 										UpdateAAInCooldown(spell);
 
-										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
 										{
@@ -667,7 +672,7 @@ namespace E3Core.Processors
 										//MQ.Cmd($"/casting \"{spell.CastName}|{spell.CastType.ToString()}\"");
 										MQ.Cmd($"/useitem \"{spell.CastName}\"");
 										UpdateItemInCooldown(spell);
-										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
 										{
@@ -685,7 +690,7 @@ namespace E3Core.Processors
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
 									MQ.Cmd($"/cast \"{spell.CastName}\"");
-									if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+									if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 									//give time for the casting bar to actulaly appear
 									if (spell.MyCastTime > 500)
 									{
@@ -701,7 +706,7 @@ namespace E3Core.Processors
 									{
 										//MQ.Cmd($"/casting \"{spell.CastName}|alt\" \"-targetid|{targetID}\"");
 										MQ.Cmd($"/alt activate {spell.AAID}");
-										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 										UpdateAAInCooldown(spell);
 										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
@@ -716,7 +721,7 @@ namespace E3Core.Processors
 										//MQ.Cmd($"/casting \"{spell.CastName}|item\" \"-targetid|{targetID}\"");
 										MQ.Cmd($"/useitem \"{spell.CastName}\"");
 										UpdateItemInCooldown(spell);
-										if (!E3.CharacterSettings.Misc_EnchancedRotationSpeed) MQ.Delay(300);
+										if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 										//give time for the casting bar to actulaly appear
 										if (spell.MyCastTime > 500)
 										{
@@ -952,8 +957,13 @@ namespace E3Core.Processors
 						if (spell.CastType == Data.CastingType.Spell)
 						{
 							_lastSpellCastTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+							_lastSuccesfulCast_RecoveryTime = spell.RecoveryTime;
 						}
-						E3.ActionTaken = true;
+						else
+						{
+							_lastSuccesfulCast_RecoveryTime = 0;
+						}
+							E3.ActionTaken = true;
 						//clear out the queues for the resist counters as they may have a few that lagged behind.
 						ClearResistChecks();
 						return returnValue;
@@ -1542,12 +1552,12 @@ namespace E3Core.Processors
 			{
 				return false;
 			}
-			if (_lastSpellCastTimeStamp + 1500 > Core.StopWatch.ElapsedMilliseconds)
+			if (_lastSpellCastTimeStamp + _lastSuccesfulCast_RecoveryTime > Core.StopWatch.ElapsedMilliseconds)
 			{
 				return true;
 			}
 
-			if(!AnySpellMemorized())
+			if (!AnySpellMemorized())
 			{
 				return false;
 			}
@@ -1929,6 +1939,12 @@ namespace E3Core.Processors
 		}
 		public static bool InRange(Int32 targetId, Data.Spell spell)
 		{
+
+			if (spell.TargetType == "Group v1" && spell.CastType!=CastingType.AA)
+			{	//group spells only should work on group, ignore buffs as there are some oddballs in there.
+				//so i'm missing something here.
+				if (!Basics.GroupMembersInZone.Contains(targetId)) return false;
+			}
 			if (!spell.Initialized) spell.ReInit(); 
 
 			if (spell.MyRange == 0) return true;
@@ -1936,6 +1952,14 @@ namespace E3Core.Processors
 			Spawn s;
 			if (_spawns.TryByID(targetId, out s))
 			{
+				if (s.Level == 1 || s.BodyTypeDesc== "Untargetable")
+				{
+					//this is a level 1 pet, most likely a familiar
+					if (s.Name.Contains("_familiar"))
+					{
+						return false;
+					}
+				}
 				double targetDistance = s.Distance;
 				if (targetDistance <= spell.MyRange)
 				{
@@ -2504,7 +2528,7 @@ namespace E3Core.Processors
 							string keyValue = match.Groups[2].Value;
 							keyValue = "${Data." + keyValue + "}"; //data format for custom keys
 							replaceValue = "";
-							string result = E3.Bots.Query(targetname, keyValue);
+							string result = E3.Bots.Query<String>(targetname, keyValue);
 							if (result != "NULL")
 							{
 								replaceValue = result;
@@ -2607,7 +2631,7 @@ namespace E3Core.Processors
 							replaceValue = "100";
 						}
 						//string startTime = E3.Bots.Query(user, "${Me.Memory_CSharpStartTime}");
-						string result = E3.Bots.Query(targetname, $"${{Me.{query}}}");
+						string result = E3.Bots.Query<String>(targetname, $"${{Me.{query}}}");
 						if (result != "NULL")
 						{
 							replaceValue = result;
@@ -2832,22 +2856,83 @@ namespace E3Core.Processors
 		public static Int64 TimeLeftOnMySpell(Data.Spell spell)
 		{
 
-			for (Int32 i = 1; i < (e3util.MobMaxDebuffSlots+1); i++)
+			if (Core._MQ2MonoVersion >= 0.420m || Debugger.IsAttached)
 			{
-				Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");
-
-				if (spell.SpellID == buffID)
+				unsafe
 				{
-					//check if its mine
-					string casterName = MQ.Query<string>($"${{Target.Buff[{i}].Caster}}");
-					if (E3.CurrentName == casterName)
+					Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+					int length;
+					byte* p = E3.MQ.GetTargetBuffDataPtr(targetID, out length);
+					Int32 counter = 0;
+					if (length > 0)
 					{
-						//its my spell!
-						Int64 millisecondsLeft = MQ.Query<Int64>($"${{Target.BuffDuration[{i}]}}");
-						return millisecondsLeft;
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						int dataStartingLength = data.Length;
+						bool buffsPopulated = false;
+						if (data.Length > 0)
+						{
+							//lets pull out the if buffs are being populated
+							buffsPopulated = MemoryMarshal.Read<Boolean>(data);
+							data = data.Slice(1);
+						}
+						while (data.Length > 0)
+						{
+							counter++;
+							Int32 spellID = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 duration = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 spellType = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 casterNameLength = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							string CasterName = string.Empty;
+							if (casterNameLength > 0)
+							{
+								unsafe
+								{
+									fixed (byte* ptostr = data)
+									{
+										//pull reused strings, without having to allocate them.
+										CasterName = StringPool.Shared.GetOrAdd(data.Slice(0, casterNameLength), Encoding.ASCII);
+									}
+								}
+								data = data.Slice(casterNameLength);
+							}
+							if (spell.SpellID == spellID)
+							{
+								//check if its mine
+								if (E3.CurrentName == CasterName)
+								{
+									//its my spell!
+									Int64 millisecondsLeft = duration * 6 * 1000;
+									return millisecondsLeft;
+								}
+							}
+						}
 					}
 				}
 			}
+			else
+			{
+				for (Int32 i = 1; i <= (e3util.MobMaxDebuffSlots); i++)
+				{
+					Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");
+
+					if (spell.SpellID == buffID)
+					{
+						//check if its mine
+						string casterName = MQ.Query<string>($"${{Target.Buff[{i}].Caster}}");
+						if (E3.CurrentName == casterName)
+						{
+							//its my spell!
+							Int64 millisecondsLeft = MQ.Query<Int64>($"${{Target.BuffDuration[{i}]}}");
+							return millisecondsLeft;
+						}
+					}
+				}
+			}
+				
 			return 0;
 		}
 		public static Int64 TimeLeftOnTargetBuff(Data.Spell spell)
@@ -2870,12 +2955,108 @@ namespace E3Core.Processors
 			}
 			return millisecondsLeft;
 		}
+
+		public static bool TryGetPetBuffDuration(string buffName, out int return_duration)
+		{
+			Int32 buff_spellID = MQ.Query<Int32>($"${{Spell[{buffName}].ID}}");
+			return_duration = 0;
+			if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
+			{
+				unsafe
+				{
+					int length;
+					byte* p = MQ.GetPetBuffDataPtr(out length);
+					if (length > 0)
+					{
+						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+						//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+						int dataStartingLength = data.Length;
+						while (data.Length > 0)
+						{
+							Int32 spellID = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 duration = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+							Int32 spellType = MemoryMarshal.Read<Int32>(data);
+							data = data.Slice(4);
+
+							if (buff_spellID == spellID)
+							{
+								return_duration = duration;
+								return true;
+
+							}
+						}
+					}
+					return false;
+				}
+			}
+
+			if(buff_spellID>0)
+			{
+				int buffIndex = MQ.Query<Int32>($"${{Me.Pet.Buff[{buffName}]}}");
+
+				if (buffIndex >-1)
+				{
+					return_duration = MQ.Query<Int32>($"${{Me.Pet.Buff[{buffIndex}].Duration}}");
+				}
+				return buffIndex>-1;
+			}
+			return false;
+		}
+
+		//only for TimeLeftOnMyPetBuff useage
+		private static Int64 TimeLeftOnMyPetBuffPerf(Data.Spell spell)
+		{
+			//don't use this directly, as it will break remote debug
+			Int64 millisecondsLeft = 0;
+			unsafe
+			{
+				int length;
+				byte* p = MQ.GetPetBuffDataPtr(out length);
+				if (length > 0)
+				{
+					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+					int dataStartingLength = data.Length;
+					while (data.Length > 0)
+					{
+						Int32 spellID = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 duration = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 spellType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						
+						if (spellID == spell.SpellID)
+						{
+							millisecondsLeft = duration;
+							if (millisecondsLeft < 0)
+							{
+								//perma buff?
+								millisecondsLeft = Int32.MaxValue;
+							}
+							else
+							{
+								millisecondsLeft = duration * 1000 * 6;
+							}
+							return millisecondsLeft;
+						}
+						
+					}
+				}
+			}
+			return millisecondsLeft;
+		}
+
 		public static Int64 TimeLeftOnMyPetBuff(Data.Spell spell)
 		{
-
+			if(Core._MQ2MonoVersion>=0.412m || Debugger.IsAttached)
+			{
+				return TimeLeftOnMyPetBuffPerf(spell);
+			}
 			Int64 millisecondsLeft = 0;
 			int buffIndex = MQ.Query<Int32>($"${{Me.Pet.Buff[{spell.SpellName}]}}");
-
 
 			if (buffIndex > 0)
 			{

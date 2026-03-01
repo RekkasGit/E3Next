@@ -26,6 +26,9 @@ namespace E3Core.Processors
 		private static string _recordingFileName = String.Empty;
 		private static Int32 _recordingZoneID = 0;
 		private static IMQ MQ = E3.MQ;
+		private static volatile bool ShouldProcessZone = false;
+		private static object ShouldProcessZoneLock = new object();
+		
 
         [SubSystemInit]
         public static void Zoning_Init()
@@ -35,18 +38,88 @@ namespace E3Core.Processors
 
         public static void Zoned(Int32 zoneId)
         {
-            // add our new zone to the zone lookup if necessary
-            if (!ZoneLookup.TryGetValue(zoneId, out CurrentZone))
-            {
-                CurrentZone = new Zone(zoneId);
-                ZoneLookup.Add(zoneId, new Zone(zoneId));
-            }
-
-            TributeDataFile.ToggleTribute();
-            Rez.TurnOffAutoRezSkip();
+			bool zoneChanged = false;
+			if(CurrentZone!=null)
+			{
+				if (zoneId != CurrentZone.Id)
+				{
+					//our zone has changed or is going to change
+					zoneChanged=true;
+				}
+			}
+			else
+			{
+				//doesn't exist, so we count this as a change.
+				zoneChanged = true;
+			}
+			// add our new zone to the zone lookup if necessary
+			if (!ZoneLookup.TryGetValue(zoneId, out CurrentZone))
+			{
+				CurrentZone = new Zone(zoneId);
+				ZoneLookup.Add(zoneId, new Zone(zoneId));
+			}
+			if(zoneChanged)
+			{
+				TributeDataFile.ToggleTribute();
+				Rez.TurnOffAutoRezSkip();
+			}
+           
         }
+		public static Boolean IsZoned()
+		{
+			lock (ShouldProcessZoneLock)
+			{
+				return ShouldProcessZone;
+			}
+		}
+		public static void SetProcessZone()
+		{
+			lock (ShouldProcessZoneLock)
+			{
+				ShouldProcessZone = true;
+			}
+		}
+		public static void ProcessZoneIfNeeded()
+		{
+			bool shouldProcess = false;
+			lock(ShouldProcessZoneLock)
+			{
+				if (ShouldProcessZone)
+				{
+					shouldProcess = true;
+				}
+			}
+			//don't do work inside of the lock, just set a variable that is local to the thread then check on it.
+			if (shouldProcess)
+			{
+				lock (ShouldProcessZoneLock)
+				{
+					ShouldProcessZone = false;
+				}
 
-	
+				E3.MQ.WriteDelayed("Processing zoning events");
+				using (E3.MQ.GetDelayLock())
+				{
+					//means we have zoned.
+					_spawns.RefreshList(full: true);//make sure we get a new refresh of this zone.
+					Loot.Reset();
+					Movement.ResetKeepFollow();
+					Assist.Reset();
+					Pets.Reset();
+					Nukes.Reset();
+					BuffCheck.AddToBuffCheckTimer(5000);
+
+					//clear out the timers as the ID's are no longer valid
+					BuffCheck.Reset();
+					Zoning.Zoned(MQ.Query<Int32>("${Zone.ID}"));
+					E3.StateUpdates();
+					foreach (var command in E3.CharacterSettings.ZoningCommands)
+					{
+						MQ.Cmd(command);
+					}
+				}
+			}
+		}
 		private static void InitZoneLookup()
         {
             TributeDataFile.LoadData();
@@ -145,40 +218,40 @@ namespace E3Core.Processors
 						{
 							foreach (var s in _spawns.Get().OrderBy(z => z.X))
 							{
+								return;//disabled the copy to data/datasize, need to create tspawn a different way.
+								//Spawn tspawn = Spawn.Aquire();
+								//tspawn.Init(s._data, s._dataSize);
+								//tspawn.TableID = npcIDToStartAt;
+								//tspawn.GridID = gridIDStart;
+								//tspawn.Initial_Heading = tspawn.Heading;
 
-								Spawn tspawn = Spawn.Aquire();
-								tspawn.Init(s._data, s._dataSize);
-								tspawn.TableID = npcIDToStartAt;
-								tspawn.GridID = gridIDStart;
-								tspawn.Initial_Heading = tspawn.Heading;
-
-								_recordedSpawns.Add(s.ID, tspawn);
-
-
-								if (s.TypeDesc != "NPC") continue;
-								//based off Guard_Lasen
-								string sqlStatement = $@"INSERT INTO `npc_types` (`id`,`name`, `lastname`, `level`, `race`, `class`, `bodytype`, `hp`, `mana`, `gender`, `texture`, `helmtexture`, `herosforgemodel`, `size`, `hp_regen_rate`, `hp_regen_per_second`, `mana_regen_rate`, `loottable_id`, `merchant_id`, `alt_currency_id`, `npc_spells_id`, `npc_spells_effects_id`, `npc_faction_id`, `adventure_template_id`, `trap_template`, `mindmg`, `maxdmg`, `attack_count`, `npcspecialattks`, `special_abilities`, `aggroradius`, `assistradius`, `face`, `luclin_hairstyle`, `luclin_haircolor`, `luclin_eyecolor`, `luclin_eyecolor2`, `luclin_beardcolor`, `luclin_beard`, `drakkin_heritage`, `drakkin_tattoo`, `drakkin_details`, `armortint_id`, `armortint_red`, `armortint_green`, `armortint_blue`, `d_melee_texture1`, `d_melee_texture2`, `ammo_idfile`, `prim_melee_type`, `sec_melee_type`, `ranged_type`, `runspeed`, `MR`, `CR`, `DR`, `FR`, `PR`, `Corrup`, `PhR`, `see_invis`, `see_invis_undead`, `qglobal`, `AC`, `npc_aggro`, `spawn_limit`, `attack_speed`, `attack_delay`, `findable`, `STR`, `STA`, `DEX`, `AGI`, `_INT`, `WIS`, `CHA`, `see_hide`, `see_improved_hide`, `trackable`, `isbot`, `exclude`, `ATK`, `Accuracy`, `Avoidance`, `slow_mitigation`, `version`, `maxlevel`, `scalerate`, `private_corpse`, `unique_spawn_by_name`, `underwater`, `isquest`, `emoteid`, `spellscale`, `healscale`, `no_target_hotkey`, `raid_target`, `armtexture`, `bracertexture`, `handtexture`, `legtexture`, `feettexture`, `light`, `walkspeed`, `peqid`, `unique_`, `fixed`, `ignore_despawn`, `show_name`, `untargetable`, `charm_ac`, `charm_min_dmg`, `charm_max_dmg`, `charm_attack_delay`, `charm_accuracy_rating`, `charm_avoidance_rating`, `charm_atk`, `skip_global_loot`, `rare_spawn`, `stuck_behavior`, `model`, `flymode`, `always_aggro`, `exp_mod`, `heroic_strikethrough`, `faction_amount`, `keeps_sold_items`) VALUES
-																			({npcIDToStartAt},'{s.CleanName.Replace(" ", "_")}', '', {s.Level}, {s.RaceID}, {s.ClassID}, {s.BodyTypeID}, 100, 0, {s.GenderID}, 1, 1, 0, 6, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 19, -1, 'mB', '10,1', 35, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'IT10', 28, 28, 7, 1.25, 75, 4, 4, 4, 4, 6, 10, 0, 1, 0, 34, 1, 0, 0, 30, 0, 35, 35, 35, 35, 35, 35, 35, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 1, 1185, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 100, 0, 0, 1);";
-								streamWriter.WriteLine(sqlStatement);
-
-								sqlStatement = $@"INSERT INTO `spawngroup` (`id`, `name`, `spawn_limit`, `dist`, `max_x`, `min_x`, `max_y`, `min_y`, `delay`, `mindelay`, `despawn`, `despawn_timer`, `wp_spawns`) 
-															    VALUES ({spawnGroupIDTOStartAt}, '{zoneName}_{npcIDToStartAt}', 0, 0, 0, 0, 0, 0, 0, 15000, 0, 100, 0);";
-								streamWriter.WriteLine(sqlStatement);
-								sqlStatement = $@"INSERT INTO `spawnentry` (`spawngroupID`, `npcID`, `chance`, `condition_value_filter`, `min_expansion`, `max_expansion`, `content_flags`, `content_flags_disabled`) 
-																VALUES ({spawnGroupIDTOStartAt}, {npcIDToStartAt}, 50, 1, -1, -1, NULL, NULL);";
+								//_recordedSpawns.Add(s.ID, tspawn);
 
 
-								streamWriter.WriteLine(sqlStatement);
+								//if (s.TypeDesc != "NPC") continue;
+								////based off Guard_Lasen
+								//string sqlStatement = $@"INSERT INTO `npc_types` (`id`,`name`, `lastname`, `level`, `race`, `class`, `bodytype`, `hp`, `mana`, `gender`, `texture`, `helmtexture`, `herosforgemodel`, `size`, `hp_regen_rate`, `hp_regen_per_second`, `mana_regen_rate`, `loottable_id`, `merchant_id`, `alt_currency_id`, `npc_spells_id`, `npc_spells_effects_id`, `npc_faction_id`, `adventure_template_id`, `trap_template`, `mindmg`, `maxdmg`, `attack_count`, `npcspecialattks`, `special_abilities`, `aggroradius`, `assistradius`, `face`, `luclin_hairstyle`, `luclin_haircolor`, `luclin_eyecolor`, `luclin_eyecolor2`, `luclin_beardcolor`, `luclin_beard`, `drakkin_heritage`, `drakkin_tattoo`, `drakkin_details`, `armortint_id`, `armortint_red`, `armortint_green`, `armortint_blue`, `d_melee_texture1`, `d_melee_texture2`, `ammo_idfile`, `prim_melee_type`, `sec_melee_type`, `ranged_type`, `runspeed`, `MR`, `CR`, `DR`, `FR`, `PR`, `Corrup`, `PhR`, `see_invis`, `see_invis_undead`, `qglobal`, `AC`, `npc_aggro`, `spawn_limit`, `attack_speed`, `attack_delay`, `findable`, `STR`, `STA`, `DEX`, `AGI`, `_INT`, `WIS`, `CHA`, `see_hide`, `see_improved_hide`, `trackable`, `isbot`, `exclude`, `ATK`, `Accuracy`, `Avoidance`, `slow_mitigation`, `version`, `maxlevel`, `scalerate`, `private_corpse`, `unique_spawn_by_name`, `underwater`, `isquest`, `emoteid`, `spellscale`, `healscale`, `no_target_hotkey`, `raid_target`, `armtexture`, `bracertexture`, `handtexture`, `legtexture`, `feettexture`, `light`, `walkspeed`, `peqid`, `unique_`, `fixed`, `ignore_despawn`, `show_name`, `untargetable`, `charm_ac`, `charm_min_dmg`, `charm_max_dmg`, `charm_attack_delay`, `charm_accuracy_rating`, `charm_avoidance_rating`, `charm_atk`, `skip_global_loot`, `rare_spawn`, `stuck_behavior`, `model`, `flymode`, `always_aggro`, `exp_mod`, `heroic_strikethrough`, `faction_amount`, `keeps_sold_items`) VALUES
+								//											({npcIDToStartAt},'{s.CleanName.Replace(" ", "_")}', '', {s.Level}, {s.RaceID}, {s.ClassID}, {s.BodyTypeID}, 100, 0, {s.GenderID}, 1, 1, 0, 6, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 19, -1, 'mB', '10,1', 35, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'IT10', 28, 28, 7, 1.25, 75, 4, 4, 4, 4, 6, 10, 0, 1, 0, 34, 1, 0, 0, 30, 0, 35, 35, 35, 35, 35, 35, 35, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 1, 1185, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 100, 0, 0, 1);";
+								//streamWriter.WriteLine(sqlStatement);
 
-								sqlStatement = $@"INSERT INTO `spawn2` (`id`, `spawngroupID`, `zone`, `version`, `x`, `y`, `z`, `heading`, `respawntime`, `variance`, `pathgrid`, `path_when_zone_idle`, `_condition`, `cond_value`, `enabled`, `animation`, `min_expansion`, `max_expansion`, `content_flags`, `content_flags_disabled`) 
-															VALUES ({spawn2IDToStartAt}, {spawnGroupIDTOStartAt}, '{zoneName}', 0, {s.X}, {s.Y}, {s.Z}, {s.Heading}, 640, 0, 0, 0, 2, 1, 1, 0, -1, -1, NULL, NULL);";
+								//sqlStatement = $@"INSERT INTO `spawngroup` (`id`, `name`, `spawn_limit`, `dist`, `max_x`, `min_x`, `max_y`, `min_y`, `delay`, `mindelay`, `despawn`, `despawn_timer`, `wp_spawns`) 
+								//							    VALUES ({spawnGroupIDTOStartAt}, '{zoneName}_{npcIDToStartAt}', 0, 0, 0, 0, 0, 0, 0, 15000, 0, 100, 0);";
+								//streamWriter.WriteLine(sqlStatement);
+								//sqlStatement = $@"INSERT INTO `spawnentry` (`spawngroupID`, `npcID`, `chance`, `condition_value_filter`, `min_expansion`, `max_expansion`, `content_flags`, `content_flags_disabled`) 
+								//								VALUES ({spawnGroupIDTOStartAt}, {npcIDToStartAt}, 50, 1, -1, -1, NULL, NULL);";
 
-								streamWriter.WriteLine(sqlStatement);
 
-								npcIDToStartAt++;
-								spawnGroupIDTOStartAt++;
-								spawn2IDToStartAt++;
-								gridIDStart++;
+								//streamWriter.WriteLine(sqlStatement);
+
+								//sqlStatement = $@"INSERT INTO `spawn2` (`id`, `spawngroupID`, `zone`, `version`, `x`, `y`, `z`, `heading`, `respawntime`, `variance`, `pathgrid`, `path_when_zone_idle`, `_condition`, `cond_value`, `enabled`, `animation`, `min_expansion`, `max_expansion`, `content_flags`, `content_flags_disabled`) 
+								//							VALUES ({spawn2IDToStartAt}, {spawnGroupIDTOStartAt}, '{zoneName}', 0, {s.X}, {s.Y}, {s.Z}, {s.Heading}, 640, 0, 0, 0, 2, 1, 1, 0, -1, -1, NULL, NULL);";
+
+								//streamWriter.WriteLine(sqlStatement);
+
+								//npcIDToStartAt++;
+								//spawnGroupIDTOStartAt++;
+								//spawn2IDToStartAt++;
+								//gridIDStart++;
 							}
 						}
 					}
@@ -199,7 +272,7 @@ namespace E3Core.Processors
 			{
 				if (!e3util.ShouldCheck(ref _nextRecordingCheck, _nextRecordingInterval)) return;
 
-				_spawns.RefreshList();
+				_spawns.RefreshList(full:true);
 
 				foreach (var s in _recordedSpawns.Values)
 				{

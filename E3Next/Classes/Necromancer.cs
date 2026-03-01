@@ -68,7 +68,7 @@ namespace E3Core.Classes
             if (!Basics.InCombat()) return;
             //allow people to run to their death if they have the window focused. 
             if (e3util.IsManualControl()) return;
-			if (Basics.GroupMembers.Count < 5) return;
+			if (Basics.GroupMembersInZone.Count < 5) return;
 
 
 			Int32 GroupSize = MQ.Query<Int32>("${Group}");
@@ -113,7 +113,7 @@ namespace E3Core.Classes
 
             //if manual control, kickout
             if (e3util.IsManualControl()) return;
-			if (Basics.GroupMembers.Count < 5) return;
+			if (Basics.GroupMembersInZone.Count < 5) return;
 
 			//if already FD, kickout
 			if (MQ.Query<bool>("${Me.Feigning}")) return;

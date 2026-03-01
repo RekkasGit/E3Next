@@ -9,6 +9,7 @@ using MonoCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -69,7 +70,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 		[SubSystemInit]
 		public static void CharacterSettingsWindow_Init()
 		{
-			if (Core._MQ2MonoVersion < 0.35m) return;
+			if (Debugger.IsAttached) return;
+			if (Core._MQ2MonoVersion < 0.412m ) return;
 			_versionInfo = $"nE³xt v{Setup.E3Version} by Rekka | Build {Setup.BuildDate}. Editor by Linamas/Rekka";
 
 			// Load UI theme settings from character INI
@@ -83,8 +85,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 						_currentTheme = theme;
 					}
 					// Apply rounding setting
-					_rounding = E3.CharacterSettings.UITheme_Rounding;
-					_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+					GlobalRoundingValue = E3.CharacterSettings.UITheme_Rounding;
+					_roundingBuf = GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture);
 				}
 			}
 			catch (Exception ex)
@@ -95,10 +97,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 			// Toggle the in-game ImGui config window
 			EventProcessor.RegisterCommand("/e3config", (x) =>
 			{
-
-				if (Core._MQ2MonoVersion < 0.35m)
+				
+				if (Core._MQ2MonoVersion < 0.41m)
 				{
-					Core.mqInstance.Write("MQ2Mono Version needs to be at least 0.35 to use this command");
+					E3.MQ.Write("This requires MQ2Mono 0.41 or greater");
 					return;
 				}
 
@@ -177,17 +179,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 					{
 						if (window.Begin(_windowName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 						{
-
-							Render_MainWindow_Header();
-							imgui_Separator();
-							Render_MainWindow_CharIniSelector();
-							imgui_Separator();
-							Render_MainWindow_SearchBar();
-							var allPlayersState = _state.GetState<State_AllPlayers>();
-							if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
-							if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
-							if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
-							if (_state.Show_Donate) RenderDonateModal();
+							using (MQ.GetDelayLock())
+							{
+								Render_MainWindow_Header();
+								imgui_Separator();
+								Render_MainWindow_CharIniSelector();
+								imgui_Separator();
+								Render_MainWindow_SearchBar();
+								var allPlayersState = _state.GetState<State_AllPlayers>();
+								if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
+								if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
+								if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
+								if (_state.Show_Donate) RenderDonateModal();
+							}
 						}
 					}
 				}
@@ -202,6 +206,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			// Header bar: version text on left, buttons on right
 
+		
 			using (var table = ImGUITable.Aquire())
 			{
 				if (table.BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(), 0))
@@ -367,9 +372,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 			else
 			{
 				// Show disabled button when there are no changes
-				imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
-				imgui_Button("Clear Changes");
-				imgui_PopStyleVar(1);
+				using(var stylevar = PushStyle.Aquire())
+				{
+					stylevar.PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+					imgui_Button("Clear Changes");
+				
+				}
+				
 				imgui_SameLine();
 			}
 
@@ -411,7 +420,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			EnsureConfigEditorInit();
 			var pd = data.GetActiveCharacterIniData();
-			if (pd == null || pd.Sections == null) { imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded."); return; }
+			if (pd == null || pd.Sections == null) { imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No character INI loaded. If you just launched /e3config, please select an INI from the drop down (even if it appears one is already selected)!"); return; }
 
 			Render_MainWindow_CatalogStatus();
 			data.RebuildSectionsOrderIfNeeded();
@@ -599,17 +608,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addIfs = imgui_MenuItem("Add New Ifs");
-						imgui_PopStyleColor(1);
-
-						if (addIfs)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "Ifs";
-							state.SelectedSection = "Ifs";
-							state.SelectedValueIndex = -1;
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addIfs = imgui_MenuItem("Add New Ifs");
+							if (addIfs)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "Ifs";
+								state.SelectedSection = "Ifs";
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -620,18 +630,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New Command Set");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "CommandSets";
-							state.SelectedSection = "CommandSets";
-							state.SelectedValueIndex = -1;
-
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New Command Set");
+					
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "CommandSets";
+								state.SelectedSection = "CommandSets";
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -642,18 +653,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New Burn");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "Burn";
-							state.SelectedSection = "Burn";
-							state.SelectedValueIndex = -1;
-
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New Burn");
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "Burn";
+								state.SelectedSection = "Burn";
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -664,18 +675,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New Event");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "Events";
-							state.SelectedSection = "Events";
-							state.SelectedValueIndex = -1;
-
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New Event");
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "Events";
+								state.SelectedSection = "Events";
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -686,18 +697,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New EventLoop");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "EventLoop";
-							state.SelectedSection = "EventLoop";
-							state.SelectedValueIndex = -1;
-
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New EventLoop");
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "EventLoop";
+								state.SelectedSection = "EventLoop";
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -708,19 +719,22 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New EventLoopTiming");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "EventLoopTiming";
-							state.SelectedSection = "EventLoopTiming";
-							state.SelectedValueIndex = -1;
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New EventLoopTiming");
+						
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "EventLoopTiming";
+								state.SelectedSection = "EventLoopTiming";
+								state.SelectedValueIndex = -1;
 
+							}
 						}
+						
 					}
 				}
 			}
@@ -730,18 +744,19 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addBurn = imgui_MenuItem("Add New EventRegMatche");
-						imgui_PopStyleColor(1);
-
-						if (addBurn)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = "EventRegMatches";
-							state.SelectedSection = "EventRegMatches";
-							state.SelectedValueIndex = -1;
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addBurn = imgui_MenuItem("Add New EventRegMatche");
+							if (addBurn)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = "EventRegMatches";
+								state.SelectedSection = "EventRegMatches";
+								state.SelectedValueIndex = -1;
 
+							}
 						}
 					}
 				}
@@ -753,18 +768,18 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					if (popup.BeginPopupContextItem(null, 1))
 					{
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						bool addKey = imgui_MenuItem("Add New Key Value");
-						imgui_PopStyleColor(1);
-
-						if (addKey)
+						using (var style = PushStyle.Aquire())
 						{
-							_state.ClearAddInLine();
-							state.Show_AddKey = true;
-							state.SelectedAddInLine = sectionName;
-							state.SelectedSection = sectionName;
-							state.SelectedValueIndex = -1;
-
+							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+							bool addKey = imgui_MenuItem("Add New Key Value");
+							if (addKey)
+							{
+								_state.ClearAddInLine();
+								state.Show_AddKey = true;
+								state.SelectedAddInLine = sectionName;
+								state.SelectedSection = sectionName;
+								state.SelectedValueIndex = -1;
+							}
 						}
 					}
 				}
@@ -1088,7 +1103,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 									Int32 spellID = -1;
 									Int32.TryParse(gemState.Gems[gem], out spellID);
 
-									string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}", false);
+									string spellName = MQ.Query<string>($"${{Spell[{spellID}]}}");
 
 									if (!string.IsNullOrEmpty(spellName) && !spellName.Equals("NULL", StringComparison.OrdinalIgnoreCase) && !spellName.Equals("ERROR", StringComparison.OrdinalIgnoreCase))
 									{
@@ -1235,6 +1250,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 			else if (data._singleEntryKeys.ContainsKey(mainWindowState.SelectedSection) && (data._singleEntryKeys[mainWindowState.SelectedSection].Count == 0 || data._singleEntryKeys[mainWindowState.SelectedSection].Contains(mainWindowState.SelectedKey)))
 			{
 				Render_MainWindow_ConfigEditor_SelectedKeyValues_String(parts, selectedSection);
+
+			}
+			else if (mainWindowState.SelectedKey.StartsWith("RGBA_"))
+			{
+
+				Render_MainWindow_ConfigEdtor_RGBA(parts, selectedSection);
 
 			}
 			else if (data._stringCollectionSections.ContainsKey(mainWindowState.SelectedSection) && (data._stringCollectionSections[mainWindowState.SelectedSection].Count == 0 || data._stringCollectionSections[mainWindowState.SelectedSection].Contains(mainWindowState.SelectedKey)))
@@ -1397,17 +1418,25 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			if (!enabled)
 			{
-				imgui_PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+				using (var stylevar = PushStyle.Aquire())
+				{
+					stylevar.PushStyleVarFloat((int)ImGuiStyleVar.Alpha, 0.4f);
+					bool pressed = imgui_Button(label);
+					if (pressed && enabled)
+					{
+						onClick?.Invoke();
+					}
+				}
 			}
-			bool pressed = imgui_Button(label);
-			if (!enabled)
+			else
 			{
-				imgui_PopStyleVar(1);
-			}
-			if (pressed && enabled)
-			{
-				onClick?.Invoke();
-			}
+				bool pressed = imgui_Button(label);
+				if (pressed && enabled)
+				{
+					onClick?.Invoke();
+				}
+
+			}	
 		}
 		private static void SwapAndMark(int fromIndex, int toIndex, out bool listChanged)
 		{
@@ -1561,6 +1590,39 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_SameLine();
 
 			}
+		}
+		static string RGBEditorCurrentValue = String.Empty;
+		static float[] RGBEditorCurrentFloats = { 0, 0, 0, 0 }; 
+		private static void Render_MainWindow_ConfigEdtor_RGBA(List<string> parts,SectionData selectedSection)
+		{
+			var mainWindowState = _state.GetState<State_MainWindow>();
+			float availWidth = imgui_GetContentRegionAvailX();
+			float inputWidth = availWidth > 0f ? Math.Min(availWidth, 800f) : 800f;
+			imgui_TextColored(0.9f, 0.95f, 1.0f, 1.0f, "RGBA Editor");
+
+		
+			if (RGBEditorCurrentValue != parts[0] || RGBEditorCurrentValue==String.Empty)
+			{
+				RGBEditorCurrentValue = parts[0];
+				string[] dataList = RGBEditorCurrentValue.Split(',');
+				for (Int32 i = 0; i < dataList.Length; i++)
+				{
+
+						if (float.TryParse(dataList[i], out var floatValue))
+						{
+							RGBEditorCurrentFloats[i] = floatValue;
+						}
+				}
+			}
+			imgui_SetNextItemWidth(200);
+
+			if (imgui_ColorPicker4_Float("##E3ConfigNameColorPicker", RGBEditorCurrentFloats[0], RGBEditorCurrentFloats[1], RGBEditorCurrentFloats[2], RGBEditorCurrentFloats[3], 0))
+			{
+				float[] newColors = imgui_ColorPicker_GetRGBA_Float("##E3ConfigNameColorPicker");
+				parts[0] =String.Join(",", newColors);
+				mainWindowState.ConfigIsDirty = true;
+			}
+			imgui_Separator();
 		}
 		private static void Render_MainWindow_ConfigEditor_SelectedKeyValues_Collections(List<string> parts, SectionData selectedSection)
 		{
@@ -1762,36 +1824,37 @@ namespace E3Core.UI.Windows.CharacterSettings
 						imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Value Actions");
 
 						// Delete Value button (red)
-						imgui_PushStyleColor((int)ImGuiCol.Button, 0.85f, 0.30f, 0.30f, 1.0f);
-						imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 0.95f, 0.40f, 0.40f, 1.0f);
-						imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.75f, 0.20f, 0.20f, 1.0f);
-						if (imgui_Button("Delete Value"))
+						using (var style = PushStyle.Aquire())
 						{
-							// Delete the currently selected value
-							var pdAct = data.GetActiveCharacterIniData();
-							var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
-							var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
-							if (key != null)
+							style.PushStyleColor((int)ImGuiCol.Button, 0.85f, 0.30f, 0.30f, 1.0f);
+							style.PushStyleColor((int)ImGuiCol.ButtonHovered, 0.95f, 0.40f, 0.40f, 1.0f);
+							style.PushStyleColor((int)ImGuiCol.ButtonActive, 0.75f, 0.20f, 0.20f, 1.0f);
+							if (imgui_Button("Delete Value"))
 							{
-								var vals = GetValues(key);
-								if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < vals.Count)
+								// Delete the currently selected value
+								var pdAct = data.GetActiveCharacterIniData();
+								var selSec = pdAct.Sections.GetSectionData(mainWindowState.SelectedSection);
+								var key = selSec?.Keys.GetKeyData(mainWindowState.SelectedKey);
+								if (key != null)
 								{
-									if (vals.Count == 1)
+									var vals = GetValues(key);
+									if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < vals.Count)
 									{
-										vals[0] = String.Empty;
+										if (vals.Count == 1)
+										{
+											vals[0] = String.Empty;
+										}
+										else
+										{
+											vals.RemoveAt(mainWindowState.SelectedValueIndex);
+										}
+										mainWindowState.SelectedValueIndex = -1; // Clear selection after delete
+										data.RefreshEditableSpellState(force: true);
 									}
-									else
-									{
-										vals.RemoveAt(mainWindowState.SelectedValueIndex);
-									}
-									mainWindowState.SelectedValueIndex = -1; // Clear selection after delete
-									data.RefreshEditableSpellState(force: true);
-
-
 								}
 							}
 						}
-						imgui_PopStyleColor(3);
+							
 						imgui_SameLine();
 
 						// Show/Hide Editor button with pulsing highlight
@@ -1799,28 +1862,30 @@ namespace E3Core.UI.Windows.CharacterSettings
 						float highlightR = 0.95f + (pulse * 0.05f);
 						float highlightG = 0.75f + (pulse * 0.25f);
 						float highlightB = 0.35f + (pulse * 0.15f);
-						imgui_PushStyleColor((int)ImGuiCol.Button, highlightR, highlightG, highlightB, 1.0f);
-						imgui_PushStyleColor((int)ImGuiCol.ButtonHovered, 1.0f, 0.85f, 0.45f, 1.0f);
-						imgui_PushStyleColor((int)ImGuiCol.ButtonActive, 0.85f, 0.65f, 0.25f, 1.0f);
-						imgui_PushStyleColor((int)ImGuiCol.Text, 0.1f, 0.1f, 0.1f, 1.0f); // Dark text for readability
-
-						string btnLabel = mainWindowState.Show_ShowIntegratedEditor ? "Hide Editor" : "Show Editor";
-						if (imgui_Button(btnLabel))
+						using (var style = PushStyle.Aquire())
 						{
-							mainWindowState.Show_ShowIntegratedEditor = !mainWindowState.Show_ShowIntegratedEditor;
-							if (mainWindowState.Show_ShowIntegratedEditor)
+							style.PushStyleColor((int)ImGuiCol.Button, highlightR, highlightG, highlightB, 1.0f);
+							style.PushStyleColor((int)ImGuiCol.ButtonHovered, 1.0f, 0.85f, 0.45f, 1.0f);
+							style.PushStyleColor((int)ImGuiCol.ButtonActive, 0.85f, 0.65f, 0.25f, 1.0f);
+							style.PushStyleColor((int)ImGuiCol.Text, 0.1f, 0.1f, 0.1f, 1.0f); // Dark text for readability
+
+							string btnLabel = mainWindowState.Show_ShowIntegratedEditor ? "Hide Editor" : "Show Editor";
+							if (imgui_Button(btnLabel))
 							{
-								// Initialize manual edit buffer when opening
-								var keyData = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
-								var valuesList = GetValues(keyData);
-								if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < valuesList.Count)
+								mainWindowState.Show_ShowIntegratedEditor = !mainWindowState.Show_ShowIntegratedEditor;
+								if (mainWindowState.Show_ShowIntegratedEditor)
 								{
-									_cfgManualEditBuffer = valuesList[mainWindowState.SelectedValueIndex] ?? string.Empty;
+									// Initialize manual edit buffer when opening
+									var keyData = selectedSection?.Keys?.GetKeyData(mainWindowState.SelectedKey ?? string.Empty);
+									var valuesList = GetValues(keyData);
+									if (mainWindowState.SelectedValueIndex >= 0 && mainWindowState.SelectedValueIndex < valuesList.Count)
+									{
+										_cfgManualEditBuffer = valuesList[mainWindowState.SelectedValueIndex] ?? string.Empty;
+									}
 								}
 							}
 						}
-
-						imgui_PopStyleColor(4);
+							
 						string editorHint = mainWindowState.Show_ShowIntegratedEditor ? "Editor panel is open below." : "Click to show the advanced editor.";
 						imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, editorHint);
 						imgui_Separator();
@@ -2560,7 +2625,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_InlineHelpButton("SpellEditor_DelayHelp", "Seconds to pause after a successful cast before this entry can fire again.");
 					Render_TwoColumn_TableInt("##SpellEditor_RecastDelay", "Recast Delay:", currentSpell.RecastDelay, (u) => { currentSpell.RecastDelay = u; });
 					Render_InlineHelpButton("SpellEditor_RecastDelayHelp", "Extra cooldown (in seconds) inserted before reusing this entry.");
-					Render_TwoColumn_TableInt("##SpellEditor_DelayBeforeRecast", "Min Duration Before Recast:", (int)currentSpell.MinDurationBeforeRecast, (u) => { currentSpell.MinDurationBeforeRecast = u; });
+					Render_TwoColumn_TableInt("##SpellEditor_DelayBeforeRecast", "Min Duration Before Recast:", (int)currentSpell.MinDurationBeforeRecast/1000, (u) => { currentSpell.MinDurationBeforeRecast = u * 1000; });
 					Render_InlineHelpButton("SpellEditor_MinDurationHelp", "Minimum duration (seconds) that must elapse before the spell is considered for recast—great for songs/buffs.");
 					Render_TwoColumn_TableInt("##SpellEditor_BeforeSpellDelay", "Before Spell Delay:", currentSpell.BeforeSpellDelay, (u) => { currentSpell.BeforeSpellDelay = u; });
 					Render_InlineHelpButton("SpellEditor_BeforeSpellDelayHelp", "Milliseconds to wait just before casting this entry.");
@@ -3439,7 +3504,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_SameLine();
 					if (string.IsNullOrEmpty(_roundingBuf))
 					{
-						_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+						_roundingBuf = GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture);
 					}
 					imgui_SetNextItemWidth(100f);
 					string roundingInputId = $"##rounding_value_{_roundingVersion}";
@@ -3448,45 +3513,45 @@ namespace E3Core.UI.Windows.CharacterSettings
 						_roundingBuf = imgui_InputText_Get(roundingInputId) ?? string.Empty;
 						if (float.TryParse(_roundingBuf, NumberStyles.Float, CultureInfo.InvariantCulture, out var rv))
 						{
-							_rounding = Math.Max(0f, Math.Min(12f, rv));
+							GlobalRoundingValue = Math.Max(0f, Math.Min(12f, rv));
 							// Save rounding to character INI
 							if (E3.CharacterSettings != null)
 							{
-								E3.CharacterSettings.UITheme_Rounding = _rounding;
+								E3.CharacterSettings.UITheme_Rounding = GlobalRoundingValue;
 								E3.CharacterSettings.SaveData();
 							}
 						}
 					}
 					imgui_SameLine();
-					imgui_Text($"({_rounding.ToString("0.0", CultureInfo.InvariantCulture)})");
+					imgui_Text($"({GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture)})");
 					imgui_SameLine();
 					if (imgui_Button("-"))
 					{
-						_rounding = Math.Max(0f, _rounding - 1f);
-						_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+						GlobalRoundingValue = Math.Max(0f, GlobalRoundingValue - 1f);
+						_roundingBuf = GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture);
 						_roundingVersion++;
 						SaveRoundingToSettings();
 					}
 					imgui_SameLine();
 					if (imgui_Button("+"))
 					{
-						_rounding = Math.Min(12f, _rounding + 1f);
-						_roundingBuf = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+						GlobalRoundingValue = Math.Min(12f, GlobalRoundingValue + 1f);
+						_roundingBuf = GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture);
 						_roundingVersion++;
 						SaveRoundingToSettings();
 					}
-					string roundingString = _rounding.ToString("0.0", CultureInfo.InvariantCulture);
+					string roundingString = GlobalRoundingValue.ToString("0.0", CultureInfo.InvariantCulture);
 					// Presets
 					imgui_Text("Presets:");
-					if (imgui_Button("0")) { _rounding = 0f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					if (imgui_Button("0")) { GlobalRoundingValue = 0f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
 					imgui_SameLine();
-					if (imgui_Button("3")) { _rounding = 3f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					if (imgui_Button("3")) { GlobalRoundingValue = 3f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
 					imgui_SameLine();
-					if (imgui_Button("6")) { _rounding = 6f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					if (imgui_Button("6")) { GlobalRoundingValue = 6f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
 					imgui_SameLine();
-					if (imgui_Button("9")) { _rounding = 9f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					if (imgui_Button("9")) { GlobalRoundingValue = 9f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
 					imgui_SameLine();
-					if (imgui_Button("12")) { _rounding = 12f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
+					if (imgui_Button("12")) { GlobalRoundingValue = 12f; _roundingBuf = roundingString; _roundingVersion++; SaveRoundingToSettings(); }
 
 					imgui_Separator();
 					// Preview the accent color
@@ -3506,7 +3571,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			if (E3.CharacterSettings != null)
 			{
-				E3.CharacterSettings.UITheme_Rounding = _rounding;
+				E3.CharacterSettings.UITheme_Rounding = GlobalRoundingValue;
 				E3.CharacterSettings.SaveData();
 			}
 		}

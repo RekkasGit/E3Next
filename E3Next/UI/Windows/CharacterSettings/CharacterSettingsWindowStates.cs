@@ -1,9 +1,10 @@
 using E3Core.Data;
 using IniParser.Model;
+using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using static MonoCore.E3ImGUI;
-using MonoCore;
 
 namespace E3Core.UI.Windows.CharacterSettings
 {
@@ -221,7 +222,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public CharacterSettingsState()
 		{
 			//set all initial windows to not show
-			if (Core._MQ2MonoVersion > 0.34m) ClearWindows();
+			if (Core._MQ2MonoVersion > 0.411m && !Debugger.IsAttached) ClearWindows();
 		}
 
 		public T GetState<T>()

@@ -59,10 +59,7 @@ namespace E3Core.Server
 			{
                 MQ.Write("/ui has been depreciated, please use /e3ui");
 			});
-			EventProcessor.RegisterCommand("/e3debug-config", (x) =>
-			{
-                PrintCharConfigLaunch();
-			});
+			
 
 			EventProcessor.RegisterCommand("/e3config-old", (x) =>
 			{
@@ -133,7 +130,7 @@ namespace E3Core.Server
 			}
 			
 		}
-        static void PrintCharConfigLaunch()
+        public static void PrintCharConfigLaunch()
         {
 
 			string dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");

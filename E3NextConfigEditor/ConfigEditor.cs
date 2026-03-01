@@ -288,7 +288,7 @@ namespace E3NextConfigEditor
 			}
 
 			//get a 'base' ini file for the class so that we can use this to merge data in later
-			_baseIniData = E3.CharacterSettings.createNewINIData();
+			_baseIniData = E3.CharacterSettings.createNewINIData(forBrandNewFile:false);
 			//get all the reflection attributes off the settings class
 			_charSettingsMappings = e3util.GetSettingsMappedToInI();
 

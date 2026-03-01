@@ -3,10 +3,12 @@ using MonoCore;
 using NetMQ;
 using NetMQ.Sockets;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,7 +23,7 @@ namespace MQServerClient
 			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 
 			AsyncIO.ForceDotNet.Force();
-            MonoCore.Core._MQ2MonoVersion = 0.21m;
+            MonoCore.Core._MQ2MonoVersion = 0.40m;
             MonoCore.Core.mqInstance = new NetMQMQ();
             MonoCore.Core.spawnInstance = new NetMQSpawns();
             MonoCore.Core.OnInit();
@@ -73,14 +75,14 @@ namespace MQServerClient
             _requestSocket.Options.ReceiveHighWatermark = 10000;
             _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
         }
-        public bool TryByID(Int32 id, out Spawn s, bool refresh = true)
+        public bool TryByID(Int32 id, out Spawn s, bool refresh = true  , Boolean useCurrentCache = false)
         {
-            if(refresh) RefreshListIfNeeded();
+            if(refresh && !useCurrentCache) RefreshListIfNeeded();
             return _spawnsByID.TryGetValue(id, out s);
         }
-        public bool TryByName(string name, out Spawn s)
+        public bool TryByName(string name, out Spawn s, Boolean useCurrentCache = false)
         {
-            RefreshListIfNeeded();
+            if(!useCurrentCache) RefreshListIfNeeded();
             return _spawnsByName.TryGetValue(name, out s);
         }
         public Int32 GetIDByName(string name)
@@ -122,7 +124,7 @@ namespace MQServerClient
         {
 
         }
-        public void RefreshList()
+        public void RefreshList(bool full = false)
         {
             foreach (var spawn in _spawns)
             {
@@ -201,12 +203,16 @@ namespace MQServerClient
                     if (_spawnsByID.TryGetValue(ID, out s))
                     {
                         //just update the value
-                        s.Init(_requestMsg.Data, _requestMsg.Size);
+
+                        ReadOnlySpan<byte> tdata = new ReadOnlySpan<byte>(_requestMsg.Data, 0,_requestMsg.Size);
+                        s.Init(tdata);
                     }
                     else
                     {
                         var spawn = Spawn.Aquire();
-                        spawn.Init(_requestMsg.Data, _requestMsg.Size);
+						ReadOnlySpan<byte> tdata = new ReadOnlySpan<byte>(_requestMsg.Data, 0, _requestMsg.Size);
+						spawn.Init(tdata);
+						//spawn.Init(_requestMsg.Data, _requestMsg.Size);
                         _spawns.Add(spawn);
                     }
                    
@@ -250,7 +256,23 @@ namespace MQServerClient
             _lastRefesh = Core.StopWatch.ElapsedMilliseconds;
 
         }
-    }
+
+		public List<int> GetIDs()
+		{
+			List<Int32> ids = new List<Int32>();
+            foreach(var spawn in _spawns)
+            {
+                ids.Add(spawn.ID);
+            }
+            return ids;
+		}
+
+		public void AddSpawn(Spawn spawn)
+		{
+			
+
+		}
+	}
 
     public static class RemoteDebugServerConfig
     {
@@ -317,11 +339,31 @@ namespace MQServerClient
         public TimeSpan RecieveTimeout = new TimeSpan(0, 5, 30);
         byte[] _payload = new byte[1000 * 86];
         Int32 _payloadLength = 0;
+		byte[] _getPetBuffDataArray = new byte[1024*86];
+        GCHandle _getPetBuffDataArrayHandle;
 
-        public NetMQMQ()
+		byte[] _getSpawn3_DeltaArray = new byte[1024 * 1024];
+		GCHandle _getSpawn3_DeltaHandle;
+		byte[] _getXTargetDataArray = new byte[1024 * 86];
+		GCHandle _getXTargetDataHandle;
+
+		byte[] _getTargetDataArray = new byte[1024 * 86];
+		GCHandle _getTargetDataHandle;
+		byte[] _getAAListDataArray = new byte[1024 * 86];
+		GCHandle _getAAListDataHandle;
+
+		byte[] _getDiscListDataArray = new byte[1024 * 86];
+		GCHandle _getDiscListDataHandle;
+		public NetMQMQ()
         {
-           
-            _requestSocket = new DealerSocket();
+			_getPetBuffDataArrayHandle = GCHandle.Alloc(_getPetBuffDataArray, GCHandleType.Pinned);
+			_getSpawn3_DeltaHandle= GCHandle.Alloc(_getSpawn3_DeltaArray, GCHandleType.Pinned);
+			_getXTargetDataHandle = GCHandle.Alloc(_getXTargetDataArray, GCHandleType.Pinned);
+			_getTargetDataHandle = GCHandle.Alloc(_getTargetDataArray, GCHandleType.Pinned);
+			_getAAListDataHandle = GCHandle.Alloc(_getAAListDataArray, GCHandleType.Pinned);
+			_getDiscListDataHandle = GCHandle.Alloc(_getDiscListDataArray, GCHandleType.Pinned);
+
+			_requestSocket = new DealerSocket();
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
             _requestSocket.Options.SendHighWatermark = 100;
             _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
@@ -422,7 +464,7 @@ namespace MQServerClient
             return true;
         }
 
-        public T Query<T>(string query, bool delayPossible = true)
+        public T Query<T>(string query)
         {
             // Console.WriteLine(query);
             if (_requestMsg.IsInitialised)
@@ -937,6 +979,376 @@ namespace MQServerClient
 		public string GetHoverWindowName()
 		{
 			return "NULL";
+		}
+
+	
+		public unsafe byte* GetPetBuffDataPtr(out int length)
+		{
+			if (_requestMsg.IsInitialised)
+			{
+				_requestMsg.Close();
+			}
+			_requestMsg.InitEmpty();
+			//send empty frame
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+            _payloadLength = 0;
+
+			_requestMsg.Close();
+
+			//include command+ length in payload
+			_requestMsg.InitPool(_payloadLength + 8);
+			unsafe
+			{
+				fixed (byte* src = _payload)
+				{
+
+					fixed (byte* dest = _requestMsg.Data)
+					{   //4 bytes = commandtype
+						//4 bytes = length
+						//N-bytes = payload
+						byte* tPtr = dest;
+						*((Int32*)tPtr) = 10;//GetPetBuffDataPtr
+						tPtr += 4;
+						*(Int32*)tPtr = _payloadLength; //init/modify
+						tPtr += 4;
+						Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+					}
+				}
+			}
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+
+			//recieve the empty frame
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			//data is back, lets parse out the data
+            //first get the length out of the first 4 bytes.
+            ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(_requestMsg.Data,0,_requestMsg.Size);
+            length = _requestMsg.Size;
+            data.CopyTo(_getPetBuffDataArray);
+			_requestMsg.Close();
+			IntPtr ptr = _getPetBuffDataArrayHandle.AddrOfPinnedObject();
+            return (byte*)ptr.ToPointer();
+
+		}
+
+		public unsafe byte* GetSpawns3_DeltaPtr(out int length)
+		{
+			if (_requestMsg.IsInitialised)
+			{
+				_requestMsg.Close();
+			}
+			_requestMsg.InitEmpty();
+			//send empty frame
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+			_payloadLength = 0;
+
+			_requestMsg.Close();
+
+			//include command+ length in payload
+			_requestMsg.InitPool(_payloadLength + 8);
+			unsafe
+			{
+				fixed (byte* src = _payload)
+				{
+
+					fixed (byte* dest = _requestMsg.Data)
+					{   //4 bytes = commandtype
+						//4 bytes = length
+						//N-bytes = payload
+						byte* tPtr = dest;
+						*((Int32*)tPtr) = 11;//GetSpawns3_DeltaPtr
+						tPtr += 4;
+						*(Int32*)tPtr = _payloadLength; //init/modify
+						tPtr += 4;
+						Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+					}
+				}
+			}
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+
+			//recieve the empty frame
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			//data is back, lets parse out the data
+			//first get the length out of the first 4 bytes.
+			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(_requestMsg.Data, 0, _requestMsg.Size);
+			length = _requestMsg.Size;
+			data.CopyTo(_getSpawn3_DeltaArray);
+			_requestMsg.Close();
+			IntPtr ptr = _getSpawn3_DeltaHandle.AddrOfPinnedObject();
+			return (byte*)ptr.ToPointer();
+		}
+		public unsafe byte* GetXtargetDataPtr(out int length)
+		{
+			if (_requestMsg.IsInitialised)
+			{
+				_requestMsg.Close();
+			}
+			_requestMsg.InitEmpty();
+			//send empty frame
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+			_payloadLength = 0;
+
+			_requestMsg.Close();
+
+			//include command+ length in payload
+			_requestMsg.InitPool(_payloadLength + 8);
+			unsafe
+			{
+				fixed (byte* src = _payload)
+				{
+
+					fixed (byte* dest = _requestMsg.Data)
+					{   //4 bytes = commandtype
+						//4 bytes = length
+						//N-bytes = payload
+						byte* tPtr = dest;
+						*((Int32*)tPtr) = 12;//id of the enum on the server
+						tPtr += 4;
+						*(Int32*)tPtr = _payloadLength; //init/modify
+						tPtr += 4;
+						Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+					}
+				}
+			}
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+
+			//recieve the empty frame
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			//data is back, lets parse out the data
+			//first get the length out of the first 4 bytes.
+			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(_requestMsg.Data, 0, _requestMsg.Size);
+			length = _requestMsg.Size;
+			data.CopyTo(_getXTargetDataArray);
+			_requestMsg.Close();
+			IntPtr ptr = _getXTargetDataHandle.AddrOfPinnedObject();
+			return (byte*)ptr.ToPointer();
+		}
+
+		public unsafe byte* GetTargetBuffDataPtr(Int32 spawnid,out int length)
+		{
+			if (_requestMsg.IsInitialised)
+			{
+				_requestMsg.Close();
+			}
+			_requestMsg.InitEmpty();
+			//send empty frame
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+			
+			_requestMsg.Close();
+
+			//create query+parm buffer
+			string pramQuery = spawnid.ToString();
+			_payloadLength = System.Text.Encoding.Default.GetBytes(pramQuery, 0, pramQuery.Length, _payload, 0);
+
+			//include command+ length in payload
+			_requestMsg.InitPool(_payloadLength + 8);
+			unsafe
+			{
+				fixed (byte* src = _payload)
+				{
+
+					fixed (byte* dest = _requestMsg.Data)
+					{   //4 bytes = commandtype
+						//4 bytes = length
+						//N-bytes = payload
+						byte* tPtr = dest;
+						*((Int32*)tPtr) = 13;//id of the enum on the server
+						tPtr += 4;
+						*(Int32*)tPtr = _payloadLength; //init/modify
+						tPtr += 4;
+						Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+					}
+				}
+			}
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+
+			//recieve the empty frame
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			//data is back, lets parse out the data
+			//first get the length out of the first 4 bytes.
+			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(_requestMsg.Data, 0, _requestMsg.Size);
+			length = _requestMsg.Size;
+			data.CopyTo(_getTargetDataArray);
+			_requestMsg.Close();
+			IntPtr ptr = _getTargetDataHandle.AddrOfPinnedObject();
+			return (byte*)ptr.ToPointer();
+		}
+		public unsafe byte* GetAAIdsDataPtr(out int length)
+		{
+			if (_requestMsg.IsInitialised)
+			{
+				_requestMsg.Close();
+			}
+			_requestMsg.InitEmpty();
+			//send empty frame
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+			_payloadLength = 0;
+
+			_requestMsg.Close();
+
+			//include command+ length in payload
+			_requestMsg.InitPool(_payloadLength + 8);
+			unsafe
+			{
+				fixed (byte* src = _payload)
+				{
+
+					fixed (byte* dest = _requestMsg.Data)
+					{   //4 bytes = commandtype
+						//4 bytes = length
+						//N-bytes = payload
+						byte* tPtr = dest;
+						*((Int32*)tPtr) = 14;//id of the enum on the server
+						tPtr += 4;
+						*(Int32*)tPtr = _payloadLength; //init/modify
+						tPtr += 4;
+						Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+					}
+				}
+			}
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+
+			//recieve the empty frame
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			//data is back, lets parse out the data
+			//first get the length out of the first 4 bytes.
+			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(_requestMsg.Data, 0, _requestMsg.Size);
+			length = _requestMsg.Size;
+			data.CopyTo(_getAAListDataArray);
+			_requestMsg.Close();
+			IntPtr ptr = _getAAListDataHandle.AddrOfPinnedObject();
+			return (byte*)ptr.ToPointer();
+		}
+
+		public void DisableDelay()
+		{
+		}
+
+		public void EnableDelay()
+		{
+		}
+
+		public IMQLock GetDelayLock()
+		{
+            return null;
+		}
+
+		public unsafe byte* GetDiscIdsDataPtr(out int length)
+		{
+			if (_requestMsg.IsInitialised)
+			{
+				_requestMsg.Close();
+			}
+			_requestMsg.InitEmpty();
+			//send empty frame
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+			_payloadLength = 0;
+
+			_requestMsg.Close();
+
+			//include command+ length in payload
+			_requestMsg.InitPool(_payloadLength + 8);
+			unsafe
+			{
+				fixed (byte* src = _payload)
+				{
+
+					fixed (byte* dest = _requestMsg.Data)
+					{   //4 bytes = commandtype
+						//4 bytes = length
+						//N-bytes = payload
+						byte* tPtr = dest;
+						*((Int32*)tPtr) = 15;//id of the enum on the server
+						tPtr += 4;
+						*(Int32*)tPtr = _payloadLength; //init/modify
+						tPtr += 4;
+						Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+					}
+				}
+			}
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+
+			//recieve the empty frame
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			//data is back, lets parse out the data
+			//first get the length out of the first 4 bytes.
+			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(_requestMsg.Data, 0, _requestMsg.Size);
+			length = _requestMsg.Size;
+			data.CopyTo(_getDiscListDataArray);
+			_requestMsg.Close();
+			IntPtr ptr = _getDiscListDataHandle.AddrOfPinnedObject();
+			return (byte*)ptr.ToPointer();
 		}
 	}
 

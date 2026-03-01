@@ -1,4 +1,5 @@
-﻿using E3Core.Data;
+﻿using CommunityToolkit.HighPerformance.Buffers;
+using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Utility;
 using IniParser;
@@ -333,7 +334,7 @@ namespace E3Core.Processors
 					{
 						if (!IgnoreHealTargets.Contains(s.CleanName))
 						{
-							if (s.TypeDesc != "Corpse")
+							if (s.Dead)
 							{
 								if (s.Distance < 200)
 								{
@@ -579,8 +580,7 @@ namespace E3Core.Processors
 				if (E3.Bots.IsMyBot(target))
 				{
 					pctHealth = E3.Bots.PctHealth(target);
-					bool invulnerable = false;
-					Boolean.TryParse(E3.Bots.Query(target, "${Me.Invulnerable}"), out invulnerable);
+					bool invulnerable = E3.Bots.Query<Boolean>(target, "${Me.Invulnerable}");
 					if (invulnerable) continue; //can't heal people who are invulnerable
 				}
 				else
@@ -643,8 +643,7 @@ namespace E3Core.Processors
 				{
 					//lets look up their health
 					pctHealth = E3.Bots.PctHealth(name);
-					bool invulnerable = false;
-					Boolean.TryParse(E3.Bots.Query(name, "${Me.Invulnerable}"), out invulnerable);
+					bool invulnerable = E3.Bots.Query<Boolean>(name, "${Me.Invulnerable}");
 					if (invulnerable) continue; //can't heal people who are invulnerable
 
 				}
@@ -736,13 +735,21 @@ namespace E3Core.Processors
 						bool isABot = E3.Bots.BotsConnected().Contains(name, StringComparer.OrdinalIgnoreCase);
 						if (isABot)
 						{
-							bool invulnerable = false;
-							Boolean.TryParse(E3.Bots.Query(name, "${Me.Invulnerable}"), out invulnerable);
+							bool invulnerable = E3.Bots.Query<Boolean>(name, "${Me.Invulnerable}");
 							if (invulnerable) continue; //can't heal people who are invulnerable
 
 							//they are a bot and they are in zone
-							Int32 pctHealth = E3.Bots.PctHealth(name);
-						
+
+							Func<String, Int32> findHealth;
+							if (healPets)
+							{
+								findHealth = E3.Bots.PctPetHealth;
+							}
+							else
+							{
+								findHealth = E3.Bots.PctHealth;
+							}
+							Int32 pctHealth = findHealth(name);
 							foreach (var spell in spells)
 							{
 								if (!spell.Enabled) continue;
@@ -815,114 +822,138 @@ namespace E3Core.Processors
 							//check group data
 							if (_useEQGroupDataForHeals || healPets)
 							{
-								Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{name}].Index}}");
-
-								if (groupMemberIndex > 0)
+								ValueStringBuilder sb = new ValueStringBuilder(64);
+								try
 								{
-									Int32 pctHealth = 0;
-									if (healPets)
+									sb.Append("${Group.Member[");
+									sb.Append(name);
+									sb.Append("].Index}");
+									string indexQuery = StringPool.Shared.GetOrAdd(sb.AsSpan());
+									Int32 groupMemberIndex = MQ.Query<Int32>(indexQuery);
+								
+									if (groupMemberIndex > 0)
 									{
-										pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.Pet.CurrentHPs}}");
-									}
-									else
-									{
-										pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
-									}
-
-									if (pctHealth < 1)
-									{
-										//dead, no sense in casting. check the next person
-										continue;
-									}
-									foreach (var spell in spells)
-									{
-										if (!spell.Enabled) continue;
-										//check Ifs on the spell
-										if (!String.IsNullOrWhiteSpace(spell.Ifs))
+										Int32 pctHealth = 0;
+										if (healPets)
 										{
-											if (!Casting.Ifs(spell))
+											sb.Reset();
+											sb.Append("${Group.Member[");
+											sb.Append(e3util.GetIntStr(groupMemberIndex));
+											sb.Append("].Spawn.Pet.CurrentHPs}");
+											string petHealthQuery = StringPool.Shared.GetOrAdd(sb.AsSpan());
+											pctHealth = MQ.Query<Int32>(petHealthQuery);
+										}
+										else
+										{
+											sb.Reset();
+											sb.Append("${Group.Member[");
+											sb.Append(e3util.GetIntStr(groupMemberIndex));
+											sb.Append("].Spawn.CurrentHPs}");
+											string healthQuery = StringPool.Shared.GetOrAdd(sb.AsSpan());
+											pctHealth = MQ.Query<Int32>(healthQuery);
+										}
+
+										if (pctHealth < 1)
+										{
+											//dead, no sense in casting. check the next person
+											continue;
+										}
+										foreach (var spell in spells)
+										{
+											if (!spell.Enabled) continue;
+											//check Ifs on the spell
+											if (!String.IsNullOrWhiteSpace(spell.Ifs))
 											{
-												//failed check, onto the next
+												if (!Casting.Ifs(spell))
+												{
+													//failed check, onto the next
+													continue;
+												}
+											}
+
+											bool shouldContinue = false;
+											if (spell.CheckForCollection.Count > 0)
+											{
+												var bufflist = E3.Bots.BuffList(name);
+												foreach (var checkforItem in spell.CheckForCollection.Keys)
+												{
+													if (bufflist.Contains(spell.CheckForCollection[checkforItem]))
+													{
+														shouldContinue = true;
+														break;
+													}
+												}
+												if (shouldContinue) { continue; }
+											}
+
+										recastSpell:
+											if (spell.Mana > currentMana)
+											{
+												//mana cost too high
 												continue;
 											}
-										}
-
-										bool shouldContinue = false;
-										if (spell.CheckForCollection.Count > 0)
-										{
-											var bufflist = E3.Bots.BuffList(name);
-											foreach (var checkforItem in spell.CheckForCollection.Keys)
+											if (spell.MinMana > pctMana)
 											{
-												if (bufflist.Contains(spell.CheckForCollection[checkforItem]))
-												{
-													shouldContinue = true;
-													break;
-												}
+												//mana is set too high, can't cast
+												continue;
 											}
-											if (shouldContinue) { continue; }
-										}
-
-									recastSpell:
-										if (spell.Mana > currentMana)
-										{
-											//mana cost too high
-											continue;
-										}
-										if (spell.MinMana > pctMana)
-										{
-											//mana is set too high, can't cast
-											continue;
-										}
 
 
-										if (Casting.InRange(targetID, spell))
-										{
-											if (pctHealth < spell.HealPct)
+											if (Casting.InRange(targetID, spell))
 											{
-												if (E3.CharacterSettings.HealAutoNecroOrbs && !JustCheck)
+												if (pctHealth < spell.HealPct)
 												{
-													if (_orbOfShadowsSpell == null && MQ.Query<bool>($"${{Me.ItemReady[Orb of the Sanguine]}}"))
+													if (E3.CharacterSettings.HealAutoNecroOrbs && !JustCheck)
 													{
-														_orbOfShadowsSpell = new Data.Spell("Orb of the Sanguine");
+														if (_orbOfShadowsSpell == null && MQ.Query<bool>($"${{Me.ItemReady[Orb of the Sanguine]}}"))
+														{
+															_orbOfShadowsSpell = new Data.Spell("Orb of the Sanguine");
+														}
+														if (_orbOfShadowsSpell == null && MQ.Query<bool>($"${{Me.ItemReady[Orb of Shadows]}}"))
+														{
+															_orbOfShadowsSpell = new Data.Spell("Orb of Shadows");
+														}
+														if (_orbOfSoulsSpell == null && MQ.Query<bool>($"${{Me.ItemReady[Orb of Souls]}}"))
+														{
+															_orbOfSoulsSpell = new Data.Spell("Orb of Souls");
+														}
+														if (_orbOfShadowsSpell != null && Casting.CheckReady(_orbOfShadowsSpell))
+														{
+															Casting.Cast(targetID, _orbOfShadowsSpell, null, false);
+														}
+														if (_orbOfSoulsSpell != null && Casting.CheckReady(_orbOfSoulsSpell))
+														{
+															Casting.Cast(targetID, _orbOfSoulsSpell);
+														}
 													}
-													if (_orbOfShadowsSpell == null && MQ.Query<bool>($"${{Me.ItemReady[Orb of Shadows]}}"))
+													//should cast a heal!
+													if (Casting.CheckMana(spell) && Casting.CheckReady(spell, JustCheck, JustCheck))
 													{
-														_orbOfShadowsSpell = new Data.Spell("Orb of Shadows");
-													}
-													if (_orbOfSoulsSpell == null && MQ.Query<bool>($"${{Me.ItemReady[Orb of Souls]}}"))
-													{
-														_orbOfSoulsSpell = new Data.Spell("Orb of Souls");
-													}
-													if (_orbOfShadowsSpell != null && Casting.CheckReady(_orbOfShadowsSpell))
-													{
-														Casting.Cast(targetID, _orbOfShadowsSpell, null, false);
-													}
-													if (_orbOfSoulsSpell != null && Casting.CheckReady(_orbOfSoulsSpell))
-													{
-														Casting.Cast(targetID, _orbOfSoulsSpell);
-													}
-												}
-												//should cast a heal!
-												if (Casting.CheckMana(spell) && Casting.CheckReady(spell, JustCheck, JustCheck))
-												{
-													if (JustCheck)
-													{
-														_log.Write($"eq group {name} pct:{pctHealth} forcing interrupt");
+														if (JustCheck)
+														{
+															_log.Write($"eq group {name} pct:{pctHealth} forcing interrupt");
+															return true;
+														}
+
+														if (Casting.Cast(targetID, spell, TargetDoesNotNeedHeals, false, isEmergency) == CastReturn.CAST_FIZZLE)
+														{
+															currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+															pctMana = MQ.Query<Int32>("${Me.PctMana}");
+															goto recastSpell;
+														}
+														E3.ActionTaken = true;
 														return true;
 													}
-
-													if (Casting.Cast(targetID, spell, TargetDoesNotNeedHeals, false, isEmergency) == CastReturn.CAST_FIZZLE)
-													{
-														currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
-														pctMana = MQ.Query<Int32>("${Me.PctMana}");
-														goto recastSpell;
-													}
-													E3.ActionTaken = true;
-													return true;
 												}
 											}
 										}
 									}
+
+
+								}
+								finally
+								{
+									sb.Dispose();
 								}
 							}
 						}
@@ -937,7 +968,7 @@ namespace E3Core.Processors
 			//using (_log.Trace())
 			{
 
-				foreach (var name in Basics.GroupMembers)
+				foreach (var name in Basics.GroupMembersInZone)
 				{
 					
 					Int32 targetID = 0;
@@ -946,8 +977,7 @@ namespace E3Core.Processors
 					{
 						if (E3.Bots.IsMyBot(s.CleanName))
 						{
-							bool invulnerable = false;
-							Boolean.TryParse(E3.Bots.Query(s.CleanName, "${Me.Invulnerable}"), out invulnerable);
+							bool invulnerable = E3.Bots.Query<Boolean>(s.CleanName, "${Me.Invulnerable}");
 							if (invulnerable) continue; //can't heal people who are invulnerable
 						}
 
@@ -987,71 +1017,97 @@ namespace E3Core.Processors
 							//check group data
 							if (_useEQGroupDataForHeals || healPets)
 							{
-								Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{s.Name}].Index}}");
-
-								if (groupMemberIndex > 0)
+								ValueStringBuilder sb = new ValueStringBuilder(64);
+								try
 								{
-									Int32 pctHealth = 0;
-									if (healPets)
-									{
-										pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.Pet.CurrentHPs}}");
-									}
-									else
-									{
-										pctHealth = MQ.Query<Int32>($"${{Group.Member[{groupMemberIndex}].Spawn.CurrentHPs}}");
-									}
+									sb.Append("${Group.Member[");
+									sb.Append(s.Name);
+									sb.Append("].Index}");
+									string indexQuery = StringPool.Shared.GetOrAdd(sb.AsSpan());
+									Int32 groupMemberIndex = MQ.Query<Int32>(indexQuery);
 
-									if (pctHealth < 1)
+									
+									if (groupMemberIndex > 0)
 									{
-										//dead, no sense in casting. check the next person
-										continue;
-									}
-									foreach (var spell in spells)
-									{
-										if (!spell.Enabled) continue;
-										//check Ifs on the spell
-										if (!String.IsNullOrWhiteSpace(spell.Ifs))
+										Int32 pctHealth = 0;
+										if (healPets)
 										{
-											if (!Casting.Ifs(spell))
+											sb.Reset();
+											sb.Append("${Group.Member[");
+											sb.Append(e3util.GetIntStr(groupMemberIndex));
+											sb.Append("].Spawn.Pet.CurrentHPs}");
+											string petHealthQuery = StringPool.Shared.GetOrAdd(sb.AsSpan());
+
+											pctHealth = MQ.Query<Int32>(petHealthQuery);
+										}
+										else
+										{
+											sb.Reset();
+											sb.Append("${Group.Member[");
+											sb.Append(e3util.GetIntStr(groupMemberIndex));
+											sb.Append("].Spawn.CurrentHPs}");
+											string healthQuery = StringPool.Shared.GetOrAdd(sb.AsSpan());
+											pctHealth = MQ.Query<Int32>(healthQuery);
+										}
+
+										if (pctHealth < 1)
+										{
+											//dead, no sense in casting. check the next person
+											continue;
+										}
+										foreach (var spell in spells)
+										{
+											if (!spell.Enabled) continue;
+											//check Ifs on the spell
+											if (!String.IsNullOrWhiteSpace(spell.Ifs))
 											{
-												//failed check, onto the next
+												if (!Casting.Ifs(spell))
+												{
+													//failed check, onto the next
+													continue;
+												}
+											}
+
+										recastSpell:
+											if (spell.Mana > currentMana)
+											{
+												//mana cost too high
 												continue;
 											}
-										}
-
-									recastSpell:
-										if (spell.Mana > currentMana)
-										{
-											//mana cost too high
-											continue;
-										}
-										if (spell.MinMana > pctMana)
-										{
-											//mana is set too high, can't cast
-											continue;
-										}
-
-										if (Casting.InRange(targetID, spell))
-										{
-											if (pctHealth < spell.HealPct)
+											if (spell.MinMana > pctMana)
 											{
-												//should cast a heal!
-												if (Casting.CheckMana(spell) && Casting.CheckReady(spell, JustCheck, JustCheck))
+												//mana is set too high, can't cast
+												continue;
+											}
+
+											if (Casting.InRange(targetID, spell))
+											{
+												if (pctHealth < spell.HealPct)
 												{
-													if (JustCheck) return true;
-													if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
+													//should cast a heal!
+													if (Casting.CheckMana(spell) && Casting.CheckReady(spell, JustCheck, JustCheck))
 													{
-														currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
-														pctMana = MQ.Query<Int32>("${Me.PctMana}");
-														goto recastSpell;
+														if (JustCheck) return true;
+														if (Casting.Cast(targetID, spell) == CastReturn.CAST_FIZZLE)
+														{
+															currentMana = MQ.Query<Int32>("${Me.CurrentMana}");
+															pctMana = MQ.Query<Int32>("${Me.PctMana}");
+															goto recastSpell;
+														}
+														E3.ActionTaken = true;
+														return true;
 													}
-													E3.ActionTaken = true;
-													return true;
 												}
 											}
 										}
 									}
+
 								}
+								finally
+								{
+									sb.Dispose();
+								}
+								
 							}
 						}
 					}
@@ -1069,8 +1125,7 @@ namespace E3Core.Processors
 
 					if (E3.Bots.IsMyBot(name))
 					{
-						bool invulnerable = false;
-						Boolean.TryParse(E3.Bots.Query(name, "${Me.Invulnerable}"), out invulnerable);
+						bool invulnerable = E3.Bots.Query<Boolean>(name, "${Me.Invulnerable}");
 						if (invulnerable) continue; //can't heal people who are invulnerable
 					}
 

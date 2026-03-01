@@ -25,7 +25,7 @@ namespace E3Core.Settings
         public DefaultBroadcast General_BroadCast_Default = DefaultBroadcast.Group;
         public bool General_HealWhileNavigating = true;
 		public bool General_CureWhileNavigating = true;
-        public bool General_BeepNotifications = true;
+        public bool General_BeepNotifications = false;
         public bool General_LazarusManaRecovery = true;
 
         public string General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";

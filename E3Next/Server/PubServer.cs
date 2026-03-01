@@ -5,15 +5,13 @@ using MonoCore;
 using NetMQ;
 using NetMQ.Sockets;
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static E3Core.Server.SharedDataClient;
 
 namespace E3Core.Server
 {
@@ -28,6 +26,8 @@ namespace E3Core.Server
         {
             public string topic;
             public string message;
+			public char[] payload;
+			public Int32 payloadLength = 0;
             private topicMessagePair()
             {
                 //do not let others instance us
@@ -45,6 +45,9 @@ namespace E3Core.Server
 			{
                 topic = string.Empty;
                 message = string.Empty;
+				if(payload!=null) ArrayPool<char>.Shared.Return(payload);
+				payload = null;
+				payloadLength = 0;
 				StaticObjectPool.Push(this);
 			}
 			~topicMessagePair()
@@ -117,14 +120,42 @@ namespace E3Core.Server
 			_serverThread = Task.Factory.StartNew(() => { Process(filePath); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
 
         }
+        static Int64 _topicBackupMessageInterval = 1000;
+        static Int64 _topicBackupMessageTimestamp = 0;
         public  static void AddTopicMessage(string topic, string message)
         {  
             topicMessagePair t = topicMessagePair.Aquire();
             t.topic = topic;
             t.message=message;
 		     _topicMessages.Enqueue(t);
+
+            if(_topicMessages.Count>500)
+            {
+                if(e3util.ShouldCheck(ref _topicBackupMessageTimestamp,_topicBackupMessageInterval))
+                {
+					MQ.Write($"\arTopic messages backed up count:\ag{_topicMessages.Count}");
+				}
+			}
         }
-        private void Process(string filePath)
+
+		public static void AddTopicMessage(string topic, char[] payload,Int32 length)
+		{
+			topicMessagePair t = topicMessagePair.Aquire();
+			t.topic = topic;
+			t.payload = payload;
+			t.payloadLength = length;
+			
+			_topicMessages.Enqueue(t);
+
+			if (_topicMessages.Count > 500)
+			{
+				if (e3util.ShouldCheck(ref _topicBackupMessageTimestamp, _topicBackupMessageInterval))
+				{
+					MQ.Write($"\arTopic messages backed up count:\ag{_topicMessages.Count}");
+				}
+			}
+		}
+		private void Process(string filePath)
         {
 			//need to do this so double parses work in other languages
 			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
@@ -144,7 +175,60 @@ namespace E3Core.Server
                             //using so that we put it back into the memory pool
                             using(value)
                             {
-								pubSocket.SendMoreFrame(value.topic).SendFrame($"{E3.CurrentName}:{E3.ServerName}:{value.message}");
+								ValueStringBuilder sb = new ValueStringBuilder(1024);
+                                try
+                                {
+                                    sb.Append(E3.CurrentName);
+                                    sb.Append(":");
+                                    sb.Append(E3.ServerName);
+                                    sb.Append(":");
+									if (value.payloadLength > 0)
+									{
+										sb.Append(value.payload,0, value.payloadLength);
+									}
+									else
+									{
+										sb.Append(value.message);
+
+									}
+									//	pubSocket.SendMoreFrame(value.topic).SendFrame(sb.ToString());
+									ReadOnlySpan<char> charSpan = sb.AsSpan();
+
+									//.net framework doesn't have a lot of the span stuff
+									// in the framework itself, so we have to drop into unsafe code.
+                                    int byteCount = 0;
+                                    unsafe
+                                    {
+										fixed (char* cPtr = charSpan)
+										{
+											byteCount = Encoding.ASCII.GetByteCount(cPtr, charSpan.Length);
+										}
+
+									}
+									byte[] byteArray = ArrayPool<byte>.Shared.Rent(byteCount);
+									try
+                                    {
+										Span<byte> byteSpan = new Span<byte>(byteArray);
+										unsafe
+										{
+											fixed (char* charPtr = charSpan)
+											fixed (byte* bytePtr = byteSpan)
+											{
+												int bytesWritten = Encoding.ASCII.GetBytes(charPtr, charSpan.Length, bytePtr, byteSpan.Length);
+												pubSocket.SendMoreFrame(value.topic).SendFrame(byteArray, bytesWritten);
+											}
+										}
+									}
+                                    finally
+                                    {
+                                        ArrayPool<byte>.Shared.Return(byteArray);
+                                    }
+                                }
+                                finally
+                                {
+                                    sb.Dispose();
+                                }
+
 							}
                         }
                     }
@@ -153,8 +237,21 @@ namespace E3Core.Server
                         string message;
                         if (IncomingChatMessages.TryDequeue(out message))
                         {
-
-                            pubSocket.SendMoreFrame("OnIncomingChat").SendFrame($"{E3.CurrentName}:{E3.ServerName}:{message}");
+							ValueStringBuilder sb = new ValueStringBuilder(1024);
+							try
+							{
+								sb.Append(E3.CurrentName);
+								sb.Append(":");
+								sb.Append(E3.ServerName);
+								sb.Append(":");
+								sb.Append(message);
+								pubSocket.SendMoreFrame("OnIncomingChat").SendFrame(sb.ToString());
+							}
+							finally
+							{
+								sb.Dispose();
+							}
+							
                         }
                     }
                    while (MQChatMessages.Count > 0)
@@ -162,8 +259,21 @@ namespace E3Core.Server
                         string message;
                         if (MQChatMessages.TryDequeue(out message))
                         {
-
-                            pubSocket.SendMoreFrame("OnWriteChatColor").SendFrame($"{E3.CurrentName}:{E3.ServerName}:{message}");
+							ValueStringBuilder sb = new ValueStringBuilder(1024);
+							try
+							{
+								sb.Append(E3.CurrentName);
+								sb.Append(":");
+								sb.Append(E3.ServerName);
+								sb.Append(":");
+								sb.Append(message);
+								pubSocket.SendMoreFrame("OnWriteChatColor").SendFrame(sb.ToString());
+							}
+							finally
+							{
+								sb.Dispose();
+							}
+							
 
                         }
                     }
@@ -172,8 +282,52 @@ namespace E3Core.Server
                         string message;
                         if (CommandsToSend.TryDequeue(out message))
                         {
+							ValueStringBuilder sb = new ValueStringBuilder(1024);
+							try
+							{
+								sb.Append(E3.CurrentName);
+								sb.Append(":");
+								sb.Append(E3.ServerName);
+								sb.Append(":");
+								sb.Append(message);
+								//pubSocket.SendMoreFrame("OnCommand").SendFrame(sb.ToString());
+								ReadOnlySpan<char> charSpan = sb.AsSpan();
+								int byteCount = 0;
+								unsafe
+								{
+									fixed (char* cPtr = charSpan)
+									{
+										byteCount = Encoding.ASCII.GetByteCount(cPtr, charSpan.Length);
+									}
 
-                            pubSocket.SendMoreFrame("OnCommand").SendFrame($"{E3.CurrentName}:{E3.ServerName}:{message}");
+								}
+								byte[] byteArray = ArrayPool<byte>.Shared.Rent(byteCount);
+								try
+								{
+									Span<byte> byteSpan = new Span<byte>(byteArray);
+									unsafe
+									{
+										fixed (char* charPtr = charSpan)
+										fixed (byte* bytePtr = byteSpan)
+										{
+											int bytesWritten = Encoding.ASCII.GetBytes(charPtr, charSpan.Length, bytePtr, byteSpan.Length);
+											pubSocket.SendMoreFrame("OnCommand").SendFrame(byteArray, bytesWritten);
+										}
+									}
+								}
+								finally
+								{
+									ArrayPool<byte>.Shared.Return(byteArray);
+								}
+
+								
+							}
+							finally
+							{
+								sb.Dispose();
+							}
+
+							
 
                         }
                     }
