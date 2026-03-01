@@ -1095,6 +1095,8 @@ namespace E3Core.UI.Windows.Hud
 			if (_spawns.TryByID(targetID, out var spawn, useCurrentCache: true))
 			{
 
+			
+
 				if (spawn.CleanName != state.TargetName)
 				{
 					state.PreviousTargetName = state.TargetName;
@@ -1102,8 +1104,7 @@ namespace E3Core.UI.Windows.Hud
 					state.Display_TargetName = $"{state.TargetName} ({targetID})";
 					state.TargetNameSize = imgui_CalcTextSizeX(state.TargetName);
 				}
-
-
+			
 
 				state.TargetHP = MQ.Query<Int32>("${Target.PctHPs}");
 
@@ -5066,7 +5067,8 @@ namespace E3Core.UI.Windows.Hud
 								rowCount++;
 								imgui_TableNextRow();
 								imgui_TableNextColumn();
-								bool is_row_selected = (state.SelectedRow == rowCount);
+								//just always have the row not be selected
+								bool is_row_selected = false;//(state.SelectedRow == rowCount);
 
 								string rowID = String.Empty;
 								ValueStringBuilder sb = new ValueStringBuilder(64);
@@ -5083,7 +5085,8 @@ namespace E3Core.UI.Windows.Hud
 								}
 								if (imgui_Selectable_WithFlags(rowID, is_row_selected, (int)(ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags.ImGuiSelectableFlags_AllowOverlap)))
 								{
-									state.SelectedRow = rowCount;
+									//state.SelectedRow = rowCount;
+									//state.SelectedToonName = stats.Name;
 
 									switch (state.LeftClickAction)
 									{
@@ -5112,6 +5115,7 @@ namespace E3Core.UI.Windows.Hud
 											{
 												string command = $"/target id {targertspawn.ID}";
 												E3ImGUI.MQCommandQueue.Enqueue(command);
+												
 											}
 											else
 											{
@@ -5139,8 +5143,7 @@ namespace E3Core.UI.Windows.Hud
 								{
 									if (popup.BeginPopupContextItemPerf("Hub_RenderGroupTablePopupRows", "##row_selected_context_", rowCount, 1))
 									{
-										state.SelectedToonForBuffs = String.Empty;
-										state.SelectedRow = -1;
+										
 										using (var style = PushStyle.Aquire())
 										{
 											style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);

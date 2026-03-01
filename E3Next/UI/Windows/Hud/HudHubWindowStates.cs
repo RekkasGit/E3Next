@@ -125,6 +125,7 @@ namespace E3Core.UI.Windows.Hud
 		public string SelectedToonForBuffs = String.Empty;
 
 		public int SelectedRow = -1;
+		public string SelectedToonName = String.Empty;
 		public bool IsDirty = false;
 
 		public State_HubWindow()
