@@ -363,7 +363,7 @@ namespace E3Core.UI.Windows.Hud
 				buffState.DeBuffInfo.Clear();
 				string userTouse = E3.CurrentName;
 				ShareDataEntry entry = E3.Bots.Query<ShareDataEntry>(userTouse, "${Me.PetBuffInfo}");
-
+				if (entry == null) return;
 				List<TableRow_BuffInfo> dataInfo = null;
 				lock (entry)
 				{
@@ -522,6 +522,8 @@ namespace E3Core.UI.Windows.Hud
 				}
 
 				ShareDataEntry entry = E3.Bots.Query<ShareDataEntry>(userTouse, "${Me.BuffInfo}");
+
+				if (entry == null) return;
 
 				List<TableRow_BuffInfo> dataInfo = null;
 				lock (entry)
@@ -2677,46 +2679,77 @@ namespace E3Core.UI.Windows.Hud
 						TryReattachWindowsIfClosed();
 						var buttonState = _state.GetState<State_HotbuttonsWindow>();
 
+						try
+						{
+							RefreshGroupInfo();
+							RefreshBuffInfo();
+							RefreshPetBuffInfo();
+							RefreshPlayerInfo();
+							RefreshTargetInfo();
 
-						RefreshGroupInfo();
-						RefreshBuffInfo();
-						RefreshPetBuffInfo();
-						RefreshPlayerInfo();
-						RefreshTargetInfo();
-						RenderHub_MainWindow();
+						}
+						catch (Exception ex)
+						{
+							MQ.WriteDelayed($"Error in UI thread, Refreshing Info: message:{ex.Message} payload:{ex.StackTrace} ");
+							return;
+						}
 
-						var buffState = _state.GetState<State_BuffWindow>();
-						RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true, locked: buffState.Locked);
-						var songState = _state.GetState<State_SongWindow>();
-						RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true, locked: songState.Locked);
-						var petbuffState = _state.GetState<State_PetBuffWindow>();
-						RenderHub_TryDetached(petbuffState.WindowName, petbuffState.Detached, RenderPetBuffTableSimple, petbuffState.WindowAlpha, noTitleBar: true, locked: petbuffState.Locked);
+						try
+						{
+							RenderHub_MainWindow();
 
-						var playerInfoState = _state.GetState<State_PlayerInfoWindow>();
-						if (state.ShowPlayerInfo)
-						{
-							RenderHub_TryDetached(playerInfoState.WindowName, playerInfoState.Detached, RenderPlayerInfo, playerInfoState.WindowAlpha, noTitleBar: true, locked: playerInfoState.Locked);
 						}
-						var targetInfoState = _state.GetState<State_TargetInfoWindow>();
-						if (state.ShowTargetInfo)
+						catch (Exception ex)
 						{
-							RenderHub_TryDetached(targetInfoState.WindowName, targetInfoState.Detached, RenderTargetInfo, targetInfoState.WindowAlpha, noTitleBar: true, locked: targetInfoState.Locked);
+							MQ.WriteDelayed($"Error in UI thread, Main Window: message:{ex.Message} payload:{ex.StackTrace} ");
+							return;
+
 						}
-						if (state.ShowHotButtons)
+
+
+						try
 						{
-							RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
+							var buffState = _state.GetState<State_BuffWindow>();
+							RenderHub_TryDetached(buffState.WindowName, buffState.Detached, RenderBuffTableSimple, buffState.WindowAlpha, noTitleBar: true, locked: buffState.Locked);
+							var songState = _state.GetState<State_SongWindow>();
+							RenderHub_TryDetached(songState.WindowName, songState.Detached, RenderSongTableSimple, songState.WindowAlpha, noTitleBar: true, locked: songState.Locked);
+							var petbuffState = _state.GetState<State_PetBuffWindow>();
+							RenderHub_TryDetached(petbuffState.WindowName, petbuffState.Detached, RenderPetBuffTableSimple, petbuffState.WindowAlpha, noTitleBar: true, locked: petbuffState.Locked);
+
+							var playerInfoState = _state.GetState<State_PlayerInfoWindow>();
+							if (state.ShowPlayerInfo)
+							{
+								RenderHub_TryDetached(playerInfoState.WindowName, playerInfoState.Detached, RenderPlayerInfo, playerInfoState.WindowAlpha, noTitleBar: true, locked: playerInfoState.Locked);
+							}
+							var targetInfoState = _state.GetState<State_TargetInfoWindow>();
+							if (state.ShowTargetInfo)
+							{
+								RenderHub_TryDetached(targetInfoState.WindowName, targetInfoState.Detached, RenderTargetInfo, targetInfoState.WindowAlpha, noTitleBar: true, locked: targetInfoState.Locked);
+							}
+							if (state.ShowHotButtons)
+							{
+								RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
+							}
+							var peerAAState = _state.GetState<State_PeerAAWindow>();
+							if (peerAAState.IsOpen)
+							{
+								RenderHub_TryDetached(peerAAState.WindowName, true, RenderPeerAAWindow, peerAAState.WindowAlpha);
+							}
+
 						}
-						var peerAAState = _state.GetState<State_PeerAAWindow>();
-						if (peerAAState.IsOpen)
+						catch (Exception ex)
 						{
-							RenderHub_TryDetached(peerAAState.WindowName, true, RenderPeerAAWindow, peerAAState.WindowAlpha);
+							MQ.WriteDelayed($"Error in UI thread, Render detach: message:{ex.Message} payload:{ex.StackTrace} ");
+							return;
+
 						}
+					
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				MQ.WriteDelayed($"Error in UI thread: message:{ex.Message} payload:{ex.StackTrace} ");
+				MQ.WriteDelayed($"Error in UI thread Global: message:{ex.Message} payload:{ex.StackTrace} ");
 			}
 
 
