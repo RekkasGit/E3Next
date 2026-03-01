@@ -920,9 +920,29 @@ namespace E3Core.UI.Windows.Hud
 				state.GroupMembersAdded.Clear();
 
 				//get the connected bots.
-				List<string> users = E3.Bots.BotsConnected(readOnly: true); //this is a direct cache value, do not edit
+				List<string> users;
+				if (state.PeerSortOrder=="By Class")
+				{
+					users = E3.Bots.BotsConnected(readOnly: true); ; //this is a direct cache value, do not edit
 
+					List<Spawn> sortedUsers = new List<Spawn>();
+					foreach(var user in users)
+					{
+						if(_spawns.TryByName(user, out var s))
+						{
+							sortedUsers.Add(s);	
+						}
+					}
+					sortedUsers = sortedUsers.OrderBy(x=>x.ClassShortName).ToList();
+					users = new List<string>(sortedUsers.Select(x => x.Name).ToList());
+				}
+				else 
+				{ 
+					users = E3.Bots.BotsConnected(readOnly: true); //this is a direct cache value, do not edit
+				}
+				
 
+				
 				//users.Sort();
 				if (state.PeerSortOrder == "Me On Top")
 				{

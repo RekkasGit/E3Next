@@ -113,7 +113,7 @@ namespace E3Core.UI.Windows.Hud
 		public float[] PetHealthBarColor { get => E3.CharacterSettings.E3Hud_Hub_RGBA_PetHealthBar; }
 
 		public string PeerSortOrder { get => E3.CharacterSettings.E3Hud_Hub_PeerSortOrder; set { E3.CharacterSettings.E3Hud_Hub_PeerSortOrder = value; IsDirty = true; } }
-		public string[] PeerSortOrders = { "Alphabetical", "Me On Top" };
+		public string[] PeerSortOrders = { "Alphabetical", "Me On Top", "By Class" };
 		public string[] LeftClickActions = { "Target", "Foreground", "ViewBuffs", "NavToToon" };
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;
