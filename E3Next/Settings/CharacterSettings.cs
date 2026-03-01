@@ -504,7 +504,9 @@ namespace E3Core.Settings
 		public bool Alerts_ReflectMessages = true;
 		[INI_Section("Alerts", "Buff Stack Messages(On/Off)")]
 		public bool Alerts_BuffStackMessages = true;
-
+		[INI_Section("Alerts", "Task Updated Message(On/Off)")]
+		public bool Alerts_TaskUpdatedMessages = true;
+		
 		//Buff Stack Messages(On/Off)
 		//debuffs
 		[INI_Section("Debuffs", "Debuff on Assist")]
@@ -1024,7 +1026,7 @@ namespace E3Core.Settings
 			LoadKeyData("Alerts", "Damage Messages(On/Off)", ParsedData, ref Alerts_DamageMessages);
 			LoadKeyData("Alerts", "Reflect Messages(On/Off)", ParsedData, ref Alerts_ReflectMessages);
 			LoadKeyData("Alerts", "Buff Stack Messages(On/Off)", ParsedData, ref Alerts_BuffStackMessages);
-
+			LoadKeyData("Alerts", "Task Updated Message(On/Off)", ParsedData, ref Alerts_TaskUpdatedMessages);
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
 			LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
@@ -1570,6 +1572,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Damage Messages(On/Off)", "On");
 			section.Keys.AddKey("Reflect Messages(On/Off)", "On");
 			section.Keys.AddKey("Buff Stack Messages(On/Off)", "On");
+			section.Keys.AddKey("Task Updated Message(On/Off)", "On");
 
 
 			newFile.Sections.AddSection("Assist Settings");

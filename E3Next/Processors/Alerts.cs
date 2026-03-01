@@ -340,11 +340,13 @@ namespace E3Core.Processors
 			});
 			pattern = @"Your task '(.+)' has been updated\.";
 			EventProcessor.RegisterEvent("TaskUpdatedEvent", pattern, (x) => {
-				if (x.match.Groups.Count > 1)
+				
+				if(E3.CharacterSettings.Alerts_TaskUpdatedMessages)
 				{
-					E3.Bots.Broadcast($"\ay{x.match.Groups[1].Value} \aghas been updated!");
-
-
+					if (x.match.Groups.Count > 1)
+					{
+						E3.Bots.Broadcast($"\ay{x.match.Groups[1].Value} \aghas been updated!");
+					}
 				}
 			});
 			if (e3util.IsEQLive())
