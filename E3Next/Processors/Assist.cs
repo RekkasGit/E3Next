@@ -624,9 +624,9 @@ namespace E3Core.Processors
                     E3.Bots.Broadcast("Cannot assist, a corpse");
                     return;
                 }
-                if (!(s.TypeDesc == "NPC" || s.TypeDesc == "Pet" || s.TypeDesc == "Chest" || s.TypeDesc == "PC"))
+                if (!(s.TypeDesc == "NPC" || s.TypeDesc == "Pet" || s.TypeDesc == "Chest" || s.TypeDesc == "PC" || s.TypeDesc=="Object"))
                 {
-                    E3.Bots.Broadcast("Cannot assist, not a NPC,PC,Chest or Pet");
+                    E3.Bots.Broadcast("Cannot assist, not a NPC,PC,Chest,Object or Pet");
                     return;
                 }
                 if (s.Distance3D > E3.GeneralSettings.Assists_MaxEngagedDistance)
