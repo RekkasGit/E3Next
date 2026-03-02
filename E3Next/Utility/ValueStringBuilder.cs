@@ -99,9 +99,9 @@ namespace E3Core.Utility
 		}
 		public unsafe char[] ReturnCopyBufferFromPool(out Int32 length)
 		{
-			char[] returnValue = ArrayPool<char>.Shared.Rent(_pos+1);
+			char[] returnValue = ArrayPool<char>.Shared.Rent(_chars.Length);
 			_chars.CopyTo(returnValue.AsSpan());
-			length = _pos+1;
+			length = _pos;
 			return returnValue;
 		}
 		public override string ToString()
