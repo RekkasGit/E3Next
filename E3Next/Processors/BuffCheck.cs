@@ -771,12 +771,27 @@ namespace E3Core.Processors
 
 								var t_target = target.Trim();
 
+								bool groupShortName = false;
+								//gmnk,gwar,gpal,etc
+								if(t_target.StartsWith("g", StringComparison.OrdinalIgnoreCase))
+								{
+									string realshortname = t_target.Substring(1);
+									if(EQClasses.ClassShortNamesLookup.Contains(realshortname))
+									{
+										groupShortName = true;
+										t_target = realshortname;
+									}
+								}
+
 								if (EQClasses.ClassShortNamesLookup.Contains(t_target))
 								{
 									//this is cached, so its ok in this context
 									foreach (var name in E3.Bots.BotsConnected())
 									{
-										//if (!Basics.GroupMemberNames.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
+										if(groupShortName)
+										{
+											if (!Basics.GroupMemberNames.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
+										}
 
 										if (_spawns.TryByName(name, out var s))
 										{
