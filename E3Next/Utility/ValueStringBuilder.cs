@@ -45,6 +45,7 @@ namespace E3Core.Utility
 		public void Reset()
 		{
 			_pos = 0;
+
 		}
 
 		public int Capacity => _chars.Length;
