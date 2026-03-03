@@ -3,22 +3,16 @@ using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
-using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
-using Google.Protobuf.Collections;
 using IniParser.Model;
 using MonoCore;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
-using System.Drawing;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows.Forms;
+
 
 namespace E3Core.Processors
 {
@@ -38,7 +32,9 @@ namespace E3Core.Processors
 		public static List<string> GroupMemberNames = new List<string>();
 		public static ConcurrentDictionary<string, string> GroupMemberNamesLookup = new ConcurrentDictionary<string, string>();
 		public static List<int> RaidMembers = new List<int>();
+		[ExposedData("Basics","RaidMembers")]
 		public static List<string> RaidMemberNames = new List<string>();
+		[ExposedData("Basics", "RaidMembersLookup")]
 		public static ConcurrentDictionary<string, string> RaidMemberNamesLookup = new ConcurrentDictionary<string, string>();
 
 
@@ -1387,9 +1383,9 @@ namespace E3Core.Processors
 			RaidMemberNamesLookup.Clear();
 			if (raidCount > 0)
 			{
-				raidCount++;
+				//raidCount++;
 				//refresh raid members.
-				for (int i = 1; i < raidCount; i++)
+				for (int i = 1; i <= raidCount; i++)
 				{
 					// Query name first - this works for out-of-zone raid members too
 					string name = MQ.Query<string>($"${{Raid.Member[{i}].Name}}");
@@ -1698,6 +1694,9 @@ namespace E3Core.Processors
 		/// E3N has somewhat out grown it, and no loner a real valid thing for most servers, leaving here for laz people with an option to turn it off
 		/// </summary>
 		/// <returns></returns>
+		/// 
+		private static Int32 _largeModRodManaGiven=0;
+		private static Int32 _largeModRodHPTaken = 0;
 		private static bool LazarusManaRecovery()
 		{
 			if (!(e3util.IsEQEMU() && E3.ServerName == "Lazarus")) return false;
@@ -1706,6 +1705,15 @@ namespace E3Core.Processors
 			if (Basics.AmIDead()) return false;
 			if (e3util.IsEQLive()) return false;
 			if (E3.CurrentClass == Class.Bard) return false;
+
+			if (_largeModRodHPTaken == 0)
+			{   //mod rod is 
+				//line1: subtract health
+				//line2: give mana
+				_largeModRodHPTaken = Math.Abs(MQ.Query<Int32>("${Spell[Large Modulation Effect].Base[1]}"));
+				_largeModRodManaGiven = MQ.Query<Int32>("${Spell[Large Modulation Effect].Base[2]}");
+
+			}
 
 			int pctMana = MQ.Query<int>("${Me.PctMana}");
 			var pctHps = MQ.Query<int>("${Me.PctHPs}");
@@ -1732,32 +1740,11 @@ namespace E3Core.Processors
 				}
 			}
 
-			//if (E3.CurrentClass == Data.Class.Shaman)
-			//{
-			//	bool canniReady = MQ.Query<bool>("${Me.AltAbilityReady[Cannibalization]}");
-
-			//	if (canniReady && currentHps > 7000 && MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 4500)
-			//	{
-			//		Spell s;
-			//		if (!Spell.LoadedSpellsByName.TryGetValue("Cannibalization", out s))
-			//		{
-			//			s = new Spell("Cannibalization");
-			//		}
-			//		if (s.CastType != CastingType.None)
-			//		{
-			//			var result = Casting.Cast(0, s);
-			//			if(result== CastReturn.CAST_INTERRUPTFORHEAL)
-			//			{
-			//				return true;
-			//			}
-			//			return true;
-			//		}
-			//	}
-			//}
-
 			if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
 			{
-				if (MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > 6500 && currentHps > 9000)
+			
+			
+				if (currentHps > _largeModRodHPTaken && MQ.Query<double>("${Math.Calc[${Me.MaxMana} - ${Me.CurrentMana}]}") > _largeModRodManaGiven)
 				{
 					Spell s;
 					if (!Spell.LoadedSpellsByName.TryGetValue("Summoned: Large Modulation Shard", out s))

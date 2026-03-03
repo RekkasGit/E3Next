@@ -2551,6 +2551,7 @@ namespace E3Core.Utility
 			}
 
 		}
+	
 		private static readonly ConcurrentDictionary<int, string> _getIntStrCache = new ConcurrentDictionary<int, string>();
 
 		public static string GetIntStr(int value)

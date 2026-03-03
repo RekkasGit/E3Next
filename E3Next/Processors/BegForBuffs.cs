@@ -328,6 +328,13 @@ namespace E3Core.Processors
 							{
 								spell = realSpell;
 							}
+
+							if (Decimal.TryParse(spell,out var _))
+							{
+                                //to prevent index number tells from queuing spells by accident.
+                                return;
+							}
+
 							bool inBook = MQ.Query<bool>($"${{Me.Book[{spell}]}}");
 							bool aa = MQ.Query<bool>($"${{Me.AltAbility[{spell}].Spell}}");
                          

@@ -1940,7 +1940,7 @@ namespace E3Core.Processors
 		public static bool InRange(Int32 targetId, Data.Spell spell)
 		{
 
-			if (spell.TargetType == "Group v1" && spell.CastType!=CastingType.AA)
+			if (spell.TargetType == "Group v1" && !spell.IsBuff)
 			{	//group spells only should work on group, ignore buffs as there are some oddballs in there.
 				//so i'm missing something here.
 				if (!Basics.GroupMembersInZone.Contains(targetId)) return false;
