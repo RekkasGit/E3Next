@@ -1296,7 +1296,19 @@ namespace E3Core.Processors
 											bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spell.SpellID}].StacksWith[{buffID}]}}");
 											if (!stacksWith)
 											{
-												MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay because of stacking issues with \aw{buffName}\ay. \agTrying again in 15 seconds");
+												Int32 maxbuffsCount = MQ.Query<Int32>("${Me.MaxBuffSlots}");
+												Int32 currentBuffCount = MQ.Query<Int32>("${Me.BuffCount}");
+
+												if(currentBuffCount==maxbuffsCount)
+												{
+													MQ.Write($"\ayStacking logic failed on buff \aw{spell.SpellName} \aybecause I have max buff count. \aw{currentBuffCount}\ay out of \ay{maxbuffsCount}. \agTrying again in 15 seconds");
+
+												}
+												else
+												{
+													MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay because of stacking issues with \aw{buffName}\ay. \agTrying again in 15 seconds");
+
+												}
 												break;
 											}
 										}
@@ -1407,7 +1419,18 @@ namespace E3Core.Processors
 												bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spell.SpellID}].StacksWith[{buffID}]}}");
 												if (!stacksWith)
 												{
-													MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay because of stacking issues with \aw{buffName}\ay. \agTrying again in 30 seconds");
+													Int32 maxbuffsCount = MQ.Query<Int32>("${Me.MaxBuffSlots}");
+													Int32 currentBuffCount = MQ.Query<Int32>("${Me.BuffCount}");
+
+													if (currentBuffCount == maxbuffsCount)
+													{
+														MQ.Write($"\ayStacking logic failed on buff \aw{spell.SpellName} \aybecause I have max buff count. \aw{currentBuffCount}\ay out of \ay{maxbuffsCount}. \agTrying again in 15 seconds");
+
+													}
+													else
+													{
+														MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay because of stacking issues with \aw{buffName}\ay. \agTrying again in 30 seconds");
+													}
 												}
 											}
 										}
