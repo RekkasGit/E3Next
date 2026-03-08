@@ -634,7 +634,8 @@ namespace E3Core.Processors
 									PubServer.AddTopicMessage("${Casting}", $"{spell.CastName} on {targetName}");
 									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
-									MQ.Cmd($"/cast \"{spell.CastName}\"");
+
+									CastSpell(spell);
 									if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 									//give time for the casting bar to actulaly appear
 									if (spell.MyCastTime > 500)
@@ -689,7 +690,7 @@ namespace E3Core.Processors
 									PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
 									MQ.Write($"\ag{spell.CastName} \at{spell.SpellID} \am{targetName} \ao{targetID} \aw({spell.MyCastTime / 1000}sec)");
 									//MQ.Cmd($"/casting \"{spell.CastName}|{spell.SpellGem}\" \"-targetid|{targetID}\"");
-									MQ.Cmd($"/cast \"{spell.CastName}\"");
+									CastSpell(spell);
 									if (!E3.CharacterSettings.Misc_EnhancedRotationSpeed && !spell.IsNukeSection) MQ.Delay(300);
 									//give time for the casting bar to actulaly appear
 									if (spell.MyCastTime > 500)
@@ -1001,7 +1002,19 @@ namespace E3Core.Processors
 				}
 			}
 		}
-
+		public static void CastSpell(Spell spell)
+		{
+			if(Core._MQ2MonoVersion>=0.422m)
+			{
+				//this was actully fixed sometime a little before version 
+				//3.1.1.28 of EMU, but i know its after i released mq2mono 0.422, so we will use that.
+				MQ.Cmd($"/cast \"={spell.CastName}\"");
+			}
+			else
+			{
+				MQ.Cmd($"/cast \"{spell.CastName}\"");
+			}
+		}
 		public static void BeforeEventCheck(Spell spell)
 		{
 			_log.Write("Checking BeforeEvent...");
@@ -1197,7 +1210,7 @@ namespace E3Core.Processors
 				retrysong:
 					MQ.Cmd("/stopsong");
 					PubServer.AddTopicMessage("${Me.Casting}", spell.CastName);
-					MQ.Cmd($"/cast \"{spell.CastName}\"");
+					CastSpell(spell);
 					if (spell.MyCastTime > 500)
 					{
 						MQ.Delay(300, IsCasting);
@@ -1940,7 +1953,7 @@ namespace E3Core.Processors
 		public static bool InRange(Int32 targetId, Data.Spell spell)
 		{
 
-			if (spell.TargetType == "Group v1" && !spell.IsBuff)
+			if (spell.TargetType == "Group v1" && !spell.IsBuff && targetId!=MQ.Query<Int32>("${Me.ID}"))
 			{	//group spells only should work on group, ignore buffs as there are some oddballs in there.
 				//so i'm missing something here.
 				if (!Basics.GroupMembersInZone.Contains(targetId)) return false;

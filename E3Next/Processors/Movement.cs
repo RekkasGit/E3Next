@@ -215,7 +215,7 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextAnchorCheck, _nextAnchorCheckInterval)) return;
             if (AnchorEnabled() && !Assist.IsAssisting)
             {
-                MoveToAnchor();
+                MoveToAnchor(); 
             }
         }
         public static bool IsMoving()

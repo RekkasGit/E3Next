@@ -721,6 +721,10 @@ namespace E3Core.Processors
 					if (!(hasBuff || hasSong))
 					{
 						bool willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLand}}");
+
+						if (spell.IgnoreStackRules) willStack = true;
+
+
 						if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 						{
 							if (spell.TargetType == "Self" || spell.TargetType == "Group v1")
@@ -767,6 +771,7 @@ namespace E3Core.Processors
 							string[] targets = spell.CastTarget.Split(',');
 							foreach (var target in targets)
 							{
+								if (E3.ActionTaken) return;
 								if (String.IsNullOrWhiteSpace(target)) continue;
 
 								var t_target = target.Trim();
@@ -839,6 +844,7 @@ namespace E3Core.Processors
 						{
 							foreach (var name in E3.Bots.BotsConnected())
 							{
+								if (E3.ActionTaken) return;
 								if (_spawns.TryByName(name, out var s))
 								{
 									if (spell.ExcludedClasses.Contains(s.ClassShortName)) { continue; }
@@ -864,6 +870,7 @@ namespace E3Core.Processors
 						{
 							foreach (var name in E3.Bots.BotsConnected())
 							{
+								if (E3.ActionTaken) return;
 								if (_spawns.TryByName(name, out var s))
 								{
 									if (spell.ExcludedClasses.Contains(s.ClassShortName)) { continue; }
@@ -897,6 +904,7 @@ namespace E3Core.Processors
 							//check for class name types
 							foreach (var name in E3.Bots.BotsConnected())
 							{
+								if (E3.ActionTaken) return;
 								if (_spawns.TryByName(name, out var s))
 								{
 									string classShortName = s.ClassShortName;

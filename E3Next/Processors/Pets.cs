@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using static E3Core.Processors.BuffCheck;
 
 namespace E3Core.Processors
 {
@@ -145,6 +146,7 @@ namespace E3Core.Processors
         {
             Int32 pctHps = MQ.Query<Int32>("${Me.Pet.PctHPs}");
             Int32 pctMendHps = E3.CharacterSettings.Pet_MendPercent;
+            
             if (pctHps < pctMendHps)
             {
                 if (MQ.Query<bool>("${Me.AltAbilityReady[Replenish Companion]}"))
@@ -164,6 +166,15 @@ namespace E3Core.Processors
             foreach (var spell in E3.CharacterSettings.PetHeals)
             {
 				if (!spell.Enabled) continue;
+
+				if (!String.IsNullOrWhiteSpace(spell.Ifs))
+				{
+					if (!Casting.Ifs(spell))
+					{
+                        continue;
+					}
+				}
+
 				if (pctHps <= spell.HealPct)
                 {
                     if (Casting.CheckMana(spell) && Casting.CheckReady(spell))

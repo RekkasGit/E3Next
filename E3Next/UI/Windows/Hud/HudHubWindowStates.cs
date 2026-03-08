@@ -22,7 +22,7 @@ namespace E3Core.UI.Windows.Hud
 		{
 			if (Debugger.IsAttached) return;
 			//set all initial windows to not show
-			if (Core._MQ2MonoVersion >= 0.37m) ClearWindows();
+			if (Core._MQ2MonoVersion >= 0.422m) ClearWindows();
 		}
 		private State_HubWindow _hubWindowState = new State_HubWindow();
 		private State_BuffWindow _buffWindowState = new State_BuffWindow();
