@@ -334,7 +334,7 @@ namespace E3Core.Processors
 					{
 						if (!IgnoreHealTargets.Contains(s.CleanName))
 						{
-							if (s.Dead)
+							if (!s.Dead)
 							{
 								if (s.Distance < 200)
 								{
@@ -352,7 +352,7 @@ namespace E3Core.Processors
 				}
 			}
 			//found someone to heal
-			if (lowestHealthTargetid > 0 && currentLowestHealth < 95)
+			if (lowestHealthTargetid > 0 && currentLowestHealth <95)
 			{
 				foreach (var spell in spellsToUse)
 				{

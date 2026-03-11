@@ -47,7 +47,7 @@ namespace E3Core.Settings
         public String BuffRequests_RestrictedPCs;
         public String BuffRequests_AllowedPcs;
         //loot
-        public Int32 Loot_CorpseSeekRadius;
+        public Int32 Loot_CorpseSeekRadius= 50;
         public bool Loot_LootInCombat;
         public Int32 Loot_NumberOfFreeSlotsOpen;
         public Boolean Loot_OnlyStackableOnlyCommonTradeSkillItems = false;
