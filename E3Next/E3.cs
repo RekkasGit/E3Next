@@ -654,7 +654,8 @@ namespace E3Core.Processors
 				GlobalCursorDelete = new GlobalCursorDelete();
 				CharacterSettings = new Settings.CharacterSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
-				
+				ResistSettings = new ResistDataFile();
+
 				//setup is done after the settings are setup.
 				//as there is an order dependecy
 				Setup.Init();
@@ -708,6 +709,7 @@ namespace E3Core.Processors
 		public static Settings.FeatureSettings.GlobalCursorDelete GlobalCursorDelete = null;
 		public static Settings.GeneralSettings GeneralSettings = null;
         public static Settings.AdvancedSettings AdvancedSettings = null;
+		public static Settings.FeatureSettings.ResistDataFile ResistSettings= null;
         public static IBots Bots = null;
         public static string CurrentName;
         public static Data.Class CurrentClass;

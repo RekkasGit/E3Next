@@ -373,6 +373,10 @@ namespace E3Core.Data
                     else if (value.StartsWith("Zone|", StringComparison.OrdinalIgnoreCase))
                     {
                         Zone = GetArgument<String>(value);
+                        if(!String.IsNullOrWhiteSpace(Zone))
+                        {
+                            Zone_Collection= Zone.Split(new char[] {','},StringSplitOptions.RemoveEmptyEntries).ToList();
+                        }
                     }
                     else if (value.StartsWith("MinSick|", StringComparison.OrdinalIgnoreCase))
                     {
@@ -1096,6 +1100,7 @@ namespace E3Core.Data
         public Int32 MinAggro;
         public Int32 MaxAggro;
         public String Zone = "All";
+        public List<string> Zone_Collection = new List<string>();
         private const Int32 MinSickDefault = 2;
         public Int32 MinSick = MinSickDefault;
         public Boolean AllowSpellSwap;

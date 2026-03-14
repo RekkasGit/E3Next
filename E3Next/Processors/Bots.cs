@@ -29,7 +29,9 @@ namespace E3Core.Processors
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
+		void BroadcastCommandAllZoneNotMe(string command, bool noparse = false, CommandMatch match = null);
 		void BroadcastCommandAllZone(string command, bool noparse = false, CommandMatch match = null);
+
 		void BroadcastCommandToGroupZone(string command, CommandMatch match = null, bool noparse = false);
 		void BroadcastCommandToPerson(string person, string command, bool noparse = false);
         void Broadcast(string message, bool noparse = false);

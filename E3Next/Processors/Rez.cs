@@ -426,7 +426,7 @@ namespace E3Core.Processors
 								//this can take a bit of time, thus if it fails, we add to recently rezed.
 								if (!CanRez(spawn.ID))
 								{
-									_recentlyRezzed.Add(spawn.ID, DateTime.Now);
+									_recentlyRezzed[spawn.ID]=DateTime.Now;
 									continue;
 								}
 								if (Basics.InCombat())
@@ -437,7 +437,7 @@ namespace E3Core.Processors
 									if (result == CastReturn.CAST_INTERRUPTFORHEAL) return;
 									if (result == CastReturn.CAST_SUCCESS)
 									{
-										_recentlyRezzed.Add(spawn.ID, DateTime.Now);
+										_recentlyRezzed[spawn.ID]=DateTime.Now;
 										break;
 									}
 								}
@@ -449,7 +449,7 @@ namespace E3Core.Processors
 									if (result == CastReturn.CAST_INTERRUPTFORHEAL) return;
 									if (result == CastReturn.CAST_SUCCESS)
 									{
-										_recentlyRezzed.Add(spawn.ID, DateTime.Now);
+										_recentlyRezzed[spawn.ID] = DateTime.Now;
 										break;
 									}
 								}

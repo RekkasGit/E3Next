@@ -61,6 +61,10 @@ namespace E3NextConfigEditor.Client
 			
 		}
 
+		public void BroadcastCommandAllZoneNotMe(string command, bool noparse = false, EventProcessor.CommandMatch match = null)
+		{
+		}
+
 		public void BroadcastCommandToGroup(string command, EventProcessor.CommandMatch match = null, bool noparse = false)
 		{
 			
