@@ -2495,6 +2495,12 @@ namespace E3Core.Processors
 				//lets replace it with TRUE/FALSE
 				tIF = tIF.ReplaceInsensitive("${IsNotSafeZone}", (!Zoning.CurrentZone.IsSafeZone).ToString());
 			}
+			if (tIF.IndexOf("${E3NVersion}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				//lets replace it with TRUE/FALSE
+				tIF = tIF.ReplaceInsensitive("${E3NVersion}", Setup.E3Version);
+			}
+
 			//StandingStillForTimePeriod()
 
 			return tIF;
