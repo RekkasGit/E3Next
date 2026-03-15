@@ -232,6 +232,9 @@ namespace E3Core.Settings
             LoadKeyData("Movement", "Chase Distance Minimum", parsedData, ref Movement_ChaseDistanceMin);
             LoadKeyData("Movement", "Chase Distance Maximum", parsedData, ref Movement_ChaseDistanceMax);
             LoadKeyData("Movement", "Nav Stop Distance", parsedData, ref Movement_NavStopDistance);
+
+            if (Movement_ChaseDistanceMin < Movement_NavStopDistance) Movement_NavStopDistance = Movement_ChaseDistanceMin;
+
             LoadKeyData("Movement", "Anchor Distance Minimum", parsedData, ref Movement_AnchorDistanceMin);
             LoadKeyData("Movement", "Anchor Distance Maximum", parsedData, ref Movement_AnchorDistanceMax);
             LoadKeyData("Movement", "Milliseconds till standing Still",parsedData,ref Movement_StandingStill);
