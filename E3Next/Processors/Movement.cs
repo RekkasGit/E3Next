@@ -20,7 +20,7 @@ namespace E3Core.Processors
         public static double Anchor_Y = double.MinValue;
         public static double Anchor_Z = double.MinValue;
         public static List<string> AnchorFilters = new List<string>();
-
+		public static bool MovementPaused = false;
 		[ExposedData("Movement", "Following")]
 		public static bool Following = false;
 		//public static Int32 _followTargetID = 0;
@@ -92,6 +92,8 @@ namespace E3Core.Processors
             if (ChaseTargetName == String.Empty) return;
             if (!e3util.ShouldCheck(ref _nextChaseCheck, _nextChaseCheckInterval)) return;
 
+            if (MovementPaused) return;
+
             using (_log.Trace())
             {
 
@@ -155,7 +157,7 @@ namespace E3Core.Processors
             if (String.IsNullOrWhiteSpace(FollowTargetName)) return;
  
             if (Assist.IsAssisting) return;
-
+            if (MovementPaused) return;           
             Spawn s;
             if (_spawns.TryByName(FollowTargetName, out s))
             {
@@ -272,7 +274,41 @@ namespace E3Core.Processors
         static void RegisterEvents()
         {
 
-            EventProcessor.RegisterCommand("/scatter", (x) => {
+			EventProcessor.RegisterCommand("/e3movement", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+
+					if (x.args[0].Length == "pause".Length && x.args[0].IndexOf("pause", 0, "pause".Length, StringComparison.OrdinalIgnoreCase) != -1)
+					{
+						if (FollowTargetName != String.Empty || ChaseTargetName != string.Empty)
+						{
+							E3.Bots.Broadcast("Pausing movement");
+							MovementPaused = true;
+							PauseMovement();
+						}
+						else
+						{
+							E3.Bots.Broadcast("Currently not following anyone.");
+						}
+					}
+					else if (x.args[0].Length == "resume".Length && x.args[0].IndexOf("resume", 0, "resume".Length, StringComparison.OrdinalIgnoreCase) != -1)
+					{
+						if (FollowTargetName != String.Empty || ChaseTargetName != string.Empty)
+						{
+							E3.Bots.Broadcast("Resuming movement");
+							MovementPaused = false;
+							Following = false;
+
+						}
+						else
+						{
+							E3.Bots.Broadcast("Currently not following anyone.");
+						}
+					}
+				}
+			}, "pause/resume movement");
+			EventProcessor.RegisterCommand("/scatter", (x) => {
 
                 Int32 Distance = 10;
                 if(x.args.Count>0)

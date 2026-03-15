@@ -25,6 +25,7 @@ namespace E3Core.Processors
 		public static Logging _log = E3.Log;
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
+		
 		[ExposedData("Basics", "IsPaused")]
 		public static bool IsPaused = false;
 		[ExposedData("Basics", "GroupMembers")]
@@ -141,6 +142,7 @@ namespace E3Core.Processors
 					}
 				}
 			});
+		
 
 
 			EventProcessor.RegisterCommand("/e3toggle_amidead", (x) =>
