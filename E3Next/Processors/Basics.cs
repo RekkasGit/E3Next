@@ -590,7 +590,6 @@ namespace E3Core.Processors
 						MQ.Cmd("/dismount");
 						MQ.Cmd($"/camp{toDesktop}");
 					}
-					E3.Bots.BroadcastCommandToGroup($"/followoff me", x); //turn off follow as camping
 					//we are telling people to follow us
 					E3.Bots.BroadcastCommandToGroup($"/e3camp{toDesktop} " + E3.CurrentName, x);
 				}
