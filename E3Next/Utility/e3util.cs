@@ -2320,7 +2320,7 @@ namespace E3Core.Utility
 			int timeoutInMS = 3000;
 
 
-			MQ.Cmd($"/nav id {spawnID} distance={stopDistance}");
+			MQ.Cmd($"/nav id {spawnID} distance={stopDistance} log=warning");
 
 			Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
 			MQ.Delay(600);
