@@ -148,10 +148,6 @@ namespace E3Core.Data
 					{
 						IgnoreStackRules = true;
 					}
-					else if (value.Equals("IgnoreStackRules", StringComparison.OrdinalIgnoreCase))
-					{
-						IgnoreStackRules = true;
-					}
 					else if (value.StartsWith("SongRefreshTime|", StringComparison.OrdinalIgnoreCase))
 					{
 						SongRefreshTime = GetArgument<Int32>(value);
@@ -838,6 +834,7 @@ namespace E3Core.Data
 				
 				if (SpellInBook && Int32.TryParse(CastName, out _)==false)
                 {
+                    CastType = CastingType.Spell;
 					//we already have this data populated, just kick out
 					if (SpellDataLookup.ContainsKey(CastName))
 					{
@@ -1138,6 +1135,7 @@ namespace E3Core.Data
         public bool IsShortBuff = false;
         public Int32 HealthMax = 100;
         public bool IgnoreStackRules = false;
+        public bool IgnoreResistanceCheck = false;
         public bool IsDebuff = false;
         public bool IsDoT = false;
 		public bool IsBuff = false;

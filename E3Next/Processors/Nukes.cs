@@ -123,8 +123,11 @@ namespace E3Core.Processors
                                     continue;
                                 }
                             }
-                            //can't cast if it isn't ready
-                            if (Casting.InRange(Assist.AssistTargetID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
+                            //if there are resist settings setup for this spawn.
+                            if (E3.ResistSettings.ShouldSkip(spell, s)) continue;
+
+							//can't cast if it isn't ready
+							if (Casting.InRange(Assist.AssistTargetID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
                             {
                                 //we should have a valid target via check_assistStatus
                                 if (spell.Delay > 0 && delayTimeStamp > 0 && Core.StopWatch.ElapsedMilliseconds < delayTimeStamp)

@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using E3Core.Data;
 using E3Core.Processors;
 using MonoCore;
 using System;
@@ -42,6 +43,27 @@ namespace E3Core.Settings.FeatureSettings
 		{
 			RegisterEvents();
 			fileName = GetSettingsFilePath($"E3Resist_{E3.ServerName}.db");
+		}
+		public bool ShouldSkip(Spell spell, Spawn s)
+		{
+			if (E3.ResistSettings.ZoneData.TryGetValue(s.CleanName, out var resistInfo))
+			{
+				if (spell.ResistType == "Magic" && resistInfo.MagicImmune) return true;
+				else if (spell.ResistType == "Fire" && resistInfo.FireImmune) return true;
+				else if (spell.ResistType == "Cold" && resistInfo.ColdImmune) return true;
+				else if (spell.ResistType == "Poison" && resistInfo.PoisonImmune) return true;
+				else if (spell.ResistType == "Disease" && resistInfo.DiseaseImmune) return true;
+				else if (spell.ResistType == "Corruption" && resistInfo.CorruptImmune) return true;
+
+				if (spell.ResistType == "Magic" && resistInfo.MagicResistant && !spell.IgnoreResistanceCheck) return true;
+				else if (spell.ResistType == "Fire" && resistInfo.FireResistant && !spell.IgnoreResistanceCheck) return true;
+				else if (spell.ResistType == "Cold" && resistInfo.ColdResistant && !spell.IgnoreResistanceCheck) return true;
+				else if (spell.ResistType == "Poison" && resistInfo.PoisonResistant && !spell.IgnoreResistanceCheck) return true;
+				else if (spell.ResistType == "Disease" && resistInfo.DiseaseResistant && !spell.IgnoreResistanceCheck) return true;
+				else if (spell.ResistType == "Corruption" && resistInfo.CorruptResistant && !spell.IgnoreResistanceCheck) return true;
+
+			}
+			return false;
 		}
 		private void RegisterEvents()
 		{
@@ -178,7 +200,7 @@ namespace E3Core.Settings.FeatureSettings
 	
 			ZoneData.Clear();
 			bool fileExists = File.Exists(fileName);
-			MQ.Write($"Connecting to {fileName}");
+			//MQ.Write($"Connecting to {fileName}");
 			if (fileExists)
 			{
 				_sqlite = new SQLiteConnection($"Data Source={fileName};Mode=ReadOnly;New=False;");
