@@ -436,151 +436,146 @@ namespace E3Core.Processors
 
 			try
 			{
-				//this is important so that we do not get caught up in recursion during a Delay as delay can call this. 
-				InStateUpdate = true;
-				PctHPs = MQ.Query<int>("${Me.PctHPs}");
-				IsInvis = MQ.Query<bool>("${Me.Invis}");
-				IsInvul = MQ.Query<bool>("${Me.Invulnerable}");
-				CurrentId = MQ.Query<int>("${Me.ID}");
-				CurrentInCombat = Basics.InCombat();
-				
-				E3ImGUI.ProcessMQCommands();
-				//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
-				if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, E3.CharacterSettings.CPU_PublishStateDataInMS))
+				using(var mqlock = MQ.GetDelayLock())
 				{
-					StateUpdates_Stats();
-				}
-				
-				//other stuff not quite so quickly
-				if (e3util.ShouldCheck(ref _nextMiscUpdateCheckTime, E3.CharacterSettings.CPU_PublishMiscDataInMS))
-				{
-					StateUpdates_Misc();
-				}
-				
-				//expensive only send out once per second?
-				if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, E3.CharacterSettings.CPU_PublishBuffDataInMS))
-				{
-					StateUpdates_BuffInformation();
-					StateUpdates_Counters();
-				}
-			
-				if (e3util.ShouldCheck(ref _nextMemoryUpdateCheckTime, _nextMemoryUpdateCheckRate))
-				{
-					StateUpdates_Memory();
-				}
-				
-				//not horribly important stuff, can just be sent out whever, currently once per second
-				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
-				{
-					StateUpdates_AAInformation();
-					
-					if (Core._MQ2MonoVersion>=0.412m || Debugger.IsAttached)
+					//this is important so that we do not get caught up in recursion during a Delay as delay can call this. 
+					InStateUpdate = true;
+					PctHPs = MQ.Query<int>("${Me.PctHPs}");
+					IsInvis = MQ.Query<bool>("${Me.Invis}");
+					IsInvul = MQ.Query<bool>("${Me.Invulnerable}");
+					CurrentId = MQ.Query<int>("${Me.ID}");
+					CurrentInCombat = Basics.InCombat();
+
+					E3ImGUI.ProcessMQCommands();
+					//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
+					if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, E3.CharacterSettings.CPU_PublishStateDataInMS))
 					{
-						unsafe
+						StateUpdates_Stats();
+					}
+
+					//other stuff not quite so quickly
+					if (e3util.ShouldCheck(ref _nextMiscUpdateCheckTime, E3.CharacterSettings.CPU_PublishMiscDataInMS))
+					{
+						StateUpdates_Misc();
+					}
+
+					//expensive only send out once per second?
+					if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, E3.CharacterSettings.CPU_PublishBuffDataInMS))
+					{
+						StateUpdates_BuffInformation();
+						StateUpdates_Counters();
+					}
+
+					if (e3util.ShouldCheck(ref _nextMemoryUpdateCheckTime, _nextMemoryUpdateCheckRate))
+					{
+						StateUpdates_Memory();
+					}
+
+					//not horribly important stuff, can just be sent out whever, currently once per second
+					if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
+					{
+						StateUpdates_AAInformation();
+
+						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
 						{
-							int length;
-							byte* p;
-							p = MQ.GetXtargetDataPtr(out length);
-							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
-							Int32 xtargetMaxAggro = e3util.GetXTargetMaxAggro(data);
+							unsafe
+							{
+								int length;
+								byte* p;
+								p = MQ.GetXtargetDataPtr(out length);
+								ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+								Int32 xtargetMaxAggro = e3util.GetXTargetMaxAggro(data);
+								if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
+								PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", e3util.GetIntStr(xtargetMaxAggro));
+								Int32 xtargetMinAggro = e3util.GetXTargetMinAggro(data);
+								if (xtargetMinAggro < 0) xtargetMinAggro = 0;
+								PubServer.AddTopicMessage("${Me.XTargetMinAggro}", e3util.GetIntStr(xtargetMinAggro));
+							}
+
+						}
+						else
+						{
+							Int32 xtargetMaxAggro = e3util.GetXtargetMaxAggro();
 							if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
 							PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", e3util.GetIntStr(xtargetMaxAggro));
-							Int32 xtargetMinAggro = e3util.GetXTargetMinAggro(data);
+							Int32 xtargetMinAggro = e3util.GetXtargetMinAggro();
 							if (xtargetMinAggro < 0) xtargetMinAggro = 0;
 							PubServer.AddTopicMessage("${Me.XTargetMinAggro}", e3util.GetIntStr(xtargetMinAggro));
 						}
 
-					}
-					else
-					{
-						Int32 xtargetMaxAggro = e3util.GetXtargetMaxAggro();
-						if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
-						PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", e3util.GetIntStr(xtargetMaxAggro));
-						Int32 xtargetMinAggro = e3util.GetXtargetMinAggro();
-						if (xtargetMinAggro < 0) xtargetMinAggro = 0;
-						PubServer.AddTopicMessage("${Me.XTargetMinAggro}", e3util.GetIntStr(xtargetMinAggro));
-					}
 
-					
-					string activeDisc = MQ.Query<string>("${Me.ActiveDisc}");
+						string activeDisc = MQ.Query<string>("${Me.ActiveDisc}");
 
-					Int32 timeInTicksForDisc = 0;
-					if (activeDisc != "NULL")
-					{
-						timeInTicksForDisc = MQ.Query<Int32>("${Me.ActiveDisc.Duration}");
-					}
-					else
-					{
-						activeDisc = "";
-					}
-					PubServer.AddTopicMessage("${Me.ActiveDisc}", activeDisc);
-					PubServer.AddTopicMessage("${Me.ActiveDiscTimeLeft}", e3util.GetIntStr(timeInTicksForDisc * 6));
-					Decimal discPercentage = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}");
-					PubServer.AddTopicMessage("${Me.ActiveDiscPerentTimeLeft}", e3util.GetDecimalString(discPercentage));
-					PubServer.AddTopicMessage("${Me.IsInvis}", IsInvis ? "true" : "false");
-
-					Int32 pctAggr = MQ.Query<Int32>("${Me.PctAggro}");
-					if (pctAggr < 0) pctAggr = 0;
-					PubServer.AddTopicMessage("${Me.PctAggro}", e3util.GetIntStr(pctAggr));
-
-					string loc_x = MQ.Query<string>("${Me.X}");
-					string loc_y = MQ.Query<string>("${Me.Y}");
-					string loc_z = MQ.Query<string>("${Me.Z}");
-					PubServer.AddTopicMessage("${Me.X}", loc_x);
-					PubServer.AddTopicMessage("${Me.Y}", loc_y);
-					PubServer.AddTopicMessage("${Me.Z}", loc_z);
-					double.TryParse(loc_x, out Loc_X);
-					double.TryParse(loc_y, out Loc_Y);
-					double.TryParse(loc_z, out Loc_Z);
-					//lets query the data we are configured to send out extra
-					if (E3.CharacterSettings.E3BotsPublishData.Count > 0)
-					{
-						foreach (var pair in E3.CharacterSettings.E3BotsPublishData)
+						Int32 timeInTicksForDisc = 0;
+						if (activeDisc != "NULL")
 						{
-							//to parse out custom values
-							string valueToCheck = Casting.Ifs_Results(pair.Value);
-							string resultvalue= MQ.Query<string>(valueToCheck);
-							PubServer.AddTopicMessage(pair.Key, resultvalue);
+							timeInTicksForDisc = MQ.Query<Int32>("${Me.ActiveDisc.Duration}");
 						}
-					}
-					string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
-					if (nameOfPet != "NULL")
-					{
-						//set the pet name
-						CurrentPetName = nameOfPet;
-						PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
-					}
-					string nameOfMerc = MQ.Query<string>("${Mercenary.CleanName}");
-					if (nameOfMerc != "NULL")
-					{
-						//set the pet name
-						CurrentMercName = nameOfMerc;
-						PubServer.AddTopicMessage("${Mercenary.CleanName}", CurrentMercName);
-					}
-					E3.IsMoving = MQ.Query<bool>("${Me.Moving}");
-					if (E3.IsMoving)
-					{
-						LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-					}
-					E3.IsFD = MQ.Query<bool>("${Me.Feigning}");
-					if (E3.IsFD)
-					{
-						LastFDTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-					}
-
-
-
-					if (MQ.Query<bool>("${MoveUtils.GM}"))
-					{
-						if (e3util.IsEQEMU())
+						else
 						{
-							MQ.Cmd("/squelch /stick imsafe");
+							activeDisc = "";
 						}
-						Bots.Broadcast("GM Safe kicked in, on live issue /stick imsafe.  you may need to reissue /followme or /assiston");
+						PubServer.AddTopicMessage("${Me.ActiveDisc}", activeDisc);
+						PubServer.AddTopicMessage("${Me.ActiveDiscTimeLeft}", e3util.GetIntStr(timeInTicksForDisc * 6));
+						Decimal discPercentage = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}");
+						PubServer.AddTopicMessage("${Me.ActiveDiscPerentTimeLeft}", e3util.GetDecimalString(discPercentage));
+						PubServer.AddTopicMessage("${Me.IsInvis}", IsInvis ? "true" : "false");
+
+						Int32 pctAggr = MQ.Query<Int32>("${Me.PctAggro}");
+						if (pctAggr < 0) pctAggr = 0;
+						PubServer.AddTopicMessage("${Me.PctAggro}", e3util.GetIntStr(pctAggr));
+
+						string loc_x = MQ.Query<string>("${Me.X}");
+						string loc_y = MQ.Query<string>("${Me.Y}");
+						string loc_z = MQ.Query<string>("${Me.Z}");
+						PubServer.AddTopicMessage("${Me.X}", loc_x);
+						PubServer.AddTopicMessage("${Me.Y}", loc_y);
+						PubServer.AddTopicMessage("${Me.Z}", loc_z);
+						double.TryParse(loc_x, out Loc_X);
+						double.TryParse(loc_y, out Loc_Y);
+						double.TryParse(loc_z, out Loc_Z);
+						//lets query the data we are configured to send out extra
+						if (E3.CharacterSettings.E3BotsPublishData.Count > 0)
+						{
+							foreach (var pair in E3.CharacterSettings.E3BotsPublishData)
+							{
+								//to parse out custom values
+								string valueToCheck = Casting.Ifs_Results(pair.Value);
+								string resultvalue = MQ.Query<string>(valueToCheck);
+								PubServer.AddTopicMessage(pair.Key, resultvalue);
+							}
+						}
+						string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
+						if (nameOfPet != "NULL")
+						{
+							//set the pet name
+							CurrentPetName = nameOfPet;
+							PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
+						}
+						string nameOfMerc = MQ.Query<string>("${Mercenary.CleanName}");
+						if (nameOfMerc != "NULL")
+						{
+							//set the pet name
+							CurrentMercName = nameOfMerc;
+							PubServer.AddTopicMessage("${Mercenary.CleanName}", CurrentMercName);
+						}
+						E3.IsMoving = MQ.Query<bool>("${Me.Moving}");
+						if (E3.IsMoving)
+						{
+							LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+						}
+						E3.IsFD = MQ.Query<bool>("${Me.Feigning}");
+						if (E3.IsFD)
+						{
+							LastFDTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+						}
+						
 					}
 				}
-
-			
+			}
+			catch(Exception ex)
+			{
+				MQ.Write("Error:" + ex.Message + " stack:" + ex.StackTrace);
 			}
             finally
             {

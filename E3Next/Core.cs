@@ -2679,6 +2679,9 @@ namespace MonoCore
 					}
 					//E3.MQ.WriteDelayed($"Adding new spawn {spawn.ID}: {spawn.CleanName} TD:{spawn.TypeDesc}");
 					//its new, so add it to the collections
+
+					if (spawn.GM) E3.Bots.Broadcast($"GM {spawn.CleanName} Entered zone.");
+
 					_spawns.Add(spawn);
 					SpawnsByID.TryAdd(spawn.ID, spawn);
 					if (spawn.TypeDesc == "PC" && !spawn.Dead)

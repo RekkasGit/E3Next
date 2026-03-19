@@ -3176,29 +3176,29 @@ namespace E3Core.Processors
 			//});
 
 			r = new List<string>();
-			r.Add("Your target has no mana to affect.");
-			r.Add("Your target looks unaffected.");
-			r.Add("Your target is immune to changes in its attack speed.");
-			r.Add("Your target is immune to changes in its run speed.");
-			r.Add("Your target is immune to snare spells.");
-			r.Add("Your target cannot be mesmerized.");
-			r.Add("Your target looks unaffected.");
+			r.Add(@"Your target has no mana to affect\.");
+			r.Add(@"Your target looks unaffected\.");
+			r.Add(@"Your target is immune to changes in its attack speed\.");
+			r.Add(@"Your target is immune to changes in its run speed\.");
+			r.Add(@"Your target is immune to snare spells\.");
+			r.Add(@"Your target cannot be mesmerized\.");
+			r.Add(@"Your target looks unaffected\.");
 			EventProcessor.RegisterEvent("CAST_IMMUNE", r, (x) =>
 			{
 			});
 
 
 			r = new List<string>();
-			r.Add("Your .+ is interrupted.");
-			r.Add("Your spell is interrupted.");
-			r.Add("Your casting has been interrupted.");
+			r.Add(@"Your .+ is interrupted\.");
+			r.Add(@"Your spell is interrupted\.");
+			r.Add(@"Your casting has been interrupted\.");
 			EventProcessor.RegisterEvent("CAST_INTERRUPTED", r, (x) =>
 			{
 			});
 
 			r = new List<string>();
-			r.Add("Your spell fizzles.");
-			r.Add("Your .+ spell fizzles.");
+			r.Add(@"Your spell fizzles\.");
+			r.Add(@"Your .+ spell fizzles\.");
 			r.Add(@"You miss a note, bringing your song to a close\.");
 			EventProcessor.RegisterEvent("CAST_FIZZLE", r, (x) =>
 			{
