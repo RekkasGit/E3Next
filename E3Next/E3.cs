@@ -180,7 +180,7 @@ namespace E3Core.Processors
 				Bard.check_BardSongs();
 			}
 		}
-	
+		private static List<String> ClassCallKeys = new List<string>();
 		private static void ClassMethodCalls()
 		{
 
@@ -191,14 +191,23 @@ namespace E3Core.Processors
 			//using (Log.Trace("ClassMethodCalls"))
 			{
 
+				ClassCallKeys.Clear();
+				foreach(var kvp in AdvancedSettings.ClassMethodLookup)
+				{
+					ClassCallKeys.Add(kvp.Key);
+				}
 				//lets do our class methods, this is last because of bards
-				foreach (var kvp in AdvancedSettings.ClassMethodLookup)
+				foreach (var ckey in ClassCallKeys)
 				{
 					if (Zoning.IsZoned()) return;
 					Burns.UseBurns();
 					//using (Log.Trace($"ClassMethodCalls-{kvp.Key}-Main"))
 					{
-						kvp.Value.Invoke();
+						if(AdvancedSettings.ClassMethodLookup.TryGetValue(ckey,out var method))
+						{
+							method.Invoke();
+
+						}
 					}
 					EventProcessor.ProcessEventsInQueues();
 				}
