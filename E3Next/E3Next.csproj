@@ -212,7 +212,7 @@
     <Compile Include="UI\Windows\Hud\HudHubWindowStates.cs" />
     <Compile Include="UI\Windows\MemStats\MemoryStatsWindow.cs" />
     <Compile Include="UI\Windows\NetworkingStats\NetStatWindow.cs" />
-    <Compile Include="UI\Windows\Tasks\E3Tasks.cs" />
+    <Compile Include="UI\Windows\E3Tasks.cs" />
     <Compile Include="Utility\ArrayBufferPool.cs" />
     <Compile Include="Utility\ByteArrayComparer.cs" />
     <Compile Include="Utility\e3util.cs" />

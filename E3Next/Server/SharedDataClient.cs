@@ -169,7 +169,7 @@ namespace E3Core.Server
 				if (IMGUICommands.TryDequeue(out var data))
 				{
 					string messageTopicReceived = data.Data;
-					string payloaduser = data.Data2.ToLower();
+					string payloaduser = data.Data2?.ToLower() ?? string.Empty;
 					string messageReceived = data.Data3;
 
 					var typeInfo = data.TypeOfCommand;
@@ -259,6 +259,15 @@ namespace E3Core.Server
 								string value = parts[2];
 								E3.CharacterSettings.ParsedData[section][key] = value;
 								E3.CharacterSettings.SaveData();
+							}
+						}
+						else if (typeInfo == OnCommandData.CommandType.OnE3TasksRequest)
+						{
+							// Handle task data request from another peer
+							// messageTopicReceived contains the requesting user's name (stored in data.Data)
+							if (!string.IsNullOrEmpty(messageTopicReceived))
+							{
+								E3Core.UI.Windows.E3TasksWindow.ProcessTaskDataRequest(messageTopicReceived);
 							}
 						}
 					}
@@ -664,6 +673,7 @@ namespace E3Core.Server
 				subSocket.Subscribe("BroadCastMessage");
 				subSocket.Subscribe("BroadCastMessageZone");
 				subSocket.Subscribe("E3Tasks");
+			subSocket.Subscribe("E3TasksReq");
 				// e3imgui Add From Catalog peer relay topics
 				// Requests addressed to specific toons and responses back to requester
 				subSocket.Subscribe($"CatalogReq-{E3.CurrentName.ToLower()}");
@@ -998,6 +1008,15 @@ namespace E3Core.Server
 									data.TypeOfCommand = OnCommandData.CommandType.OnCommandName;
 									CommandQueue.Enqueue(data);
 								}
+								else if (messageTopicReceived == "E3TasksReq")
+								{
+									// Request for task data - queue it for processing
+									var data = OnCommandData.Aquire();
+									data.Data = payloaduser; // Who requested the data
+									data.Data2 = payloaduser; // Also set Data2 for consistency
+									data.TypeOfCommand = OnCommandData.CommandType.OnE3TasksRequest;
+									IMGUICommands.Enqueue(data);
+								}
 								else
 								{
 									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceivedAsSpan);
@@ -1178,7 +1197,8 @@ namespace E3Core.Server
 				OnIMGUICommand_GetCatalogData,
 				OnIMGUICommand_GetItemsByType,
 				OnIMGUICommand_ConfigValueReq,
-				OnIMGUICommand_ConfigValueUpdate
+				OnIMGUICommand_ConfigValueUpdate,
+				OnE3TasksRequest
 
 			}
 			public string Data { get; set; }

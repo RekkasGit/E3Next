@@ -3,6 +3,7 @@ using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
+using E3Core.UI.Windows;
 using E3Core.UI.Windows.Hud;
 using E3Core.Utility;
 using MonoCore;
@@ -447,6 +448,7 @@ namespace E3Core.Processors
 					CurrentInCombat = Basics.InCombat();
 
 					E3ImGUI.ProcessMQCommands();
+					E3TasksWindow.Pulse();
 					//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
 					if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, E3.CharacterSettings.CPU_PublishStateDataInMS))
 					{

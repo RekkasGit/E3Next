@@ -1,4 +1,4 @@
-using E3Core.Data;
+﻿using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Server;
 using E3Core.Utility;
@@ -18,7 +18,9 @@ namespace E3Core.UI.Windows
 
         private static bool _windowInitialized;
         private static bool _imguiContextReady;
-        private static bool _forceRefresh;
+        private static bool _captureNeeded;
+        private static bool _publishNeeded;
+        private static bool _isWindowOpen;
         private static long _nextRefresh;
         private static readonly long _refreshInterval = 1000;
         private static long _lastDataUpdate;
@@ -90,11 +92,22 @@ namespace E3Core.UI.Windows
                 {
                     _windowInitialized = true;
                     imgui_Begin_OpenFlagSet(WindowName, true);
+                    _isWindowOpen = true;
+                    _captureNeeded = true;
+                    // Request task data from all peers when opening the window
+                    RequestTaskDataFromPeers();
                 }
                 else
                 {
                     bool open = imgui_Begin_OpenFlagGet(WindowName);
                     imgui_Begin_OpenFlagSet(WindowName, !open);
+                    _isWindowOpen = !open;
+                    if (!open) 
+                    {
+                        _captureNeeded = true;
+                        // Request task data from all peers when reopening the window
+                        RequestTaskDataFromPeers();
+                    }
                 }
 
                 _imguiContextReady = true;
@@ -106,12 +119,151 @@ namespace E3Core.UI.Windows
             }
         }
 
+        /// <summary>
+        /// Broadcasts a request for task data to all connected peers.
+        /// Called when the UI window is opened.
+        /// NOTE: This is called from UI thread - must not call MQ directly!
+        /// </summary>
+        public static void RequestTaskDataFromPeers()
+        {
+            try
+            {
+                // Publish a request for all peers to send their task data
+                PubServer.AddTopicMessage("E3TasksReq", E3.CurrentName);
+                
+                // Queue local capture AND publish to happen on game loop thread (Pulse)
+                // DO NOT call MQ methods here - it's on UI thread!
+                _captureNeeded = true;
+                _publishNeeded = true;
+            }
+            catch (Exception ex)
+            {
+                _log.Write($"Failed to request task data: {ex.Message}", Logging.LogLevels.Error);
+            }
+        }
+
+        /// <summary>
+        /// Processes a task data request from another peer.
+        /// Captures current task data and publishes it.
+        /// NOTE: This is called from networking thread - must not call MQ directly!
+        /// </summary>
+        public static void ProcessTaskDataRequest(string requestingUser)
+        {
+            try
+            {
+                // Queue capture AND publish to happen on game loop thread (Pulse)
+                // DO NOT call MQ methods here - it's on wrong thread!
+                _captureNeeded = true;
+                _publishNeeded = true;
+            }
+            catch (Exception ex)
+            {
+                _log.Write($"Failed to process task data request: {ex.Message}", Logging.LogLevels.Error);
+            }
+        }
+
+        /// <summary>
+        /// Captures current task data and publishes it to the PubServer.
+        /// </summary>
+        private static void CaptureAndPublishTaskData()
+        {
+            try
+            {
+                var snapshot = TaskDataCollector.Capture(MQ, allowDelays: false);
+                foreach (var task in snapshot)
+                {
+                    if (task.TimerSeconds >= TimerDisplayThresholdSeconds)
+                    {
+                        task.TimerSeconds = 0;
+                        task.TimerDisplay = string.Empty;
+                    }
+                }
+
+                _cachedTasks.Clear();
+                _cachedTasks.AddRange(snapshot
+                    .OrderBy(t => t.IsComplete)
+                    .ThenBy(t => t.Type, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase));
+
+                _lastDataUpdate = Core.StopWatch.ElapsedMilliseconds;
+
+                // Publish task data for peers to consume
+                PubServer.AddTopicMessage("E3Tasks", TaskDataCollector.SerializeForWire(_cachedTasks));
+            }
+            catch (Exception ex)
+            {
+                _log.Write($"Failed to capture and publish task data: {ex.Message}", Logging.LogLevels.Error);
+            }
+        }
+
+        /// <summary>
+        /// Called from the game pulse (E3.StateUpdates) — safe to call mq.Query here.
+        /// Only updates local cached data for UI display.
+        /// Publishing happens when _publishNeeded is set (in response to explicit requests).
+        /// </summary>
+        public static void Pulse()
+        {
+            // Handle publish requests even when window is closed (for peer requests)
+            bool shouldPublish = _publishNeeded;
+            _publishNeeded = false;
+            
+            if (shouldPublish)
+            {
+                try
+                {
+                    // Capture and publish task data for peers
+                    var snapshot = TaskDataCollector.Capture(MQ, allowDelays: false);
+                    PubServer.AddTopicMessage("E3Tasks", TaskDataCollector.SerializeForWire(snapshot));
+                }
+                catch (Exception ex)
+                {
+                    _log.Write($"Failed to publish task data: {ex.Message}", Logging.LogLevels.Error);
+                }
+            }
+
+            // Rest of update only happens if window is open
+            if (!_isWindowOpen) return;
+            if (!_captureNeeded && !e3util.ShouldCheck(ref _nextRefresh, _refreshInterval)) return;
+
+            _captureNeeded = false;
+
+            try
+            {
+                // Capture task data - safe to call MQ here (game loop thread)
+                var snapshot = TaskDataCollector.Capture(MQ, allowDelays: false);
+                foreach (var task in snapshot)
+                {
+                    if (task.TimerSeconds >= TimerDisplayThresholdSeconds)
+                    {
+                        task.TimerSeconds = 0;
+                        task.TimerDisplay = string.Empty;
+                    }
+                }
+
+                _cachedTasks.Clear();
+                _cachedTasks.AddRange(snapshot
+                    .OrderBy(t => t.IsComplete)
+                    .ThenBy(t => t.Type, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase));
+
+                _lastDataUpdate = Core.StopWatch.ElapsedMilliseconds;
+
+                RefreshPeerTaskData();
+            }
+            catch (ThreadAbort)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _log.Write($"Failed to refresh task data: {ex.Message}", Logging.LogLevels.Error);
+            }
+        }
+
         private static void RenderWindow()
         {
             if (!_imguiContextReady) return;
             if (!imgui_Begin_OpenFlagGet(WindowName)) return;
-
-            RefreshTaskData();
 
             PushCurrentTheme();
             try
@@ -123,6 +275,7 @@ namespace E3Core.UI.Windows
                     int flags = (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse;
                     if (!window.Begin(WindowName, flags))
                     {
+                        _isWindowOpen = false;
                         return;
                     }
 
@@ -156,8 +309,9 @@ namespace E3Core.UI.Windows
 
             if (imgui_Button("Refresh"))
             {
-                _forceRefresh = true;
-                RefreshTaskData(force: true);
+                _captureNeeded = true;
+                // Also request fresh data from peers when manually refreshing
+                RequestTaskDataFromPeers();
             }
 
             imgui_SameLine();
@@ -361,50 +515,6 @@ namespace E3Core.UI.Windows
             }
         }
 
-        private static void RefreshTaskData(bool force = false)
-        {
-            if (!force)
-            {
-                if (!_forceRefresh && !e3util.ShouldCheck(ref _nextRefresh, _refreshInterval))
-                {
-                    return;
-                }
-            }
-
-            _forceRefresh = false;
-
-            try
-            {
-                var snapshot = TaskDataCollector.Capture(MQ, allowDelays: false);
-                foreach (var task in snapshot)
-                {
-                    if (task.TimerSeconds >= TimerDisplayThresholdSeconds)
-                    {
-                        task.TimerSeconds = 0;
-                        task.TimerDisplay = string.Empty;
-                    }
-                }
-
-                _cachedTasks.Clear();
-                _cachedTasks.AddRange(snapshot
-                    .OrderBy(t => t.IsComplete)
-                    .ThenBy(t => t.Type, StringComparer.OrdinalIgnoreCase)
-                    .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase));
-
-                _lastDataUpdate = Core.StopWatch.ElapsedMilliseconds;
-
-                RefreshPeerTaskData();
-            }
-            catch (ThreadAbort)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _log.Write($"Failed to refresh task data: {ex.Message}", Logging.LogLevels.Error);
-            }
-        }
-
         private static void RefreshPeerTaskData()
         {
             _peerTasks.Clear();
@@ -427,7 +537,7 @@ namespace E3Core.UI.Windows
                     continue;
                 }
 
-                var summaries = TaskDataCollector.DeserializeFromWire(entry.Data);
+                var summaries = TaskDataCollector.DeserializeFromWire(entry.GetData().ToString());
 
                 _peerTasks.Add(new PeerTaskSummary
                 {
@@ -682,8 +792,8 @@ namespace E3Core.UI.Windows
             imgui_SameLine();
             if (imgui_Button("Refresh"))
             {
-                _forceRefresh = true;
-                RefreshTaskData(force: true);
+                _captureNeeded = true;
+                RequestTaskDataFromPeers();
             }
 
             imgui_Separator();
@@ -898,8 +1008,8 @@ namespace E3Core.UI.Windows
             imgui_SameLine();
             if (imgui_Button("Refresh"))
             {
-                _forceRefresh = true;
-                RefreshTaskData(force: true);
+                _captureNeeded = true;
+                RequestTaskDataFromPeers();
                 RefreshAdvancedTaskList();
             }
 
@@ -1000,243 +1110,181 @@ namespace E3Core.UI.Windows
                     if (!peerHasTask) continue;
                 }
 
-                bool isSelected = string.Equals(_advSelectedTaskKey, entry.Key, StringComparison.OrdinalIgnoreCase);
+                bool isSelected = _advSelectedTaskKey == entry.Key;
 
                 // Count how many peers have this task
-                int peerCount = 0;
+                int peerCountWithTask = 0;
                 foreach (var peer in _peerTasks)
                 {
                     if (peer.Tasks?.Any(t =>
                         string.Equals(BuildTaskComparisonKey(t.Title ?? "", t.Type ?? ""), entry.Key, StringComparison.OrdinalIgnoreCase)) ?? false)
                     {
-                        peerCount++;
+                        peerCountWithTask++;
                     }
                 }
-                bool selfHas = entry.LocalTask != null;
-                int totalCount = selfHas ? peerCount + 1 : peerCount;
+                bool localHasTask = entry.LocalTask != null;
+                int totalCount = (localHasTask ? 1 : 0) + peerCountWithTask;
 
-                // Format: [Type] (count) Task Name
-                string typePrefix = string.IsNullOrEmpty(entry.Type) ? "" : $"[{entry.Type}] ";
-                string label = $"{typePrefix}({totalCount}) {entry.Title}";
+                string label = $"[{entry.Type ?? "???"}] ({totalCount}) {entry.Title}";
 
-                if (imgui_Selectable($"{label}##{entry.Key}", isSelected))
+                if (imgui_Selectable(label, isSelected))
                 {
                     _advSelectedTaskKey = entry.Key;
-                    _advSelectedObjectiveSource = null; // Reset to default when selecting new task
+                    _advSelectedObjectiveSource = null; // reset to auto
                 }
             }
         }
 
         private static void RenderAdvancedView_RightPane()
         {
-            if (string.IsNullOrEmpty(_advSelectedTaskKey))
+            var entry = _advAllTasks.FirstOrDefault(e => e.Key == _advSelectedTaskKey);
+            if (entry == null)
             {
-                imgui_TextColored(0.6f, 0.6f, 0.6f, 1f, "Select a task from the list.");
+                imgui_TextColored(0.6f, 0.6f, 0.6f, 1f, "Select a task to view details.");
                 return;
             }
 
-            var selectedEntry = _advAllTasks.FirstOrDefault(e =>
-                string.Equals(e.Key, _advSelectedTaskKey, StringComparison.OrdinalIgnoreCase));
-
-            if (selectedEntry == null)
-            {
-                imgui_TextColored(0.6f, 0.6f, 0.6f, 1f, "Task not found.");
-                return;
-            }
-
-            float availX = imgui_GetContentRegionAvailX();
-            float availY = imgui_GetContentRegionAvailY();
-            float topPaneHeight = Math.Max(150f, (availY - 10f) * 0.45f);
-            float bottomPaneHeight = availY - topPaneHeight - 10f;
-
-            // Top section - Task objectives
-            using (var topChild = ImGUIChild.Aquire())
-            {
-                if (topChild.BeginChild("AdvView_Objectives", availX, topPaneHeight,
-                    (int)ImGuiChildFlags.Borders, 0))
-                {
-                    RenderAdvancedView_Objectives(selectedEntry);
-                }
-            }
-
-            // Bottom section - Peer status
-            using (var bottomChild = ImGUIChild.Aquire())
-            {
-                if (bottomChild.BeginChild("AdvView_PeerStatus", availX, bottomPaneHeight,
-                    (int)ImGuiChildFlags.Borders, 0))
-                {
-                    RenderAdvancedView_PeerStatus(selectedEntry);
-                }
-            }
-        }
-
-        private static void RenderAdvancedView_Objectives(AdvancedTaskEntry entry)
-        {
-            string header = string.IsNullOrEmpty(entry.Type)
-                ? entry.Title
-                : $"{entry.Title} [{entry.Type}]";
-            imgui_TextColored(0.9f, 0.9f, 0.5f, 1f, header);
-
-            // Show whose objectives we're viewing
-            if (string.IsNullOrEmpty(_advSelectedObjectiveSource))
-            {
-                if (entry.LocalTask != null)
-                {
-                    imgui_SameLine();
-                    imgui_TextColored(0.5f, 1f, 0.5f, 1f, $"({E3.CurrentName})");
-                }
-            }
-            else
-            {
-                imgui_SameLine();
-                imgui_TextColored(0.65f, 0.85f, 1f, 1f, $"({_advSelectedObjectiveSource})");
-            }
-
+            // Header
+            imgui_TextColored(0.9f, 0.9f, 0.5f, 1f, entry.Title);
+            imgui_TextColored(0.6f, 0.6f, 0.6f, 1f, $"Type: {entry.Type ?? "Unknown"}");
             imgui_Separator();
 
-            // Determine which objectives to show based on _advSelectedObjectiveSource
-            List<TaskObjectiveSnapshot> localObjectives = null;
-            List<TaskWireObjective> peerObjectives = null;
-            string sourceName = null;
+            // Peer selector for objectives
+            imgui_Text("View objectives from:");
+            imgui_SameLine();
+            imgui_SetNextItemWidth(150f);
 
-            if (string.IsNullOrEmpty(_advSelectedObjectiveSource))
+            using (var combo = ImGUICombo.Aquire())
             {
-                // Default: show local first, then fall back to any peer
-                localObjectives = entry.LocalTask?.Objectives;
-                if (localObjectives == null || localObjectives.Count == 0)
+                string preview = _advSelectedObjectiveSource ?? "Auto (Self if available)";
+                if (combo.BeginCombo("##ObjectiveSource", preview))
                 {
-                    // Find a peer that has this task with objectives
+                    if (imgui_Selectable("Auto (Self if available)", _advSelectedObjectiveSource == null))
+                    {
+                        _advSelectedObjectiveSource = null;
+                    }
+
+                    if (entry.LocalTask != null)
+                    {
+                        if (imgui_Selectable($"Self ({E3.CurrentName})", _advSelectedObjectiveSource == $"Self:{E3.CurrentName}"))
+                        {
+                            _advSelectedObjectiveSource = $"Self:{E3.CurrentName}";
+                        }
+                    }
+
                     foreach (var peer in _peerTasks)
                     {
                         var peerTask = peer.Tasks?.FirstOrDefault(t =>
                             string.Equals(BuildTaskComparisonKey(t.Title ?? "", t.Type ?? ""), entry.Key, StringComparison.OrdinalIgnoreCase));
-                        if (peerTask?.Objectives != null && peerTask.Objectives.Count > 0)
+                        if (peerTask != null)
                         {
-                            peerObjectives = peerTask.Objectives;
-                            sourceName = peer.Name;
-                            break;
+                            if (imgui_Selectable(peer.Name, _advSelectedObjectiveSource == peer.Name))
+                            {
+                                _advSelectedObjectiveSource = peer.Name;
+                            }
                         }
                     }
                 }
             }
+
+            imgui_Separator();
+
+            // Find the task to display objectives from
+            TaskSnapshot taskToShow = null;
+            if (_advSelectedObjectiveSource == null)
+            {
+                // Auto: prefer self, then first peer
+                taskToShow = entry.LocalTask;
+                if (taskToShow == null)
+                {
+                    var peerWithTask = _peerTasks.FirstOrDefault(p =>
+                        p.Tasks?.Any(t => string.Equals(BuildTaskComparisonKey(t.Title ?? "", t.Type ?? ""), entry.Key, StringComparison.OrdinalIgnoreCase)) ?? false);
+                    if (peerWithTask != null)
+                    {
+                        var peerTask = peerWithTask.Tasks.First(t =>
+                            string.Equals(BuildTaskComparisonKey(t.Title ?? "", t.Type ?? ""), entry.Key, StringComparison.OrdinalIgnoreCase));
+                        // Convert TaskWireSummary to TaskSnapshot for display
+                        taskToShow = ConvertWireSummaryToSnapshot(peerTask);
+                    }
+                }
+            }
+            else if (_advSelectedObjectiveSource.StartsWith("Self:"))
+            {
+                taskToShow = entry.LocalTask;
+            }
             else
             {
-                // Show specific peer's objectives
-                var selectedPeer = _peerTasks.FirstOrDefault(p =>
-                    string.Equals(p.Name, _advSelectedObjectiveSource, StringComparison.OrdinalIgnoreCase));
-                if (selectedPeer != null)
+                var peer = _peerTasks.FirstOrDefault(p => p.Name == _advSelectedObjectiveSource);
+                if (peer != null)
                 {
-                    var peerTask = selectedPeer.Tasks?.FirstOrDefault(t =>
+                    var peerTask = peer.Tasks?.FirstOrDefault(t =>
                         string.Equals(BuildTaskComparisonKey(t.Title ?? "", t.Type ?? ""), entry.Key, StringComparison.OrdinalIgnoreCase));
-                    if (peerTask?.Objectives != null && peerTask.Objectives.Count > 0)
+                    if (peerTask != null)
                     {
-                        peerObjectives = peerTask.Objectives;
-                        sourceName = selectedPeer.Name;
+                        taskToShow = ConvertWireSummaryToSnapshot(peerTask);
                     }
                 }
             }
 
-            if (localObjectives != null && localObjectives.Count > 0)
+            if (taskToShow == null)
             {
-                // Render local objectives
-                foreach (var obj in localObjectives)
-                {
-                    var color = obj.IsComplete ? CompletedColor : ActiveColor;
-                    string icon = obj.IsComplete ? FA_CHECK : FA_TIMES;
-                    string optional = obj.Optional ? " (Optional)" : "";
-
-                    imgui_TextColored(color.R, color.G, color.B, 1f, icon);
-                    imgui_SameLine(0f, 6f);
-
-                    string statusText = string.IsNullOrWhiteSpace(obj.Status) ? "" : $" [{obj.Status}]";
-                    imgui_Text($"{obj.Index}. {obj.Instruction}{optional}{statusText}");
-
-                    if (!string.IsNullOrWhiteSpace(obj.Zone))
-                    {
-                        imgui_SameLine();
-                        imgui_TextColored(0.6f, 0.6f, 0.6f, 1f, $"({obj.Zone})");
-                    }
-                }
+                imgui_TextColored(0.6f, 0.6f, 0.6f, 1f, "No objective data available from selected source.");
+                return;
             }
-            else if (peerObjectives != null && peerObjectives.Count > 0)
+
+            // Status
+            var statusColor = taskToShow.IsComplete ? CompletedColor : ActiveColor;
+            imgui_TextColored(statusColor.R, statusColor.G, statusColor.B, 1f,
+                $"Status: {(taskToShow.IsComplete ? "Complete" : "In Progress")}");
+
+            if (!string.IsNullOrWhiteSpace(taskToShow.ActiveStep))
             {
-                foreach (var obj in peerObjectives)
-                {
-                    var color = obj.IsComplete ? CompletedColor : ActiveColor;
-                    string icon = obj.IsComplete ? FA_CHECK : FA_TIMES;
-                    string optional = obj.Optional ? " (Optional)" : "";
-
-                    imgui_TextColored(color.R, color.G, color.B, 1f, icon);
-                    imgui_SameLine(0f, 6f);
-
-                    string statusText = string.IsNullOrWhiteSpace(obj.Status) ? "" : $" [{obj.Status}]";
-                    imgui_Text($"{obj.Index}. {obj.Instruction}{optional}{statusText}");
-
-                    if (!string.IsNullOrWhiteSpace(obj.Zone))
-                    {
-                        imgui_SameLine();
-                        imgui_TextColored(0.6f, 0.6f, 0.6f, 1f, $"({obj.Zone})");
-                    }
-                }
+                imgui_TextColored(0.75f, 0.9f, 1f, 1f, "Current Step:");
+                imgui_TextWrapped(taskToShow.ActiveStep);
             }
-            else
+
+            // Peer summary table
+            imgui_Separator();
+            imgui_TextColored(0.75f, 0.9f, 1f, 1f, "Who has this task:");
+            RenderAdvancedView_PeerSummaryTable(entry);
+
+            // Objectives
+            if (taskToShow.Objectives.Count > 0)
             {
-                imgui_TextColored(0.6f, 0.6f, 0.6f, 1f, "No objective details available.");
+                imgui_Separator();
+                RenderObjectivesTable(taskToShow);
             }
         }
 
-        private static void RenderAdvancedView_PeerStatus(AdvancedTaskEntry entry)
+        private static void RenderAdvancedView_PeerSummaryTable(AdvancedTaskEntry entry)
         {
-            imgui_TextColored(0.65f, 0.85f, 1f, 1f, "Who Has This Task");
-            imgui_Separator();
+            int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
+                                   ImGuiTableFlags.ImGuiTableFlags_BordersInner |
+                                   ImGuiTableFlags.ImGuiTableFlags_BordersOuter);
 
             using (var table = ImGUITable.Aquire())
             {
-                int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
-                                       ImGuiTableFlags.ImGuiTableFlags_BordersInner |
-                                       ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
-                                       ImGuiTableFlags.ImGuiTableFlags_Resizable |
-                                       ImGuiTableFlags.ImGuiTableFlags_ScrollY);
-
-                if (!table.BeginTable("AdvView_PeerTable", 3, tableFlags, 0f, 0f))
-                {
+                if (!table.BeginTable("PeerSummary", 3, tableFlags, 0f, 0f))
                     return;
-                }
 
-                imgui_TableSetupColumn("Character", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120f);
-                imgui_TableSetupColumn("Current Step", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 200f);
+                imgui_TableSetupColumn("Peer", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 150f);
+                imgui_TableSetupColumn("Status", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 100f);
                 imgui_TableSetupColumn("Progress", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 100f);
                 imgui_TableHeadersRow();
 
-                // Self first
+                // Self
                 if (entry.LocalTask != null)
                 {
-                    var task = entry.LocalTask;
                     imgui_TableNextRow();
-
                     imgui_TableNextColumn();
-                    bool isSelfSelected = string.IsNullOrEmpty(_advSelectedObjectiveSource);
-                    if (isSelfSelected)
-                    {
-                        imgui_TextColored(0.5f, 1f, 0.5f, 1f, $"> {E3.CurrentName} (Self)");
-                    }
-                    else
-                    {
-                        imgui_TextColored(0.5f, 1f, 0.5f, 1f, $"{E3.CurrentName} (Self)");
-                    }
-                    if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
-                    {
-                        _advSelectedObjectiveSource = null; // Reset to local
-                    }
-
+                    imgui_TextColored(0.65f, 0.85f, 1f, 1f, E3.CurrentName);
                     imgui_TableNextColumn();
-                    string step = string.IsNullOrEmpty(task.ActiveStep) ? "(No step info)" : task.ActiveStep;
-                    imgui_TextWrapped(step);
-
+                    var statusColor = entry.LocalTask.IsComplete ? CompletedColor : ActiveColor;
+                    imgui_TextColored(statusColor.R, statusColor.G, statusColor.B, 1f,
+                        entry.LocalTask.IsComplete ? "Complete" : "In Progress");
                     imgui_TableNextColumn();
-                    var color = task.IsComplete ? CompletedColor : ActiveColor;
-                    string progress = task.IsComplete ? "Complete" : $"{task.CompletedObjectives}/{task.TotalObjectives}";
-                    imgui_TextColored(color.R, color.G, color.B, 1f, progress);
+                    int completed = entry.LocalTask.Objectives.Count(o => o.IsComplete);
+                    imgui_Text($"{completed}/{entry.LocalTask.Objectives.Count}");
                 }
 
                 // Peers
@@ -1244,53 +1292,66 @@ namespace E3Core.UI.Windows
                 {
                     var peerTask = peer.Tasks?.FirstOrDefault(t =>
                         string.Equals(BuildTaskComparisonKey(t.Title ?? "", t.Type ?? ""), entry.Key, StringComparison.OrdinalIgnoreCase));
-
-                    if (peerTask == null) continue;
-
-                    imgui_TableNextRow();
-
-                    imgui_TableNextColumn();
-                    bool isPeerSelected = string.Equals(_advSelectedObjectiveSource, peer.Name, StringComparison.OrdinalIgnoreCase);
-                    if (isPeerSelected)
+                    if (peerTask != null)
                     {
-                        imgui_TextColored(0.65f, 0.85f, 1f, 1f, $"> {peer.Name}");
+                        imgui_TableNextRow();
+                        imgui_TableNextColumn();
+                        imgui_Text(peer.Name);
+                        imgui_TableNextColumn();
+                        var statusColor = peerTask.IsComplete ? CompletedColor : ActiveColor;
+                        imgui_TextColored(statusColor.R, statusColor.G, statusColor.B, 1f,
+                            peerTask.IsComplete ? "Complete" : "In Progress");
+                        imgui_TableNextColumn();
+                        imgui_Text($"{peerTask.CompletedObjectives}/{peerTask.TotalObjectives}");
                     }
-                    else
-                    {
-                        imgui_TextColored(0.65f, 0.85f, 1f, 1f, peer.Name);
-                    }
-                    if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
-                    {
-                        _advSelectedObjectiveSource = peer.Name;
-                    }
-
-                    imgui_TableNextColumn();
-                    string step = string.IsNullOrEmpty(peerTask.ActiveStep) ? "(No step info)" : peerTask.ActiveStep;
-                    imgui_TextWrapped(step);
-
-                    imgui_TableNextColumn();
-                    var color = peerTask.IsComplete ? CompletedColor : ActiveColor;
-                    string progress = peerTask.IsComplete ? "Complete" : $"{peerTask.CompletedObjectives}/{peerTask.TotalObjectives}";
-                    imgui_TextColored(color.R, color.G, color.B, 1f, progress);
                 }
             }
         }
 
-        #endregion
-
-        private sealed class PeerTaskSummary
+        private static TaskSnapshot ConvertWireSummaryToSnapshot(TaskWireSummary wire)
         {
-            public string Name { get; set; } = string.Empty;
-            public long LastUpdate { get; set; }
-            public List<TaskWireSummary> Tasks { get; set; } = new List<TaskWireSummary>();
+            var snapshot = new TaskSnapshot
+            {
+                Slot = wire.Slot,
+                Title = wire.Title,
+                Type = wire.Type,
+                ActiveStep = wire.ActiveStep,
+                TimerDisplay = wire.TimerDisplay,
+                TimerSeconds = 0
+            };
+
+            foreach (var obj in wire.Objectives)
+            {
+                // IsComplete is computed from Status, so set Status to "Done" if complete
+                string status = obj.IsComplete ? "Done" : obj.Status;
+                snapshot.Objectives.Add(new TaskObjectiveSnapshot
+                {
+                    Index = obj.Index,
+                    Instruction = obj.Instruction,
+                    Status = status,
+                    Zone = obj.Zone,
+                    Optional = obj.Optional
+                });
+            }
+
+            return snapshot;
         }
 
-        private sealed class AdvancedTaskEntry
+        #endregion
+
+        private class PeerTaskSummary
         {
-            public string Key { get; set; } = string.Empty;
-            public string Title { get; set; } = string.Empty;
-            public string Type { get; set; } = string.Empty;
-            public TaskSnapshot LocalTask { get; set; } // null if we don't have it locally
+            public string Name { get; set; }
+            public long LastUpdate { get; set; }
+            public List<TaskWireSummary> Tasks { get; set; }
+        }
+
+        private class AdvancedTaskEntry
+        {
+            public string Key { get; set; }
+            public string Title { get; set; }
+            public string Type { get; set; }
+            public TaskSnapshot LocalTask { get; set; }
         }
     }
 }

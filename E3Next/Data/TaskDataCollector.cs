@@ -190,7 +190,7 @@ namespace E3Core.Data
         {
             try
             {
-                return mq.Query<T>(query, allowDelays);
+                return mq.Query<T>(query);
             }
             catch (ThreadAbort)
             {

@@ -851,9 +851,16 @@ namespace E3Core.UI.Windows.CharacterSettings
 								_cfgSectionExpanded[sec] = tree.IsOpen;
 								if (tree.IsOpen)
 								{
-									var keys = secData.Keys.Select(k => k.KeyName).ToArray();
-									foreach (var key in keys)
+									var search = (state.Buffer_KeySearch ?? string.Empty).Trim();
+									bool sectionNameMatches = string.IsNullOrWhiteSpace(search) ||
+										sec.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1;
+									var keys = secData.Keys
+										.Where(k => sectionNameMatches || KeyMatchesSearch(k, search))
+										.ToArray();
+
+									foreach (var keyData in keys)
 									{
+										var key = keyData.KeyName;
 										bool keySelected = string.Equals(state.SelectedSection, sec, StringComparison.OrdinalIgnoreCase) &&
 											string.Equals(state.SelectedKey, key, StringComparison.OrdinalIgnoreCase);
 
@@ -3714,28 +3721,70 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 			foreach (var section in mainWindowState.SectionsOrdered)
 			{
-				// Check if section name matches
-				if (section.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
+				var secData = pd.Sections.GetSectionData(section);
+				if (SectionMatchesSearch(section, secData, search))
 				{
 					matches.Add(section);
-					continue;
-				}
-
-				// Check if any key in this section matches
-				var secData = pd.Sections.GetSectionData(section);
-				if (secData?.Keys != null)
-				{
-					foreach (var key in secData.Keys)
-					{
-						if (key.KeyName.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
-						{
-							matches.Add(section);
-							break;
-						}
-					}
 				}
 			}
 			return matches;
+		}
+
+		private static bool SectionMatchesSearch(string sectionName, SectionData secData, string search)
+		{
+			if (sectionName.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				return true;
+			}
+
+			if (secData?.Keys == null)
+			{
+				return false;
+			}
+
+			foreach (var key in secData.Keys)
+			{
+				if (KeyMatchesSearch(key, search))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private static bool KeyMatchesSearch(KeyData key, string search)
+		{
+			if (key == null)
+			{
+				return false;
+			}
+
+			if (!string.IsNullOrEmpty(key.KeyName) &&
+				key.KeyName.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				return true;
+			}
+
+			if (!string.IsNullOrEmpty(key.Value) &&
+				key.Value.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				return true;
+			}
+
+			if (key.ValueList != null)
+			{
+				foreach (var value in key.ValueList)
+				{
+					if (!string.IsNullOrEmpty(value) &&
+						value.IndexOf(search, 0, StringComparison.OrdinalIgnoreCase) > -1)
+					{
+						return true;
+					}
+				}
+			}
+
+			return false;
 		}
 
 		private static void LoadSampleIfsForModal()

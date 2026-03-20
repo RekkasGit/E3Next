@@ -27,6 +27,8 @@ namespace E3Core.Processors
 		public static long LastAssistStartedTimeStamp = 0;
 		[ExposedData("Assist", "CurrentSecondsInCombat")]
 		public static long CurrentSecondsInCombat = 0;
+		[ExposedData("Assist", "LastKillTimeSeconds")]
+		public static long LastKillTimeSeconds = 0;
 		[ExposedData("Assist", "MobPctHealthWhenAssistStarted")]
 		public static long MobPctHealthWhenAssistStarted = 0;
 		[ExposedData("Assist", "MobPctHealthLossPerSecond")]
@@ -53,10 +55,20 @@ namespace E3Core.Processors
 		private static bool _assistIsEnraged = false;
         private static Dictionary<string, Action> _stickSwitch;
         private static HashSet<Int32> _offAssistIgnore = new HashSet<Int32>();
+		private const string AssistTypeManual = "Manual";
 		//private static Data.Spell _divineStun = new Data.Spell("Divine Stun");
 		//private static Data.Spell _terrorOfDiscord = new Data.Spell("Terror of Discord");
 		[ExposedData("Assist", "TankTypes")]
 		private static List<string> _tankTypes = new List<string>() { "WAR", "PAL", "SHD" };
+
+		private static bool AssistCommandsDisabled()
+		{
+			return IsManualAssistType(E3.CharacterSettings.Assist_Type);
+		}
+		private static bool IsManualAssistType(string assistType)
+		{
+			return String.Equals(assistType, AssistTypeManual, StringComparison.OrdinalIgnoreCase);
+		}
 
         /// <summary>
         /// Initializes this instance.
@@ -73,7 +85,6 @@ namespace E3Core.Processors
         /// </summary>
         public static void Process()
         {
-
 			if (LastAssistStartedTimeStamp > 0)
 			{
 				CurrentSecondsInCombat = (Core.StopWatch.ElapsedMilliseconds - LastAssistStartedTimeStamp) / 1000;
@@ -111,6 +122,15 @@ namespace E3Core.Processors
                 CurrentMinAggro = 0;
             }
 
+			if (AssistCommandsDisabled())
+			{
+				if (IsAssisting)
+				{
+					AssistOff();
+				}
+				return;
+			}
+
             CheckAssistStatus();
             ProcessCombat();
         }
@@ -126,7 +146,8 @@ namespace E3Core.Processors
             DebuffDot.Reset();
 			Dispel.Reset();
 			Burns.Reset();
-            AssistOff();
+			AssistOff();
+			LastKillTimeSeconds = 0;
          
 
 		}
@@ -547,6 +568,24 @@ namespace E3Core.Processors
         /// </summary>
         public static void AssistOff()
         {  
+			Int32 previousAssistTargetID = AssistTargetID;
+			Int64 previousCombatDuration = CurrentSecondsInCombat;
+			bool assistedTargetIsCorpse = false;
+			string assistedTargetName = String.Empty;
+			if (previousAssistTargetID > 0)
+			{
+				if (_spawns.TryByID(previousAssistTargetID, out var assistSpawn))
+				{
+					assistedTargetName = assistSpawn.CleanName;
+					assistedTargetIsCorpse = assistSpawn.Dead || String.Equals(assistSpawn.TypeDesc, "Corpse", StringComparison.OrdinalIgnoreCase);
+				}
+				else
+				{
+					assistedTargetName = MQ.Query<string>($"${{Spawn[id {previousAssistTargetID}].CleanName}}");
+					assistedTargetIsCorpse = MQ.Query<bool>($"${{Spawn[id {previousAssistTargetID}].Type.Equal[Corpse]}}");
+				}
+			}
+
 			while(MQ.Query<bool>("${Me.Combat}")) MQ.Cmd("/attack off");
 
 			
@@ -559,6 +598,18 @@ namespace E3Core.Processors
             if (MQ.Query<Int32>("${Me.Pet.ID}") > 0) MQ.Cmd("/squelch /pet back off");
 
 
+			if (previousCombatDuration > 0)
+			{
+				LastKillTimeSeconds = previousCombatDuration;
+				if (assistedTargetIsCorpse)
+				{
+					if (String.IsNullOrWhiteSpace(assistedTargetName))
+					{
+						assistedTargetName = previousAssistTargetID > 0 ? $"ID {previousAssistTargetID}" : "Unknown";
+					}
+					MQ.Write($"\agkilled \at{assistedTargetName}\ag in \at{previousCombatDuration}");
+				}
+			}
 			CurrentSecondsInCombat = 0;
 			LastAssistStartedTimeStamp = 0;
 			IsAssisting = false;
@@ -590,6 +641,11 @@ namespace E3Core.Processors
         /// <param name="mobID">The mob identifier.</param>
         public static void AssistOn(Int32 mobID, Int32 zoneId)
         {
+			if (AssistCommandsDisabled())
+			{
+				AllowControl = false;
+				return;
+			}
 
             if (zoneId != Zoning.CurrentZone.Id)
             {
@@ -895,6 +951,7 @@ namespace E3Core.Processors
                    E3.Bots.Broadcast("\arNot assisting! \agI am paused!");
                    return; 
                }
+			   bool assistDisabled = AssistCommandsDisabled();
 
                 //clear in case its not reset by other means
                 //or you want to attack in enrage
@@ -930,26 +987,32 @@ namespace E3Core.Processors
                    {
                        if (!e3util.FilterMe(x))
                        {
-                           if (targetID != AssistTargetID)
-                           {
-                               AssistOff();
-                              
-                           }
-						   AllowControl = true;
-						   AssistOn(targetID, Zoning.CurrentZone.Id);
+						   if (!assistDisabled)
+						   {
+							   if (targetID != AssistTargetID)
+							   {
+								   AssistOff();
+								  
+							   }
+							   AllowControl = true;
+							   AssistOn(targetID, Zoning.CurrentZone.Id);
+						   }
 					   }
                    }
                    else
                    {
                        //we are asking to ignore ourself, but might want to send out our pet still
-                       if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
-                       {
-                           MQ.Cmd($"/pet attack {targetID}");
-						  
-					   }
-					   if (e3util.IsEQLive())
+					   if (!assistDisabled)
 					   {
-						   MQ.Cmd("/pet swarm");
+						   if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
+						   {
+							   MQ.Cmd($"/pet attack {targetID}");
+							  
+						   }
+						   if (e3util.IsEQLive())
+						   {
+							   MQ.Cmd("/pet swarm");
+						   }
 					   }
 				   }
                    E3.Bots.BroadcastCommandToGroup($"/assistme {targetID} {Zoning.CurrentZone.Id}", x);
@@ -968,23 +1031,26 @@ namespace E3Core.Processors
                         //make sure the target is in the same zone we are in
                        if (x.args.Count>1 && Int32.TryParse(x.args[1], out zoneid))
                        {
-                           if (mobid != AssistTargetID)
+						   if (!assistDisabled)
 						   {
-							   AssistOff();
-				           }
-                           AllowControl = false;
-						   if (e3util.IsEQLive())
-						   {
-							   //random delay so it isn't quite so ovious
-                               if((E3.CurrentClass & Class.Priest)!=E3.CurrentClass)
-                               {
-                                   //if not a priest/healer, lets chill for 30-400ms
-								  // MQ.Delay(E3.Random.Next(30, 400));
+							   if (mobid != AssistTargetID)
+							   {
+								   AssistOff();
+				           	   }
+							   AllowControl = false;
+							   if (e3util.IsEQLive())
+							   {
+								   //random delay so it isn't quite so ovious
+								   if((E3.CurrentClass & Class.Priest)!=E3.CurrentClass)
+								   {
+									   //if not a priest/healer, lets chill for 30-400ms
+									   // MQ.Delay(E3.Random.Next(30, 400));
+
+								   }
 
 							   }
-
+							   AssistOn(mobid, zoneid);
 						   }
-						   AssistOn(mobid, zoneid);
 
                        }
                        else
