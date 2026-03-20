@@ -131,6 +131,7 @@
     <Compile Include="Data\MelodyIfs.cs" />
     <Compile Include="Data\ProtoBuff\BuffData.cs" />
     <Compile Include="Data\ProtoBuff\SpellData.cs" />
+    <Compile Include="Data\ProtoBuff\TaskData.cs" />
     <Compile Include="Data\ResistCounter.cs" />
     <Compile Include="Data\Skills.cs" />
     <Compile Include="Data\SpellRequest.cs" />
@@ -229,6 +230,7 @@
     <None Include="app.config" />
     <None Include="Data\ProtoBuff\BuffData.proto" />
     <None Include="Data\ProtoBuff\SpellData.proto" />
+    <None Include="Data\ProtoBuff\TaskData.proto" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

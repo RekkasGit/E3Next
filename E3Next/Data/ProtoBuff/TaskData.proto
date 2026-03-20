@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+message TaskDataList {
+    repeated TaskData data = 1;
+}
+
+message TaskData {
+    int32 slot = 1;
+    string title = 2;
+    string active_step = 3;
+    int32 completed_objectives = 4;
+    int32 total_objectives = 5;
+    string type = 6;
+    bool is_complete = 7;
+    string timer_display = 8;
+    repeated TaskObjective objectives = 9;
+}
+
+message TaskObjective {
+    int32 index = 1;
+    string instruction = 2;
+    string status = 3;
+    string zone = 4;
+    bool optional = 5;
+}

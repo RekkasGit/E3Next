@@ -1,19 +1,14 @@
 using E3Core.Processors;
+using Google.Protobuf;
 using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace E3Core.Data
 {
     public static class TaskDataCollector
     {
-        private const char WireFieldSeparator = '|';
-        private const char WireEntrySeparator = ';';
-        private const char WireObjectiveSeparator = '~';
-        private const char WireObjectiveFieldSeparator = '^';
-
         public const int MaxTaskSlots = 30;
         public const int MaxObjectiveSlots = 20;
 
@@ -38,42 +33,13 @@ namespace E3Core.Data
         {
             if (tasks == null) return string.Empty;
 
-            var builder = new StringBuilder();
+            var taskList = new TaskDataList();
             foreach (var task in tasks)
             {
-                if (builder.Length > 0)
-                {
-                    builder.Append(WireEntrySeparator);
-                }
-
-                builder.Append(task.Slot);
-                builder.Append(WireFieldSeparator).Append(Encode(task.Title));
-                builder.Append(WireFieldSeparator).Append(Encode(task.ActiveStep));
-                builder.Append(WireFieldSeparator).Append(task.CompletedObjectives);
-                builder.Append(WireFieldSeparator).Append(task.TotalObjectives);
-                builder.Append(WireFieldSeparator).Append(Encode(task.Type));
-                builder.Append(WireFieldSeparator).Append(task.IsComplete ? 1 : 0);
-                builder.Append(WireFieldSeparator).Append(Encode(task.TimerDisplay));
-
-                // Serialize objectives
-                builder.Append(WireFieldSeparator);
-                for (int i = 0; i < task.Objectives.Count; i++)
-                {
-                    if (i > 0)
-                    {
-                        builder.Append(WireObjectiveSeparator);
-                    }
-
-                    var obj = task.Objectives[i];
-                    builder.Append(obj.Index);
-                    builder.Append(WireObjectiveFieldSeparator).Append(Encode(obj.Instruction));
-                    builder.Append(WireObjectiveFieldSeparator).Append(Encode(obj.Status));
-                    builder.Append(WireObjectiveFieldSeparator).Append(Encode(obj.Zone));
-                    builder.Append(WireObjectiveFieldSeparator).Append(obj.Optional ? 1 : 0);
-                }
+                taskList.Data.Add(task.ToProto());
             }
 
-            return builder.ToString();
+            return Convert.ToBase64String(taskList.ToByteArray());
         }
 
         public static List<TaskWireSummary> DeserializeFromWire(string payload)
@@ -81,49 +47,18 @@ namespace E3Core.Data
             var results = new List<TaskWireSummary>();
             if (string.IsNullOrWhiteSpace(payload)) return results;
 
-            var entries = payload.Split(WireEntrySeparator);
-            foreach (var entry in entries)
+            try
             {
-                if (string.IsNullOrWhiteSpace(entry)) continue;
+                var taskList = new TaskDataList();
+                taskList.MergeFrom(ByteString.FromBase64(payload));
 
-                var fields = entry.Split(WireFieldSeparator);
-                if (fields.Length < 8) continue;
-
-                var summary = new TaskWireSummary
+                foreach (var task in taskList.Data)
                 {
-                    Slot = ParseInt(fields[0]),
-                    Title = Decode(fields[1]),
-                    ActiveStep = Decode(fields[2]),
-                    CompletedObjectives = ParseInt(fields[3]),
-                    TotalObjectives = ParseInt(fields[4]),
-                    Type = Decode(fields[5]),
-                    IsComplete = ParseInt(fields[6]) == 1,
-                    TimerDisplay = Decode(fields[7])
-                };
-
-                // Parse objectives if present (field index 8)
-                if (fields.Length > 8 && !string.IsNullOrEmpty(fields[8]))
-                {
-                    var objectiveEntries = fields[8].Split(WireObjectiveSeparator);
-                    foreach (var objEntry in objectiveEntries)
-                    {
-                        if (string.IsNullOrWhiteSpace(objEntry)) continue;
-
-                        var objFields = objEntry.Split(WireObjectiveFieldSeparator);
-                        if (objFields.Length < 5) continue;
-
-                        summary.Objectives.Add(new TaskWireObjective
-                        {
-                            Index = ParseInt(objFields[0]),
-                            Instruction = Decode(objFields[1]),
-                            Status = Decode(objFields[2]),
-                            Zone = Decode(objFields[3]),
-                            Optional = ParseInt(objFields[4]) == 1
-                        });
-                    }
+                    results.Add(task.ToWireSummary());
                 }
-
-                results.Add(summary);
+            }
+            catch
+            {
             }
 
             return results;
@@ -207,34 +142,69 @@ namespace E3Core.Data
             var result = SafeQuery<string>(mq, query, allowDelays);
             return string.IsNullOrEmpty(result) ? string.Empty : result.Trim();
         }
+    }
 
-        private static string Encode(string value)
+    public static class TaskSnapshotExtensions
+    {
+        public static TaskData ToProto(this TaskSnapshot snapshot)
         {
-            if (string.IsNullOrEmpty(value)) return string.Empty;
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
+            var taskData = new TaskData
+            {
+                Slot = snapshot.Slot,
+                Title = snapshot.Title ?? string.Empty,
+                ActiveStep = snapshot.ActiveStep ?? string.Empty,
+                CompletedObjectives = snapshot.CompletedObjectives,
+                TotalObjectives = snapshot.TotalObjectives,
+                Type = snapshot.Type ?? string.Empty,
+                IsComplete = snapshot.IsComplete,
+                TimerDisplay = snapshot.TimerDisplay ?? string.Empty
+            };
+
+            foreach (var obj in snapshot.Objectives)
+            {
+                taskData.Objectives.Add(new TaskObjective
+                {
+                    Index = obj.Index,
+                    Instruction = obj.Instruction ?? string.Empty,
+                    Status = obj.Status ?? string.Empty,
+                    Zone = obj.Zone ?? string.Empty,
+                    Optional = obj.Optional
+                });
+            }
+
+            return taskData;
         }
+    }
 
-        private static string Decode(string value)
+    public static class TaskDataExtensions
+    {
+        public static TaskWireSummary ToWireSummary(this TaskData data)
         {
-            if (string.IsNullOrEmpty(value)) return string.Empty;
-            try
+            var summary = new TaskWireSummary
             {
-                return Encoding.UTF8.GetString(Convert.FromBase64String(value));
-            }
-            catch
-            {
-                return string.Empty;
-            }
-        }
+                Slot = data.Slot,
+                Title = data.Title,
+                ActiveStep = data.ActiveStep,
+                CompletedObjectives = data.CompletedObjectives,
+                TotalObjectives = data.TotalObjectives,
+                Type = data.Type,
+                IsComplete = data.IsComplete,
+                TimerDisplay = data.TimerDisplay
+            };
 
-        private static int ParseInt(string value)
-        {
-            if (int.TryParse(value, out var result))
+            foreach (var obj in data.Objectives)
             {
-                return result;
+                summary.Objectives.Add(new TaskWireObjective
+                {
+                    Index = obj.Index,
+                    Instruction = obj.Instruction,
+                    Status = obj.Status,
+                    Zone = obj.Zone,
+                    Optional = obj.Optional
+                });
             }
 
-            return 0;
+            return summary;
         }
     }
 
