@@ -31,7 +31,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public string CastType; // AA/Spell/Disc/Ability/Item/None
 		public int SpellGem;
 		public List<string> SpellEffects = new List<string>();
-		public int SpellIcon = -1; // Spell icon index for display
+		public int SpellIcon = 0; // Spell icon index for display
 		public override string ToString() => Name;
 	}
 	public class State_CatalogWindow

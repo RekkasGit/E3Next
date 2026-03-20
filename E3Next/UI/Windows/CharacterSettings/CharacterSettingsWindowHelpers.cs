@@ -246,6 +246,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				string cat = s.Category ?? string.Empty;
 				string sub = s.Subcategory ?? string.Empty;
 				if (!dest.TryGetValue(cat, out var submap))
@@ -282,6 +283,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 						: new List<string>(),
 					SpellIcon = s.SpellIcon
 				};
+				
+
 
 				if (String.IsNullOrWhiteSpace(newSpell.CastName)) newSpell.CastName = newSpell.Name;
 
@@ -302,6 +305,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				string cat = s.Category ?? string.Empty;
 				string sub = s.Subcategory ?? string.Empty;
 				if (!dest.TryGetValue(cat, out var submap))
@@ -363,7 +367,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			submap[sub] = list;
 			foreach (var s in data)
 			{
+
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				var newSpell = new E3Spell
 				{
 					Name = s.SpellName ?? string.Empty,
@@ -391,6 +397,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				string cat = s.CastName ?? string.Empty; // item name
 				string sub = s.SpellName ?? string.Empty; // click spell
 				if (!dest.TryGetValue(cat, out var submap))
@@ -436,6 +443,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				string cat = s.CastName ?? string.Empty; // item name
 				string sub = s.SpellName ?? string.Empty; // click spell
 				if (!dest.TryGetValue(cat, out var submap))
@@ -488,6 +496,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				list.Add(new E3Spell
 				{
 					Name = s.SpellName ?? string.Empty,
@@ -1032,11 +1041,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 				// Fallback: Query MQ directly for spell icon
 				int iconIndex = E3.MQ.Query<int>($"${{Spell[{spellName}].SpellIcon}}");
-				return iconIndex > 0 ? iconIndex : -1;
+				return iconIndex > 0 ? iconIndex : 0;
 			}
 			catch
 			{
-				return -1;
+				return 0;
 			}
 		}
 

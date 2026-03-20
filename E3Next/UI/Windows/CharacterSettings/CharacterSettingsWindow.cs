@@ -3178,6 +3178,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 								string uid = $"{state.CurrentAddType}_{state.SelectedCategory}_{state.SelectedSubCategory}_{i}";
 
 								// Icon
+								
 								imgui_DrawSpellIconByIconIndex(e.SpellIcon, 30.0f);
 								imgui_SameLine();
 

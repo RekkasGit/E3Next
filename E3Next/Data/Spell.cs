@@ -1506,7 +1506,7 @@ namespace E3Core.Data
 			string t_AfterEventDelay = AfterEventDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterEventDelay}";
 			string t_AfterSpellDelay = AfterSpellDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterSpellDelay}";
 			string t_BeforeEventDelay = BeforeEventDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeEventDelay}";
-			string t_BeforeSpellDelay = BeforeSpellDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeSpellDelay}";
+			string t_BeforeSpellDelay = BeforeSpellDelay == 0 ? String.Empty : $"/BeforeSpellDelay|{BeforeSpellDelay}";
 			string t_AfterCastDelay = AfterCastDelay == 0 ? String.Empty : $"/AfterCastDelay|{AfterCastDelay}";
 			string t_AfterCastCompletedDelay= AfterCastCompletedDelay == 0 ? String.Empty : $"/AfterCastCompletedDelay|{AfterCastCompletedDelay}";
 			string t_SongRefreshTime = SongRefreshTime == 18 ? String.Empty : $"/SongRefreshTime|{SongRefreshTime}";
