@@ -149,6 +149,7 @@ namespace E3Core.UI.Windows
         /// </summary>
         public static void ProcessTaskDataRequest(string requestingUser)
         {
+            _ = requestingUser; // callback signature requires parameter, intentionally unused
             try
             {
                 // Queue capture AND publish to happen on game loop thread (Pulse)
@@ -162,6 +163,18 @@ namespace E3Core.UI.Windows
             }
         }
 
+        private static void ClearLongTimers(List<TaskSnapshot> tasks)
+        {
+            foreach (var task in tasks)
+            {
+                if (task.TimerSeconds >= TimerDisplayThresholdSeconds)
+                {
+                    task.TimerSeconds = 0;
+                    task.TimerDisplay = string.Empty;
+                }
+            }
+        }
+
         /// <summary>
         /// Captures current task data and publishes it to the PubServer.
         /// </summary>
@@ -170,14 +183,7 @@ namespace E3Core.UI.Windows
             try
             {
                 var snapshot = TaskDataCollector.Capture(MQ, allowDelays: false);
-                foreach (var task in snapshot)
-                {
-                    if (task.TimerSeconds >= TimerDisplayThresholdSeconds)
-                    {
-                        task.TimerSeconds = 0;
-                        task.TimerDisplay = string.Empty;
-                    }
-                }
+                ClearLongTimers(snapshot);
 
                 _cachedTasks.Clear();
                 _cachedTasks.AddRange(snapshot
@@ -231,14 +237,7 @@ namespace E3Core.UI.Windows
             {
                 // Capture task data - safe to call MQ here (game loop thread)
                 var snapshot = TaskDataCollector.Capture(MQ, allowDelays: false);
-                foreach (var task in snapshot)
-                {
-                    if (task.TimerSeconds >= TimerDisplayThresholdSeconds)
-                    {
-                        task.TimerSeconds = 0;
-                        task.TimerDisplay = string.Empty;
-                    }
-                }
+                ClearLongTimers(snapshot);
 
                 _cachedTasks.Clear();
                 _cachedTasks.AddRange(snapshot
@@ -712,7 +711,7 @@ namespace E3Core.UI.Windows
                                     string icon = peerTask.IsComplete ? FA_CHECK : FA_TIMES;
                                     string progress = $"{peerTask.CompletedObjectives}/{peerTask.TotalObjectives}";
 
-                                    imgui_TextColored(CompletedColor.R, CompletedColor.G, CompletedColor.B, 1f, FA_CHECK);
+                                    imgui_TextColored(statusColor.R, statusColor.G, statusColor.B, 1f, icon);
                                     imgui_SameLine(0f, 6f);
                                     RenderClickablePeerName(peer);
                                     imgui_SameLine(0f, 8f);
