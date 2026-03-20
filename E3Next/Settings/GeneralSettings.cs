@@ -25,7 +25,7 @@ namespace E3Core.Settings
         public DefaultBroadcast General_BroadCast_Default = DefaultBroadcast.Group;
         public bool General_HealWhileNavigating = true;
 		public bool General_CureWhileNavigating = true;
-        public bool General_BeepNotifications = true;
+        public bool General_BeepNotifications = false;
         public bool General_LazarusManaRecovery = true;
 
         public string General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";
@@ -47,7 +47,7 @@ namespace E3Core.Settings
         public String BuffRequests_RestrictedPCs;
         public String BuffRequests_AllowedPcs;
         //loot
-        public Int32 Loot_CorpseSeekRadius;
+        public Int32 Loot_CorpseSeekRadius= 50;
         public bool Loot_LootInCombat;
         public Int32 Loot_NumberOfFreeSlotsOpen;
         public Boolean Loot_OnlyStackableOnlyCommonTradeSkillItems = false;
@@ -232,6 +232,9 @@ namespace E3Core.Settings
             LoadKeyData("Movement", "Chase Distance Minimum", parsedData, ref Movement_ChaseDistanceMin);
             LoadKeyData("Movement", "Chase Distance Maximum", parsedData, ref Movement_ChaseDistanceMax);
             LoadKeyData("Movement", "Nav Stop Distance", parsedData, ref Movement_NavStopDistance);
+
+            if (Movement_ChaseDistanceMin < Movement_NavStopDistance) Movement_NavStopDistance = Movement_ChaseDistanceMin;
+
             LoadKeyData("Movement", "Anchor Distance Minimum", parsedData, ref Movement_AnchorDistanceMin);
             LoadKeyData("Movement", "Anchor Distance Maximum", parsedData, ref Movement_AnchorDistanceMax);
             LoadKeyData("Movement", "Milliseconds till standing Still",parsedData,ref Movement_StandingStill);

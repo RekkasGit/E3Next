@@ -1,9 +1,10 @@
 using E3Core.Data;
 using IniParser.Model;
+using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using static MonoCore.E3ImGUI;
-using MonoCore;
 
 namespace E3Core.UI.Windows.CharacterSettings
 {
@@ -30,7 +31,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public string CastType; // AA/Spell/Disc/Ability/Item/None
 		public int SpellGem;
 		public List<string> SpellEffects = new List<string>();
-		public int SpellIcon = -1; // Spell icon index for display
+		public int SpellIcon = 0; // Spell icon index for display
 		public override string ToString() => Name;
 	}
 	public class State_CatalogWindow
@@ -225,7 +226,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public CharacterSettingsState()
 		{
 			//set all initial windows to not show
-			if (Core._MQ2MonoVersion > 0.34m) ClearWindows();
+			if (Core._MQ2MonoVersion > 0.411m && !Debugger.IsAttached) ClearWindows();
 		}
 
 		public T GetState<T>()

@@ -4,9 +4,11 @@ using MonoCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
+using static E3Core.UI.Windows.Hud.HudCastingWindow;
+using static E3Core.UI.Windows.Hud.HudHubWindow.TableRow_GroupInfo;
 
 namespace E3Core.Settings
 {
@@ -149,8 +151,56 @@ namespace E3Core.Settings
                 }
             }
         }
-        
-        public static void LoadFloatKeyData(string sectionKey, string Key, IniData parsedData, ref float valueToSet)
+		public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref float valueToSet)
+		{
+			_log.Write($"{sectionKey} {Key}");
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+				var keyData = section.GetKeyData(Key);
+				if (keyData != null)
+				{
+					foreach (var data in keyData.ValueList)
+					{
+						if (!String.IsNullOrWhiteSpace(data))
+						{
+							if (float.TryParse(data, out float result))
+							{
+								valueToSet = result;
+							}
+						}
+					}
+				}
+			}
+		}
+		public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref Vector4 valueToSet)
+		{
+			_log.Write($"{sectionKey} {Key}");
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+				var keyData = section.GetKeyData(Key);
+				if (keyData != null)
+				{
+					foreach (var data in keyData.ValueList)
+					{
+						if (!String.IsNullOrWhiteSpace(data))
+						{
+							//first splace the value via comma
+							string[] dataList = data.Split(',');
+                            if(dataList.Length==4)
+                            {
+                                float.TryParse(dataList[0], out valueToSet.X);
+								float.TryParse(dataList[1], out valueToSet.Y);
+								float.TryParse(dataList[2], out valueToSet.Z);
+								float.TryParse(dataList[3], out valueToSet.W);
+							}
+						}
+					}
+				}
+			}
+		}
+		public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, float[] valueToSet)
         {
             _log.Write($"{sectionKey} {Key}");
             var section = parsedData.Sections[sectionKey];
@@ -163,15 +213,24 @@ namespace E3Core.Settings
                     {
                         if (!String.IsNullOrWhiteSpace(data))
                         {
-                            if (float.TryParse(data, out float result))
+                            //first splace the value via comma
+                            string[] dataList = data.Split(',');
+                            for (Int32 i = 0; i < dataList.Length; i++)
                             {
-                                valueToSet = result;
+                                if (i < valueToSet.Length)
+                                {
+                                    if (float.TryParse(dataList[i], out var floatValue))
+                                    {
+                                        valueToSet[i] = floatValue;
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
+
 
         public static void LoadKeyData(string sectionKey, string Key, IniData parsedData, ref DefaultBroadcast valueToSet)
         {
@@ -236,6 +295,24 @@ namespace E3Core.Settings
 
 						dictionary.Add((K)(object)data.KeyName, tburn);
 						
+					}
+				}
+			}
+		}
+		public static void LoadKeyData(string sectionKey, IniData parsedData, List<Hotbutton_DynamicButton> list)
+		{
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+				var keyData = section;
+				if (keyData != null)
+				{
+					foreach (var data in keyData)
+					{
+						Hotbutton_DynamicButton dynamicButton = new Hotbutton_DynamicButton();
+						dynamicButton.Name = data.KeyName;
+                        dynamicButton.Command = data.Value;
+						list.Add(dynamicButton);
 					}
 				}
 			}
@@ -344,17 +421,21 @@ namespace E3Core.Settings
                         if (!String.IsNullOrWhiteSpace(data))
                         {
                             if (data.Equals("Off", StringComparison.OrdinalIgnoreCase) || data.Equals("False", StringComparison.OrdinalIgnoreCase))
-                            {
-                                valueToSet = false;
-                            }
+							{
+								
+								valueToSet = false;
+								_log.Write($"{sectionKey} {Key}: {valueToSet}");
+							}
                             else if (data.Equals("On", StringComparison.OrdinalIgnoreCase) || data.Equals("True", StringComparison.OrdinalIgnoreCase))
                             {
                                 valueToSet = true;
-                            }
+								_log.Write($"{sectionKey} {Key}: {valueToSet}");
+							}
                             else
                             {
                                 valueToSet = false;
-                            }
+								_log.Write($"{sectionKey} {Key}: {valueToSet}");
+							}
 
                         }
                     }
@@ -552,6 +633,7 @@ namespace E3Core.Settings
 			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Group Buff Request",StringComparison.OrdinalIgnoreCase)) return;
 			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Raid Buff Request", StringComparison.OrdinalIgnoreCase)) return;
 			if (sectionkey.Equals("Buffs", StringComparison.OrdinalIgnoreCase) && keyData.KeyName.Equals("Stack Buff Request", StringComparison.OrdinalIgnoreCase)) return;
+			if (sectionkey.Equals("Manastone", StringComparison.OrdinalIgnoreCase)) return;
 
 			if (sectionkey.Equals("Charm", StringComparison.OrdinalIgnoreCase)) return;
 

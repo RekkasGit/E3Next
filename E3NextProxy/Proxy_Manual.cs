@@ -27,8 +27,16 @@ namespace E3NextProxy
 		private Task _ProcessSubscriptionsTask=null;
 		private ConcurrentDictionary<string, string> _localUseres = new ConcurrentDictionary<string, string>();
 		private Int32 _externalProxySubscriberCount = 0;
+
+		private HashSet<string> _externalProxies = new HashSet<string>();
+
 		public void AddExteranlProxySubBinding(string connectionString)
 		{
+			if(_externalProxies.Contains(connectionString))
+			{
+				return;
+			}
+			_externalProxies.Add(connectionString);
 			_actionsToprocess.Enqueue(new Action(() => {
 
 				if (_isRunning)
@@ -36,6 +44,11 @@ namespace E3NextProxy
 					Console.WriteLine($"External Subscriber socket connecting...{connectionString}");
 					_externalProxySubscriberSocket.Connect(connectionString);
 					_externalProxySubscriberCount++;
+
+				}
+				else
+				{
+					Console.WriteLine($"External Subscriber Not Running can't connect...{connectionString}");
 
 				}
 			}));
@@ -94,6 +107,7 @@ namespace E3NextProxy
 			if(!_isRunning)
 			{
 				_isRunning = true;
+				Console.WriteLine("Starting up the Proxy and processing subscriptions!");
 				_ProcessSubscriptionsTask = Task.Factory.StartNew(() =>
 				{
 					ProcessSubs(pubPort);
@@ -116,92 +130,99 @@ namespace E3NextProxy
 		{
 			//TimeSpan recieveTimeout = new TimeSpan(0, 0, 0, 0, 1);
 			TimeSpan recieveTimeout = TimeSpan.Zero;
-
-			using (_localSubscriberSocket = new SubscriberSocket())
+			try
 			{
-				using (_externalProxySubscriberSocket = new SubscriberSocket())
+				using (_localSubscriberSocket = new SubscriberSocket())
 				{
-					using (_publisherSocket = new PublisherSocket())
+					using (_externalProxySubscriberSocket = new SubscriberSocket())
 					{
-						using(_externalPublisherSocket = new PublisherSocket())
+						using (_publisherSocket = new PublisherSocket())
 						{
-							_localSubscriberSocket.Options.ReceiveHighWatermark = 50000;
-							_localSubscriberSocket.SubscribeToAnyTopic();
-
-							_externalProxySubscriberSocket.Options.ReceiveHighWatermark = 50000;
-							_externalProxySubscriberSocket.SubscribeToAnyTopic();
-
-
-							_publisherSocket.Options.SendHighWatermark = 50000;
-							string publishConnectionString = "tcp://0.0.0.0:" + PubPort.ToString();
-							_publisherSocket.Bind(publishConnectionString);
-							string externalPublishConnectionString = "tcp://0.0.0.0:" + (PubPort+1).ToString();
-							_externalPublisherSocket.Bind(externalPublishConnectionString);
-
-							Console.WriteLine($"Publishing on:{publishConnectionString}");
-							Console.WriteLine($"External Publishing on:{externalPublishConnectionString}");
-							Stopwatch sw = Stopwatch.StartNew();
-							sw.Start();
-							Int64 timeSinceLastMessage = 0;
-
-
-							while (_isRunning)
+							using (_externalPublisherSocket = new PublisherSocket())
 							{
+								_localSubscriberSocket.Options.ReceiveHighWatermark = 50000;
+								_localSubscriberSocket.SubscribeToAnyTopic();
 
-								if (_actionsToprocess.Count > 0)
+								_externalProxySubscriberSocket.Options.ReceiveHighWatermark = 50000;
+								_externalProxySubscriberSocket.SubscribeToAnyTopic();
+
+
+								_publisherSocket.Options.SendHighWatermark = 50000;
+								string publishConnectionString = "tcp://0.0.0.0:" + PubPort.ToString();
+								_publisherSocket.Bind(publishConnectionString);
+								string externalPublishConnectionString = "tcp://0.0.0.0:" + (PubPort + 1).ToString();
+								_externalPublisherSocket.Bind(externalPublishConnectionString);
+
+								Console.WriteLine($"Publishing on:{publishConnectionString}");
+								Console.WriteLine($"External Publishing on:{externalPublishConnectionString}");
+								Stopwatch sw = Stopwatch.StartNew();
+								sw.Start();
+								Int64 timeSinceLastMessage = 0;
+
+
+								while (_isRunning)
 								{
-									while (_actionsToprocess.Count > 0)
+
+									if (_actionsToprocess.Count > 0)
 									{
-										if (_actionsToprocess.TryDequeue(out var action))
+										while (_actionsToprocess.Count > 0)
 										{
-											action();
+											if (_actionsToprocess.TryDequeue(out var action))
+											{
+												action();
+											}
+
 										}
-
 									}
-								}
-								//local proxy
-								string messageTopicReceived = string.Empty;
-								if (_localSubscriberSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
-								{
-
-									//we got something, reset!
-									timeSinceLastMessage = sw.ElapsedMilliseconds;
-
-									string messageReceived = _localSubscriberSocket.ReceiveFrameString();
-									try
+									//local proxy
+									string messageTopicReceived = string.Empty;
+									if (_localSubscriberSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
 									{
-										//write out to our one publisher
+
+										//we got something, reset!
+										timeSinceLastMessage = sw.ElapsedMilliseconds;
+
+										string messageReceived = _localSubscriberSocket.ReceiveFrameString();
+										try
+										{
+											//write out to our one publisher
+											_publisherSocket.SendMoreFrame(messageTopicReceived).SendFrame(messageReceived);
+											if (_externalProxySubscriberCount > 0) _externalPublisherSocket.SendMoreFrame(messageTopicReceived).SendFrame(messageReceived);
+										}
+										catch (Exception)
+										{
+
+										}
+									}
+									//exteranl proxy
+									if (_externalProxySubscriberSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
+									{
+										//we got something, reset!
+										timeSinceLastMessage = sw.ElapsedMilliseconds;
+										//we check to see if we shoudl propagate the user info, to prevent infinate loops
+										string messageReceived = _externalProxySubscriberSocket.ReceiveFrameString();
 										_publisherSocket.SendMoreFrame(messageTopicReceived).SendFrame(messageReceived);
-										if(_externalProxySubscriberCount > 0) _externalPublisherSocket.SendMoreFrame(messageTopicReceived).SendFrame(messageReceived);
+
 									}
-									catch (Exception)
+									if (sw.ElapsedMilliseconds - timeSinceLastMessage > 5)
 									{
+										//been 15ms since the last check, sleep for a bit.
+										//means we got no messages from either proxy, or local, sleep for 1ms
+										System.Threading.Thread.Sleep(1);
 
 									}
-								}
-								//exteranl proxy
-								if (_externalProxySubscriberSocket.TryReceiveFrameString(recieveTimeout, out messageTopicReceived))
-								{
-									//we got something, reset!
-									timeSinceLastMessage = sw.ElapsedMilliseconds;
-									//we check to see if we shoudl propagate the user info, to prevent infinate loops
-									string messageReceived = _externalProxySubscriberSocket.ReceiveFrameString();
-									_publisherSocket.SendMoreFrame(messageTopicReceived).SendFrame(messageReceived);
-									
-								}
-								if (sw.ElapsedMilliseconds - timeSinceLastMessage > 5)
-								{
-									//been 15ms since the last check, sleep for a bit.
-									//means we got no messages from either proxy, or local, sleep for 1ms
-									System.Threading.Thread.Sleep(1);
-
 								}
 							}
+
 						}
-		
 					}
 				}
 			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.ToString());
+			}
+			
 		}
 
 	}

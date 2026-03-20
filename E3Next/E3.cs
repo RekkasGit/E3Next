@@ -3,6 +3,7 @@ using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
+using E3Core.UI.Windows.Hud;
 using E3Core.Utility;
 using MonoCore;
 using NetMQ;
@@ -39,30 +40,35 @@ namespace E3Core.Processors
 			}
 			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 			if (!IsInit) { Init(); }
-			var sw = new Stopwatch();
-			sw.Start();
 			//auto X min gc check
 			CheckGC();
 
+			
 			//did someone send us a command? lets process it. 
 			ProcessExternalCommands();
+			
+			//update all states, important.
 
-            //update all states, important.
-            StateUpdates();
+			StateUpdates();
+
+			//zoning stuff happens here no iszoned checks should be done before this point.
 			RefreshCaches();
-
+			
 			//don't eat stat food even if paused!
 			Basics.CheckFood();
 			//kickout after updates if paused
 			if (IsPaused()) return;
 			//stunned, no sense in processing
 
-			EventProcessor.ProcessEventsInQueues("/nowcast");
 			EventProcessor.ProcessEventsInQueues("/backoff");
 			EventProcessor.ProcessEventsInQueues("/assistme");
 
+
 			if (MQ.Query<bool>("${Me.Stunned}")) return;
 			if (MQ.Query<bool>("${Me.Invulnerable}")) return; //can't do anything anyway
+
+			EventProcessor.ProcessEventsInQueues("/nowcast");
+
 			if (MQ.Query<Int32>("${Me.CurrentHPs}") < 1) return; //we are dead
 			if (MQ.Query<bool>("${Me.Feigning}") && E3.CharacterSettings.IfFDStayDown) return;
 
@@ -70,6 +76,7 @@ namespace E3Core.Processors
 			//if true, adv settings will stop processing for this loop.
 			ActionTaken = false;
 			BeforeAdvancedSettingsCalls();
+			if (Zoning.IsZoned()) return;
 
 			if (!_amIDead)
 			{
@@ -88,14 +95,13 @@ namespace E3Core.Processors
 				//follow/rez/etc
 				ClassMethodCalls();
 			}
-
-			
-            //final cleanup/actions after the main loop has done processing
-            FinalCalls();
+			//final cleanup/actions after the main loop has done processing
+			FinalCalls();
         }
 
         private static void BeforeAdvancedSettingsCalls()
 		{
+
 			if (PctHPs < 98)
 			{
 				Heals.Check_LifeSupport();
@@ -126,7 +132,7 @@ namespace E3Core.Processors
 		}
 		private static void AdvancedSettingsCalls()
 		{
-			using (Log.Trace("AdvMethodCalls"))
+			//using (Log.Trace("AdvMethodCalls"))
 			{
 				//rembmer check_heals is auto inserted, should probably just pull out here
 				List<string> _methodsToInvokeAsStrings;
@@ -134,6 +140,7 @@ namespace E3Core.Processors
 				{
 					foreach (var methodName in _methodsToInvokeAsStrings)
 					{
+						if (Zoning.IsZoned()) return;
 						Burns.UseBurns();
 						//if an action was taken, start over
 						if (ActionTaken)
@@ -147,15 +154,16 @@ namespace E3Core.Processors
 						}
 						//check backoff
 						//check nowcast
-						EventProcessor.ProcessEventsInQueues("/nowcast");
-						EventProcessor.ProcessEventsInQueues("/backoff");
+						
 					}
+					EventProcessor.ProcessEventsInQueues();
 				}
 			}
 		}
 		
 		private static void AfterAdvancedSettingsCalls()
 		{
+			if (Zoning.IsZoned()) return;
 			EventProcessor.ProcessEventsInQueues("/backoff");
 			EventProcessor.ProcessEventsInQueues("/assistme");
 
@@ -163,7 +171,8 @@ namespace E3Core.Processors
 
 			//process any requests commands from the UI.
 			PubClient.ProcessRequests();
-
+			
+			
 			//bard song player
 			if (E3.CurrentClass == Data.Class.Bard)
 			{
@@ -171,7 +180,7 @@ namespace E3Core.Processors
 				Bard.check_BardSongs();
 			}
 		}
-	
+		private static List<String> ClassCallKeys = new List<string>();
 		private static void ClassMethodCalls()
 		{
 
@@ -182,18 +191,30 @@ namespace E3Core.Processors
 			//using (Log.Trace("ClassMethodCalls"))
 			{
 
-				//lets do our class methods, this is last because of bards
-				foreach (var kvp in AdvancedSettings.ClassMethodLookup)
+				ClassCallKeys.Clear();
+				foreach(var kvp in AdvancedSettings.ClassMethodLookup)
 				{
+					ClassCallKeys.Add(kvp.Key);
+				}
+				//lets do our class methods, this is last because of bards
+				foreach (var ckey in ClassCallKeys)
+				{
+					if (Zoning.IsZoned()) return;
 					Burns.UseBurns();
 					//using (Log.Trace($"ClassMethodCalls-{kvp.Key}-Main"))
 					{
-						kvp.Value.Invoke();
+						if(AdvancedSettings.ClassMethodLookup.TryGetValue(ckey,out var method))
+						{
+							method.Invoke();
+
+						}
 					}
-					EventProcessor.ProcessEventsInQueues("/nowcast");
-					EventProcessor.ProcessEventsInQueues("/backoff");
-					EventProcessor.ProcessEventsInQueues("/assistme");
+					EventProcessor.ProcessEventsInQueues();
 				}
+				//perf penality for calling this many, its not free, so don't do it in a loop.
+				//EventProcessor.ProcessEventsInQueues("/nowcast");
+				//EventProcessor.ProcessEventsInQueues("/backoff");
+				//EventProcessor.ProcessEventsInQueues("/assistme");
 				e3util.PutOriginalTargetBackIfNeeded(orgTargetID);
 			}
 
@@ -202,8 +223,8 @@ namespace E3Core.Processors
 		private static void FinalCalls()
 		{
 
-
-			if(!_amIDead)
+			if (Zoning.IsZoned()) return;
+			if (!_amIDead)
 			{
 				using (Log.Trace("LootProcessing"))
 				{
@@ -306,8 +327,6 @@ namespace E3Core.Processors
 		private static Int64 _nextMemoryUpdateCheckTime = 0;
 		private static Int64 _nextMemoryUpdateCheckRate = 2000;
 		private static Int64 _MiscUpdateCheckRate = 100;
-		private static Int64 _nextTaskInfoUpdateCheckTime = 0;
-		private static readonly Int64 _taskInfoUpdateInterval = 2000;
 
 	
 		//qick hack to prevent calling state update... while in state updates. 
@@ -316,7 +335,7 @@ namespace E3Core.Processors
 		public static void StateUpdates_Memory()
 		{
 			double eqprocessMemoryMB = 0;
-			if (Core._MQ2MonoVersion > 0.35M)
+			if (Core._MQ2MonoVersion > 0.40M && !Debugger.IsAttached)
 			{
 				eqprocessMemoryMB = Core.mq_Memory_GetPageFileSize();
 			}
@@ -345,16 +364,23 @@ namespace E3Core.Processors
 		}
 		public static void StateUpdates_Misc()
 		{
-			string combatString = Basics.InCombat(skipBotCheck: true).ToString();
+			bool inCombat =Basics.InCombat(skipBotCheck: true);
+			string combatString = inCombat ? "True" : "False";
+			
 			PubServer.AddTopicMessage("${InCombat}", combatString);
 			PubServer.AddTopicMessage("${Me.InCombat}", combatString);
 			bool invulnerable = MQ.Query<bool>("${Me.Invulnerable}");
-			PubServer.AddTopicMessage("${Me.Invulnerable}", invulnerable.ToString());
+			string invulnerableString = invulnerable ? "True" : "False";
+
+			PubServer.AddTopicMessage("${Me.Invulnerable}", invulnerableString);
 			PubServer.AddTopicMessage("${EQ.CurrentFocusedWindowName}", MQ.GetFocusedWindowName());
 			//PubServer.AddTopicMessage("${EQ.CurrentHoveredWindowName}", MQ.GetHoverWindowName());
 			PubServer.AddTopicMessage("${Me.CurrentTargetID}", MQ.Query<string>("${Target.ID}"));
-			PubServer.AddTopicMessage("${Me.ZoneID}", MQ.Query<string>("${Zone.ID}"));
+			ZoneID = MQ.Query<Int32>("${Zone.ID}");
+			PubServer.AddTopicMessage("${Me.ZoneID}", e3util.GetIntStr(ZoneID));
+			PubServer.AddTopicMessage("${Me.ZoneShortName}", MQ.Query<string>("${Zone.ShortName}"));
 			PubServer.AddTopicMessage("${Me.Instance}", MQ.Query<string>("${Me.Instance}"));
+			
 
 		}
 		public static void StateUpdates_Stats()
@@ -363,16 +389,30 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.PctMana}", mana);
 			string endurance = MQ.Query<string>("${Me.PctEndurance}");
 			PubServer.AddTopicMessage("${Me.PctEndurance}", endurance);
-			string hps = PctHPs.ToString();
+			string hps = e3util.GetIntStr(PctHPs);
 			PubServer.AddTopicMessage("${Me.PctHPs}", hps);
 			PubServer.AddTopicMessage("${Me.CurrentHPs}", MQ.Query<string>("${Me.CurrentHPs}"));
 			PubServer.AddTopicMessage("${Me.CurrentMana}", MQ.Query<string>("${Me.CurrentMana}"));
 			PubServer.AddTopicMessage("${Me.CurrentEndurance}", MQ.Query<string>("${Me.CurrentEndurance}"));
+			Int32 pet_hps = MQ.Query<Int32>("${Me.Pet.CurrentHPs}");
+			PubServer.AddTopicMessage("${Me.Pet.CurrentHPs}", e3util.GetIntStr(pet_hps));
 		}
 		public static void StateUpdates_BuffInformation()
 		{
-			PubServer.AddTopicMessage("${Me.BuffInfo}", e3util.GenerateBuffInfoForPubSub());
-			PubServer.AddTopicMessage("${Me.PetBuffInfo}", e3util.GeneratePetBuffInfoForPubSub());
+			if (Core._MQ2MonoVersion >= 0.411m && !Debugger.IsAttached)
+			{
+				Int32 length = 0;
+				char[] payload = e3util.GetBuffDataForPubSubHighPerf(out length);
+				PubServer.AddTopicMessage("${Me.BuffInfo}", payload, length);
+				payload = e3util.GetPetBuffDataForPubSubHighPerf(out length);
+				PubServer.AddTopicMessage("${Me.PetBuffInfo}", payload,length);
+			}
+			else
+			{
+				PubServer.AddTopicMessage("${Me.BuffInfo}", e3util.GenerateBuffInfoForPubSub());
+				PubServer.AddTopicMessage("${Me.PetBuffInfo}", e3util.GeneratePetBuffInfoForPubSub());
+
+			}
 		}
 		public static void StateUpdates_AAInformation()
 		{
@@ -381,111 +421,161 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.AAPointsSpent}", MQ.Query<string>("${Me.AAPointsSpent}"));
 			PubServer.AddTopicMessage("${Me.AAPointsTotal}", MQ.Query<string>("${Me.AAPointsTotal}"));
 		}
-		public static void StateUpdates_TaskInformation()
-		{
-			var tasks = TaskDataCollector.Capture(MQ, allowDelays: false);
-			string payload = TaskDataCollector.SerializeForWire(tasks);
-			PubServer.AddTopicMessage("E3Tasks", payload);
-		}
 		public static void ProcessExternalCommands()
 		{
+			if (!e3util.ShouldCheck(ref _processCommandsTimeStamp, _processCommandsInterval)) return;
 			NetMQServer.SharedDataClient.ProcessCommands(); //recieving data
-			e3util.ProcessE3BCCommands(); //send out data we may have queued up for /e3bc commands
+			//e3util.ProcessE3BCCommands(); //send out data we may have queued up for /e3bc commands
+			EventProcessor.ProcessEventsInQueues();
 			RouterServer.ProcessRequests();//process any tlo request from the UI, or anything really.
-			//process any commands we need to process from the UI
+			////process any commands we need to process from the UI
 			PubClient.ProcessRequests();
-			
 		}
 		public static void StateUpdates()
         {
 
 			try
 			{
-				//this is important so that we do not get caught up in recursion during a Delay as delay can call this. 
-				InStateUpdate = true;
-				PctHPs = MQ.Query<int>("${Me.PctHPs}");
-				IsInvis = MQ.Query<bool>("${Me.Invis}");
-				IsInvul = MQ.Query<bool>("${Me.Invulnerable}");
-				CurrentId = MQ.Query<int>("${Me.ID}");
-				CurrentInCombat = Basics.InCombat();
+				using(var mqlock = MQ.GetDelayLock())
+				{
+					//this is important so that we do not get caught up in recursion during a Delay as delay can call this. 
+					InStateUpdate = true;
+					PctHPs = MQ.Query<int>("${Me.PctHPs}");
+					IsInvis = MQ.Query<bool>("${Me.Invis}");
+					IsInvul = MQ.Query<bool>("${Me.Invulnerable}");
+					CurrentId = MQ.Query<int>("${Me.ID}");
+					CurrentInCombat = Basics.InCombat();
 
-				//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
-				if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, E3.CharacterSettings.CPU_PublishStateDataInMS))
-				{
-					StateUpdates_Stats();
-				}
-				//other stuff not quite so quickly
-				if (e3util.ShouldCheck(ref _nextMiscUpdateCheckTime, E3.CharacterSettings.CPU_PublishMiscDataInMS))
-				{
-					StateUpdates_Misc();
-				}
-				//expensive only send out once per second?
-				if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, E3.CharacterSettings.CPU_PublishBuffDataInMS))
-				{
-					StateUpdates_BuffInformation();
-					StateUpdates_Counters();
-				}
-				if (e3util.ShouldCheck(ref _nextMemoryUpdateCheckTime, _nextMemoryUpdateCheckRate))
-				{
-					StateUpdates_Memory();
-				}
-				//not horribly important stuff, can just be sent out whever, currently once per second
-				if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
-				{
-					StateUpdates_AAInformation();
-					//lets query the data we are configured to send out extra
-					if (E3.CharacterSettings.E3BotsPublishData.Count > 0)
+					E3ImGUI.ProcessMQCommands();
+					//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
+					if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, E3.CharacterSettings.CPU_PublishStateDataInMS))
 					{
-						foreach (var pair in E3.CharacterSettings.E3BotsPublishData)
+						StateUpdates_Stats();
+					}
+
+					//other stuff not quite so quickly
+					if (e3util.ShouldCheck(ref _nextMiscUpdateCheckTime, E3.CharacterSettings.CPU_PublishMiscDataInMS))
+					{
+						StateUpdates_Misc();
+					}
+
+					//expensive only send out once per second?
+					if (e3util.ShouldCheck(ref _nextBuffUpdateCheckTime, E3.CharacterSettings.CPU_PublishBuffDataInMS))
+					{
+						StateUpdates_BuffInformation();
+						StateUpdates_Counters();
+					}
+
+					if (e3util.ShouldCheck(ref _nextMemoryUpdateCheckTime, _nextMemoryUpdateCheckRate))
+					{
+						StateUpdates_Memory();
+					}
+
+					//not horribly important stuff, can just be sent out whever, currently once per second
+					if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
+					{
+						StateUpdates_AAInformation();
+
+						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
 						{
-							//to parse out custom values
-							string valueToCheck = Casting.Ifs_Results(pair.Value);
-							string resultvalue= MQ.Query<string>(valueToCheck);
-							PubServer.AddTopicMessage(pair.Key, resultvalue);
+							unsafe
+							{
+								int length;
+								byte* p;
+								p = MQ.GetXtargetDataPtr(out length);
+								ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+								Int32 xtargetMaxAggro = e3util.GetXTargetMaxAggro(data);
+								if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
+								PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", e3util.GetIntStr(xtargetMaxAggro));
+								Int32 xtargetMinAggro = e3util.GetXTargetMinAggro(data);
+								if (xtargetMinAggro < 0) xtargetMinAggro = 0;
+								PubServer.AddTopicMessage("${Me.XTargetMinAggro}", e3util.GetIntStr(xtargetMinAggro));
+							}
+
 						}
-					}
-					string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
-					if (nameOfPet != "NULL")
-					{
-						//set the pet name
-						CurrentPetName = nameOfPet;
-						PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
-					}
-					string nameOfMerc = MQ.Query<string>("${Mercenary.CleanName}");
-					if (nameOfMerc != "NULL")
-					{
-						//set the pet name
-						CurrentMercName = nameOfMerc;
-						PubServer.AddTopicMessage("${Mercenary.CleanName}", CurrentMercName);
-					}
-					E3.IsMoving = MQ.Query<bool>("${Me.Moving}");
-					if (E3.IsMoving)
-					{
-						LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-					}
-					E3.IsFD = MQ.Query<bool>("${Me.Feigning}");
-					if (E3.IsFD)
-					{
-						LastFDTimeStamp = Core.StopWatch.ElapsedMilliseconds;
-					}
-
-
-
-					if (MQ.Query<bool>("${MoveUtils.GM}"))
-					{
-						if (e3util.IsEQEMU())
+						else
 						{
-							MQ.Cmd("/squelch /stick imsafe");
+							Int32 xtargetMaxAggro = e3util.GetXtargetMaxAggro();
+							if (xtargetMaxAggro < 0) xtargetMaxAggro = 0;
+							PubServer.AddTopicMessage("${Me.XTargetMaxAggro}", e3util.GetIntStr(xtargetMaxAggro));
+							Int32 xtargetMinAggro = e3util.GetXtargetMinAggro();
+							if (xtargetMinAggro < 0) xtargetMinAggro = 0;
+							PubServer.AddTopicMessage("${Me.XTargetMinAggro}", e3util.GetIntStr(xtargetMinAggro));
 						}
-						Bots.Broadcast("GM Safe kicked in, on live issue /stick imsafe.  you may need to reissue /followme or /assiston");
+
+
+						string activeDisc = MQ.Query<string>("${Me.ActiveDisc}");
+
+						Int32 timeInTicksForDisc = 0;
+						if (activeDisc != "NULL")
+						{
+							timeInTicksForDisc = MQ.Query<Int32>("${Me.ActiveDisc.Duration}");
+						}
+						else
+						{
+							activeDisc = "";
+						}
+						PubServer.AddTopicMessage("${Me.ActiveDisc}", activeDisc);
+						PubServer.AddTopicMessage("${Me.ActiveDiscTimeLeft}", e3util.GetIntStr(timeInTicksForDisc * 6));
+						Decimal discPercentage = MQ.Query<Decimal>("${Window[CombatAbilityWnd].Child[CAW_CombatEffectTimeRemainingGauge].Value}");
+						PubServer.AddTopicMessage("${Me.ActiveDiscPerentTimeLeft}", e3util.GetDecimalString(discPercentage));
+						PubServer.AddTopicMessage("${Me.IsInvis}", IsInvis ? "true" : "false");
+
+						Int32 pctAggr = MQ.Query<Int32>("${Me.PctAggro}");
+						if (pctAggr < 0) pctAggr = 0;
+						PubServer.AddTopicMessage("${Me.PctAggro}", e3util.GetIntStr(pctAggr));
+
+						string loc_x = MQ.Query<string>("${Me.X}");
+						string loc_y = MQ.Query<string>("${Me.Y}");
+						string loc_z = MQ.Query<string>("${Me.Z}");
+						PubServer.AddTopicMessage("${Me.X}", loc_x);
+						PubServer.AddTopicMessage("${Me.Y}", loc_y);
+						PubServer.AddTopicMessage("${Me.Z}", loc_z);
+						double.TryParse(loc_x, out Loc_X);
+						double.TryParse(loc_y, out Loc_Y);
+						double.TryParse(loc_z, out Loc_Z);
+						//lets query the data we are configured to send out extra
+						if (E3.CharacterSettings.E3BotsPublishData.Count > 0)
+						{
+							foreach (var pair in E3.CharacterSettings.E3BotsPublishData)
+							{
+								//to parse out custom values
+								string valueToCheck = Casting.Ifs_Results(pair.Value);
+								string resultvalue = MQ.Query<string>(valueToCheck);
+								PubServer.AddTopicMessage(pair.Key, resultvalue);
+							}
+						}
+						string nameOfPet = MQ.Query<string>("${Me.Pet.CleanName}");
+						if (nameOfPet != "NULL")
+						{
+							//set the pet name
+							CurrentPetName = nameOfPet;
+							PubServer.AddTopicMessage("${Me.Pet.CleanName}", CurrentPetName);
+						}
+						string nameOfMerc = MQ.Query<string>("${Mercenary.CleanName}");
+						if (nameOfMerc != "NULL")
+						{
+							//set the pet name
+							CurrentMercName = nameOfMerc;
+							PubServer.AddTopicMessage("${Mercenary.CleanName}", CurrentMercName);
+						}
+						E3.IsMoving = MQ.Query<bool>("${Me.Moving}");
+						if (E3.IsMoving)
+						{
+							LastMovementTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+						}
+						E3.IsFD = MQ.Query<bool>("${Me.Feigning}");
+						if (E3.IsFD)
+						{
+							LastFDTimeStamp = Core.StopWatch.ElapsedMilliseconds;
+						}
+						
 					}
 				}
-				if (e3util.ShouldCheck(ref _nextTaskInfoUpdateCheckTime, _taskInfoUpdateInterval))
-				{
-					StateUpdates_TaskInformation();
-				}
-
-			
+			}
+			catch(Exception ex)
+			{
+				MQ.Write("Error:" + ex.Message + " stack:" + ex.StackTrace);
 			}
             finally
             {
@@ -495,10 +585,19 @@ namespace E3Core.Processors
            
         }
         private static void RefreshCaches()
-        {
-            Casting.RefreshGemCache();
+		{
+			//sometimes the zoning doesn't update like it should
+			//making super sure zone changes are caught.
+			var currentZone = MQ.Query<Int32>("${Zone.ID}");
+			Zoning.Zoned(currentZone);
+			////////////
+
+			Zoning.ProcessZoneIfNeeded();
+			Spawns.RefreshList();
+			Casting.RefreshGemCache();
             Basics.RefreshGroupMembers();
 			Basics.RefreshRaidMembers();
+			
         }
 		public static void ReInit()
 		{
@@ -559,12 +658,13 @@ namespace E3Core.Processors
 				GlobalCursorDelete = new GlobalCursorDelete();
 				CharacterSettings = new Settings.CharacterSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
-				
+				ResistSettings = new ResistDataFile();
+
 				//setup is done after the settings are setup.
 				//as there is an order dependecy
 				Setup.Init();
                 IsInit = true;
-                MonoCore.Spawns.RefreshTimePeriodInMS = 500;
+                //MonoCore.Spawns.RefreshTimePeriodInMS = 500;
 			}
 
 
@@ -594,16 +694,17 @@ namespace E3Core.Processors
         //test to see if we need to GC every 5 min to maintain proper memory profile
         private static void CheckGC()
         {
-			if (Basics.InCombat()) return;
+			//if (Basics.InCombat()) return;
 			if (!e3util.ShouldCheck(ref _lastGCCollect, 300000)) return;
-			GC.Collect();
-        }
-
+			GC.GetTotalMemory(true);
+		}
+		public static Int64 _processCommandsInterval = 500;
+		public static Int64 _processCommandsTimeStamp = 0;
         public static bool ActionTaken = false;
         public static bool Following = false;
         public static long StartTimeStamp;
 		[ExposedData("Core", "IsInit")]
-		public static bool IsInit = false;
+		public static volatile bool IsInit = false;
 		public static bool IsBadState = false;
         public static IMQ MQ = Core.mqInstance;
         public static Logging Log = Core.logInstance;
@@ -612,6 +713,7 @@ namespace E3Core.Processors
 		public static Settings.FeatureSettings.GlobalCursorDelete GlobalCursorDelete = null;
 		public static Settings.GeneralSettings GeneralSettings = null;
         public static Settings.AdvancedSettings AdvancedSettings = null;
+		public static Settings.FeatureSettings.ResistDataFile ResistSettings= null;
         public static IBots Bots = null;
         public static string CurrentName;
         public static Data.Class CurrentClass;
@@ -628,6 +730,10 @@ namespace E3Core.Processors
         public static string CurrentShortClassString;
 		public static System.Random Random = new System.Random();
 		public static int PctHPs;
+		public static int ZoneID;
+		public static double Loc_X;
+		public static double Loc_Y;
+		public static double Loc_Z;
         public static ISpawns Spawns = Core.spawnInstance;
         public static bool IsInvis;
 		public static bool IsInvul;

@@ -20,7 +20,7 @@ namespace E3Core.Processors
         public static double Anchor_Y = double.MinValue;
         public static double Anchor_Z = double.MinValue;
         public static List<string> AnchorFilters = new List<string>();
-
+		public static bool MovementPaused = false;
 		[ExposedData("Movement", "Following")]
 		public static bool Following = false;
 		//public static Int32 _followTargetID = 0;
@@ -38,6 +38,7 @@ namespace E3Core.Processors
         private static Int64 _nextChaseCheckInterval = 10;
 		[ExposedData("Movement", "ChaseTarget")]
 		public static string ChaseTargetName = String.Empty;
+        public static float _followMeDistance = 10;
 		public static List<string> _clickitUseDoorZones = new List<string>() { "poknowledge", "potranq", "potimea", "potimeb","anguish","solrotower" };
 
 		[SubSystemInit]
@@ -90,6 +91,8 @@ namespace E3Core.Processors
         {
             if (ChaseTargetName == String.Empty) return;
             if (!e3util.ShouldCheck(ref _nextChaseCheck, _nextChaseCheckInterval)) return;
+
+            if (MovementPaused) return;
 
             using (_log.Trace())
             {
@@ -154,7 +157,7 @@ namespace E3Core.Processors
             if (String.IsNullOrWhiteSpace(FollowTargetName)) return;
  
             if (Assist.IsAssisting) return;
-
+            if (MovementPaused) return;           
             Spawn s;
             if (_spawns.TryByName(FollowTargetName, out s))
             {
@@ -169,7 +172,9 @@ namespace E3Core.Processors
                             {
                                 MQ.Delay(100);
                                 //if a bot, use afollow, else use stick
-                                MQ.Cmd("/afollow on nodoor");
+                                string mqcommand = $"/afollow on nodoor {_followMeDistance}";
+								MQ.Cmd(mqcommand);
+                               // E3.Bots.Broadcast($"issuing command {mqcommand}");
                                 Following = true;
                             }
                         }
@@ -212,7 +217,7 @@ namespace E3Core.Processors
             if (!e3util.ShouldCheck(ref _nextAnchorCheck, _nextAnchorCheckInterval)) return;
             if (AnchorEnabled() && !Assist.IsAssisting)
             {
-                MoveToAnchor();
+                MoveToAnchor(); 
             }
         }
         public static bool IsMoving()
@@ -269,7 +274,41 @@ namespace E3Core.Processors
         static void RegisterEvents()
         {
 
-            EventProcessor.RegisterCommand("/scatter", (x) => {
+			EventProcessor.RegisterCommand("/e3movement", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+
+					if (x.args[0].Length == "pause".Length && x.args[0].IndexOf("pause", 0, "pause".Length, StringComparison.OrdinalIgnoreCase) != -1)
+					{
+						if (FollowTargetName != String.Empty || ChaseTargetName != string.Empty)
+						{
+							E3.Bots.Broadcast("Pausing movement");
+							MovementPaused = true;
+							PauseMovement();
+						}
+						else
+						{
+							E3.Bots.Broadcast("Currently not following anyone.");
+						}
+					}
+					else if (x.args[0].Length == "resume".Length && x.args[0].IndexOf("resume", 0, "resume".Length, StringComparison.OrdinalIgnoreCase) != -1)
+					{
+						if (FollowTargetName != String.Empty || ChaseTargetName != string.Empty)
+						{
+							E3.Bots.Broadcast("Resuming movement");
+							MovementPaused = false;
+							Following = false;
+
+						}
+						else
+						{
+							E3.Bots.Broadcast("Currently not following anyone.");
+						}
+					}
+				}
+			}, "pause/resume movement");
+			EventProcessor.RegisterCommand("/scatter", (x) => {
 
                 Int32 Distance = 10;
                 if(x.args.Count>0)
@@ -545,10 +584,36 @@ namespace E3Core.Processors
                 }
 
             });
+
+           
+
             EventProcessor.RegisterCommand("/followme", (x) =>
             {
                 string user = string.Empty;
 
+                //need to check if a distance is supplid in the args
+                //kinda hacky bit keeps the old legacy logic the same and allows users to do /followme 30
+                string distance =String.Empty;
+                //using strings as well floats can get weird going from value to string and back
+                foreach (var arg in x.args)
+                {
+                    if(float.TryParse(arg, out var _))
+                    {
+                        distance = arg;
+                        break;
+                    }
+                }
+                if (distance !=String.Empty)
+                {
+                    _followMeDistance = float.Parse(distance);
+                    if (_followMeDistance < 1) _followMeDistance = 1;
+                    if (_followMeDistance > 200) _followMeDistance = 200;
+                    x.args.Remove(distance);
+                }
+                else
+                {
+                    _followMeDistance = 10;
+                }
                 if (x.args.Count > 0)
                 {
                     if (!e3util.FilterMe(x))
@@ -557,10 +622,10 @@ namespace E3Core.Processors
                         Spawn s;
                         if (_spawns.TryByName(user, out s))
                         {
-                           
+
                             FollowTargetName = user;
                             Following = false;
-                            if(E3.CurrentClass!=Class.Bard)
+                            if (E3.CurrentClass != Class.Bard)
                             {
                                 Casting.Interrupt();
                             }
@@ -575,8 +640,8 @@ namespace E3Core.Processors
                 {
                     Rez.Reset();
                     //we are telling people to follow us
-                    E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName, x);
-                   
+                    E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName + $" {_followMeDistance}", x);
+
                 }
             });
 
@@ -725,7 +790,7 @@ namespace E3Core.Processors
                     Spawn s;
                     if (_spawns.TryByName(cothTarget, out s))
                     {
-                        if (!Basics.GroupMembers.Contains(s.ID)) 
+                        if (!Basics.GroupMembersInZone.Contains(s.ID)) 
                         {
                             E3.Bots.Broadcast($"{s.CleanName} is not in our group, can't summon.");
                             return;
@@ -797,7 +862,7 @@ namespace E3Core.Processors
             }
 
             //randomly pick group member
-            foreach (int memberid in Basics.GroupMembers.OrderBy(x=>Guid.NewGuid()).ToList())
+            foreach (int memberid in Basics.GroupMembersInZone.OrderBy(x=>Guid.NewGuid()).ToList())
             {
                 //if (Basics.InCombat())
                 //{

@@ -12,8 +12,6 @@ namespace RemoteDebugServerTester
 		static void Main(string[] args)
 		{
 
-
-
 			Core.OnInit();
 			
 			while(true)

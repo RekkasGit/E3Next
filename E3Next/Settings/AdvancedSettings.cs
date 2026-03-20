@@ -4,6 +4,7 @@ using IniParser;
 using IniParser.Model;
 using MonoCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -38,7 +39,7 @@ namespace E3Core.Settings
         //  public static Dictionary<string, Action> _methodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
 
         public static Dictionary<string, Action> MethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
-        public static Dictionary<string,Action> ClassMethodLookup = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
+        public static ConcurrentDictionary<string,Action> ClassMethodLookup = new ConcurrentDictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
         public static Dictionary<string, List<string>> ClassMethodsAsStrings = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         private string filename = string.Empty;
         public AdvancedSettings()
@@ -122,7 +123,7 @@ namespace E3Core.Settings
                 { 
                     //these are static don't need to create an instance
                     var func = (Action)foundMethod.CreateDelegate(typeof(Action));
-                    ClassMethodLookup.Add(foundMethod.Name, func);
+                    ClassMethodLookup.TryAdd(foundMethod.Name, func);
                 }
             }
 

@@ -1,26 +1,18 @@
-﻿using E3Core.Data;
+﻿using CommunityToolkit.HighPerformance.Buffers;
+using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
+using E3Core.UI.Windows.Hud;
 using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.UI;
-using System.Xml.Linq;
 using static MonoCore.EventProcessor;
+
 
 namespace E3Core.Processors
 {
@@ -29,6 +21,7 @@ namespace E3Core.Processors
        
      //   Boolean InZone(string Name);
         Int32 PctHealth(string name);
+		Int32 PctPetHealth(string name);
 		Boolean InCombat(string name);
 		List<string> BotsInCombat();
 		Int32 PctMana(string name);
@@ -36,7 +29,9 @@ namespace E3Core.Processors
         Boolean HasShortBuff(string name, Int32 buffid);
         void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null);
         void BroadcastCommandToGroup(string command, CommandMatch match=null, bool noparse = false);
+		void BroadcastCommandAllZoneNotMe(string command, bool noparse = false, CommandMatch match = null);
 		void BroadcastCommandAllZone(string command, bool noparse = false, CommandMatch match = null);
+
 		void BroadcastCommandToGroupZone(string command, CommandMatch match = null, bool noparse = false);
 		void BroadcastCommandToPerson(string person, string command, bool noparse = false);
         void Broadcast(string message, bool noparse = false);
@@ -50,7 +45,7 @@ namespace E3Core.Processors
 		void GetMemoryUsage(string name, out double Csharpmemory, out double EQPageMemory);
         bool IsMyBot(string name);
         void Trade(string name);
-		string Query(string name, string query);
+		T Query<T>(string name, string query);
 		CharacterBuffs GetBuffInformation(string name);
     }
   
@@ -425,19 +420,28 @@ namespace E3Core.Processors
                 if (!buffCollection.ContainsKey(charBuffKeyName))
                 {
                     var buffInfo = CharacterBuffs.Aquire();
-                    e3util.BuffInfoToDictonary(userTopics[topicKey].Data, buffInfo.BuffDurations);
-                    buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
-                    buffCollection.Add(charBuffKeyName, buffInfo);
-                }
+					var entry = userTopics[topicKey];
+					lock(entry)
+					{
+						e3util.BuffInfoToDictonary(entry.GetData(), buffInfo.BuffDurations);
+						buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
+						buffCollection.Add(charBuffKeyName, buffInfo);
+					}
+				}
                 //do we have updated information that is newer than what we already have?
                 if (userTopics[topicKey].LastUpdate > buffCollection[charBuffKeyName].LastUpdate)
                 {
-                    //new info, lets update!
-                    var buffInfo = buffCollection[charBuffKeyName];
-                    e3util.BuffInfoToDictonary(userTopics[topicKey].Data, buffInfo.BuffDurations);
-                    buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
-                    
-                }
+					//new info, lets update!
+					var entry = userTopics[topicKey];
+					lock(entry)
+					{
+						var buffInfo = buffCollection[charBuffKeyName];
+						e3util.BuffInfoToDictonary(entry.GetData(), buffInfo.BuffDurations);
+						buffInfo.LastUpdate = userTopics[topicKey].LastUpdate;
+
+					}
+
+				}
             }
         }
 
@@ -458,19 +462,19 @@ namespace E3Core.Processors
 				//don't have the data yet kick out and assume everything is ok.
 				return 0;//dunno just say 0
 			}
-			var entry = userTopics[keyToUse];
+			
 			if (!collection.ContainsKey(name))
 			{
 				collection.Add(name, new SharedNumericDataInt32 { Data = 0 });
 			}
 			var sharedInfo = collection[name];
-            lock(entry)
+			var entry = userTopics[keyToUse];
+			lock (entry)
             {
 				if (entry.LastUpdate > sharedInfo.LastUpdate)
 				{
-					if (Int32.TryParse(entry.Data, out var result))
+					if (e3util.Int32TryParse(entry.GetData(), out var result))
 					{
-
 						sharedInfo.Data = result;
 						sharedInfo.LastUpdate = entry.LastUpdate;
 					}
@@ -497,7 +501,7 @@ namespace E3Core.Processors
 				var entry = userTopics[keyToUse];
 				lock (entry)
 				{
-					Double.TryParse(entry.Data, out Csharpmemory);
+					Double.TryParse(entry.GetData().ToString(), out Csharpmemory);
 				}
 			}
 			keyToUse = "${Me.Memory_EQPageFile}";
@@ -506,7 +510,7 @@ namespace E3Core.Processors
 				var entry = userTopics[keyToUse];
 				lock (entry)
 				{
-					Double.TryParse(entry.Data, out EQPageMemory);
+					Double.TryParse(entry.GetData().ToString(), out EQPageMemory);
 				}
 			}
 		}
@@ -601,8 +605,9 @@ namespace E3Core.Processors
         {
 			//have to parse out all the MQ macro information
 			if (!noparse)
-			{
-				message = MQ.Query<string>(message);
+			{	
+				using (MQ.GetDelayLock()) message = MQ.Query<string>(message);
+				
 			}
 			PubServer.AddTopicMessage("BroadCastMessage", $"{E3.CurrentName}:{message}");
 		}
@@ -611,10 +616,10 @@ namespace E3Core.Processors
 			//have to parse out all the MQ macro information
 			if (!noparse)
 			{
-				message = MQ.Query<string>(message);
+				using (MQ.GetDelayLock()) message = MQ.Query<string>(message);
 			}
 			PubServer.AddTopicMessage("BroadCastMessageZone", $"{E3.CurrentName}:{message}");
-			//	MQ.Write($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
+			//	MQ.WriteDelayed($"\ar<\ay{E3.CurrentName}\ar> \aw{message}");
 		}
 		public void BroadcastCommand(string command, bool noparse = false, CommandMatch match = null)
         {
@@ -631,11 +636,11 @@ namespace E3Core.Processors
 			}
             if(!noparse)
             {
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 
 			PubServer.AddTopicMessage("OnCommand-AllExceptMe", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayAll: \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ayAll: \ag{command}");
 		}
 		public void BroadcastCommandAll(string command, bool noparse = false, CommandMatch match = null)
 		{
@@ -652,7 +657,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-All", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -671,7 +676,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-Raid", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -690,10 +695,10 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-RaidNotMe", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayRaid All: \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ayRaid All: \ag{command}");
 		}
 
 		public void BroadcastCommandRaidZone(string command, CommandMatch match = null, bool noparse = false)
@@ -712,7 +717,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-RaidZone", $"{E3.CurrentName}:{noparse}:{command}");
 
@@ -734,7 +739,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-RaidZoneNotMe", $"{E3.CurrentName}:{noparse}:{command}");
 
@@ -754,7 +759,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-AllZone", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -773,10 +778,10 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-AllExceptMeZone", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayGroup All: \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ayGroup All: \ag{command}");
 		}
 		public void BroadcastCommandToGroup(string command, CommandMatch match = null, bool noparse = false)
         {
@@ -810,10 +815,10 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-Group", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayGroup: \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ayGroup: \ag{command}");
 		}
 		public void BroadcastCommandToGroupZone(string command, CommandMatch match = null, bool noparse = false)
 		{
@@ -847,10 +852,10 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupZone", $"{E3.CurrentName}:{noparse}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ayGroup Zone : \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ayGroup Zone : \ag{command}");
 		}
 		public void BroadcastCommandToGroupAll(string command, CommandMatch match = null, bool noparse = false)
 		{
@@ -884,7 +889,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupAll", $"{E3.CurrentName}:{noparse}:{command}");
 		}
@@ -920,7 +925,7 @@ namespace E3Core.Processors
 			}
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage("OnCommand-GroupAllZone", $"{E3.CurrentName}:{noparse}:{command}");
 			
@@ -929,10 +934,10 @@ namespace E3Core.Processors
 		{
 			if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
 			PubServer.AddTopicMessage($"${{DataChannel.{channel}}}", $"{E3.CurrentName}:{false}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ay{channel} : \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ay{channel} : \ag{command}");
 
 		}
 		public void BroadcastCommandToPerson(string person, string command, bool noparse = false)
@@ -940,10 +945,10 @@ namespace E3Core.Processors
             person = e3util.FirstCharToUpper(person);
             if (!noparse)
 			{
-				command = MQ.Query<string>(command);
+				using (MQ.GetDelayLock()) command = MQ.Query<string>(command);
 			}
      		PubServer.AddTopicMessage("OnCommand-" + person, $"{E3.CurrentName}:{false}:{command}");
-			MQ.Write($"\ap{E3.CurrentName} => \ay{person} : \ag{command}");
+			MQ.WriteDelayed($"\ap{E3.CurrentName} => \ay{person} : \ag{command}");
 
 		}
 		List<int> _buffListReturnValue = new List<int>();
@@ -1025,19 +1030,27 @@ namespace E3Core.Processors
 				//don't have the data yet kick out and assume everything is ok.
 				return false;
 			}
-			var entry = userTopics[keyToUse];
+			
 			if (!_inCombatCollection.ContainsKey(name))
 			{
 				_inCombatCollection.Add(name, new SharedNumericDataBool { Data = false });
 			}
 			var sharedInfo = _inCombatCollection[name];
+			var entry = userTopics[keyToUse];
 			lock (entry)
 			{
 				if (entry.LastUpdate > sharedInfo.LastUpdate)
 				{
-					if (Boolean.TryParse(entry.Data, out var result))
+					var trueSpan = "true".AsSpan();
+				
+					if (e3util.EqualsIgnoreCase(trueSpan,entry.GetData()))
 					{
-						sharedInfo.Data = result;
+						sharedInfo.Data = true;
+						sharedInfo.LastUpdate = entry.LastUpdate;
+					}
+					else
+					{
+						sharedInfo.Data = false;
 						sharedInfo.LastUpdate = entry.LastUpdate;
 					}
 				}
@@ -1051,7 +1064,45 @@ namespace E3Core.Processors
 
 			return sharedInfo.Data;
 		}
-        Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
+
+		//${Me.Pet.CurrentHPs}
+		Dictionary<string, SharedNumericDataInt32> _pctPetHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int PctPetHealth(string name)
+		{
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				return 100; //dunno just say full health
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string keyToUse = "${Me.Pet.CurrentHPs}";
+			if (!userTopics.ContainsKey(keyToUse))
+			{
+				//don't have the data yet kick out and assume everything is ok.
+				return 100;//dunno just say full health
+			}
+			if (!_pctPetHealthCollection.ContainsKey(name))
+			{
+				_pctPetHealthCollection.Add(name, new SharedNumericDataInt32 { Data = 100 });
+			}
+			var sharedInfo = _pctPetHealthCollection[name];
+			var entry = userTopics[keyToUse];
+			lock (entry)
+			{
+				if (entry.LastUpdate > sharedInfo.LastUpdate)
+				{
+					if (e3util.Int32TryParse(entry.GetData(), out var result))
+					{
+						sharedInfo.Data = result;
+						sharedInfo.LastUpdate = entry.LastUpdate;
+					}
+				}
+			}
+
+			return sharedInfo.Data;
+		}
+		Dictionary<string, SharedNumericDataInt32> _pctHealthCollection = new Dictionary<string, SharedNumericDataInt32>();
 		public int PctHealth(string name)
 		{
 			//register the user to get their buff data if its not already there
@@ -1067,20 +1118,20 @@ namespace E3Core.Processors
 				//don't have the data yet kick out and assume everything is ok.
 				return 100;//dunno just say full health
 			}
-            var entry = userTopics[keyToUse];
+          
             if(!_pctHealthCollection.ContainsKey(name))
             {
                 _pctHealthCollection.Add(name, new SharedNumericDataInt32 { Data=100});
 			}
             var sharedInfo = _pctHealthCollection[name];
-            lock(entry)
+			var entry = userTopics[keyToUse];
+			lock (entry)
             {
 				if (entry.LastUpdate > sharedInfo.LastUpdate)
 				{
-					if (Int32.TryParse(entry.Data, out var result))
+					if (e3util.Int32TryParse(entry.GetData(), out var result))
 					{
-
-						sharedInfo.Data = result;
+						sharedInfo.Data = result;	
 						sharedInfo.LastUpdate = entry.LastUpdate;
 					}
 				}
@@ -1104,17 +1155,18 @@ namespace E3Core.Processors
 				//don't have the data yet kick out and assume everything is ok.
 				return 100;//dunno just say full mana
 			}
-			var entry = userTopics[keyToUse];
+			
 			if (!_PctManaCollection.ContainsKey(name))
 			{
 				_PctManaCollection.Add(name, new SharedNumericDataInt32 { Data = 100 });
 			}
 			var sharedInfo = _PctManaCollection[name];
+			var entry = userTopics[keyToUse];
 			lock (entry)
 			{
 				if (entry.LastUpdate > sharedInfo.LastUpdate)
 				{
-					if (Int32.TryParse(entry.Data, out var result))
+					if (e3util.Int32TryParse(entry.GetData(), out var result))
 					{
 
 						sharedInfo.Data = result;
@@ -1125,25 +1177,75 @@ namespace E3Core.Processors
 
 			return sharedInfo.Data;
 		}
-		public string Query(string name,string query)
+		public T Query<T>(string name,string query)
         {
-			//register the user to get their buff data if its not already there
-			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			if(NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(name,out var userTopics))
 			{
-				return "NULL"; //dunno
+				//check to see if it has been filled out yet.
+				string keyToUse = query;
+				if(userTopics.TryGetValue(keyToUse,out var entry))
+				{
+					var type = typeof(T);
+					lock (entry)
+					{
+						if (type == typeof(String))
+						{
+							if (entry.DataLength < 256)
+							{
+								return (T)(object)StringPool.Shared.GetOrAdd(entry.GetData());
+							}
+							else
+							{
+								return (T)(object)new string(entry.Data, 0, entry.DataLength);
+							}
+						}
+						if (type == typeof(Int32))
+						{
+							e3util.Int32TryParse(entry.GetData(), out var result);
+							return (T)(object)result;
+						}
+						if (type == typeof(Int64))
+						{
+							e3util.Int64TryParse(entry.GetData(), out var result);
+							return (T)(object)result;
+						}
+						if (type == typeof(Double))
+						{
+							double result;
+							e3util.DoubleTryParse(entry.GetData(), out result);
+							
+							return (T)(object)result;
+						}
+						if (type == typeof(Decimal))
+						{
+							double result;
+							e3util.DoubleTryParse(entry.GetData(), out result);
+
+							return (T)(object)(Decimal)result;
+						}
+						if (type==typeof(Boolean))
+						{
+							var trueSpan = "true".AsSpan();
+
+							if (e3util.EqualsIgnoreCase(trueSpan, entry.GetData()))
+							{
+								return (T)(object)true;
+							}
+							else
+							{
+								return (T)(object)false;
+							}
+
+						}
+						if (type == typeof(ShareDataEntry))
+						{
+							
+							return (T)(object)entry;
+						}
+					}
+				}
 			}
-			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
-			//check to see if it has been filled out yet.
-			string keyToUse = query;
-			if (!userTopics.ContainsKey(keyToUse))
-			{
-				return "NULL"; //dunno
-			}
-			var entry = userTopics[keyToUse];
-			lock (entry)
-			{
-                return entry.Data;
-			}
+			return default(T);//dunno;
 		}
 
 		public List<int> PetBuffList(string name)

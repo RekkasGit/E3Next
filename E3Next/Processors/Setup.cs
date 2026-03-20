@@ -45,7 +45,7 @@ namespace E3Core.Processors
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
 		[ExposedData("Setup", "Version")]
-		public const string E3Version = "1.52_devbuild";
+		public const string E3Version = "1.53_devbuild";
 		[ExposedData("Setup", "BuildDate")]
 		public static string BuildDate = string.Empty;
         public static Boolean _debug = true;
@@ -106,17 +106,15 @@ namespace E3Core.Processors
                 InitSubSystems();
 
 				//after all subsystems have been init, lets init the server specific ones, as they can override events/commands
-				SeverSpecific.SeverSpecific_Init();
+				ServerSpecific.SeverSpecific_Init();
 
 				GetExposedDataMappedToDictionary();
-
-
-
-
+				
 				foreach (var command in E3.CharacterSettings.StartupCommands)
                 {
-                    MQ.Cmd(command);
-                }
+				//	MQ.Write($"Startup command:{command}");
+                    MQ.Cmd(command,delayed:true);
+			    }
                 _inventoryDataFile = new InventoryDataFile();
 				//needed for IsMyGuild(namn), to supply a user generated list of guild members
 				_guildListFilePath = Settings.BaseSettings.GetSettingsFilePath("GuildList.txt");
@@ -171,13 +169,7 @@ namespace E3Core.Processors
 
 			},"Have your toon broadcast writes out to the MQ window for a conssolidated view.");
 
-			EventProcessor.RegisterCommand("/e3debug_disablewrites", (x) =>
-			{
-
-				e3util.ToggleBooleanSetting(ref _disableWrites, "Disable Writes", x.args);
-
-
-			}, "Disable writes locally");
+		
 
 		}
 		private static void InitSubSystems()

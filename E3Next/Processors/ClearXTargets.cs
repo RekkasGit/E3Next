@@ -1,14 +1,11 @@
-﻿using E3Core.Classes;
-using E3Core.Data;
-using E3Core.Settings;
+﻿using E3Core.Settings;
 using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
+using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
+
 
 namespace E3Core.Processors
 {
@@ -125,38 +122,45 @@ namespace E3Core.Processors
 
 			});
 		}
-
+		public static void Reset()
+		{
+			ClearXTargets.Enabled = false;
+			ClearXTargets.Filters.Clear();
+			ClearXTargets.HasAllFlag = false;
+		}
 		[ClassInvoke(Data.Class.All)]
         public static void Check_Xtargets()
         {
             if (Enabled)
             {
-                e3util.YieldToEQ();
-                _spawns.RefreshList();
-                if (MobToAttack > 0)
+				//e3util.YieldToEQ();
+				if (MobToAttack > 0)
                 {
                     if (_spawns.TryByID(MobToAttack, out var ts))
                     {
                         //is it still alive?
-                        if (ts.TypeDesc == "Corpse") MobToAttack = 0;//its dead jim
-                    }
+                        if (ts.Dead) MobToAttack = 0;//its dead jim
+					}
                     else
                     {
                         MobToAttack = 0;
                     }
                 }
-                //lets see if we have anything on xtarget that is valid
-                if (MobToAttack == 0)
-                {
+			
+				//lets see if we have anything on xtarget that is valid
+				if (MobToAttack == 0)
+				{
+					_spawns.RefreshList(full: true);
+
 					//first check to see if our driver already has a target
-					if(UseMyTarget)
+					if (UseMyTarget)
 					{
 						Int32 targetedMobID = MQ.Query<Int32>("${Target.ID}");
 						if (targetedMobID > 0)
 						{
 							if (_spawns.TryByID(targetedMobID, out var tmob))
 							{
-								if (tmob.TypeDesc == "NPC" && tmob.Targetable && tmob.Aggressive)
+								if (!tmob.Dead && tmob.TypeDesc == "NPC" && tmob.Targetable && tmob.Aggressive)
 								{
 									MobToAttack = tmob.ID;
 								}
@@ -165,66 +169,100 @@ namespace E3Core.Processors
 					}
 					if (FindLowestHPTarget)
 					{
-						MobToAttack = e3util.GetXtargetLowestHP();
+						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
+						{
+							unsafe
+							{
+								int length;
+								byte* p;
+								p = MQ.GetXtargetDataPtr(out length);
+								ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+								MobToAttack = e3util.GetXtargetLowestHP(data);
+							}
+						}
+						else
+						{
+							MobToAttack = e3util.GetXtargetLowestHP();
+						}
 					}
 					else if (FindHighestHPTarget)
 					{
-						MobToAttack = e3util.GetXtargetHighestHP();
-					}
-					if (MobToAttack<1)
-					{
-						foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
+						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
 						{
-							//find all mobs that are close
-							if (s.TypeDesc != "NPC") continue;
-							if (!s.Targetable) continue;
-							if (!s.Aggressive) continue;
-							if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
-							if (s.CleanName.EndsWith("s pet")) continue;
-							if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-							if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
-													   //its valid to attack!
-							MobToAttack = s.ID;
-							break;
+							unsafe
+							{
+								int length;
+								byte* p;
+								p = MQ.GetXtargetDataPtr(out length);
+								ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+								MobToAttack = e3util.GetXtargetHighestHP(data);
+							}
 						}
-					}
-					if (MobToAttack <=0)
-                    {
-                        //we are done, stop killing
-                        Enabled = false;
-                        MQ.Write("\agClear Targets complete.");
-                        return;
-                    }
+						else
+						{
+							MobToAttack = e3util.GetXtargetHighestHP();
+						}
 
-                    //mobs to attack will be sorted by distance.
-                    if (MobToAttack > 0)
-                    {
-                        //pop it off and start assisting.
-                        Int32 mobId = MobToAttack;
-                        Spawn s;
-                        if (_spawns.TryByID(mobId, out s))
-                        {
-                            MQ.Write($"\agClear Targets: \aoIssuing Assist on {s.DisplayName} with id:{s.ID}.");
-                            Assist.AllowControl = true;
-                            Assist.AssistOn(s.ID, Zoning.CurrentZone.Id);
-                            if (FaceTarget)
-                            {
-                                if(e3util.IsEQLive())
-                                {
-									MQ.Cmd("/face",500);
+					}
+					if (MobToAttack < 1)
+					{
+						using (MQ.GetDelayLock())
+						{
+							foreach (var s in _spawns.Get().OrderBy(x => x.Distance3D))
+							{
+								//find all mobs that are close
+								if (s.TypeDesc != "NPC") continue;
+								if (s.Dead) continue;
+								if (!s.Targetable) continue;
+								if (!s.Aggressive) continue;
+								if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
+								if (s.CleanName.EndsWith("s pet")) continue;
+								if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+								if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
+															 //its valid to attack!
+								MobToAttack = s.ID;
+								break;
+							}
+						}
+
+					}
+					if (MobToAttack <= 0)
+					{
+						//we are done, stop killing
+						Enabled = false;
+						MQ.Write("\agClear Targets complete.");
+						return;
+					}
+
+					//mobs to attack will be sorted by distance.
+					if (MobToAttack > 0)
+					{
+						//pop it off and start assisting.
+						Int32 mobId = MobToAttack;
+						Spawn s;
+						if (_spawns.TryByID(mobId, out s))
+						{
+							MQ.Write($"\agClear Targets: \aoIssuing Assist on {s.DisplayName} with id:{s.ID}. who is Dead:{s.Dead}");
+							Assist.AllowControl = true;
+							Assist.AssistOn(s.ID, Zoning.CurrentZone.Id);
+							if (FaceTarget)
+							{
+								if (e3util.IsEQLive())
+								{
+									MQ.Cmd("/face", 500);
 								}
-                                else
-                                {
+								else
+								{
 									MQ.Cmd("/face fast");
 								}
-                               
-                            }
-                            if (StickTarget)
-                            {
+
+							}
+							if (StickTarget)
+							{
 								//MQ.Write($"Setting stick with :/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
-                                MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
-                            }
-                            MQ.Delay(500);
+								MQ.Cmd($"/squelch /stick {E3.CharacterSettings.Assist_MeleeStickPoint} {Assist._assistDistance}");
+							}
+							MQ.Delay(500);
 
 							if (!String.Equals(E3.CharacterSettings.Assist_Type, "Off", StringComparison.OrdinalIgnoreCase))
 							{
@@ -232,35 +270,35 @@ namespace E3Core.Processors
 							}
 
 							if (HasAllFlag)
-                            {
-                                if (Filters.Count > 0)
-                                {
-                                    E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
-                                }
-                                else
-                                {
-                                    E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id}");
-                                }
-                            }
-                            else
-                            {
-                                if (Filters.Count > 0)
-                                {
-                                    E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
-                                }
-                                else
-                                {
-                                    E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
-                                }
-                            }
+							{
+								if (Filters.Count > 0)
+								{
+									E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
+								}
+								else
+								{
+									E3.Bots.BroadcastCommand($"/assistme {mobId} {Zoning.CurrentZone.Id}");
+								}
+							}
+							else
+							{
+								if (Filters.Count > 0)
+								{
+									E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
+								}
+								else
+								{
+									E3.Bots.BroadcastCommandToGroup($"/assistme {mobId} {Zoning.CurrentZone.Id}");
+								}
+							}
 
-                        }
-                        else
-                        {
-                            MobToAttack = 0;
-                        }
-                    }
-                }
+						}
+						else
+						{
+							MobToAttack = 0;
+						}
+					}
+				}
 
 
             }

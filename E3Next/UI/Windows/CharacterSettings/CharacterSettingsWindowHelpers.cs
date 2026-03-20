@@ -89,7 +89,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		};
 
 		public static readonly Dictionary<string, List<string>> Sections_HealPertcentage = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
-		{ { "Heals", new List<string>(){"Tank Heal","Important Heal","All Heal","Party Heal","Pet Heal","Emergency Heal","Emergency Group Heal" } }, { "Life Support", new List<string>(){} }
+		{ { "Heals", new List<string>(){"Tank Heal","Important Heal","All Heal","Party Heal","Pet Heal","Emergency Heal","Emergency Group Heal","Group Heal" } }, { "Life Support", new List<string>(){} }
 		};
 
 		public static readonly Dictionary<string, string> _spellKeyAliasMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -246,6 +246,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				string cat = s.Category ?? string.Empty;
 				string sub = s.Subcategory ?? string.Empty;
 				if (!dest.TryGetValue(cat, out var submap))
@@ -282,6 +283,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 						: new List<string>(),
 					SpellIcon = s.SpellIcon
 				};
+				
+
 
 				if (String.IsNullOrWhiteSpace(newSpell.CastName)) newSpell.CastName = newSpell.Name;
 
@@ -302,6 +305,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				string cat = s.Category ?? string.Empty;
 				string sub = s.Subcategory ?? string.Empty;
 				if (!dest.TryGetValue(cat, out var submap))
@@ -363,7 +367,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			submap[sub] = list;
 			foreach (var s in data)
 			{
+
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				var newSpell = new E3Spell
 				{
 					Name = s.SpellName ?? string.Empty,
@@ -391,6 +397,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				string cat = s.CastName ?? string.Empty; // item name
 				string sub = s.SpellName ?? string.Empty; // click spell
 				if (!dest.TryGetValue(cat, out var submap))
@@ -436,6 +443,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				string cat = s.CastName ?? string.Empty; // item name
 				string sub = s.SpellName ?? string.Empty; // click spell
 				if (!dest.TryGetValue(cat, out var submap))
@@ -488,6 +496,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			foreach (var s in data)
 			{
 				if (s == null) continue;
+				if (s.SpellIcon == -1) s.SpellIcon = 0;
 				list.Add(new E3Spell
 				{
 					Name = s.SpellName ?? string.Empty,
@@ -635,8 +644,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		}
 
 		static Dictionary<string, List<String>> _KeyOptionsLookup = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) {
-			{"Assist Type (Melee/Ranged/Off)", new List<string>() { "Melee","AutoAttack","Ranged","AutoFire","Off","Manual" } },
-			{"Melee Stick Point", new List<string>() { "Front","Behind","BehindOnce","Pin","!Front" } }
+			{"Assist Type (Melee/Ranged/Off)", new List<string>() { "Melee","AutoAttack","Ranged","AutoFire","Off" } },
+			{"Melee Stick Point", new List<string>() { "Front","Behind","BehindOnce","Pin","!Front" } },
+			{"LeftClickAction", new List<string>() { "Target","Foreground","ViewBuffs","NavToToon" } }
 
 		};
 
@@ -1031,11 +1041,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 				// Fallback: Query MQ directly for spell icon
 				int iconIndex = E3.MQ.Query<int>($"${{Spell[{spellName}].SpellIcon}}");
-				return iconIndex > 0 ? iconIndex : -1;
+				return iconIndex > 0 ? iconIndex : 0;
 			}
 			catch
 			{
-				return -1;
+				return 0;
 			}
 		}
 
@@ -1200,7 +1210,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (entry.LastUpdate < dataMustBeOlderThan) continue;
 					_log.WriteDelayed($"Data found with key:{topic}", Logging.LogLevels.Debug);
 
-					string payload = entry.Data;
+					string payload = entry.GetData().ToString();
 					int first = payload.IndexOf(':');
 					int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
 					string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
@@ -1234,7 +1244,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
 						&& topics.TryGetValue(topic, out var entry))
 					{
-						string payload = entry.Data;
+						string payload = entry.GetData().ToString();
 						ParseGemDataWithIcons(payload, out gemData, out gemState.GemIcons);
 						return true;
 					}
@@ -1243,7 +1253,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2)
 						&& topics2.TryGetValue(topic, out var entry2))
 					{
-						string payload = entry2.Data;
+						string payload = entry2.GetData().ToString();
 						ParseGemDataWithIcons(payload, out gemData, out gemState.GemIcons);
 						return true;
 					}
@@ -1717,7 +1727,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics)
 						&& topics.TryGetValue(topic, out var entry))
 					{
-						string payload = entry.Data ?? string.Empty;
+						string payload = String.Empty;
+						lock (entry)
+						{
+							payload = entry.GetData().ToString() ?? string.Empty;
+						}
 						int first = payload.IndexOf(':');
 						int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
 						string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
@@ -1742,7 +1756,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 					else if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2)
 							 && topics2.TryGetValue(topic, out var entry2))
 					{
-						string payload = entry2.Data ?? string.Empty;
+						string payload = String.Empty;
+						lock (entry2)
+						{
+							payload = entry2.GetData().ToString() ?? string.Empty;
+
+						}
+						
 						int first = payload.IndexOf(':');
 						int second = first >= 0 ? payload.IndexOf(':', first + 1) : -1;
 						string b64 = (second > 0 && second + 1 < payload.Length) ? payload.Substring(second + 1) : payload;
@@ -1822,14 +1842,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 									if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(toon, out var topics) &&
 										topics.TryGetValue(responseTopic, out var entry))
 									{
-										value = entry.Data;
+										value = entry.GetData().ToString();
 										found = true;
 										break;
 									}
 									if (E3Core.Server.NetMQServer.SharedDataClient.TopicUpdates.TryGetValue(E3.CurrentName, out var topics2) &&
 										topics2.TryGetValue(responseTopic, out var entry2))
 									{
-										value = entry2.Data;
+										value = entry2.GetData().ToString();
 										found = true;
 										break;
 									}

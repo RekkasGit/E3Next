@@ -2,6 +2,7 @@
 using NetMQ;
 using NetMQ.Sockets;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,12 +12,13 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace E3NextProxy
 {
-	
+
 	internal class Program
 	{
 		[DllImport("Kernel32")]
@@ -36,24 +38,143 @@ namespace E3NextProxy
 		private static bool Handler(CtrlType sig)
 		{
 			Console.WriteLine("Exiting system due to external CTRL-C, or process kill, or shutdown");
-			if(File.Exists(_fullFileName))
+			if (File.Exists(_fullFileName))
 			{
 				File.Delete(_fullFileName);
 			}
 			return true;
 		}
 
-		static E3NextProxy.Proxy_Manual m_proxy;
+		static Proxy_Manual m_proxy = new Proxy_Manual();
 		//lets scan the file system to find files so we can connect to start the proxy
 		static string _directoryLocation = $@"D:\EQ\MQLive\config\e3 Macro Inis\SharedData\";
 		static string _fileName = "proxy_pubsubport.txt";
 		static string _fullFileName = _fileName;
-		static Int32 _XPublisherPort;
+		//5697-5699 are current unassigned
+		static Int32 _XPublisherPort = 5698;
 		//static Int32 _XSubPort;
-		static string _localIP = "127.0.0.1";
+		static IPAddress _localIP = IPAddress.Parse("127.0.0.1");
 		static string _FQDN = "";
+		static ConcurrentDictionary<string, string> _remoteProxies = new ConcurrentDictionary<string, string>();
+		static volatile bool _isProcessing = true;
+		private static void NetworkDiscoveryServerProcessing(Int32 discoveryPort, string localAddress)
+		{
+			Console.WriteLine("Starting discovery server");
+			using (var udpServer = new UdpClient(discoveryPort))
+			{
+				udpServer.Client.ReceiveTimeout = 750;
+				while (_isProcessing)
+				{
+					try
+					{
+						var remoteEP = new IPEndPoint(IPAddress.Any, 0);
+						var data = udpServer.Receive(ref remoteEP); // Wait for discovery request
+						string message = Encoding.ASCII.GetString(data);
+
+						//if its ourself, don't reply to it.
+						if (remoteEP.Address.MapToIPv6().Equals(_localIP.MapToIPv6())) continue; 
+
+						if (message == "DISCOVER_E3NPROXY_SERVER")
+						{
+							byte[] response = Encoding.ASCII.GetBytes(localAddress);
+							//Console.WriteLine($"Someone asking for a discovery:{remoteEP.ToString()}");
+							udpServer.Send(response, response.Length, remoteEP); // Reply to the sender
+						}
+					}
+					catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
+					{
+
+					}
+				}
+			}
+			Console.WriteLine("Shut down Discovery Server");
+		}
+		
+		public static bool ShouldCheck(ref Stopwatch stopwatch, ref Int64 nextCheck, Int64 nextCheckInterval)
+		{
+			if (stopwatch.ElapsedMilliseconds < nextCheck)
+			{
+				return false;
+			}
+			else
+			{
+				nextCheck = stopwatch.ElapsedMilliseconds + nextCheckInterval;
+				return true;
+			}
+		}
+		private static void NetworkDiscoverySendPings(int discoveryPort)
+		{
+			Console.WriteLine("Starting discovery client");
+			using (var udpClient = new UdpClient())
+			{
+				string localAddressAsString = _localIP.ToString();
+				udpClient.EnableBroadcast = true;
+				byte[] request = Encoding.ASCII.GetBytes("DISCOVER_E3NPROXY_SERVER");
+
+				Stopwatch stopwatch = Stopwatch.StartNew();
+
+				Int64 lastSendTimeStamp = 0;
+			
+				while (_isProcessing)
+				{
+
+					if(ShouldCheck(ref stopwatch,ref lastSendTimeStamp,1000))
+					{
+						udpClient.Send(request, request.Length, new IPEndPoint(IPAddress.Broadcast, discoveryPort));
+					}
+
+					udpClient.Client.ReceiveTimeout = 100;
+					var serverEP = new IPEndPoint(IPAddress.Any, 0);
+					try
+					{
+						byte[] response = udpClient.Receive(ref serverEP);
+						string responseString = Encoding.ASCII.GetString(response); // Returns "tcp://192.168.1.50:5555"
+						if (responseString != localAddressAsString && !_remoteProxies.ContainsKey(responseString))
+						{
+							//found a proxy! lets see if they are already connected
+							Console.WriteLine($"Found proxy to connect to:{responseString}");
+
+							try
+							{
+								m_proxy.AddExteranlProxySubBinding($"tcp://{responseString}:{_XPublisherPort + 1}");
+
+							}
+							catch(Exception ex)
+							{
+								Console.WriteLine($"Tryign to add to proxy exception:{ex.Message}");
+
+
+							}
+
+							_remoteProxies.TryAdd(responseString, responseString);
+						}
+					}
+					catch (Exception ex)
+					{
+						//Console.WriteLine(ex.ToString());
+					}
+				}
+
+			}
+
+			using (var udpClient = new UdpClient())
+			{
+				string localAddressAsString = _localIP.ToString();
+				udpClient.EnableBroadcast = true;
+				byte[] request = Encoding.ASCII.GetBytes("DISCOVER_E3NPROXY_SERVER");
+				while (_isProcessing)
+				{
+					// Send broadcast to the specific port
+					udpClient.Send(request, request.Length, new IPEndPoint(IPAddress.Broadcast, discoveryPort));
+					//send out the pings on a set inverval
+					Thread.Sleep(500);
+				}
+			}
+			Console.WriteLine("Shut down Discovery Pings");
+		}
 		static void Main(string[] args)
 		{
+
 			//capture to clean up on force close
 			_handler += new EventHandler(Handler);
 			SetConsoleCtrlHandler(_handler, true);
@@ -63,41 +184,45 @@ namespace E3NextProxy
 			//if running 54 bots, that would be 2900+ threads vs just 108 threads using the proxy, it scales a lot better, tho less convient to run a server vs just peer to peer. 
 
 			//_XPublisherPort = FreeTcpPort();
-			_XPublisherPort = 5698;  //5697-5699 are current unassigned
+
 			//_XSubPort = FreeTcpPort();
 			_localIP = GetLocalIPAddress();
 			_FQDN = GetFQDN();
-			if (!CreateInfoFile(_localIP, _XPublisherPort))
+			if (!CreateInfoFile(_localIP.ToString(), _XPublisherPort))
 			{
 				return;
 			}
-
-
-			m_proxy = new Proxy_Manual();
 			m_proxy.Start(_XPublisherPort);
-			var xSubTaskAdd = Task.Factory.StartNew(() => { AddSubscribers(_localIP); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-			var sub1task = Task.Factory.StartNew(() => { SubScribeReader(_XPublisherPort, _localIP); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-			Console.WriteLine("Press enter to end");
+			System.Threading.Thread.Sleep(1000);//need to wait for the servers to startup before we start trying to add people.
+			var xSubTaskAdd = Task.Factory.StartNew(() => { AddSubscribers(_localIP.ToString()); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+			var sub1task = Task.Factory.StartNew(() => { SubScribeReader(_XPublisherPort, _localIP.ToString()); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+			var discoveryTask = Task.Factory.StartNew(() => { NetworkDiscoveryServerProcessing(_XPublisherPort - 1, _localIP.ToString()); });
+			var discoverySendPings = Task.Factory.StartNew(() => { NetworkDiscoverySendPings(_XPublisherPort - 1); });
 
 			var proxiesToConnecTo = System.Configuration.ConfigurationManager.AppSettings["ProxiesToConnectTo"];
-			
-			List<string> proxies = proxiesToConnecTo.Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+			List<string> proxies = proxiesToConnecTo.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
 
 			foreach (string proxy in proxies)
 			{
 				string tproxy = proxy.Replace(" ", "");
-				if (tproxy == _localIP || String.Equals(tproxy,_FQDN,StringComparison.OrdinalIgnoreCase)) continue;
+				if (tproxy == _localIP.ToString() || String.Equals(tproxy, _FQDN, StringComparison.OrdinalIgnoreCase)) continue;
 				//external connections are +1 the port number. 
-				m_proxy.AddExteranlProxySubBinding($"tcp://{tproxy}:{_XPublisherPort+1}");
+				m_proxy.AddExteranlProxySubBinding($"tcp://{tproxy}:{_XPublisherPort + 1}");
 			}
+
+			Console.WriteLine("Press enter to end");
 			Console.ReadLine();
+			Console.WriteLine("Shutting down.....");
+			_isProcessing = false;
+			System.Threading.Thread.Sleep(2000);
 
 		}
 		public static string GetFQDN()
 		{
 			string domainName = IPGlobalProperties.GetIPGlobalProperties().DomainName;
 			string hostName = Dns.GetHostName();
-			if(!string.IsNullOrEmpty(domainName) )
+			if (!string.IsNullOrEmpty(domainName))
 			{
 				domainName = "." + domainName;
 				if (!hostName.EndsWith(domainName))  // if hostname does not already include domain name
@@ -107,49 +232,15 @@ namespace E3NextProxy
 			}
 			return hostName;                    // return the fully qualified name
 		}
-		public static void OldMain(string localIP, int XPublisherPort)
-		{
-			//try
-			//{
-			//	using (var xpubSocket = new XPublisherSocket())
-			//	using (var xsubSocket = new XSubscriberSocket())
-			//	{
-			//		string connectionString = $"tcp://{localIP}:{XPublisherPort}";
-			//		xpubSocket.Bind(connectionString);
-
-
-			//		var sub1task = Task.Factory.StartNew(() => { SubScribeReader(XPublisherPort, localIP); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-
-			//		m_proxy = new E3NextProxy.Proxy(xsubSocket, xpubSocket);
-			//		var xSubTaskAdd = Task.Factory.StartNew(() => { AddSubscribers(localIP, new List<int>() { _XSubPort }); }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-
-			//		// blocks indefinitely
-			//		m_proxy.StartAsync();
-			//		Console.WriteLine($"Publish connection string:{connectionString}");
-			//		Console.WriteLine("Press enter to end");
-			//		Console.ReadLine();
-			//		m_proxy.Stop();
-			//	}
-			//}
-			//finally
-			//{
-			//	if (File.Exists(_fullFileName))
-			//	{
-			//		File.Delete(_fullFileName);
-
-			//	}
-			//}
-		}
+		
 		public static void AddSubscribers(string localIP)
 		{
-		
-			System.Threading.Thread.Sleep(1000);
 
-			Dictionary<string,SubInfo> currentlyProcessing = new Dictionary<string, SubInfo>();
+			Dictionary<string, SubInfo> currentlyProcessing = new Dictionary<string, SubInfo>();
 			List<string> removeItems = new List<string>();
 			List<string> foldersToMonitor = new List<string>();
 			foldersToMonitor.Add(_directoryLocation);
-			
+
 			while (true)
 			{
 				try
@@ -225,11 +316,11 @@ namespace E3NextProxy
 						removeItems.Clear();
 					}
 				}
-				catch (Exception ex) 
-				{ 
+				catch (Exception ex)
+				{
 					Console.WriteLine($"[{System.DateTime.Now.ToString()}] Error:" + ex.ToString());
 				}
-				
+
 				Thread.Sleep(1000);
 			}
 		}
@@ -258,7 +349,7 @@ namespace E3NextProxy
 						Console.WriteLine("Sending message : {0}", msg);
 						pubSocket.SendMoreFrame("TopicB").SendFrame(msg);
 					}
-					System.Threading.Thread.Sleep(1000);	
+					System.Threading.Thread.Sleep(1000);
 				}
 			}
 
@@ -284,38 +375,40 @@ namespace E3NextProxy
 					//Console.WriteLine($"[{messageTopicReceived}] {messageReceived}");
 					_totalMessageCount++;
 
-					if(_stopWatch.ElapsedMilliseconds > _lastUpdateTime)
+					if (_stopWatch.ElapsedMilliseconds > _lastUpdateTime)
 					{
-						if(_lastTotalMessageCount > 0)
+						if (_lastTotalMessageCount > 0)
 						{
-							Int64 messageDelta =_totalMessageCount - _lastTotalMessageCount;
-							Console.Write($"\r{messageDelta} per {_stopWatch.ElapsedMilliseconds - (_lastUpdateTime-1000)} milliseconds");
+							Int64 messageDelta = _totalMessageCount - _lastTotalMessageCount;
+							Console.Write($"\r{messageDelta} per {_stopWatch.ElapsedMilliseconds - (_lastUpdateTime - 1000)} milliseconds");
 						}
 
 						_lastTotalMessageCount = _totalMessageCount;
-						_lastUpdateTime = _stopWatch.ElapsedMilliseconds+1000;
+						_lastUpdateTime = _stopWatch.ElapsedMilliseconds + 1000;
 					}
-				
+
 				}
 			}
 
 
 		}
-		public static bool CreateInfoFile(string localIP,Int32 XPublisherPort)
+		public static bool CreateInfoFile(string localIP, Int32 XPublisherPort)
 		{
 			//need to create a file in the macroquest directory, walk backwards till we get to the root with the config file
 			//we should be in the \mono\macros\e3 folder, might cause an issue if this is running and updates are happening
 
 			var dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("E3NextProxy.exe", "");
 
-			if(System.Diagnostics.Debugger.IsAttached)
+			if (System.Diagnostics.Debugger.IsAttached)
 			{
-				dllFullPath= @"D:\EQ\MQEmu\mono\macros\e3\";
+				dllFullPath = @"D:\EQ\MQEmu\mono\macros\e3\";
 			}
+
+			Console.WriteLine($"Using full path of :{dllFullPath}");
 
 			DirectoryInfo currentDirectory = new DirectoryInfo(dllFullPath);
 
-			
+
 			while (!IsMQInPath(currentDirectory.FullName))
 			{
 				currentDirectory = Directory.GetParent(currentDirectory.FullName);
@@ -339,7 +432,7 @@ namespace E3NextProxy
 			Console.WriteLine("Config File Path:" + _directoryLocation);
 
 			//now delete the old file if it exists
-			string fullPathName = configPathDirectory.FullName + @"\"+_fileName;
+			string fullPathName = configPathDirectory.FullName + @"\" + _fileName;
 
 			if (File.Exists(fullPathName))
 			{
@@ -360,16 +453,16 @@ namespace E3NextProxy
 			}
 			return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
 		}
-		public static string GetLocalIPAddress()
+		public static IPAddress GetLocalIPAddress()
 		{
 			//https://stackoverflow.com/questions/6803073/get-local-ip-address
 
-			string localIP;
+			IPAddress localIP;
 			using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
 			{
 				socket.Connect("8.8.8.8", 65530);
 				IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
-				localIP = endPoint.Address.ToString();
+				localIP = endPoint.Address;
 			}
 			return localIP;
 		}
@@ -378,9 +471,9 @@ namespace E3NextProxy
 
 			string[] files = Directory.GetFiles(path);
 
-			foreach(var file in files)
+			foreach (var file in files)
 			{
-				if(file.EndsWith(@"\MacroQuest.exe"))
+				if (file.EndsWith(@"\MacroQuest.exe"))
 				{
 					return true;
 				}

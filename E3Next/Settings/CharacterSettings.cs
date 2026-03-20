@@ -1,17 +1,21 @@
 ﻿using E3Core.Data;
 using E3Core.Processors;
+using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
 using IniParser;
 using IniParser.Model;
+using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
-using static System.Collections.Specialized.BitVector32;
-using MonoCore;
-using System.Drawing.Drawing2D;
 using System.Text.RegularExpressions;
+using static E3Core.UI.Windows.Hud.HudCastingWindow;
+using static E3Core.UI.Windows.Hud.HudHubWindow.TableRow_GroupInfo;
+using static System.Collections.Specialized.BitVector32;
 
 namespace E3Core.Settings
 {
@@ -102,7 +106,7 @@ namespace E3Core.Settings
 		[INI_Section("Misc", "Debuffs/Dots are visible")]
 		public bool Misc_VisibleDebuffsDots = true;
 		[INI_Section("Misc", "Enhanced rotation speed")]
-		public bool Misc_EnchancedRotationSpeed = false;
+		public bool Misc_EnhancedRotationSpeed = false;
 
 		[INI_Section("Misc", "Echo Command Received")]
 		public bool Misc_EchoCommandReceived = true;
@@ -123,6 +127,214 @@ namespace E3Core.Settings
 		public string UITheme_E3Config = "DarkTeal";
 		[INI_Section("UI Theme", "Rounding")]
 		public float UITheme_Rounding = 8.0f;
+
+		[INI_Section("E3Hud_Casting", "SelectedFont")]
+		public string E3Hud_Casting_SelectedFont = "robo";
+		[INI_Section("E3Hud_Casting", "SelectedFontSize")]
+		public Int32 E3Hud_Casting_SelectedFontSize = 16;
+		[INI_Section("E3Hud_Casting", "Alpha")]
+		public float E3Hud_Casting_Alpha = 0.8f;
+		[INI_Section("E3Hud_Casting", "Locked")]
+		public bool E3Hud_Casting_Locked = false;
+		[INI_Section("E3Hud_Casting", "RGBA_NameColor")]
+		public float[] E3Hud_Casting_RGBA_NameColor = { 0.169f, 1f, 0f, 1f };
+
+
+
+		[INI_Section("E3Hud_Hub", "Alpha")]
+		public float E3Hud_Hub_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub", "ShowColumnHP")]
+		public Boolean E3Hud_Hub_ShowColumnHP = true;
+		[INI_Section("E3Hud_Hub", "ShowColumnEnd")]
+		public Boolean E3Hud_Hub_ShowColumnEnd = true;
+		[INI_Section("E3Hud_Hub", "ShowColumnMana")]
+		public Boolean E3Hud_Hub_ShowColumnMana = true;
+		[INI_Section("E3Hud_Hub", "ShowColumnDistance")]
+		public Boolean E3Hud_Hub_ShowColumnDistance = true;
+		[INI_Section("E3Hud_Hub", "ShowColumnAggro")]
+		public Boolean E3Hud_Hub_ShowColumnAggro = true;
+		[INI_Section("E3Hud_Hub", "ShowColumnAggroXTarget")]
+		public Boolean E3Hud_Hub_ShowColumnAggroXTarget = true;
+		[INI_Section("E3Hud_Hub", "ShowColumnAggroMinXTarget")]
+		public Boolean E3Hud_Hub_ShowColumnAggroMinXTarget = true;
+		[INI_Section("E3Hud_Hub", "FadeTimeInMS")]
+		public int E3Hud_Hub_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub", "RGBA_NameColor")]
+		public float[] E3Hud_Hub_RGBA_NameColor = { 0.95f, 0.85f, 0.35f, 1.0f };
+		[INI_Section("E3Hud_Hub", "RGBA_HealthBar")]
+		public float[] E3Hud_Hub_RGBA_HealthBar = { 1, 0f, 0f, 0.4f };
+		[INI_Section("E3Hud_Hub", "RGBA_PetHealthBar")]
+		public float[] E3Hud_Hub_RGBA_PetHealthBar = { 0, 1f, 0f, 0.4f };
+
+		[INI_Section("E3Hud_Hub", "SelectedFont")]
+		public string E3Hud_Hub_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_SelectedFontSize = 16;
+		[INI_Section("E3Hud_Hub", "Locked")]
+		public bool E3Hud_Hub_Locked = false;
+		[INI_Section("E3Hud_Hub", "DisplayHPBar")]
+		public bool E3Hud_Hub_DisplayHPBar = false;
+		[INI_Section("E3Hud_Hub", "LeftClickAction")]
+		public string E3Hud_Hub_LeftClickAction = "Target";
+		[INI_Section("E3Hud_Hub", "ShowTickTimer")]
+		public bool E3Hud_Hub_ShowTickTimer = true;
+		[INI_Section("E3Hud_Hub", "ShowHotButtons")]
+		public bool E3Hud_Hub_ShowHotButtons = true;
+		[INI_Section("E3Hud_Hub", "ShowPlayerInfo")]
+		public bool E3Hud_Hub_ShowPlayerInfo = true;
+		[INI_Section("E3Hud_Hub", "ShowTargetInfo")]
+		public bool E3Hud_Hub_ShowTargetInfo = true;
+		[INI_Section("E3Hud_Hub", "PeerSortOrder")]
+		public string E3Hud_Hub_PeerSortOrder = "Alphabetical";
+		
+		[INI_Section("E3Hud_Hub_PlayerInfo", "SelectedFont")]
+		public string E3Hud_Hub_PlayerInfo_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_PlayerInfo", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_PlayerInfo_SelectedFontSize = 16;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "Alpha")]
+		public float E3Hud_Hub_PlayerInfo_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "Detached")]
+		public bool E3Hud_Hub_PlayerInfo_Detached = false;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "Locked")]
+		public bool E3Hud_Hub_PlayerInfo_Locked = false;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "RGBA_DiscProgressBar")]
+		public float[] E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar = { 0, 1f, 1f, 0.4f };
+		[INI_Section("E3Hud_Hub_PlayerInfo", "ShowHPAsPercent")]
+		public bool E3Hud_Hub_PlayerInfo_ShowHPAsPercent = false;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "ShowManaAsPercent")]
+		public bool E3Hud_Hub_PlayerInfo_ShowManaAsPercent = false;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "ShowEndAsPercent")]
+		public bool E3Hud_Hub_PlayerInfo_ShowEndAsPercent = false;
+		[INI_Section("E3Hud_Hub_PlayerInfo", "ShowProgressBars")]
+		public bool E3Hud_Hub_PlayerInfo_ShowProgressBars = true;
+
+		[INI_Section("E3Hud_Hub_TargetInfo", "Alpha")]
+		public float E3Hud_Hub_TargetInfo_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_TargetInfo", "SelectedFont")]
+		public string E3Hud_Hub_TargetInfo_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_TargetInfo", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_TargetInfo_SelectedFontSize = 16;
+		[INI_Section("E3Hud_Hub_TargetInfo", "Detached")]
+		public bool E3Hud_Hub_TargetInfo_Detached = false;
+		[INI_Section("E3Hud_Hub_TargetInfo", "Locked")]
+		public bool E3Hud_Hub_TargetInfo_Locked = false;
+		[INI_Section("E3Hud_Hub_TargetInfo", "ConColorBorder")]
+		public int E3Hud_Hub_TargetInfo_ConColorBorder = 2;
+		[INI_Section("E3Hud_Hub_TargetInfo", "IconSize")]
+		public int E3Hud_Hub_TargetInfo_IconSize = 40;
+
+		[INI_Section("E3Hud_Hub_Buff", "SelectedFont")]
+		public string E3Hud_Hub_Buff_SelectedFont = "robo";
+
+		[INI_Section("E3Hud_Hub_Buff", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_Buff_SelectedFontSize = 16;
+
+		[INI_Section("E3Hud_Hub_Buff", "Detached")]
+		public bool E3Hud_Hub_Buff_Detached = false;
+		[INI_Section("E3Hud_Hub_Buff", "IconSize")]
+		public int E3Hud_Hub_Buff_IconSize = 40;
+		[INI_Section("E3Hud_Hub_Buff", "FadeTimeInMS")]
+		public Int32 E3Hud_Hub_Buff_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub_Buff", "Alpha")]
+		public float E3Hud_Hub_Buff_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_Buff", "Locked")]
+		public bool E3Hud_Hub_Buff_Locked = false;
+		[INI_Section("E3Hud_Hub_Buff", "ListView")]
+		public bool E3Hud_Hub_Buff_ListView = false;
+		[INI_Section("E3Hud_Hub_Buff", "ShowProgressBars")]
+		public bool E3Hud_Hub_Buff_ShowProgressBars = true;
+
+		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor")]
+		public float[] E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor = {0.8f,0.2f, 0.2f, 0.4f };
+		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor")]
+		public float[] E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor ={0,0,1,0.4f };
+		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_NameColor")]
+		public float[] E3Hud_Hub_Buff_RGBA_ListView_NameColor = { 1,1,1,1 };
+
+
+		[INI_Section("E3Hud_Hub_PetBuff", "SelectedFont")]
+		public string E3Hud_Hub_PetBuff_SelectedFont = "robo";
+
+		[INI_Section("E3Hud_Hub_PetBuff", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_PetBuff_SelectedFontSize = 16;
+
+
+		[INI_Section("E3Hud_Hub_PetBuff", "Detached")]
+		public bool E3Hud_Hub_PetBuff_Detached = false;
+		[INI_Section("E3Hud_Hub_PetBuff", "IconSize")]
+		public int E3Hud_Hub_PetBuff_IconSize = 40;
+		[INI_Section("E3Hud_Hub_PetBuff", "FadeTimeInMS")]
+		public Int32 E3Hud_Hub_PetBuff_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub_PetBuff", "Alpha")]
+		public float E3Hud_Hub_PetBuff_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_PetBuff", "Locked")]
+		public bool E3Hud_Hub_PetBuff_Locked = false;
+		[INI_Section("E3Hud_Hub_PetBuff", "ListView")]
+		public bool E3Hud_Hub_PetBuff_ListView = false;
+		[INI_Section("E3Hud_Hub_PetBuff", "ShowProgressBars")]
+		public bool E3Hud_Hub_PetBuff_ShowProgressBars = true;
+
+		[INI_Section("E3Hud_Hub_Song", "SelectedFont")]
+		public string E3Hud_Hub_Song_SelectedFont = "robo";
+
+		[INI_Section("E3Hud_Hub_Song", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_Song_SelectedFontSize = 16;
+
+
+		[INI_Section("E3Hud_Hub_Song", "Detached")]
+		public bool E3Hud_Hub_Song_Detached = false;
+		[INI_Section("E3Hud_Hub_Song", "IconSize")]
+		public int E3Hud_Hub_Song_IconSize = 40;
+		[INI_Section("E3Hud_Hub_Song", "FadeTimeInMS")]
+		public Int32 E3Hud_Hub_Song_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub_Song", "Alpha")]
+		public float E3Hud_Hub_Song_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_Song", "Locked")]
+		public bool E3Hud_Hub_Song_Locked = false;
+		[INI_Section("E3Hud_Hub_Song", "ListView")]
+		public bool E3Hud_Hub_Song_ListView = false;
+		[INI_Section("E3Hud_Hub_Song", "ShowProgressBars")]
+		public bool E3Hud_Hub_Song_ShowProgressBars = true;
+
+		[INI_Section("E3Hud_Hub_HotButtons", "Alpha")]
+		public float E3Hud_Hub_HotButtons_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_HotButtons", "ButtonSizeX")]
+		public int E3Hud_Hub_HotButtons_ButtonSizeX = 50;
+		[INI_Section("E3Hud_Hub_HotButtons", "ButtonSizeY")]
+		public int E3Hud_Hub_HotButtons_ButtonSizeY = 30;
+		[INI_Section("E3Hud_Hub_HotButtons", "Detached")]
+		public bool E3Hud_Hub_HotButtons_Detached = false;
+		[INI_Section("E3Hud_Hub_HotButtons", "SelectedFont")]
+		public string E3Hud_Hub_HotButtons_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_HotButtons", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_HotButtons_SelectedFontSize = 16;
+
+		[INI_Section("E3Hud_Hub_HotButtons_UseDefaultDynamicButtons", "UseDefaultDynamicButtons")]
+		public bool E3Hud_Hub_HotButtons_UseDefaultDynamicButtons = true;
+		[INI_Section("E3Hud_Hub_HotButtons", "Locked")]
+		public bool E3Hud_Hub_HotButtons_Locked = false;
+
+		[INI_Section("E3Hud_Hub_HotButtons_Dynamic", "")]
+		public List<Hotbutton_DynamicButton> E3Hud_Hub_HotButtons_DynamicButtons = new List<Hotbutton_DynamicButton>();
+
+		[INI_Section("E3Hud_Hub_Debuff", "SelectedFont")]
+		public string E3Hud_Hub_Debuff_SelectedFont = "robo";
+		[INI_Section("E3Hud_Hub_Debuff", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_Debuff_SelectedFontSize = 16;
+
+		[INI_Section("E3Hud_Hub_Debuff", "Detached")]
+		public bool E3Hud_Hub_Debuff_Detached = false;
+		[INI_Section("E3Hud_Hub_Debuff", "IconSize")]
+		public int E3Hud_Hub_Debuff_IconSize = 40;
+		[INI_Section("E3Hud_Hub_Debuff", "FadeTimeInMS")]
+		public Int32 E3Hud_Hub_Debuff_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub_Debuff", "Alpha")]
+		public float E3Hud_Hub_Debuff_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_Debuff", "Locked")]
+		public bool E3Hud_Hub_Debuff_Locked = false;
+		[INI_Section("E3Hud_Hub_Debuff", "ListView")]
+		public bool E3Hud_Hub_Debuff_ListView = false;
+
 
 		[INI_Section("AutoMed", "Override Old Settings and use This(On/Off)")]
 		public bool AutoMed_OverrideOldSettings;
@@ -220,6 +432,9 @@ namespace E3Core.Settings
 		[INI_Section("Rampage Actions", "Action")]
 		public List<Spell> RampageSpells = new List<Spell>();
 
+		[INI_Section("Brace Actions", "Action")]
+		public List<Spell> BraceSpells = new List<Spell>();
+
 		[INI_Section("Buffs", "Instant Buff")]
 		public List<Spell> InstantBuffs = new List<Spell>();
 		[INI_Section("Buffs", "Self Buff")]
@@ -287,7 +502,12 @@ namespace E3Core.Settings
 		public bool Alerts_RampageMessages = true;
 		[INI_Section("Alerts", "Reflect Messages(On/Off)")]
 		public bool Alerts_ReflectMessages = true;
-
+		[INI_Section("Alerts", "Buff Stack Messages(On/Off)")]
+		public bool Alerts_BuffStackMessages = true;
+		[INI_Section("Alerts", "Task Updated Message(On/Off)")]
+		public bool Alerts_TaskUpdatedMessages = true;
+		
+		//Buff Stack Messages(On/Off)
 		//debuffs
 		[INI_Section("Debuffs", "Debuff on Assist")]
 		public List<Spell> Debuffs_OnAssist = new List<Spell>();
@@ -503,7 +723,7 @@ namespace E3Core.Settings
 		[INI_Section("CPU", "PublishStateDataInMS")]
 		public Int32 CPU_PublishStateDataInMS = 100;
 		[INI_Section("CPU", "PublishBuffDataInMS")]
-		public Int32 CPU_PublishBuffDataInMS = 1000;
+		public Int32 CPU_PublishBuffDataInMS = 500;
 		[INI_Section("CPU", "PublishMiscDataInMS")]
 		public Int32 CPU_PublishMiscDataInMS = 300;
 		[INI_Section("CPU", "PublishSlowDataInMS")]
@@ -680,16 +900,133 @@ namespace E3Core.Settings
 			LoadKeyData("Misc", "Delay in MS After CastWindow Drops For Spell Completion", ParsedData, ref Misc_DelayAfterCastWindowDropsForSpellCompletion);
 			LoadKeyData("Misc", "If FD stay down (true/false)", ParsedData, ref IfFDStayDown);
 			LoadKeyData("Misc", "Debuffs/Dots are visible", ParsedData, ref Misc_VisibleDebuffsDots);
-			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnchancedRotationSpeed);
+			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnhancedRotationSpeed);
 			LoadKeyData("Misc", "Echo Command Received", ParsedData, ref Misc_EchoCommandReceived);
 
 			LoadKeyData("UI Theme", "E3 Config", ParsedData, ref UITheme_E3Config);
-			LoadFloatKeyData("UI Theme", "Rounding", ParsedData, ref UITheme_Rounding);
+			LoadKeyData("UI Theme", "Rounding", ParsedData, ref UITheme_Rounding);
+
+			LoadKeyData("E3Hud_Hub", "Alpha", ParsedData, ref E3Hud_Hub_Alpha);
+			LoadKeyData("E3Hud_Hub", "ShowColumnHP", ParsedData, ref E3Hud_Hub_ShowColumnHP);
+			LoadKeyData("E3Hud_Hub", "ShowColumnEnd", ParsedData, ref E3Hud_Hub_ShowColumnEnd);
+			LoadKeyData("E3Hud_Hub", "ShowColumnMana", ParsedData, ref E3Hud_Hub_ShowColumnMana);
+			LoadKeyData("E3Hud_Hub", "ShowColumnDistance", ParsedData, ref E3Hud_Hub_ShowColumnDistance);
+
+			LoadKeyData("E3Hud_Hub", "ShowColumnAggro", ParsedData, ref E3Hud_Hub_ShowColumnAggro);
+			LoadKeyData("E3Hud_Hub", "ShowColumnAggroXTarget", ParsedData, ref E3Hud_Hub_ShowColumnAggroXTarget);
+			LoadKeyData("E3Hud_Hub", "ShowColumnAggroMinXTarget", ParsedData, ref E3Hud_Hub_ShowColumnAggroMinXTarget);
+
+			LoadKeyData("E3Hud_Hub", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub", "RGBA_NameColor", ParsedData, E3Hud_Hub_RGBA_NameColor);
+			LoadKeyData("E3Hud_Hub", "RGBA_HealthBar", ParsedData, E3Hud_Hub_RGBA_HealthBar);
+			LoadKeyData("E3Hud_Hub", "RGBA_PetHealthBar", ParsedData, E3Hud_Hub_RGBA_PetHealthBar);
+
+
+			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData, ref E3Hud_Hub_SelectedFont);
+			LoadKeyData("E3Hud_Hub", "SelectedFontSize", ParsedData, ref E3Hud_Hub_SelectedFontSize);
+
+			LoadKeyData("E3Hud_Hub", "Locked", ParsedData, ref E3Hud_Hub_Locked);
+			LoadKeyData("E3Hud_Hub", "DisplayHPBar", ParsedData, ref E3Hud_Hub_DisplayHPBar);
+			LoadKeyData("E3Hud_Hub", "LeftClickAction", ParsedData, ref E3Hud_Hub_LeftClickAction);
+			LoadKeyData("E3Hud_Hub", "ShowTickTimer", ParsedData, ref E3Hud_Hub_ShowTickTimer);
+			LoadKeyData("E3Hud_Hub", "ShowHotButtons", ParsedData, ref E3Hud_Hub_ShowHotButtons);
+			LoadKeyData("E3Hud_Hub", "ShowPlayerInfo", ParsedData, ref E3Hud_Hub_ShowPlayerInfo);
+			LoadKeyData("E3Hud_Hub", "ShowTargetInfo", ParsedData, ref E3Hud_Hub_ShowTargetInfo);
+			LoadKeyData("E3Hud_Hub", "PeerSortOrder", ParsedData, ref E3Hud_Hub_PeerSortOrder);
+
+
+
+			LoadKeyData("E3Hud_Casting", "SelectedFont", ParsedData, ref E3Hud_Casting_SelectedFont);
+			LoadKeyData("E3Hud_Casting", "SelectedFontSize", ParsedData, ref E3Hud_Casting_SelectedFontSize);
+
+			LoadKeyData("E3Hud_Casting", "Alpha", ParsedData, ref E3Hud_Casting_Alpha);
+			LoadKeyData("E3Hud_Casting", "Locked", ParsedData, ref E3Hud_Casting_Locked);
+			LoadKeyData("E3Hud_Casting", "RGBA_NameColor", ParsedData, E3Hud_Casting_RGBA_NameColor);
+
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFont", ParsedData, ref E3Hud_Hub_PlayerInfo_SelectedFont);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFontSize", ParsedData, ref E3Hud_Hub_PlayerInfo_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "Alpha", ParsedData, ref E3Hud_Hub_PlayerInfo_Alpha);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "Locked", ParsedData, ref E3Hud_Hub_PlayerInfo_Locked);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "Detached", ParsedData, ref E3Hud_Hub_PlayerInfo_Detached);
+
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "RGBA_DiscProgressBar", ParsedData, E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowHPAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowHPAsPercent);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowManaAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowManaAsPercent);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowEndAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowEndAsPercent);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowProgressBars", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowProgressBars);
+
+			LoadKeyData("E3Hud_Hub_TargetInfo", "Alpha", ParsedData, ref E3Hud_Hub_TargetInfo_Alpha);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "SelectedFont", ParsedData, ref E3Hud_Hub_TargetInfo_SelectedFont);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "SelectedFontSize", ParsedData, ref E3Hud_Hub_TargetInfo_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "IconSize", ParsedData, ref E3Hud_Hub_TargetInfo_IconSize);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "Detached", ParsedData, ref E3Hud_Hub_TargetInfo_Detached);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "Locked", ParsedData, ref E3Hud_Hub_TargetInfo_Locked);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "ConColorBorder", ParsedData, ref E3Hud_Hub_TargetInfo_ConColorBorder);
+
+			LoadKeyData("E3Hud_Hub_Buff", "Alpha", ParsedData, ref E3Hud_Hub_Buff_Alpha);
+			LoadKeyData("E3Hud_Hub_Buff", "Detached", ParsedData, ref E3Hud_Hub_Buff_Detached);
+			LoadKeyData("E3Hud_Hub_Buff", "IconSize", ParsedData, ref E3Hud_Hub_Buff_IconSize);
+			LoadKeyData("E3Hud_Hub_Buff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Buff_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_Buff", "Locked", ParsedData, ref E3Hud_Hub_Buff_Locked);
+			LoadKeyData("E3Hud_Hub_Buff", "ListView", ParsedData, ref E3Hud_Hub_Buff_ListView);
+			LoadKeyData("E3Hud_Hub_Buff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Buff_ShowProgressBars);
+			LoadKeyData("E3Hud_Hub_Buff", "SelectedFont", ParsedData, ref E3Hud_Hub_Buff_SelectedFont);
+			LoadKeyData("E3Hud_Hub_Buff", "SelectedFontSize", ParsedData, ref E3Hud_Hub_Buff_SelectedFontSize);
+
+
+			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor);
+			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor);
+			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_NameColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_NameColor);
+
+			LoadKeyData("E3Hud_Hub_PetBuff", "Alpha", ParsedData, ref E3Hud_Hub_PetBuff_Alpha);
+			LoadKeyData("E3Hud_Hub_PetBuff", "Detached", ParsedData, ref E3Hud_Hub_PetBuff_Detached);
+			LoadKeyData("E3Hud_Hub_PetBuff", "IconSize", ParsedData, ref E3Hud_Hub_PetBuff_IconSize);
+			LoadKeyData("E3Hud_Hub_PetBuff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_PetBuff_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_PetBuff", "Locked", ParsedData, ref E3Hud_Hub_PetBuff_Locked);
+			LoadKeyData("E3Hud_Hub_PetBuff", "ListView", ParsedData, ref E3Hud_Hub_PetBuff_ListView);
+			LoadKeyData("E3Hud_Hub_PetBuff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_PetBuff_ShowProgressBars);
+			LoadKeyData("E3Hud_Hub_PetBuff", "SelectedFont", ParsedData, ref E3Hud_Hub_PetBuff_SelectedFont);
+			LoadKeyData("E3Hud_Hub_PetBuff", "SelectedFontSize", ParsedData, ref E3Hud_Hub_PetBuff_SelectedFontSize);
+
+
+			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData, ref E3Hud_Hub_Song_Alpha);
+			LoadKeyData("E3Hud_Hub_Song", "Detached", ParsedData, ref E3Hud_Hub_Song_Detached);
+			LoadKeyData("E3Hud_Hub_Song", "IconSize", ParsedData, ref E3Hud_Hub_Song_IconSize);
+			LoadKeyData("E3Hud_Hub_Song", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Song_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_Song", "Locked", ParsedData, ref E3Hud_Hub_Song_Locked);
+			LoadKeyData("E3Hud_Hub_Song", "ListView", ParsedData, ref E3Hud_Hub_Song_ListView);
+			LoadKeyData("E3Hud_Hub_Song", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Song_ShowProgressBars);
+			LoadKeyData("E3Hud_Hub_Song", "SelectedFont", ParsedData, ref E3Hud_Hub_Song_SelectedFont);
+			LoadKeyData("E3Hud_Hub_Song", "SelectedFontSize", ParsedData, ref E3Hud_Hub_Song_SelectedFontSize);
+
+			LoadKeyData("E3Hud_Hub_HotButtons", "Alpha", ParsedData, ref E3Hud_Hub_HotButtons_Alpha);
+			LoadKeyData("E3Hud_Hub_HotButtons", "Detached", ParsedData, ref E3Hud_Hub_HotButtons_Detached);
+			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeX", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeX);
+			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeY", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeY);
+			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFont", ParsedData, ref E3Hud_Hub_HotButtons_SelectedFont);
+			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFontSize", ParsedData, ref E3Hud_Hub_HotButtons_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", ParsedData, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
+			LoadKeyData("E3Hud_Hub_HotButtons", "Locked", ParsedData, ref E3Hud_Hub_HotButtons_Locked);
+
+
+			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic", ParsedData, E3Hud_Hub_HotButtons_DynamicButtons);
+
+			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData, ref E3Hud_Hub_Debuff_Alpha);
+			LoadKeyData("E3Hud_Hub_Debuff", "Detached", ParsedData, ref E3Hud_Hub_Debuff_Detached);
+			LoadKeyData("E3Hud_Hub_Debuff", "IconSize", ParsedData, ref E3Hud_Hub_Debuff_IconSize);
+			LoadKeyData("E3Hud_Hub_Debuff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Debuff_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_Debuff", "Locked", ParsedData, ref E3Hud_Hub_Debuff_Locked);
+			LoadKeyData("E3Hud_Hub_Debuff", "ListView", ParsedData, ref E3Hud_Hub_Debuff_ListView);
+			LoadKeyData("E3Hud_Hub_Debuff", "SelectedFont", ParsedData, ref E3Hud_Hub_Debuff_SelectedFont);
+			LoadKeyData("E3Hud_Hub_Debuff", "SelectedFontSize", ParsedData, ref E3Hud_Hub_Debuff_SelectedFontSize);
+
+
 
 			LoadKeyData("Alerts", "Rampage Messages(On/Off)", ParsedData, ref Alerts_RampageMessages);
 			LoadKeyData("Alerts", "Damage Messages(On/Off)", ParsedData, ref Alerts_DamageMessages);
 			LoadKeyData("Alerts", "Reflect Messages(On/Off)", ParsedData, ref Alerts_ReflectMessages);
-
+			LoadKeyData("Alerts", "Buff Stack Messages(On/Off)", ParsedData, ref Alerts_BuffStackMessages);
+			LoadKeyData("Alerts", "Task Updated Message(On/Off)", ParsedData, ref Alerts_TaskUpdatedMessages);
 
 			LoadKeyData("Manastone", "Override General Settings (On/Off)", ParsedData, ref Manastone_OverrideGeneralSettings);
 			LoadKeyData("Manastone", "Manastone Enabled (On/Off)", ParsedData, ref Manastone_Enabled);
@@ -722,6 +1059,7 @@ namespace E3Core.Settings
 
 			LoadKeyData("Rampage Actions", "Action", ParsedData, RampageSpells);
 
+			LoadKeyData("Brace Actions", "Action", ParsedData, BraceSpells);
 
 			LoadKeyData("Report", "ReportEntry", ParsedData, Report_Entries);
 
@@ -932,6 +1270,10 @@ namespace E3Core.Settings
 			LoadKeyData("Cursor Delete", "Delete", ParsedData, Cursor_Delete);
 
 			LoadKeyData("Nukes", "Main", ParsedData, Nukes);
+			foreach(var nuke in Nukes)
+			{
+				nuke.IsNukeSection = true;
+			}
 			LoadKeyData("Stuns", "Main", ParsedData, Stuns);
 
 			LoadKeyData("Dispel", "Main", ParsedData, Dispels);
@@ -951,6 +1293,8 @@ namespace E3Core.Settings
 			//LoadKeyData("LootCommander", "Looter", ParsedData, LootCommander_Looters);
 
 			LoadKeyData("Burn", ParsedData, BurnCollection);
+
+
 			LoadKeyData("CommandSets", ParsedData, CommandCollection);
 
 			LoadKeyData("Pets", "Pet Spell", ParsedData, PetSpell);
@@ -1047,7 +1391,7 @@ namespace E3Core.Settings
 
 		}
 
-		public IniData createNewINIData()
+		public IniData createNewINIData(bool forBrandNewFile)
 		{
 			IniData newFile = new IniData();
 
@@ -1075,6 +1419,144 @@ namespace E3Core.Settings
 			section.Keys.AddKey("E3 Config", "DarkTeal");
 			section.Keys.AddKey("Rounding", "8.0");
 
+
+			newFile.Sections.AddSection("E3Hud_Hub");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+			section.Keys.AddKey("ShowColumnHP", "True");
+			section.Keys.AddKey("ShowColumnEnd", "True");
+			section.Keys.AddKey("ShowColumnMana", "True");
+			section.Keys.AddKey("ShowColumnDistance", "True");
+
+			section.Keys.AddKey("ShowColumnAggro", "True");
+			section.Keys.AddKey("ShowColumnAggroXTarget", "True");
+			section.Keys.AddKey("ShowColumnAggroMinXTarget", "False");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("RGBA_NameColor", "0.9486451,0.9714931,0.9768786,1");
+			section.Keys.AddKey("RGBA_HealthBar", "0.9843137,0,0.1686275,0.4509804");
+			section.Keys.AddKey("RGBA_PetHealthBar", "0.2980392,0.9960784,0,0.4901961");
+			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("DisplayHPBar", "True");
+			section.Keys.AddKey("LeftClickAction", "Target");
+			section.Keys.AddKey("ShowTickTimer", "False");
+			section.Keys.AddKey("ShowHotButtons", "True");
+			section.Keys.AddKey("ShowPlayerInfo", "True");
+			section.Keys.AddKey("ShowTargetInfo", "True");
+			section.Keys.AddKey("PeerSortOrder", "Me On Top");
+
+			newFile.Sections.AddSection("E3Hud_Casting");
+			section = newFile.Sections.GetSectionData("E3Hud_Casting");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+			section.Keys.AddKey("RGBA_NameColor", "0.169f, 1f, 0f, 1f");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("Locked", "False");
+
+			newFile.Sections.AddSection("E3Hud_Hub_PlayerInfo");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_PlayerInfo");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("RGBA_DiscProgressBar", "0,1,1,0.4");
+			section.Keys.AddKey("ShowHPAsPercent", "False");
+			section.Keys.AddKey("ShowManaAsPercent", "False");
+			section.Keys.AddKey("ShowEndAsPercent", "False");
+			section.Keys.AddKey("ShowProgressBars", "True");
+
+			newFile.Sections.AddSection("E3Hud_Hub_TargetInfo");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_TargetInfo");
+
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("IconSize", "24");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ConColorBorder", "2");
+
+			newFile.Sections.AddSection("E3Hud_Hub_Buff");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_Buff");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+
+			section.Keys.AddKey("IconSize", "40");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ListView", "False");
+			section.Keys.AddKey("ShowProgressBars", "True");
+			section.Keys.AddKey("RGBA_ListView_ProgressBarBlinkColor", "0.8,0.2f,0.2f,0.4f");
+			section.Keys.AddKey("RGBA_ListView_ProgressBarColor", "0,1,0.9756098,0.4");
+			section.Keys.AddKey("RGBA_ListView_NameColor", "1,1,1,1");
+
+
+			newFile.Sections.AddSection("E3Hud_Hub_PetBuff");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_PetBuff");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("IconSize", "40");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ListView", "False");
+			section.Keys.AddKey("ShowProgressBars", "True");
+
+			newFile.Sections.AddSection("E3Hud_Hub_Song");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_Song");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("IconSize", "40");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ListView", "False");
+			section.Keys.AddKey("ShowProgressBars", "True");
+
+			newFile.Sections.AddSection("E3Hud_Hub_Debuff");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_Debuff");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("IconSize", "40");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ListView", "False");
+
+			newFile.Sections.AddSection("E3Hud_Hub_HotButtons_Dynamic");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons_Dynamic");
+
+			if(E3Hud_Hub_HotButtons_UseDefaultDynamicButtons)
+			{
+				section.Keys.AddKey("Invite", "/invite");
+				section.Keys.AddKey("Disband", "/disband");
+				section.Keys.AddKey("Follow Me", "/followme");
+				section.Keys.AddKey("Follow off", "/followoff");
+				section.Keys.AddKey("Click It", "/clickit");
+				section.Keys.AddKey("Move to Me", "/mtm");
+			}
+
+			newFile.Sections.AddSection("E3Hud_Hub_HotButtons");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("Detached", "False");
+			section.Keys.AddKey("ButtonSizeX", "80");
+			section.Keys.AddKey("ButtonSizeY", "25");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+
+			section.Keys.AddKey("UseDefaultDynamicButtons", "True");
+			section.Keys.AddKey("Locked", "False");
+
+
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");
 			section.Keys.AddKey("Override Old Settings and use This(On/Off)", "Off");
@@ -1089,6 +1571,8 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Rampage Messages(On/Off)", "On");
 			section.Keys.AddKey("Damage Messages(On/Off)", "On");
 			section.Keys.AddKey("Reflect Messages(On/Off)", "On");
+			section.Keys.AddKey("Buff Stack Messages(On/Off)", "On");
+			section.Keys.AddKey("Task Updated Message(On/Off)", "On");
 
 
 			newFile.Sections.AddSection("Assist Settings");
@@ -1209,7 +1693,11 @@ namespace E3Core.Settings
 			{
 				newFile.Sections.AddSection("Bard");
 				section = newFile.Sections.GetSectionData("Bard");
-				section.Keys.AddKey("MelodyIf", "");
+				if(forBrandNewFile)
+				{
+					section.Keys.AddKey("MelodyIf", "main/Ifs|MainIf");
+					section.Keys.AddKey("MelodyIf", "combat/Ifs|CombatIf");
+				}
 				section.Keys.AddKey("AutoMezSong", "");
 				section.Keys.AddKey("AutoMezSongDuration in seconds", "18");
 				section.Keys.AddKey("Auto-Sonata (On/Off)", "Off");
@@ -1357,6 +1845,10 @@ namespace E3Core.Settings
 			section = newFile.Sections.GetSectionData("Rampage Actions");
 			section.Keys.AddKey("Action", "");
 
+			newFile.Sections.AddSection("Brace Actions");
+			section = newFile.Sections.GetSectionData("Brace Actions");
+			section.Keys.AddKey("Action", "");
+
 			newFile.Sections.AddSection("Blocked Buffs");
 			section = newFile.Sections.GetSectionData("Blocked Buffs");
 			section.Keys.AddKey("BuffName", "");
@@ -1378,6 +1870,23 @@ namespace E3Core.Settings
 
 
 			newFile.Sections.AddSection("Ifs");
+			
+			if(CharacterClass == Class.Bard && forBrandNewFile)
+			{
+				section = newFile.Sections.GetSectionData("Ifs");
+				//add the default melody ifs sections
+				section.Keys.AddKey("MainIf", "!(${InCombat})");
+				section.Keys.AddKey("CombatIf", "${InCombat}");
+
+				newFile.Sections.AddSection("main Melody");
+				section = newFile.Sections.GetSectionData("main Melody");
+				section.Keys.AddKey("Song", "");
+				newFile.Sections.AddSection("combat Melody");
+				section = newFile.Sections.GetSectionData("combat Melody");
+				section.Keys.AddKey("Song", "");
+
+			}
+			
 
 			newFile.Sections.AddSection("Events");
 			newFile.Sections.AddSection("EventLoop");
@@ -1443,16 +1952,17 @@ namespace E3Core.Settings
 
 			FileIniDataParser parser = e3util.CreateIniParser();
 
-			IniData newFile = createNewINIData();
+			
 
 			if (!String.IsNullOrEmpty(CurrentSet))
 			{
 				fileName = fileName.Replace(".ini", "_" + CurrentSet + ".ini");
 			}
-
-
+			IniData newFile = null; 
 			if (!File.Exists(fileName))
 			{
+				
+				newFile = createNewINIData(forBrandNewFile:true);
 				if (!Directory.Exists(_configFolder + _botFolder))
 				{
 					Directory.CreateDirectory(_configFolder + _botFolder);
@@ -1470,6 +1980,13 @@ namespace E3Core.Settings
 				//Create an instance of a ini file parser
 				FileIniDataParser fileIniData = e3util.CreateIniParser();
 				IniData tParsedData = fileIniData.ReadFile(fileName);
+
+
+				//before we merge, we need to check on hotkey dynamic to see if its set to true or false in the current ini data
+				//this is because there is a filter on createNewINI data
+				LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", tParsedData, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
+				newFile = createNewINIData(false);
+
 				if (_mergeUpdates)
 				{
 					//overwrite newfile with what was already there
@@ -1499,7 +2016,9 @@ namespace E3Core.Settings
 			var charSettings = e3util.GetSettingsMappedToInI();
 			List<string> transferedKeyComments = new List<string>();
 
-			IniData defaultFile = createNewINIData();
+			IniData defaultFile = createNewINIData(forBrandNewFile:false);
+
+
 
 			//lets save the normal stuff
 			foreach (var pair in charSettings)
@@ -1589,6 +2108,11 @@ namespace E3Core.Settings
 									section_keyCollection.AddKey(keyName, spell.ToConfigEntry());
 								}
 							}
+							else if (reference is float[])
+							{
+								float[] floatList = (float[])reference;
+								section_keyCollection.AddKey(keyName, String.Join(",", floatList));
+							}
 							else if (reference is List<SpellRequest>)
 							{
 								List<SpellRequest> spellList = (List<SpellRequest>)reference;
@@ -1656,6 +2180,14 @@ namespace E3Core.Settings
 
 								}
 							}
+							else if (reference is List<Hotbutton_DynamicButton>)
+							{
+								IList<Hotbutton_DynamicButton> hotbuttons = (IList<Hotbutton_DynamicButton>)reference;
+								foreach (var hb in hotbuttons)
+								{
+									section_keyCollection.AddKey(hb.Name, hb.Command);
+								}
+							}
 							else if (reference is IDictionary<string, CommandSet>)
 							{
 								IDictionary<string, CommandSet> stringDict = (IDictionary<string, CommandSet>)reference;
@@ -1682,6 +2214,7 @@ namespace E3Core.Settings
 								{
 									section_keyCollection.AddKey(keyName, (string)reference);
 								}
+
 								else if (reference is bool)
 								{
 									string boolString = "On";
@@ -1694,6 +2227,14 @@ namespace E3Core.Settings
 								else if (reference is Int32)
 								{
 									section_keyCollection.AddKey(keyName, ((Int32)reference).ToString());
+								}
+								else if (reference is Single)
+								{
+									section_keyCollection.AddKey(keyName, ((Single)reference).ToString());
+								}
+								else if (reference is decimal)
+								{
+									section_keyCollection.AddKey(keyName, ((decimal)reference).ToString());
 								}
 								else if (reference is Int64)
 								{

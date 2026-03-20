@@ -137,6 +137,12 @@ namespace E3Core.Processors
                 }
                 Spell spell = new Spell(spellName, E3.CharacterSettings.ParsedData);
 
+                //check if the spell is a buff
+                string category = MQ.Query<String>($"${{Spell[{spellName}].Category}}");
+                if (!String.IsNullOrWhiteSpace(category) && category.IndexOf("Buff", 0, StringComparison.OrdinalIgnoreCase) != -1)
+                {
+                    spell.IsBuff = true;  
+                }
                 if (spell.SpellID > 0)
 				{
 					//get a valid target for ifs check

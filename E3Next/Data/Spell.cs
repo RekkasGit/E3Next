@@ -20,7 +20,8 @@ namespace E3Core.Data
         Ability,
         Item,
         None,
-        SpellInBook
+        SpellInBook,
+        SpellByID
     }
 
     public class Spell
@@ -89,6 +90,13 @@ namespace E3Core.Data
 					}
 				}
 			}
+            else
+            {
+                if(CastTypeOverride!=CastingType.None)
+                {
+					CastType = CastTypeOverride;
+				}
+            }
 			
         }
 
@@ -135,10 +143,6 @@ namespace E3Core.Data
 					else if (value.Equals("Debug", StringComparison.OrdinalIgnoreCase))
 					{
 						Debug = true;
-					}
-					else if (value.Equals("IgnoreStackRules", StringComparison.OrdinalIgnoreCase))
-					{
-						IgnoreStackRules = true;
 					}
 					else if (value.Equals("IgnoreStackRules", StringComparison.OrdinalIgnoreCase))
 					{
@@ -365,6 +369,10 @@ namespace E3Core.Data
                     else if (value.StartsWith("Zone|", StringComparison.OrdinalIgnoreCase))
                     {
                         Zone = GetArgument<String>(value);
+                        if(!String.IsNullOrWhiteSpace(Zone))
+                        {
+                            Zone_Collection= Zone.Split(new char[] {','},StringSplitOptions.RemoveEmptyEntries).ToList();
+                        }
                     }
                     else if (value.StartsWith("MinSick|", StringComparison.OrdinalIgnoreCase))
                     {
@@ -567,38 +575,43 @@ namespace E3Core.Data
             Initialized = true;
 			if (CastTypeOverride == CastingType.None)
 			{
-				if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
-				{
-					CastType = CastingType.AA;
-				}
-				else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}"))
-				{
-					CastType = CastingType.Spell;
-					SpellInBook = true;
-				}
-				else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}"))
-				{
-					CastType = CastingType.Disc;
-				}
-				else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}") || String.Compare("Slam", CastName, true) == 0)
-				{
-					CastType = CastingType.Ability;
-				}
-				else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}"))
-				{
+                if(Int32.TryParse(CastName,out _))
+                {
+                    //its a spell id of some type
+                    CastType = CastingType.SpellByID;
+                }
+                else if (MQ.Query<bool>($"${{Me.AltAbility[{CastName}].Spell}}"))
+                {
+                    CastType = CastingType.AA;
+                }
+                else if (MQ.Query<bool>($"${{Me.Book[{CastName}]}}"))
+                {
+                    CastType = CastingType.Spell;
+                    SpellInBook = true;
+                }
+                else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}"))
+                {
+                    CastType = CastingType.Disc;
+                }
+                else if (MQ.Query<bool>($"${{Me.Ability[{CastName}]}}") || String.Compare("Slam", CastName, true) == 0)
+                {
+                    CastType = CastingType.Ability;
+                }
+                else if (MQ.Query<bool>($"${{FindItem[={CastName}]}}"))
+                {
 
-					CastType = CastingType.Item;
-				}
-				else if (MQ.Query<bool>($"${{Spell[{CastName}]}}"))
-				{
-					//final check to see if its a spell, that maybe a mob casts?
-					CastType = CastingType.Spell;
-				}
-				else
-				{
-					//bad spell/item/etc
-					CastType = CastingType.None;
-				}
+                    CastType = CastingType.Item;
+                }
+                else if (MQ.Query<bool>($"${{Spell[{CastName}]}}"))
+                {
+                    //final check to see if its a spell, that maybe a mob casts?
+                    CastType = CastingType.Spell;
+                }
+                else
+                {
+                    //bad spell/item/etc
+                    CastType = CastingType.None;
+                }
 			}
 			else
 			{
@@ -816,11 +829,12 @@ namespace E3Core.Data
                 Subcategory = MQ.Query<String>($"${{Me.AltAbility[{CastName}].Spell.Subcategory}}");
                
 			}
-			else if (CastType == CastingType.Spell || CastType== CastingType.SpellInBook)
+			else if (CastType == CastingType.Spell || CastType== CastingType.SpellInBook || CastType==CastingType.SpellByID)
             {
 				
 				if (SpellInBook && Int32.TryParse(CastName, out _)==false)
                 {
+                    CastType = CastingType.Spell;
 					//we already have this data populated, just kick out
 					if (SpellDataLookup.ContainsKey(CastName))
 					{
@@ -881,6 +895,7 @@ namespace E3Core.Data
                 else
                 {
                    
+                   
 
 
                     TargetType = MQ.Query<String>($"${{Spell[{CastName}].TargetType}}");
@@ -902,7 +917,6 @@ namespace E3Core.Data
                     Description = MQ.Query<string>($"${{Spell[{CastName}].Description}}");
 					ResistType = MQ.Query<String>($"${{Spell[{CastName}].ResistType}}");
 					ResistAdj = MQ.Query<Int32>($"${{Spell[{CastName}].ResistAdj}}");
-
 
 					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
                     {
@@ -927,8 +941,14 @@ namespace E3Core.Data
 
                     }
                     Mana = MQ.Query<Int32>($"${{Spell[{CastName}].Mana}}");
-                    SpellName = CastName;
-                    SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
+					SpellID = MQ.Query<Int32>($"${{Spell[{CastName}].ID}}");
+					if (CastType == CastingType.SpellByID)
+					{
+						CastName = MQ.Query<String>($"${{Spell[{CastName}].Name}}");
+                        CastType = CastingType.Spell;
+					}
+					SpellName = CastName;
+                   
                     CastID = SpellID;
 					//this was to work around issues using spell IDs
 					if (CastType == CastingType.SpellInBook)
@@ -1035,6 +1055,7 @@ namespace E3Core.Data
                 }
             }
         }
+        public bool IsNukeSection = false;
 		public Int32 AAID = 0;
         public decimal MyCastTimeInSeconds = 0;
         public Double MyRange;
@@ -1076,6 +1097,7 @@ namespace E3Core.Data
         public Int32 MinAggro;
         public Int32 MaxAggro;
         public String Zone = "All";
+        public List<string> Zone_Collection = new List<string>();
         private const Int32 MinSickDefault = 2;
         public Int32 MinSick = MinSickDefault;
         public Boolean AllowSpellSwap;
@@ -1113,6 +1135,7 @@ namespace E3Core.Data
         public bool IsShortBuff = false;
         public Int32 HealthMax = 100;
         public bool IgnoreStackRules = false;
+        public bool IgnoreResistanceCheck = false;
         public bool IsDebuff = false;
         public bool IsDoT = false;
 		public bool IsBuff = false;
@@ -1483,7 +1506,7 @@ namespace E3Core.Data
 			string t_AfterEventDelay = AfterEventDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterEventDelay}";
 			string t_AfterSpellDelay = AfterSpellDelay == 0 ? String.Empty : $"/AfterEventDelay|{AfterSpellDelay}";
 			string t_BeforeEventDelay = BeforeEventDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeEventDelay}";
-			string t_BeforeSpellDelay = BeforeSpellDelay == 0 ? String.Empty : $"/BeforeEventDelay|{BeforeSpellDelay}";
+			string t_BeforeSpellDelay = BeforeSpellDelay == 0 ? String.Empty : $"/BeforeSpellDelay|{BeforeSpellDelay}";
 			string t_AfterCastDelay = AfterCastDelay == 0 ? String.Empty : $"/AfterCastDelay|{AfterCastDelay}";
 			string t_AfterCastCompletedDelay= AfterCastCompletedDelay == 0 ? String.Empty : $"/AfterCastCompletedDelay|{AfterCastCompletedDelay}";
 			string t_SongRefreshTime = SongRefreshTime == 18 ? String.Empty : $"/SongRefreshTime|{SongRefreshTime}";
@@ -1491,10 +1514,11 @@ namespace E3Core.Data
 			string t_StackRequestTargets = (StackRequestTargets.Count==0) ? String.Empty : $"/StackRequestTargets|{String.Join(",",StackRequestTargets)}";
 			string t_StackCheckInterval = StackIntervalCheck == _stackIntervalCheckDefault ? String.Empty : $"/StackCheckInterval|{StackIntervalCheck/10000}";
 			string t_StackRecastDelay = StackRecastDelay == 0 ? String.Empty : $"/StackRecastDelay|{StackRecastDelay/1000}";
+            string t_MinHPTotal = MinHPTotal==0?String.Empty : $"/MinHPTotal|{MinHPTotal}";
+            string t_MinHP = MinHP == 0 ? String.Empty : $"/MinHP|{MinHP}";
 
 
-
-			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_MinAggro}{t_MaxAggro}{t_Delay}{t_RecastDelay}{t_NoTarget}{t_NoAggro}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_excludeClasses}{t_excludeNames}{t_GOM}{t_NoMidSongCast}{t_Debug}{t_Enabled}";
+			string returnValue = $"{CastName}{t_CastTarget}{t_GemNumber}{t_Ifs}{t_checkFor}{t_CastIF}{t_healPct}{t_healthMax}{t_noInterrupt}{t_Zone}{t_MinSick}{t_BeforeSpell}{t_AfterSpell}{t_BeforeEvent}{t_AfterEvent}{t_minMana}{t_maxMana}{t_MinEnd}{t_ignoreStackRules}{t_MinDurationBeforeRecast}{t_MaxTries}{t_Reagent}{t_CastTypeOverride}{t_PctAggro}{t_MinAggro}{t_MaxAggro}{t_Delay}{t_RecastDelay}{t_NoTarget}{t_NoAggro}{t_AfterEventDelay}{t_AfterSpellDelay}{t_BeforeEventDelay}{t_BeforeSpellDelay}{t_AfterCastDelay}{t_AfterCastCompletedDelay}{t_SongRefreshTime}{t_StackRequestItem}{t_StackRequestTargets}{t_StackCheckInterval}{t_StackRecastDelay}{t_excludeClasses}{t_excludeNames}{t_GOM}{t_NoMidSongCast}{t_Debug}{t_MinHPTotal}{t_MinHP}{t_Enabled}";
 			return returnValue;
 
 		}

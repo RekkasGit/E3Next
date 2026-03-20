@@ -84,15 +84,15 @@ namespace E3Core.Processors
         public static void Check_Stuns()
         {
 
-            Cast_Instasnt(E3.CharacterSettings.Stuns, ref _stunDelayTimeStamp);
+            Cast_Instant(E3.CharacterSettings.Stuns, ref _stunDelayTimeStamp);
         }
         [AdvSettingInvoke]
         public static void Check_Nukes()
         {
 
-            Cast_Instasnt(E3.CharacterSettings.Nukes, ref _nukeDelayTimeStamp);
+            Cast_Instant(E3.CharacterSettings.Nukes, ref _nukeDelayTimeStamp);
         }
-        private static void Cast_Instasnt(List<Data.Spell> spells, ref Double delayTimeStamp)
+        private static void Cast_Instant(List<Data.Spell> spells, ref Double delayTimeStamp)
         {
             if (Assist.AssistTargetID > 0)
             {
@@ -123,8 +123,11 @@ namespace E3Core.Processors
                                     continue;
                                 }
                             }
-                            //can't cast if it isn't ready
-                            if (Casting.InRange(Assist.AssistTargetID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
+                            //if there are resist settings setup for this spawn.
+                            if (E3.ResistSettings.ShouldSkip(spell, s)) continue;
+
+							//can't cast if it isn't ready
+							if (Casting.InRange(Assist.AssistTargetID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
                             {
                                 //we should have a valid target via check_assistStatus
                                 if (spell.Delay > 0 && delayTimeStamp > 0 && Core.StopWatch.ElapsedMilliseconds < delayTimeStamp)

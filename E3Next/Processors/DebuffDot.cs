@@ -87,23 +87,30 @@ namespace E3Core.Processors
 			using (_log.Trace())
 			{
 				_offAssistFullMobList.Clear();
-				foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
-				{
-					_offAssistFullMobList.Add(s.ID);
-					if (_mobsToOffAsist.Contains(s.ID)) continue;
-					//find all mobs that are close
-					if (s.PctHps < 10) continue;
-					if (s.TypeDesc != "NPC") continue;
-					if (!s.Targetable) continue;
-					if (!s.Aggressive) continue;
-					if (s.CleanName.EndsWith("s pet")) continue;
-					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
-					if (s.Distance > 200) break;//mob is too far away, and since it is ordered, kick out.
-											   //its valid to attack!
-                    if(_mobsToIgnoreOffAsist.Contains(s.ID)) continue;
+                using (MQ.GetDelayLock())
+                {
 
-					_mobsToOffAsist.Add(s.ID);
-				}
+
+
+                    foreach (var s in _spawns.Get().OrderBy(x => x.Distance))
+                    {
+                        _offAssistFullMobList.Add(s.ID);
+                        if (_mobsToOffAsist.Contains(s.ID)) continue;
+                        //find all mobs that are close
+                        if (s.PctHps < 10) continue;
+                        if (s.Dead) continue;
+                        if (s.TypeDesc != "NPC") continue;
+                        if (!s.Targetable) continue;
+                        if (!s.Aggressive) continue;
+                        if (s.CleanName.EndsWith("s pet")) continue;
+                        if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+                        if (s.Distance > 200) break;//mob is too far away, and since it is ordered, kick out.
+                                                    //its valid to attack!
+                        if (_mobsToIgnoreOffAsist.Contains(s.ID)) continue;
+
+                        _mobsToOffAsist.Add(s.ID);
+                    }
+                }
 				List<Int64> mobIdsToRemove = new List<Int64>();
 				foreach (var mobid in _mobsToOffAsist)
 				{
@@ -514,14 +521,7 @@ namespace E3Core.Processors
                     Casting.TrueTarget(mobid);
 
                     MQ.Delay(2000, "${Target.BuffsPopulated}");
-                    //// we also have the situation where over 55> buffs on the ROF2 client cannot be viewed, but up to 85 or so work. 
-                    //// we are going to have to loop through the buffs and set dot timers
-                    //// if under 55< we will evict off the timer that we think we should have if we do
-                    //// if over 55> we will update but not evict... best we can do. so if a dot goes over the 55 buff cap
-                    //// but we get an invalid resist message... well... the client is going to assume it landed and set a timer for it. 
-                    //// Most of the time this won't happen, but sometimes.. well.. ya. not much I can do.
-
-                    //delay to release back to MQ to get a proper buffcount
+                   
                     MQ.Delay(100);
                     Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}");
                     //lets just update our cache with what is on the mob.
@@ -531,9 +531,9 @@ namespace E3Core.Processors
 					//Refactored the way buffs/debuffs are stored on characters and NPCs, enabling an increase in hostile NPC's maximum from 97 to 200.
                     //This required a one-time clearing of saved buffs on mercenaries and pets, may 2022.
 
-                    
-
-					if (buffCount< e3util.MobMaxDebuffSlots && E3.CharacterSettings.Misc_VisibleDebuffsDots)
+                    //if we have any time on it, it means we can see it, so just update. If we don't see it and we are under the default cap, assume its beyond the visable range.
+                    //set a timer and continue on.
+					if (timeLeftInMS > 0 || (buffCount < e3util.MobMaxDebuffSlots && E3.CharacterSettings.Misc_VisibleDebuffsDots))
                     {
                         UpdateDotDebuffTimers(mobid, spell, timeLeftInMS, timers);
                     }

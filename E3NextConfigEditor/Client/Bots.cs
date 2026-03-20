@@ -61,6 +61,10 @@ namespace E3NextConfigEditor.Client
 			
 		}
 
+		public void BroadcastCommandAllZoneNotMe(string command, bool noparse = false, EventProcessor.CommandMatch match = null)
+		{
+		}
+
 		public void BroadcastCommandToGroup(string command, EventProcessor.CommandMatch match = null, bool noparse = false)
 		{
 			
@@ -116,14 +120,19 @@ namespace E3NextConfigEditor.Client
 			return 100;
 		}
 
+		public int PctPetHealth(string name)
+		{
+			return 100;
+		}
+
 		public List<int> PetBuffList(string name)
 		{
 			return new List<int>();
 		}
 
-		public string Query(string name, string query)
+		public T Query<T>(string name, string query)
 		{
-			return string.Empty;
+			return default(T);
 		}
 
 		public void Trade(string name)
