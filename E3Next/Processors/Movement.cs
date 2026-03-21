@@ -163,7 +163,7 @@ namespace E3Core.Processors
             {
                 if (s.Distance <= 250)
                 {
-                    if (!Following)
+                    if (!MQ.Query<bool>("${AdvPath.State}"))
                     {
                         //they are in range
                         //if (MQ.Query<bool>($"${{Spawn[{FollowTargetName}].LineOfSight}}"))
