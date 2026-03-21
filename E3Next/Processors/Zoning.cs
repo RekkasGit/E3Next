@@ -123,14 +123,14 @@ namespace E3Core.Processors
 					{
 						if(spawn.GM) E3.Bots.Broadcast($"GM {spawn.CleanName} is currently in zone. ");
 					}
-					//if (e3util.IsEQEMU())
-					//{
-					//	if (MQ.Query<bool>("${MoveUtils.GM}"))
-					//	{
-					//		MQ.Cmd("/squelch /stick imsafe");
-					//		E3.Bots.Broadcast("GM Safe kicked in, on live issue /stick imsafe.  you may need to reissue /followme or /assiston");
-					//	}
-					//}
+					if (MQ.Query<bool>("${MoveUtils.GM}")) 
+					{
+						if (e3util.IsEQEMU())
+						{
+							MQ.Cmd("/squelch /stick imsafe");
+						}
+						E3.Bots.Broadcast("GM Safe kicked in, on live issue /stick imsafe.  you may need to reissue /followme or /assiston");
+					}
 				}
 			}
 		}
