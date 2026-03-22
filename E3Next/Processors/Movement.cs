@@ -35,7 +35,7 @@ namespace E3Core.Processors
         public static Int64 _nextFollowCheck = 0;
         private static Int64 _nextFollowCheckInterval = 1000;
         private static Int64 _nextChaseCheck = 0;
-        private static Int64 _nextChaseCheckInterval = 10;
+        private static Int64 _nextChaseCheckInterval = 250;
 		[ExposedData("Movement", "ChaseTarget")]
 		public static string ChaseTargetName = String.Empty;
         public static float _followMeDistance = 10;
@@ -134,6 +134,10 @@ namespace E3Core.Processors
 							}
 						}
 					}
+                    else
+                    {
+						_spawns.RefreshList(full: true);
+					}
                 }
             }
         }
@@ -184,6 +188,11 @@ namespace E3Core.Processors
                 {
                     Following = false;
                 }
+            }
+            else
+            {  
+                //they are not in zone, sanity check refresh
+                _spawns.RefreshList(full: true);
             }
         }
         
@@ -423,7 +432,8 @@ namespace E3Core.Processors
                             // Check for Zone change or Movement
                             if (distanceMoved > 80.0 || preZoneID != postZoneID)
                             {
-                                MQ.Write("\ayZone Detected");
+								_spawns.RefreshList(full: true);
+								MQ.Write("\ayZone Detected");
                                 break;
                             }
                             // Inform the user that no movement was detected
@@ -751,7 +761,8 @@ namespace E3Core.Processors
                             MQ.Delay(100);
                             currentZone = MQ.Query<Int32>("${Zone.ID}");
                         }
-                    }
+						_spawns.RefreshList(full: true);
+					}
                 }
                 else
                 {

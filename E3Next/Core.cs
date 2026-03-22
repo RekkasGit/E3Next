@@ -2914,7 +2914,7 @@ namespace MonoCore
 			}
 			if (full)
 			{
-				E3.MQ.WriteDelayed("Refreshing spawn data full");
+				//E3.MQ.WriteDelayed("Refreshing spawn data full");
 			}
 
 
