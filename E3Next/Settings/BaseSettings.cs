@@ -45,8 +45,9 @@ namespace E3Core.Settings
 			string botFileInConfigFolder = _configFolder + _botFolder;
 			return botFileInConfigFolder + fileName;
 		}
-		public static string GetBoTFilePath(string characterName,string serverName,string characterClass)
+		public static string GetBoTFilePath(string characterName,string serverName,string characterClass, out bool classBased)
         {
+            classBased = false;
             string fileName = $"{characterName}_{serverName}.ini";
             string classFileName = $"_{characterClass}_{serverName}.ini";
 
@@ -54,7 +55,7 @@ namespace E3Core.Settings
 
             if(System.IO.File.Exists(botFileInConfigFolder + classFileName))
             {
-                
+                classBased=true;
                 return botFileInConfigFolder + classFileName;
 			}
             return botFileInConfigFolder + fileName;

@@ -869,10 +869,11 @@ namespace E3Core.Settings
 
 			string filename = fileNameToUse;
 			//if not specified, load based off the character name,servername, etc.
-			if (String.IsNullOrWhiteSpace(filename)) filename = GetBoTFilePath(CharacterName, ServerName, CharacterClass.ToString());
+			bool classBasedSettings = false;
+			if (String.IsNullOrWhiteSpace(filename)) filename = GetBoTFilePath(CharacterName, ServerName, CharacterClass.ToString(), out classBasedSettings);
 
 			//if this is a global file with multiple writers, don't merge data as multiple writers for a single file = bad mojo.
-			if (filename.StartsWith("_")) _mergeUpdates = false;
+			if (classBasedSettings) _mergeUpdates = false;
 
 			MQ.Write($"Loading settings file: [{filename}]");
 			ParsedData = CreateSettings(filename);

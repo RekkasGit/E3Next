@@ -1432,7 +1432,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var name = E3.CurrentName ?? string.Empty;
 			var server = E3.ServerName ?? string.Empty;
 			var klass = E3.CurrentClass.ToString();
-			returnValue = E3Core.Settings.BaseSettings.GetBoTFilePath(name, server, klass);
+			returnValue = E3Core.Settings.BaseSettings.GetBoTFilePath(name, server, klass,out var _);
 			return returnValue;
 		}
 		public static bool TryGetIniPathForToon(string toon, out string path)
