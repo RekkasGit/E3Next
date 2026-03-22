@@ -100,7 +100,7 @@ namespace E3Core.Settings.FeatureSettings
 		}
 
 		private void ExecuteResistCommand(EventProcessor.CommandMatch x, string resistName)
-		{
+		{ 
 			Type myType = typeof(ResistData);
 			FieldInfo fieldResist = myType.GetField($"{resistName}Resistant", BindingFlags.Public | BindingFlags.Instance);
 			FieldInfo fieldImmune = myType.GetField($"{resistName}Immune", BindingFlags.Public | BindingFlags.Instance);

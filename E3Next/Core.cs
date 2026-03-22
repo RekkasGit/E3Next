@@ -402,6 +402,10 @@ namespace MonoCore
 					{
 						if (!String.IsNullOrWhiteSpace(line))
 						{
+							//possibly need to get internal variables
+
+							line = Casting.Ifs_Results(line);
+
 
 							foreach (var item in CommandList)
 							{

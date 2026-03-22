@@ -170,7 +170,7 @@ namespace E3Core.Processors
                     if (!MQ.Query<bool>("${AdvPath.State}"))
                     {
                         //they are in range
-                        //if (MQ.Query<bool>($"${{Spawn[{FollowTargetName}].LineOfSight}}"))
+                        if (MQ.Query<bool>($"${{Spawn[{FollowTargetName}].LineOfSight}}"))
                         {
                             if (Casting.TrueTarget(s.ID))
                             {
