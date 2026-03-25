@@ -1017,6 +1017,17 @@ namespace E3Core.Processors
 
 					BuffTargetID = s.ID; //this needs to be set before the Ifs check is done, so ifs can be done on the target of said buff.
 
+
+					if(!(spell.CastType == CastingType.Spell && !Casting.SpellMemorized(spell)))
+					{
+						if (!(Casting.CheckMana(spell) && Casting.CheckReady(spell)))
+						{
+							//spell not ready 
+							UpdateBuffTimers(s.ID, spell, 15000, 15000, true, true);
+							return BuffBots_ReturnType.Continue;
+						}
+					}
+
 					if (!String.IsNullOrWhiteSpace(spell.Ifs))
 					{
 						if (!Casting.Ifs(spell))
@@ -1373,6 +1384,8 @@ namespace E3Core.Processors
 								return BuffBots_ReturnType.Continue;
 							}
 							if (!Casting.CheckReady(spell)) return BuffBots_ReturnType.Continue;
+							
+							
 							//its someone not in our buff group, do it the hacky way.
 							Casting.TrueTarget(s.ID);
 

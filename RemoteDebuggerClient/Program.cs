@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -16,11 +17,17 @@ namespace MQServerClient
 {
     class Program
     {
-        public static Stopwatch _stopWatch = new Stopwatch();
+		 //public static string IPAddress = "206.162.25.168";
+		public static string IPAddress = "127.0.0.1";
+		//public static string IPAddress = "192.168.1.100";
+
+		public static Stopwatch _stopWatch = new Stopwatch();
         static void Main(string[] args)
         {
 			//need to do this so double parses work in other languages
 			Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
+
 
 			AsyncIO.ForceDotNet.Force();
             MonoCore.Core._MQ2MonoVersion = 0.40m;
@@ -73,9 +80,10 @@ namespace MQServerClient
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
             _requestSocket.Options.SendHighWatermark = 10000;
             _requestSocket.Options.ReceiveHighWatermark = 10000;
-            _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
-        }
-        public bool TryByID(Int32 id, out Spawn s, bool refresh = true  , Boolean useCurrentCache = false)
+//            _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
+			_requestSocket.Connect($"tcp://{Program.IPAddress}:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
+		}
+		public bool TryByID(Int32 id, out Spawn s, bool refresh = true  , Boolean useCurrentCache = false)
         {
             if(refresh && !useCurrentCache) RefreshListIfNeeded();
             return _spawnsByID.TryGetValue(id, out s);
@@ -303,7 +311,7 @@ namespace MQServerClient
             using (var subSocket = new SubscriberSocket())
             {
                 subSocket.Options.ReceiveHighWatermark = 1000;
-                subSocket.Connect("tcp://localhost:"+ RemoteDebugServerConfig.NetMQPubPort.ToString());
+                subSocket.Connect($"tcp://{Program.IPAddress}:"+ RemoteDebugServerConfig.NetMQPubPort.ToString());
                 subSocket.Subscribe("OnIncomingChat");
                 subSocket.Subscribe("OnWriteChatColor");
                 subSocket.Subscribe("OnCommand");
@@ -333,6 +341,7 @@ namespace MQServerClient
 
     public class NetMQMQ : MonoCore.IMQ
     {
+        
         DealerSocket _requestSocket;
         NetMQ.Msg _requestMsg = new NetMQ.Msg();
         public TimeSpan SendTimeout = new TimeSpan(0, 5, 5);
@@ -366,9 +375,11 @@ namespace MQServerClient
 			_requestSocket = new DealerSocket();
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
             _requestSocket.Options.SendHighWatermark = 100;
-            _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
-        }
-        public void Broadcast(string query)
+			// _requestSocket.Connect("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
+			_requestSocket.Connect($"tcp://{Program.IPAddress}:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
+
+		}
+		public void Broadcast(string query)
         {
             query = @"bc " + query;
             Cmd(query);
