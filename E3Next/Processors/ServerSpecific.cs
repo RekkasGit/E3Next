@@ -4,6 +4,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 
@@ -39,6 +40,11 @@ namespace E3Core.Processors
 				MQ.Write("None found for this server.");
 			}
 		}
+		public static void Init_Ascendant()
+		{
+			
+		}
+
 		public static void Init_Lazarus()
 		{
 

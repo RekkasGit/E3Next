@@ -92,7 +92,12 @@ namespace E3Core.Processors
 		}
 		private static void RegisterEvents()
 		{
+			EventProcessor.RegisterCommand("/e3toggle_bando", (x) =>
+			{
 
+				e3util.ToggleBooleanSetting(ref E3.CharacterSettings.BandoBuff_Enabled, "BandoBuff Enabled", x.args);
+
+			}, "Toggles BandoBuff");
 			EventProcessor.RegisterCommand("/dropbuff", (x) =>
 			{
 				if (x.args.Count > 0)
