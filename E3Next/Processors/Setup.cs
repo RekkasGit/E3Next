@@ -57,14 +57,13 @@ namespace E3Core.Processors
 		public static List<string> GuildListMembers = new List<string>();
         public static bool _broadcastWrites = false;
 		public static bool _disableWrites = false;
-
+	
 		public static string _serverNameForIni = "PEQTGC"; //project eq, the grand creation, where legacy e3 was born i believe.
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
 		public static Dictionary<string, FieldInfo> ExposedDataReflectionLookup = new Dictionary<string, FieldInfo>();
 
-		public static InventoryDataFile _inventoryDataFile;
-
+	
 		public static Boolean Init()
         {
             using (_log.Trace())
@@ -87,21 +86,7 @@ namespace E3Core.Processors
 				BuildDate = BuildDate.Replace("\r\n", "");
 				MQ.Write($"Loading nE³xt v{E3Version} builddate:{BuildDate}...Mq2Mono v{Core._MQ2MonoVersion}");
 
-                //setup the library path loading, mainly used for sqlite atm
-				string MQPath = MQ.Query<String>("${MacroQuest.Path}");
-				string libPath;
-				if (!e3util.Is64Bit())
-				{
-					libPath = MQPath + @"\mono\libs\32bit\";
-				}
-				else
-				{
-					libPath = MQPath + @"\mono\libs\64bit\";
-
-				}
-			    //temp add the path for just this process/app domain
-                Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + libPath);
-
+             
 				InitPlugins();
                 InitSubSystems();
 
@@ -115,7 +100,7 @@ namespace E3Core.Processors
 				//	MQ.Write($"Startup command:{command}");
                     MQ.Cmd(command,delayed:true);
 			    }
-                _inventoryDataFile = new InventoryDataFile();
+            
 				//needed for IsMyGuild(namn), to supply a user generated list of guild members
 				_guildListFilePath = Settings.BaseSettings.GetSettingsFilePath("GuildList.txt");
 				if(System.IO.File.Exists(_guildListFilePath))

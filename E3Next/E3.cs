@@ -13,6 +13,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceModel.Channels;
@@ -660,8 +661,18 @@ namespace E3Core.Processors
 				GlobalCursorDelete = new GlobalCursorDelete();
 				CharacterSettings = new Settings.CharacterSettings();
                 AdvancedSettings = new Settings.AdvancedSettings();
-				ResistSettings = new ResistDataFile();
-
+			
+				SetupLibPaths();
+				string driverPathName =_libPath + "SQLite.Interop.dll";
+				if (File.Exists(driverPathName))
+				{
+					ResistSettings = new ResistDataFile();
+					InventoryDataFile = new InventoryDataFile();
+				}
+				else
+				{
+					MQ.Write($"\ar Warning: SQLite driver doesn't exist in:\ay{driverPathName} \ar. SQlite Features disabled!");
+				}
 				//setup is done after the settings are setup.
 				//as there is an order dependecy
 				Setup.Init();
@@ -671,8 +682,25 @@ namespace E3Core.Processors
 
 
         }
-      
-        private static bool ShouldRun()
+		private static void SetupLibPaths()
+		{
+			//setup the library path loading, mainly used for sqlite atm
+			string MQPath = MQ.Query<String>("${MacroQuest.Path}");
+
+			if (!e3util.Is64Bit())
+			{
+				_libPath = MQPath + @"\mono\libs\32bit\";
+			}
+			else
+			{
+				_libPath = MQPath + @"\mono\libs\64bit\";
+
+			}
+			//temp add the path for just this process/app domain
+			Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + _libPath);
+
+		}
+		private static bool ShouldRun()
         {
 
             if (IsBadState)
@@ -716,7 +744,9 @@ namespace E3Core.Processors
 		public static Settings.GeneralSettings GeneralSettings = null;
         public static Settings.AdvancedSettings AdvancedSettings = null;
 		public static Settings.FeatureSettings.ResistDataFile ResistSettings= null;
-        public static IBots Bots = null;
+		public static InventoryDataFile InventoryDataFile = null;
+
+		public static IBots Bots = null;
         public static string CurrentName;
         public static Data.Class CurrentClass;
         public static string ServerName;
@@ -741,6 +771,7 @@ namespace E3Core.Processors
 		public static bool IsInvul;
 		public static bool IsMoving;
 		public static bool IsFD;
+		public static string _libPath = String.Empty;
 
 		private static Int64 _nextReloadSettingsCheck = 0;
         private static Int64 _nextReloadSettingsInterval = 2000;

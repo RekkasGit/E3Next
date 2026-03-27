@@ -45,14 +45,22 @@ namespace E3Core.Processors
 				{
 					//our zone has changed or is going to change
 					zoneChanged=true;
-					E3.ResistSettings.LoadData(zoneId);
+					if (E3.ResistSettings != null)
+					{
+						E3.ResistSettings.LoadData(zoneId);
+					}
+
 				}
 			}
 			else
 			{
 				//doesn't exist, so we count this as a change.
 				zoneChanged = true;
-				E3.ResistSettings.LoadData(zoneId);
+				if(E3.ResistSettings!=null)
+				{
+					E3.ResistSettings.LoadData(zoneId);
+
+				}
 			}
 			// add our new zone to the zone lookup if necessary
 			if (!ZoneLookup.TryGetValue(zoneId, out CurrentZone))

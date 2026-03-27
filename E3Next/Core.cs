@@ -402,6 +402,10 @@ namespace MonoCore
 					{
 						if (!String.IsNullOrWhiteSpace(line))
 						{
+							//possibly need to get internal variables
+
+							line = Casting.Ifs_Results(line);
+
 
 							foreach (var item in CommandList)
 							{
@@ -2914,7 +2918,7 @@ namespace MonoCore
 			}
 			if (full)
 			{
-				E3.MQ.WriteDelayed("Refreshing spawn data full");
+				//E3.MQ.WriteDelayed("Refreshing spawn data full");
 			}
 
 

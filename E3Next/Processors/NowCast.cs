@@ -144,28 +144,28 @@ namespace E3Core.Processors
                     spell.IsBuff = true;  
                 }
                 if (spell.SpellID > 0)
-				{
-					//get a valid target for ifs check
-					if (targetid == 0)
-					{
-						targetid = E3.CurrentId;
-					}
-					//check ifs check before we interrupt anything
-					if (!String.IsNullOrWhiteSpace(spell.Ifs))
-					{
-						Casting.TrueTarget(targetid);
-						if (!Casting.Ifs(spell))
-						{
-							return (CastReturn.CAST_IFFAILURE, spell);
-						}
-					}
-					//interrupt any spell that is currently casting.
-					if (E3.CurrentClass != Class.Bard)
+                {
+                    //get a valid target for ifs check
+                    if (targetid == 0)
                     {
-						if(Casting.IsCasting())
-						{
-							Casting.Interrupt();
-						}
+                        targetid = E3.CurrentId;
+                    }
+                    //check ifs check before we interrupt anything
+                    if (!String.IsNullOrWhiteSpace(spell.Ifs))
+                    {
+                        Casting.TrueTarget(targetid);
+                        if (!Casting.Ifs(spell))
+                        {
+                            return (CastReturn.CAST_IFFAILURE, spell);
+                        }
+                    }
+                    //interrupt any spell that is currently casting.
+                    if (E3.CurrentClass != Class.Bard)
+                    {
+                        if (Casting.IsCasting())
+                        {
+                            Casting.Interrupt();
+                        }
                     }
                     else
                     {
@@ -173,77 +173,79 @@ namespace E3Core.Processors
                         MQ.Cmd("/stopsong");
                         Bard.ResetNextBardSong();
                     }
-					//wait for GCD to be over.
-					if (spell.CastType == CastingType.Spell)
+                    //wait for GCD to be over.
+                    if (spell.CastType == CastingType.Spell)
                     {
-						Int32 maxTries = 0;
-						while (Casting.InGlobalCooldown())
-						{
-							MQ.Delay(100);
-							maxTries++;
-							if (maxTries > 40) break;
-						}
-					}
-					if (spell.CheckForCollection.Count > 0)
-					{
-                        if(_spawns.TryByID(targetid, out var spawn))
+                        Int32 maxTries = 0;
+                        while (Casting.InGlobalCooldown())
                         {
-							if (E3.Bots.IsMyBot(spawn.CleanName))
-							{
-								foreach (var checkforItem in spell.CheckForCollection.Keys)
-								{
-									//keys are check for spell names, the value is the spell id
-
-									bool hasCheckFor = E3.Bots.BuffList(spawn.CleanName).Contains(spell.CheckForCollection[checkforItem]);
-									//can't check for target song buffs, be aware. will have to check netbots. 
-									if (hasCheckFor)
-									{
-										return (CastReturn.CAST_TAKEHOLD,spell);
-									}
-								}
-							}
-							else
-							{
-								Casting.TrueTarget(targetid);
-								MQ.Delay(2000, "${Target.BuffsPopulated}");
-
-								foreach (var checkforItem in spell.CheckForCollection.Keys)
-								{
-									if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
-									{
-										return (CastReturn.CAST_TAKEHOLD,spell);
-									}
-								}
-
-							}
-							
-						}
-					}
-				recast:
-                    if(!Casting.InRange(targetid,spell))
-                    {
-                        return (CastReturn.CAST_OUTOFRANGE,spell);
+                            MQ.Delay(100);
+                            maxTries++;
+                            if (maxTries > 40) break;
+                        }
                     }
-					if (!Casting.CheckMana(spell))
-					{
-						return (CastReturn.CAST_OUTOFMANA,spell);
-					}
-					if (!Casting.CheckReady(spell))
+                    if (spell.CheckForCollection.Count > 0)
                     {
-                        return (CastReturn.CAST_NOTREADY,spell);
+                        if (_spawns.TryByID(targetid, out var spawn))
+                        {
+                            if (E3.Bots.IsMyBot(spawn.CleanName))
+                            {
+                                foreach (var checkforItem in spell.CheckForCollection.Keys)
+                                {
+                                    //keys are check for spell names, the value is the spell id
+
+                                    bool hasCheckFor = E3.Bots.BuffList(spawn.CleanName).Contains(spell.CheckForCollection[checkforItem]);
+                                    //can't check for target song buffs, be aware. will have to check netbots. 
+                                    if (hasCheckFor)
+                                    {
+                                        return (CastReturn.CAST_TAKEHOLD, spell);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                Casting.TrueTarget(targetid);
+                                MQ.Delay(2000, "${Target.BuffsPopulated}");
+
+                                foreach (var checkforItem in spell.CheckForCollection.Keys)
+                                {
+                                    if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+                                    {
+                                        return (CastReturn.CAST_TAKEHOLD, spell);
+                                    }
+                                }
+
+                            }
+
+                        }
                     }
-                    if(targetid>0 && targetid!=E3.CurrentId)
+                recast:
+                    if (!Casting.InRange(targetid, spell))
                     {
-						Casting.TrueTarget(targetid);
-					}
-			        var returnValue = Casting.Cast(targetid, spell, null, true);
-					if(returnValue== CastReturn.CAST_FIZZLE)
+                        return (CastReturn.CAST_OUTOFRANGE, spell);
+                    }
+                    if (!Casting.CheckMana(spell))
+                    {
+                        return (CastReturn.CAST_OUTOFMANA, spell);
+                    }
+                    if (!Casting.CheckReady(spell))
+                    {
+                        return (CastReturn.CAST_NOTREADY, spell);
+                    }
+                    if (targetid > 0 && targetid != E3.CurrentId)
+                    {
+                        Casting.TrueTarget(targetid);
+                    }
+
+                    var returnValue = Casting.Cast(targetid, spell, null, true);
+					if (returnValue== CastReturn.CAST_FIZZLE)
                     {
                         goto recast;
                     }
                     if(returnValue == CastReturn.CAST_SUCCESS && E3.CurrentClass== Class.Bard)
                     {
                         //bards need a moment before they start back up their twist on a nowcast
+                        Bard.SetNextBardCast();
                         MQ.Delay(300);
                     }
                     return (returnValue,spell);

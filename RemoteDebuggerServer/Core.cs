@@ -606,7 +606,7 @@ namespace MonoCore
             _rpcRouter = new RouterSocket();
             _rpcRouter.Options.SendHighWatermark = 10000;
             _rpcRouter.Options.ReceiveHighWatermark = 10000;
-            _rpcRouter.Bind("tcp://127.0.0.1:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
+            _rpcRouter.Bind("tcp://*:" + RemoteDebugServerConfig.NetMQRouterPort.ToString());
             //_rpcRouter.Bind("tcp://127.0.0.1:12346");
             routerMessage.InitEmpty();
             try

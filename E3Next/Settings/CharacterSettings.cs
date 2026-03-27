@@ -869,10 +869,11 @@ namespace E3Core.Settings
 
 			string filename = fileNameToUse;
 			//if not specified, load based off the character name,servername, etc.
-			if (String.IsNullOrWhiteSpace(filename)) filename = GetBoTFilePath(CharacterName, ServerName, CharacterClass.ToString());
+			bool classBasedSettings = false;
+			if (String.IsNullOrWhiteSpace(filename)) filename = GetBoTFilePath(CharacterName, ServerName, CharacterClass.ToString(), out classBasedSettings);
 
 			//if this is a global file with multiple writers, don't merge data as multiple writers for a single file = bad mojo.
-			if (filename.StartsWith("_")) _mergeUpdates = false;
+			if (classBasedSettings) _mergeUpdates = false;
 
 			MQ.Write($"Loading settings file: [{filename}]");
 			ParsedData = CreateSettings(filename);
@@ -1137,14 +1138,15 @@ namespace E3Core.Settings
 				LoadKeyData("Magician", "Pet Weapons", ParsedData, PetWeapons);
 			}
 
-			if (CharacterClass == Class.Shaman)
+			//new servers that allow any classes to be any thing
+			//if (CharacterClass == Class.Shaman)
 			{
 				LoadKeyData("Shaman", "Auto-Canni (On/Off)", ParsedData, ref AutoCanni);
 				LoadKeyData("Shaman", "Canni", ParsedData, CanniSpell);
 				LoadKeyData("Shaman", "Malos Totem Spell Gem", ParsedData, ref MalosTotemSpellGem);
 			}
 
-			if (CharacterClass == Class.Beastlord)
+			//if (CharacterClass == Class.Beastlord)
 			{
 				LoadKeyData("Auto Paragon", "Auto Paragon (On/Off)", ParsedData, ref AutoParagon);
 				LoadKeyData("Auto Paragon", "Paragon Spell", ParsedData, out ParagonSpell);
@@ -1608,7 +1610,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Cast Aura(On/Off)", "On");
 
 
-			if ((CharacterClass & Class.Caster) != CharacterClass && (CharacterClass & Class.Priest) != CharacterClass)
+			//if ((CharacterClass & Class.Caster) != CharacterClass && (CharacterClass & Class.Priest) != CharacterClass)
 			{
 				newFile.Sections.AddSection("Melee Abilities");
 				section = newFile.Sections.GetSectionData("Melee Abilities");
@@ -1624,7 +1626,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Debuff on Assist", "");
 			section.Keys.AddKey("Debuff on Command", "");
 
-			if ((CharacterClass & Class.PureMelee) != CharacterClass && CharacterClass != Class.Bard)
+			//if ((CharacterClass & Class.PureMelee) != CharacterClass && CharacterClass != Class.Bard)
 			{
 				newFile.Sections.AddSection("Stuns");
 				section = newFile.Sections.GetSectionData("Stuns");
@@ -1644,7 +1646,7 @@ namespace E3Core.Settings
 
 
 			}
-			if ((CharacterClass & Class.ManaUsers) == CharacterClass && CharacterClass != Class.Bard)
+			if (CharacterClass != Class.Bard)
 			{
 				newFile.Sections.AddSection("Off Assist Spells");
 				section = newFile.Sections.GetSectionData("Off Assist Spells");
@@ -1703,7 +1705,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Auto-Sonata (On/Off)", "Off");
 			}
 
-			if ((CharacterClass & Class.PetClass) == CharacterClass)
+			//if ((CharacterClass & Class.PetClass) == CharacterClass)
 			{
 				newFile.Sections.AddSection("Pets");
 				section = newFile.Sections.GetSectionData("Pets");
@@ -1733,7 +1735,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Evac Spell", "");
 			}
 
-			if (((CharacterClass & Class.Priest) == CharacterClass) || CharacterClass == Class.Paladin)
+			//if (((CharacterClass & Class.Priest) == CharacterClass) || CharacterClass == Class.Paladin)
 			{
 				newFile.Sections.AddSection("Cures");
 				section = newFile.Sections.GetSectionData("Cures");
@@ -1772,7 +1774,7 @@ namespace E3Core.Settings
 
 
 
-			if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.HealHybrid) == CharacterClass)
+			//if ((CharacterClass & Class.Priest) == CharacterClass || (CharacterClass & Class.HealHybrid) == CharacterClass)
 			{
 				newFile.Sections.AddSection("Heals");
 				section = newFile.Sections.GetSectionData("Heals");
@@ -1807,6 +1809,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Keep Open Inventory Slot (On/Off)", "Off");
 				section.Keys.AddKey("Pet Weapons", "");
 			}
+
 
 			if (CharacterClass == Class.Shaman)
 			{
