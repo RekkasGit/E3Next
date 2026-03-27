@@ -405,8 +405,12 @@ namespace E3Core.Processors
              
             foreach (var spell in spells)
             {
+                if(_spawns.TryByID(mobid,out var spawn) && E3.ResistSettings!=null)
+                {
+					if (E3.ResistSettings.ShouldSkip(spell, spawn)) continue;
+                }		
                 //do we already have a timer on this spell?
-                SpellTimer s;
+				SpellTimer s;
                 if (timers.TryGetValue(mobid, out s))
                 {
                     Int64 timestamp;

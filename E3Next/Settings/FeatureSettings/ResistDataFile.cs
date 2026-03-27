@@ -9,6 +9,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Xml.Linq;
 namespace E3Core.Settings.FeatureSettings
 {
@@ -67,6 +68,30 @@ namespace E3Core.Settings.FeatureSettings
 		}
 		private void RegisterEvents()
 		{
+			EventProcessor.RegisterCommand("/e3resist-list", x =>
+			{
+				foreach(var item in ZoneData)
+				{
+					var d = item.Value;
+					StringBuilder sb = new StringBuilder();
+					sb.Append($"\ayNPC:\ag{d.NPCName} ");
+					if(d.MagicResistant) sb.Append($"\ayMR ");
+					if(d.MagicImmune) sb.Append($"\ayMRI ");
+					if (d.FireResistant) sb.Append($"\ayFR ");
+					if (d.FireImmune) sb.Append($"\ayFRI ");
+					if (d.ColdResistant) sb.Append($"\ayCR ");
+					if (d.ColdImmune) sb.Append($"\ayCRI ");
+					if (d.PoisonResistant) sb.Append($"\ayPR ");
+					if (d.PoisonImmune) sb.Append($"\ayPRI ");
+					if (d.DiseaseResistant) sb.Append($"\ayDR ");
+					if (d.DiseaseImmune) sb.Append($"\ayDRI ");
+					if (d.CorruptResistant) sb.Append($"\ayCUR ");
+					if (d.CorruptImmune) sb.Append($"\ayCURI ");
+					MQ.Write(sb.ToString());
+				}
+
+
+			});
 			EventProcessor.RegisterCommand("/e3resist-fire", x =>
 			{
 				ExecuteResistCommand(x, "Fire");

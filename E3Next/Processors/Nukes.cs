@@ -124,7 +124,7 @@ namespace E3Core.Processors
                                 }
                             }
                             //if there are resist settings setup for this spawn.
-                            if (E3.ResistSettings.ShouldSkip(spell, s)) continue;
+                            if (E3.ResistSettings!=null && E3.ResistSettings.ShouldSkip(spell, s)) continue;
 
 							//can't cast if it isn't ready
 							if (Casting.InRange(Assist.AssistTargetID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
