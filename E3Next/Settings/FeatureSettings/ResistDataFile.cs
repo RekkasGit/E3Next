@@ -70,10 +70,11 @@ namespace E3Core.Settings.FeatureSettings
 		{
 			EventProcessor.RegisterCommand("/e3resist-list", x =>
 			{
-				foreach(var item in ZoneData)
+				StringBuilder sb = new StringBuilder();
+				foreach (var item in ZoneData)
 				{
 					var d = item.Value;
-					StringBuilder sb = new StringBuilder();
+					sb.Clear();	
 					sb.Append($"\ayNPC:\ag{d.NPCName} ");
 					if(d.MagicResistant) sb.Append($"\ayMR ");
 					if(d.MagicImmune) sb.Append($"\ayMRI ");
