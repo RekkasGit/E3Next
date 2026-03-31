@@ -47,6 +47,11 @@ namespace E3Core.Settings.FeatureSettings
 		}
 		public bool ShouldSkip(Spell spell, Spawn s)
 		{
+			if (E3.ResistSettings==null)
+			{
+				return false;
+			}
+
 			if (E3.ResistSettings.ZoneData.TryGetValue(s.CleanName, out var resistInfo))
 			{
 				if (spell.ResistType == "Magic" && resistInfo.MagicImmune) return true;

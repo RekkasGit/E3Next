@@ -2596,7 +2596,7 @@ namespace MonoCore
 		/// </summary>
 		/// <returns></returns>
 		List<Int32> GetIDs();
-		void RefreshList(bool full = false);
+		void RefreshList(bool full = false, bool resetGM = false);
 		void EmptyLists();
 		bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false);
 		bool TryByName(string name, out Spawn s, Boolean useCurrentCache = false);
@@ -2623,6 +2623,7 @@ namespace MonoCore
 
 		private static ConcurrentQueue<Spawn> _addedSpawns = new ConcurrentQueue<Spawn>();
 
+		private static HashSet<string> _GMsInZone = new HashSet<string>();
 		public bool TryByID(Int32 id, out Spawn s, bool refresh = true, Boolean useCurrentCache = false)
 		{
 			if (refresh && !useCurrentCache) RefreshListIfNeeded();
@@ -2684,8 +2685,15 @@ namespace MonoCore
 					//E3.MQ.WriteDelayed($"Adding new spawn {spawn.ID}: {spawn.CleanName} TD:{spawn.TypeDesc}");
 					//its new, so add it to the collections
 
-					if (spawn.GM) E3.Bots.Broadcast($"GM {spawn.CleanName} Entered zone.");
-
+					if (spawn.GM)
+					{
+						if(!_GMsInZone.Contains(spawn.CleanName))
+						{
+							E3.Bots.Broadcast($"GM {spawn.CleanName} Entered zone.");
+						
+							_GMsInZone.Add(spawn.CleanName);
+						}
+					}
 					_spawns.Add(spawn);
 					SpawnsByID.TryAdd(spawn.ID, spawn);
 					if (spawn.TypeDesc == "PC" && !spawn.Dead)
@@ -2752,7 +2760,7 @@ namespace MonoCore
 			foreach (var spawn in _spawns) { spawn.Dispose(); }
 			_spawns.Clear();
 		}
-		public void RefreshList(bool full = false)
+		public void RefreshList(bool full = false, bool resetGM = false)
 		{
 			ProcessNewSpawns();
 			_refershSpawnIdsToDelete.Clear();
@@ -2921,7 +2929,10 @@ namespace MonoCore
 				//E3.MQ.WriteDelayed("Refreshing spawn data full");
 			}
 
-
+			if (resetGM)
+			{
+				_GMsInZone.Clear();
+			}
 			//time to blow it all away
 			EmptyLists();
 			//request new spawns!

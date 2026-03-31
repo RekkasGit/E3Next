@@ -889,7 +889,7 @@ namespace E3Core.Processors
            EventProcessor.RegisterCommand("/assistme", (x) =>
            {
 
-          
+               _spawns.RefreshList(full: true);
                //don't process assist if paused.
                if(Basics.IsPaused) {
                    E3.Bots.Broadcast("\arNot assisting! \agI am paused!");
