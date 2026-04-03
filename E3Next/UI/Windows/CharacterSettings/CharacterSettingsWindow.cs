@@ -1173,7 +1173,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 				imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Spell Modifier Editor");
 				imgui_Separator();
 			}
-			Render_SpellEditor();
+			bool renderAuxiliaryWindows = isPopout || !_state.Show_PopOut_SpellModifier;
+			Render_SpellEditor(renderAuxiliaryWindows);
 		}
 		// Safe gem display using catalog data (no TLO queries from UI thread)
 		private static void Render_MainWindow_CatalogGemData()
@@ -2413,6 +2414,34 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 			}
 		}
+
+		private static List<string> GetDistinctIfKeyNames(IniData pd)
+		{
+			var results = new List<string>();
+			if (pd?.Sections == null)
+			{
+				return results;
+			}
+
+			var ifsSection = pd.Sections.GetSectionData("Ifs");
+			if (ifsSection?.Keys == null)
+			{
+				return results;
+			}
+
+			var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+			foreach (var key in ifsSection.Keys)
+			{
+				string keyName = key?.KeyName?.Trim() ?? string.Empty;
+				if (keyName.Length == 0 || !seen.Add(keyName))
+				{
+					continue;
+				}
+				results.Add(keyName);
+			}
+
+			return results;
+		}
 		private static void RenderCastTargetPickerWindow()
 		{
 
@@ -2647,18 +2676,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 						if (pd != null)
 						{
 							_log.Write("Active Character INI Data found");
-							var ifsSection = pd.Sections.GetSectionData("Ifs");
-							if (ifsSection != null)
+							var ifKeys = GetDistinctIfKeyNames(pd);
+							if (ifKeys.Count > 0)
 							{
 								_log.Write("Ifs Section found");
 
 								spellEditorState.ResetGenericPicker();
 								spellEditorState.GenericPickerFieldName = "IfsKeys";
 
-								foreach (var key in ifsSection.Keys) //need to populate the list to show to the user
-								{
-									spellEditorState.GenericPickerList.Add(key.KeyName);
-								}
+								spellEditorState.GenericPickerList.AddRange(ifKeys);
 								_log.Write($"Added values to collection{String.Join(",", spellEditorState.GenericPickerList)}");
 								_log.Write($"Setting show generic picker to true");
 
@@ -3542,7 +3568,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 						if (child.BeginChild("IfList", w, h, 1, 0))
 						{
 
-							var list = _cfgIfAppendCandidates ?? new List<string>();
+							var list = (_cfgIfAppendCandidates ?? new List<string>())
+								.Where(x => !string.IsNullOrWhiteSpace(x))
+								.Distinct(StringComparer.OrdinalIgnoreCase)
+								.ToList();
 							int i = 0;
 							foreach (var key in list)
 							{
@@ -4179,7 +4208,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		/// </summary>
 		/// <returns>Spell object</returns>
 
-		private static void Render_SpellEditor()
+		private static void Render_SpellEditor(bool renderAuxiliaryWindows = true)
 		{
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var spellEditorState = _state.GetState<State_SpellEditor>();
@@ -4315,15 +4344,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 			string preview = previewString;
 			imgui_TextWrapped(string.IsNullOrEmpty(preview) ? "(empty)" : preview);
 
-			if (spellEditorState.ShowGenericPicker)
+			if (renderAuxiliaryWindows && spellEditorState.ShowGenericPicker)
 			{
 				Render_Generic_PickerWindow();
 			}
-			if (spellEditorState.ShowCastTargetPicker)
+			if (renderAuxiliaryWindows && spellEditorState.ShowCastTargetPicker)
 			{
 				RenderCastTargetPickerWindow();
 			}
-			if (spellEditorState.ShowCastTargetHelper)
+			if (renderAuxiliaryWindows && spellEditorState.ShowCastTargetHelper)
 			{
 				RenderCastTargetHelperWindow();
 			}
