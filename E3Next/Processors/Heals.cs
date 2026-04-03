@@ -324,7 +324,9 @@ namespace E3Core.Processors
 			for (Int32 x = 1; x <= XtargetMax; x++)
 			{
 
-				if (!MQ.Query<bool>($"${{Me.XTarget[{x}].TargetType.Equal[Specific PC]}}")) continue;
+				bool specificPC = MQ.Query<bool>($"${{Me.XTarget[{x}].TargetType.Equal[Specific PC]}}");
+				bool specificNPC = MQ.Query<bool>($"${{Me.XTarget[{x}].TargetType.Equal[Specific NPC]}}");
+				if (!(specificPC || specificNPC)) continue;
 				Int32 targetID = MQ.Query<Int32>($"${{Me.XTarget[{x}].ID}}");
 				if (targetID > 0)
 				{

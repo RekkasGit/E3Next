@@ -127,6 +127,10 @@ namespace E3Core.Data
                     {
                         NoInterrupt = true;
                     }
+					else if (value.Equals("IgnoreResistanceCheck", StringComparison.OrdinalIgnoreCase))
+					{
+						IgnoreResistanceCheck = true;
+					}
 					else if (value.Equals("IsDoT", StringComparison.OrdinalIgnoreCase))
 					{
 						IsDoT = true;

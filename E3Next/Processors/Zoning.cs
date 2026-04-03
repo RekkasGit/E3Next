@@ -111,7 +111,7 @@ namespace E3Core.Processors
 				using (E3.MQ.GetDelayLock())
 				{
 					//means we have zoned.
-					_spawns.RefreshList(full: true);//make sure we get a new refresh of this zone.
+					_spawns.RefreshList(full: true,resetGM:true);//make sure we get a new refresh of this zone.
 					Loot.Reset();
 					Movement.ResetKeepFollow();
 					Assist.Reset();
