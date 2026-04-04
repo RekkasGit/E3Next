@@ -1216,6 +1216,13 @@ namespace E3Core.Processors
 							
 							return (T)(object)result;
 						}
+						if (type == typeof(Single))
+						{
+							double result;
+							e3util.DoubleTryParse(entry.GetData(), out result);
+
+							return (T)(object)Convert.ToSingle(result);
+						}
 						if (type == typeof(Decimal))
 						{
 							double result;

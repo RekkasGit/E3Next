@@ -131,6 +131,10 @@ namespace E3Core.Data
 					{
 						IgnoreResistanceCheck = true;
 					}
+					else if (value.Equals("IgnoreReadyCheck", StringComparison.OrdinalIgnoreCase))
+					{
+						IgnoreReadyCheck = true;
+					}
 					else if (value.Equals("IsDoT", StringComparison.OrdinalIgnoreCase))
 					{
 						IsDoT = true;
@@ -1140,6 +1144,7 @@ namespace E3Core.Data
         public Int32 HealthMax = 100;
         public bool IgnoreStackRules = false;
         public bool IgnoreResistanceCheck = false;
+        public bool IgnoreReadyCheck = false;
         public bool IsDebuff = false;
         public bool IsDoT = false;
 		public bool IsBuff = false;

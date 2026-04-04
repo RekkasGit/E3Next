@@ -1613,6 +1613,8 @@ namespace MonoCore
 		public static extern byte* mq_GetAvailableAAIds(out int length);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetAvilableDiscIds(out int length);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public static extern void mq_LookAt(float x, float y, float z);
 
 
 		#endregion

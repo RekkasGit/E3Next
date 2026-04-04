@@ -387,6 +387,15 @@ namespace E3Core.Processors
 		}
 		public static void StateUpdates_Stats()
 		{
+			string loc_x = MQ.Query<string>("${Me.X}");
+			string loc_y = MQ.Query<string>("${Me.Y}");
+			string loc_z = MQ.Query<string>("${Me.Z}");
+			PubServer.AddTopicMessage("${Me.X}", loc_x);
+			PubServer.AddTopicMessage("${Me.Y}", loc_y);
+			PubServer.AddTopicMessage("${Me.Z}", loc_z);
+			double.TryParse(loc_x, out Loc_X);
+			double.TryParse(loc_y, out Loc_Y);
+			double.TryParse(loc_z, out Loc_Z);
 			string mana = MQ.Query<string>("${Me.PctMana}");
 			PubServer.AddTopicMessage("${Me.PctMana}", mana);
 			string endurance = MQ.Query<string>("${Me.PctEndurance}");
@@ -477,8 +486,13 @@ namespace E3Core.Processors
 					//not horribly important stuff, can just be sent out whever, currently once per second
 					if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
 					{
+						if (MQ.Query<bool>("${MoveUtils.GM}"))
+						{
+							MQ.Cmd("/squelch /stick imsafe");
+							E3.Bots.Broadcast("GM Safe kicked in, turning it off");
+						}
 						StateUpdates_AAInformation();
-
+						
 						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
 						{
 							unsafe
@@ -528,15 +542,7 @@ namespace E3Core.Processors
 						if (pctAggr < 0) pctAggr = 0;
 						PubServer.AddTopicMessage("${Me.PctAggro}", e3util.GetIntStr(pctAggr));
 
-						string loc_x = MQ.Query<string>("${Me.X}");
-						string loc_y = MQ.Query<string>("${Me.Y}");
-						string loc_z = MQ.Query<string>("${Me.Z}");
-						PubServer.AddTopicMessage("${Me.X}", loc_x);
-						PubServer.AddTopicMessage("${Me.Y}", loc_y);
-						PubServer.AddTopicMessage("${Me.Z}", loc_z);
-						double.TryParse(loc_x, out Loc_X);
-						double.TryParse(loc_y, out Loc_Y);
-						double.TryParse(loc_z, out Loc_Z);
+					
 						//lets query the data we are configured to send out extra
 						if (E3.CharacterSettings.E3BotsPublishData.Count > 0)
 						{

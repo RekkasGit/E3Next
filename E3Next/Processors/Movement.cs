@@ -6,7 +6,9 @@ using IniParser;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,12 +22,17 @@ namespace E3Core.Processors
         public static double Anchor_Y = double.MinValue;
         public static double Anchor_Z = double.MinValue;
         public static List<string> AnchorFilters = new List<string>();
-		public static bool MovementPaused = false;
-		[ExposedData("Movement", "Following")]
-		public static bool Following = false;
-		//public static Int32 _followTargetID = 0;
-		[ExposedData("Movement", "FollowTargetName")]
-		public static string FollowTargetName = String.Empty;
+        public static bool MovementPaused = false;
+        [ExposedData("Movement", "Following")]
+        public static bool Following = false;
+        //public static Int32 _followTargetID = 0;
+        [ExposedData("Movement", "FollowTargetName")]
+        public static string FollowTargetName = String.Empty;
+
+        [ExposedData("Movement", "E3FollowTargetName")]
+        public static string E3FollowTargetName = String.Empty;
+
+
         public static Logging _log = E3.Log;
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
@@ -34,49 +41,52 @@ namespace E3Core.Processors
         private static Int64 _nextAnchorCheckInterval = 1000;
         public static Int64 _nextFollowCheck = 0;
         private static Int64 _nextFollowCheckInterval = 1000;
+        public static Int64 _nextE3FollowCheck = 0;
+        private static Int64 _nextE3FollowCheckInterval = 1;
         private static Int64 _nextChaseCheck = 0;
         private static Int64 _nextChaseCheckInterval = 250;
-		[ExposedData("Movement", "ChaseTarget")]
-		public static string ChaseTargetName = String.Empty;
+        [ExposedData("Movement", "ChaseTarget")]
+        public static string ChaseTargetName = String.Empty;
         public static float _followMeDistance = 10;
-		public static List<string> _clickitUseDoorZones = new List<string>() { "poknowledge", "potranq", "potimea", "potimeb","anguish","solrotower" };
+        public static List<string> _clickitUseDoorZones = new List<string>() { "poknowledge", "potranq", "potimea", "potimeb", "anguish", "solrotower" };
 
-		[SubSystemInit]
+        [SubSystemInit]
         public static void Movement_Init()
         {
             RegisterEvents();
-             _doorData.LoadData();
-    
-        }
+            _doorData.LoadData();
+            RecordPositions();
 
-        public static bool StandingStillForTimePeriod(Int32 periodToCheck=0)
-        {
-            if(periodToCheck==0)
-            {
-				if ((Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp) > E3.GeneralSettings.Movement_StandingStill)
-				{
-					return true;
-				}
-			}
-            else
-            {
-				if ((Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp) > periodToCheck)
-				{
-					return true;
-				}
-			}
-            return false;
-        }
-		public static bool MillisecondsSinceLastFD(Int32 periodToCheck)
-		{
-			if ((Core.StopWatch.ElapsedMilliseconds - E3.LastFDTimeStamp) > periodToCheck)
-			{
-				return true;
-			}
-		    return false;
 		}
 
-		public static void Reset()
+        public static bool StandingStillForTimePeriod(Int32 periodToCheck = 0)
+        {
+            if (periodToCheck == 0)
+            {
+                if ((Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp) > E3.GeneralSettings.Movement_StandingStill)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if ((Core.StopWatch.ElapsedMilliseconds - E3.LastMovementTimeStamp) > periodToCheck)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public static bool MillisecondsSinceLastFD(Int32 periodToCheck)
+        {
+            if ((Core.StopWatch.ElapsedMilliseconds - E3.LastFDTimeStamp) > periodToCheck)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static void Reset()
         {
             AnchorTarget = 0;
             Anchor_X = double.MinValue;
@@ -85,6 +95,7 @@ namespace E3Core.Processors
             Following = false;
             FollowTargetName = String.Empty;
             ChaseTargetName = String.Empty;
+            E3FollowTargetName = String.Empty;
         }
         [ClassInvoke(Data.Class.All)]
         public static void Check_Chase()
@@ -97,55 +108,199 @@ namespace E3Core.Processors
             using (_log.Trace())
             {
 
-				if (ChaseTargetName != String.Empty && !Assist.IsAssisting)
+                if (ChaseTargetName != String.Empty && !Assist.IsAssisting)
                 {
-					if(_spawns.TryByName(ChaseTargetName, out var spawn))
+                    if (_spawns.TryByName(ChaseTargetName, out var spawn))
                     {
                         double distance = spawn.Distance;
-						double minDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMin;
-						double maxDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMax;
+                        double minDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMin;
+                        double maxDistanceToChase = E3.GeneralSettings.Movement_ChaseDistanceMax;
 
 
-						if (distance != -1)
-						{
-							Following = true;
-							bool InLoS = MQ.Query<bool>($"${{Spawn[={ChaseTargetName}].LineOfSight}}");
-							bool navLoaded = MQ.Query<bool>("${Bool[${Navigation.MeshLoaded}]}");
-							if (navLoaded)
-							{
-								
-								Double navPathLength = MQ.Query<Double>($"${{Navigation.PathLength[id {spawn.ID}]}}");
+                        if (distance != -1)
+                        {
+                            Following = true;
+                            bool InLoS = MQ.Query<bool>($"${{Spawn[={ChaseTargetName}].LineOfSight}}");
+                            bool navLoaded = MQ.Query<bool>("${Bool[${Navigation.MeshLoaded}]}");
+                            if (navLoaded)
+                            {
 
-								if (distance > minDistanceToChase && navPathLength < maxDistanceToChase)
-								{
-									e3util.NavToSpawnID(spawn.ID);
-								}
+                                Double navPathLength = MQ.Query<Double>($"${{Navigation.PathLength[id {spawn.ID}]}}");
 
-							}
-							else
-							{
-								if (distance > minDistanceToChase && distance < 150 && InLoS)
-								{
+                                if (distance > minDistanceToChase && navPathLength < maxDistanceToChase)
+                                {
+                                    e3util.NavToSpawnID(spawn.ID);
+                                }
+
+                            }
+                            else
+                            {
+                                if (distance > minDistanceToChase && distance < 150 && InLoS)
+                                {
                                     double x = spawn.X;
                                     double y = spawn.Y;
                                     double z = spawn.Z;
-									e3util.TryMoveToLoc(x, y, z, 5, -1);
-								}
-							}
-						}
-					}
+                                    e3util.TryMoveToLoc(x, y, z, 5, -1);
+                                }
+                            }
+                        }
+                    }
                     else
                     {
-						_spawns.RefreshList(full: true);
-					}
+                        _spawns.RefreshList(full: true);
+                    }
                 }
             }
         }
 
-        public static void RemoveFollow()
+        private static Dictionary<string, LinkedList<(float, float, float)>> _e3followpaths = new Dictionary<string, LinkedList<(float, float, float)>>();
+        [ClassInvoke(Data.Class.All)]
+        public static void RecordPositions()
+        {
+            foreach(var user in E3.Bots.BotsConnected(readOnly: true))
+            {
+
+                if (user != E3FollowTargetName) continue;
+
+                //don't record positions if they are in a different zone.
+                if (E3.ZoneID != E3.Bots.Query<Int32>(user,"${Me.ZoneID}")) continue;
+
+				float x = E3.Bots.Query<float>(user, "${Me.X}");
+				float y = E3.Bots.Query<float>(user, "${Me.Y}");
+				float z = E3.Bots.Query<float>(user, "${Me.Z}");
+
+                if (x == 0 && y == 0 && z == 0) continue;
+
+				if (!_e3followpaths.ContainsKey(user))
+				{
+					_e3followpaths.Add(user, new LinkedList<(float, float, float)>());
+				}
+				var path = _e3followpaths[user];
+
+
+                
+
+				//var distanceFromMe = e3util.GetDistanceFromMe(x, y, z);
+
+                //less than 5 units from the follow distance, don't record and chill.
+                //if (Math.Abs((decimal)_followMeDistance -distanceFromMe) < 5)
+                //{
+                //    path.Clear();
+                //    continue;
+                //}
+
+                
+
+				if (!_e3followpaths.ContainsKey(user))
+                {
+                    _e3followpaths.Add(user, new LinkedList<(float, float, float)>());
+                }
+                //we can see them, just take this is the final location.
+				if (MQ.Query<bool>($"${{Spawn[{FollowTargetName}].LineOfSight}}"))
+                {
+                    path.Clear();
+                }
+
+				if (path.Count>0)
+                {
+                    var xyz = path.First.Value;
+                    float c_x = xyz.Item1;
+                    float c_y = xyz.Item2;
+                    float c_z = xyz.Item3;
+
+					var nx = c_x - x;
+					var ny = c_y - y;
+					var nz = c_z - z;
+                   
+					//we can calculate distance
+					decimal distance = (Decimal)Math.Sqrt(nx * nx + ny * ny + nz * nz);
+                    if(distance > 1)
+                    {
+                        //we have a new update 
+         				path.AddFirst((x, y, z));
+                    }
+				}
+                else
+                {
+					//we have no path so far, lets just add
+					path.AddFirst((x, y, z));
+				}
+
+                if(path.Count>3000)
+                {
+                    path.RemoveLast();
+                }
+                
+			}
+		}
+
+        [ClassInvoke(Data.Class.All)]
+        public static void Check_E3Follow()
+        {
+
+			if (!e3util.ShouldCheck(ref _nextE3FollowCheck, _nextE3FollowCheckInterval)) return;
+
+			if (String.IsNullOrWhiteSpace(E3FollowTargetName)) return;
+
+			if (Assist.IsAssisting) return;
+			if (MovementPaused) return;
+
+
+            //find the path of the user
+
+            if (!_e3followpaths.ContainsKey(E3FollowTargetName)) return;
+
+            var path = _e3followpaths[E3FollowTargetName];
+
+            if(path.Count>0)
+            {
+				var xyz = path.Last.Value;
+				float c_x = xyz.Item1;
+				float c_y = xyz.Item2;
+				float c_z = xyz.Item3;
+
+                var distance = e3util.GetDistanceFromMe(c_x, c_y, c_z);
+
+                if(distance > 200)
+                {
+                    //distance is way too far
+                    path.Clear();
+                    return;
+                }
+                else if(distance > (decimal)_followMeDistance)
+                {
+					if (!Debugger.IsAttached)
+					{
+                        double zdiff = Math.Abs(E3.Loc_Z - c_z);
+						if (zdiff > 10)
+						{
+							MQ.Write($"Zdiff is {zdiff}");
+
+							Core.mq_LookAt(c_x, c_y, c_z);
+						}
+      //                  else if(MQ.Query<string>("${MoveUtils.Command}") == "NONE")
+      //                  {
+						//	Core.mq_LookAt(c_x, c_y, c_z);
+
+						//}
+						
+					}
+					MQ.Cmd($"/squelch /moveto loc {c_y} {c_x} mdist {_followMeDistance}");
+                    MQ.Write($"Distance is {distance} trying to to move to {c_x},{c_y}, {c_z}");
+					
+                    
+					// e3util.TryMoveToLoc(c_x, c_y, c_z, (int) _followMeDistance,usenavifavail:false);
+				}
+				path.RemoveLast();
+			}
+		}
+
+
+		public static void RemoveFollow()
         {
             ChaseTargetName = String.Empty;
             FollowTargetName = string.Empty;
+            E3FollowTargetName = string.Empty;
             Following = false;
             MQ.Cmd("/squelch /afollow off");
             MQ.Cmd("/squelch /stick off");
@@ -174,6 +329,7 @@ namespace E3Core.Processors
                         {
                             if (Casting.TrueTarget(s.ID))
                             {
+                                MQ.Delay(100);
                                 MQ.Delay(100);
                                 //if a bot, use afollow, else use stick
                                 string mqcommand = $"/afollow on nodoor {_followMeDistance}";
@@ -209,7 +365,11 @@ namespace E3Core.Processors
             Anchor_Y = double.MinValue;
             Anchor_Z = double.MinValue;
             Following = false;
-
+            //clear out the recorded paths
+            foreach(var pair in _e3followpaths)
+            {
+                pair.Value.Clear();
+            }
         }
         public static bool AnchorEnabled()
         {
@@ -558,7 +718,9 @@ namespace E3Core.Processors
                 {
                     E3.Bots.BroadcastCommandToGroup($"/chaseme off {E3.CurrentName}", x);
                     ChaseTargetName = String.Empty;
-                    Following = false;
+					E3FollowTargetName = String.Empty;
+                    FollowTargetName = String.Empty;
+					Following = false;
                 }
                 //chaseme off <toon name>
                 else if (x.args.Count == 2 && x.args[0] == "off")
@@ -594,10 +756,122 @@ namespace E3Core.Processors
                 }
 
             });
+            EventProcessor.RegisterCommand("/e3follow", (x) =>
+            {
+				string user = string.Empty;
+				string distance = String.Empty;
+				//using strings as well floats can get weird going from value to string and back
+				foreach (var arg in x.args)
+				{
+					if (float.TryParse(arg, out var _))
+					{
+						distance = arg;
+						break;
+					}
+				}
+				if (distance != String.Empty)
+				{
+					_followMeDistance = float.Parse(distance);
+					if (_followMeDistance < 1) _followMeDistance = 1;
+					if (_followMeDistance > 200) _followMeDistance = 200;
+					x.args.Remove(distance);
+				}
+				else
+				{
+					_followMeDistance = 10;
+				}
+				if (x.args.Count > 0)
+				{
+					if (!e3util.FilterMe(x))
+					{
+						user = x.args[0];
+						Spawn s;
+						if (_spawns.TryByName(user, out s))
+						{
 
-           
+							E3FollowTargetName = user;
+							if (E3.CurrentClass != Class.Bard)
+							{
+								Casting.Interrupt();
+							}
+							Rez.Reset();
+							Assist.AssistOff();
+                            Check_E3Follow();
+						}
+					}
+				}
+				else
+				{
+					Rez.Reset();
+					//we are telling people to follow us
+					E3.Bots.BroadcastCommandToGroup("/e3follow " + E3.CurrentName + $" {_followMeDistance}", x);
 
-            EventProcessor.RegisterCommand("/followme", (x) =>
+				}
+
+			});
+			EventProcessor.RegisterCommand("/e3followoff", (x) =>
+			{
+				if (!x.args.Contains("me", StringComparer.OrdinalIgnoreCase))
+				{
+					ChaseTargetName = String.Empty;
+					FollowTargetName = string.Empty;
+                    E3FollowTargetName = String.Empty;
+					Following = false;
+
+					//we are telling everyone to stop following us
+					string extraArgs = String.Empty;
+
+					if (x.args.Contains("tome", StringComparer.OrdinalIgnoreCase))
+					{
+						double currentX = MQ.Query<double>("${Me.X}");
+						double currentY = MQ.Query<double>("${Me.Y}");
+						double currentZ = MQ.Query<double>("${Me.Z}");
+						int zoneID = MQ.Query<int>("${Zone.ID}");
+						extraArgs += $" tome={currentX}/{currentY}/{currentZ}/{zoneID}";
+					}
+					E3.Bots.BroadcastCommandToGroup($"/e3followoff me{extraArgs}", x);
+				}
+				else
+				{
+					if (e3util.FilterMe(x)) return;
+					RemoveFollow();
+					foreach (var arg in x.args)
+					{
+						if (arg.StartsWith("tome="))
+						{
+							//if (_spawns.TryByName(FollowTargetName, out var s))
+							{
+								string[] strings = arg.Split(new char[] { '=' });
+								string[] xyz = strings[1].Split(new char[] { '/' });
+
+								if (xyz.Length > 2)
+								{
+									double xval;
+									double yval;
+									double zval;
+									int zoneID;
+									int.TryParse(xyz[3], out zoneID);
+									if (MQ.Query<int>("${Zone.ID}") != zoneID) return;
+									if (double.TryParse(xyz[0], out xval))
+									{
+										if (double.TryParse(xyz[1], out yval))
+										{
+											if (double.TryParse(xyz[2], out zval))
+											{
+												e3util.TryMoveToLoc(xval, yval, zval);
+												break;
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+
+				}
+			});
+
+			EventProcessor.RegisterCommand("/followme", (x) =>
             {
                 string user = string.Empty;
 
@@ -678,7 +952,8 @@ namespace E3Core.Processors
                 {
                     ChaseTargetName = String.Empty;
                     FollowTargetName = string.Empty;
-                    Following = false;
+					E3FollowTargetName = String.Empty;
+					Following = false;
 
                     //we are telling everyone to stop following us
                     string extraArgs = String.Empty;
@@ -812,6 +1087,7 @@ namespace E3Core.Processors
                 }
             });
         }
+
         public static void PlayerSummon(string cothTarget)
         {
             // {FindItem[=Wayfarers Brotherhood Emblem].Clicky} == Call of the Hero, SpellID 1771
