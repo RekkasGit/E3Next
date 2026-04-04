@@ -832,29 +832,58 @@ namespace E3Core.Utility
 
 			return result;
 		}
-		public static void TryMoveToLoc(Double x, Double y, Double z, Int32 minDistance = 0, Int32 timeoutInMS = 10000)
+		public static Decimal GetDistanceFromMe(float x, float y, float z)
+		{
+
+			x = (float)E3.Loc_X - x;
+			y = (float)E3.Loc_Y - y;
+			z = (float)E3.Loc_Z - z;
+
+			//we can calculate distance
+			decimal distance = (Decimal)Math.Sqrt(x * x + y * y + z * z);
+			return distance;
+
+		}
+		public static Decimal GetDistanceFromOtherLoc(float x, float y, float z, float x2, float y2, float z2)
+		{
+
+			x = x2 - x;
+			y = y2 - y;
+			z = z2 - z;
+
+			//we can calculate distance
+			decimal distance = (Decimal)Math.Sqrt(x * x + y * y + z * z);
+			return distance;
+
+		}
+		public static void TryMoveToLoc(Double x, Double y, Double z, Int32 minDistance = 0, Int32 timeoutInMS = 10000, bool usenavifavail=true)
 		{
 			//Check for Nav path if available and Nav is loaded
-			bool navLoaded = MQ.Query<bool>("${Plugin[MQ2Nav].IsLoaded}");
-			int targetID = MQ.Query<int>("${Target.ID}");
+			//int targetID = MQ.Query<int>("${Target.ID}");
 
-			if (navLoaded)
+			if(usenavifavail)
 			{
-				bool meshLoaded = MQ.Query<bool>("${Navigation.MeshLoaded}");
+				bool navLoaded = MQ.Query<bool>("${Plugin[MQ2Nav].IsLoaded}");
 
-				if (meshLoaded)
+				if (navLoaded)
 				{
-					NavToLoc(x, y, z);
-					//exit from TryMoveToLoc if we've reached the destination
-					Double distanceX = Math.Abs(x - MQ.Query<Double>("${Me.X}"));
-					Double distanceY = Math.Abs(y - MQ.Query<Double>("${Me.Y}"));
+					bool meshLoaded = MQ.Query<bool>("${Navigation.MeshLoaded}");
 
-					if (distanceX < 20 && distanceY < 20)
+					if (meshLoaded)
 					{
-						return;
+						NavToLoc(x, y, z);
+						//exit from TryMoveToLoc if we've reached the destination
+						Double distanceX = Math.Abs(x - MQ.Query<Double>("${Me.X}"));
+						Double distanceY = Math.Abs(y - MQ.Query<Double>("${Me.Y}"));
+
+						if (distanceX < 20 && distanceY < 20)
+						{
+							return;
+						}
 					}
 				}
 			}
+			
 
 			Double meX = MQ.Query<Double>("${Me.X}");
 			Double meY = MQ.Query<Double>("${Me.Y}");
@@ -882,7 +911,7 @@ namespace E3Core.Utility
 					break;
 				}
 
-				MQ.Delay(200);
+				MQ.Delay(50);
 			}
 
 
@@ -2399,7 +2428,7 @@ namespace E3Core.Utility
 
 
 			Int64 endTime = Core.StopWatch.ElapsedMilliseconds + timeoutInMS;
-			MQ.Delay(300);
+			MQ.Delay(50);
 
 			while (navPathExists && MQ.Query<int>("${Navigation.Velocity}") > 0)
 			{
@@ -2413,7 +2442,7 @@ namespace E3Core.Utility
 					MQ.Cmd($"/nav stop");
 					break;
 				}
-				MQ.Delay(1000);
+				MQ.Delay(50);
 
 				navActive = MQ.Query<bool>("${Navigation.Active}");
 				if (!navActive)

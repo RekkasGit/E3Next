@@ -1807,6 +1807,7 @@ namespace E3Core.Processors
 
 		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false, bool skipGCDCheck=false)
 		{
+			if (spell.IgnoreReadyCheck) return true;
 			if (spell == null) return false;
 
 			if (spell.RecastDelay>0)
