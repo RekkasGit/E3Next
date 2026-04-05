@@ -1,4 +1,5 @@
-﻿using E3Core.Data;
+﻿using CommunityToolkit.HighPerformance;
+using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
@@ -285,10 +286,28 @@ namespace E3Core.Processors
 						//}
 						
 					}
-					MQ.Cmd($"/squelch /moveto loc {c_y} {c_x} mdist {_followMeDistance}");
-                    MQ.Write($"Distance is {distance} trying to to move to {c_x},{c_y}, {c_z}");
-					
-                    
+                    if (distance > 60 && distance  < 200 
+                        && !MQ.Query<bool>($"${{Spawn[{E3FollowTargetName}].LineOfSight}}") 
+                        && MQ.Query<bool>($"${{Navigation.PathExists[spawn {E3FollowTargetName}]}}"))
+                    {
+							MQ.Write($"Possibly stuck, trying to nav to {E3FollowTargetName}. Distance is {distance}");
+							MQ.Cmd($"/nav spawn {E3FollowTargetName}");
+							MQ.Delay(1000);
+							path.Clear();
+							while (MQ.Query<bool>("${Navigation.Active}"))
+							{
+								MQ.Delay(50);
+							}
+							return;
+					}
+					else
+                    {
+						MQ.Cmd($"/squelch /moveto loc {c_y} {c_x} mdist {_followMeDistance}");
+						MQ.Write($"Distance is {distance} trying to to move to {c_x},{c_y}, {c_z}");
+
+					}
+
+
 					// e3util.TryMoveToLoc(c_x, c_y, c_z, (int) _followMeDistance,usenavifavail:false);
 				}
 				path.RemoveLast();
