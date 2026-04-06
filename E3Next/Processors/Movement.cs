@@ -43,6 +43,7 @@ namespace E3Core.Processors
         public static Int64 _nextFollowCheck = 0;
         private static Int64 _nextFollowCheckInterval = 1000;
         public static Int64 _nextE3FollowCheck = 0;
+        public static bool _e3follownavfallback = true;
         private static Int64 _nextE3FollowCheckInterval = 1;
         private static Int64 _nextChaseCheck = 0;
         private static Int64 _nextChaseCheckInterval = 250;
@@ -279,14 +280,8 @@ namespace E3Core.Processors
 
 							Core.mq_LookAt(c_x, c_y, c_z);
 						}
-      //                  else if(MQ.Query<string>("${MoveUtils.Command}") == "NONE")
-      //                  {
-						//	Core.mq_LookAt(c_x, c_y, c_z);
-
-						//}
-						
-					}
-                    if (distance > 60 && distance  < 200 
+     				}
+                    if (_e3follownavfallback &&  distance > 60 && distance  < 200 
                         && !MQ.Query<bool>($"${{Spawn[{E3FollowTargetName}].LineOfSight}}") 
                         && MQ.Query<bool>($"${{Navigation.PathExists[spawn {E3FollowTargetName}]}}"))
                     {
@@ -779,8 +774,19 @@ namespace E3Core.Processors
             {
 				string user = string.Empty;
 				string distance = String.Empty;
-				//using strings as well floats can get weird going from value to string and back
-				foreach (var arg in x.args)
+
+                if (x.args.Contains("nonav"))
+                {
+                    x.args.Remove("nonav");
+                    _e3follownavfallback = false;
+                }
+                else
+                {
+                    _e3follownavfallback = true;
+                }
+
+                //using strings as well floats can get weird going from value to string and back
+                foreach (var arg in x.args)
 				{
 					if (float.TryParse(arg, out var _))
 					{
