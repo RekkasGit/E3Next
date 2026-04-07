@@ -18,10 +18,12 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         public static Dictionary<Int32, SpellTimer> _debuffdotTimers = new Dictionary<Int32, SpellTimer>();
-     
+        [ExposedData("DebuffDot","MobsToDot")]
         public static HashSet<Int32> _mobsToDot = new HashSet<int>();
-        public static HashSet<Int32> _mobsToDebuff = new HashSet<int>();
-        public static HashSet<Int64> _mobsToOffAsist = new HashSet<Int64>();
+		[ExposedData("DebuffDot", "MobsToDebuff")]
+		public static HashSet<Int32> _mobsToDebuff = new HashSet<int>();
+		[ExposedData("DebuffDot", "MobsToOffAssist")]
+		public static HashSet<Int64> _mobsToOffAsist = new HashSet<Int64>();
 		private static HashSet<Int64> _offAssistFullMobList = new HashSet<long>();
 
 		public static HashSet<Int32> _mobsToIgnoreOffAsist = new HashSet<int>();

@@ -5,6 +5,7 @@ using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -2360,6 +2361,17 @@ namespace E3Core.Processors
 									tIF = tIF.ReplaceInsensitive(pair.Key, tburn.Active.ToString());
 								}
 
+							}
+							else if (field.GetValue(null) is IEnumerable enumerableSet)
+							{
+								List<string> result = new List<string>();
+								foreach (var item in enumerableSet)
+								{
+									// Print value or use reflection here
+									result.Add(item.ToString());
+									
+								}
+								tIF = tIF.ReplaceInsensitive(pair.Key, String.Join(",",result));
 							}
 							else
 							{
