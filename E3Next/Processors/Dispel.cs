@@ -17,7 +17,7 @@ namespace E3Core.Processors
         private static Int64 _nextDispelCheck = 0;
 		[ExposedData("Dispel", "DispelCheckInterval")]
 		private static Int64 _nextDispelCheckInterval = 500;
-
+		[ExposedData("Dispel","MobsToDispel")]
 		public static HashSet<Int32> _mobsToDispel = new HashSet<int>();
 
 		[SubSystemInit]

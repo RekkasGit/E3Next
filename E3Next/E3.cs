@@ -455,6 +455,9 @@ namespace E3Core.Processors
 					IsInvul = MQ.Query<bool>("${Me.Invulnerable}");
 					CurrentId = MQ.Query<int>("${Me.ID}");
 					CurrentInCombat = Basics.InCombat();
+					
+					//record position of anyone we are following
+					Movement.RecordPositions();
 
 					E3ImGUI.ProcessMQCommands();
 					//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
