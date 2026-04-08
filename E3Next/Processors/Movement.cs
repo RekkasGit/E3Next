@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.HighPerformance;
 using E3Core.Data;
+using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
@@ -199,10 +200,10 @@ namespace E3Core.Processors
                     _e3followpaths.Add(user, new LinkedList<(float, float, float)>());
                 }
                 //we can see them, just take this is the final location.
-				if (MQ.Query<bool>($"${{Spawn[{FollowTargetName}].LineOfSight}}"))
-                {
-                    path.Clear();
-                }
+				//if (MQ.Query<bool>($"${{Spawn[{FollowTargetName}].LineOfSight}}"))
+    //            {
+    //                path.Clear();
+    //            }
 
 				if (path.Count>0)
                 {
@@ -254,7 +255,17 @@ namespace E3Core.Processors
             if (!_e3followpaths.ContainsKey(E3FollowTargetName)) return;
 
             var path = _e3followpaths[E3FollowTargetName];
-		    path_start:
+        path_start:
+         
+            if(EventProcessor._mqCommandProcessingQueue.Count>0)
+            {
+                return;
+            }
+            if (NetMQServer.SharedDataClient.CommandQueue.Count > 0)
+            {
+                return;
+            }
+
 			if (path.Count>0)
 			{
 			   
@@ -265,7 +276,7 @@ namespace E3Core.Processors
 
                 var distance = e3util.GetDistanceFromMe(c_x, c_y, c_z);
                 var inLoS = MQ.Query<bool>($"${{Spawn[{E3FollowTargetName}].LineOfSight}}");
-
+                bool isStuck = MQ.Query<bool>("${MoveUtils.Stuck}");
 				if (distance > 200)
                 {
                     //distance is way too far
@@ -284,12 +295,12 @@ namespace E3Core.Processors
 							Core.mq_LookAt(c_x, c_y, c_z);
 						}
      				}
-                    if (_e3follow_navfallback &&  distance > 60 && distance  < 200 
-                        && !inLoS
+                    if (_e3follow_navfallback && (distance > 60 && distance  < 200) 
+                        && (!inLoS || isStuck)
 						&& MQ.Query<bool>($"${{Navigation.PathExists[spawn {E3FollowTargetName}]}}"))
                     {
 							MQ.Write($"Possibly stuck, trying to nav to {E3FollowTargetName}. Distance is {distance}");
-							MQ.Cmd($"/nav pc spawn {E3FollowTargetName}");
+							MQ.Cmd($"/nav spawn pc {E3FollowTargetName}");
 							MQ.Delay(1000);
 							path.Clear();
 							while (MQ.Query<bool>("${Navigation.Active}"))
@@ -304,10 +315,10 @@ namespace E3Core.Processors
                         MQ.Cmd($"/squelch /moveto loc {c_y} {c_x} mdist {_followMeDistance}");
 						MQ.Write($"Distance is {distance} trying to to move to {c_x},{c_y}, {c_z}");
                        
-                        if(_e3follow_replay)
+                        if(_e3follow_replay|| !inLoS)
 						{
 							//MQ.Delay(2000, "${MoveUtils.Command.Equal[MOVETO]}");
-							MQ.Delay(2000, "${MoveUtils.Command.Equal[NONE]}");
+							MQ.Delay(2000, "${MoveTo.Stopped}");
 						}
 						path.RemoveLast();
 						if (path.Count > 0)
