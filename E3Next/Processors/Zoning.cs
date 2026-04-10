@@ -49,7 +49,7 @@ namespace E3Core.Processors
 					{
 						E3.ResistSettings.LoadData(zoneId);
 					}
-
+					SetProcessZone();
 				}
 			}
 			else
@@ -61,6 +61,7 @@ namespace E3Core.Processors
 					E3.ResistSettings.LoadData(zoneId);
 
 				}
+				SetProcessZone();
 			}
 			// add our new zone to the zone lookup if necessary
 			if (!ZoneLookup.TryGetValue(zoneId, out CurrentZone))

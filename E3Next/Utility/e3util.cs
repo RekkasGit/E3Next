@@ -2403,7 +2403,7 @@ namespace E3Core.Utility
 			}
 		}
 
-		private static void NavToLoc(Double locX, Double locY, Double locZ)
+		public static void NavToLoc(Double locX, Double locY, Double locZ)
 		{
 			bool navActive = MQ.Query<bool>("${Navigation.Active}");
 			var navQuery = $"locxyz {locX} {locY} {locZ}";

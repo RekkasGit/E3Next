@@ -451,7 +451,7 @@ namespace E3Core.Processors
 			
 				EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) =>
 				{
-					if (Core._MQ2MonoVersion < 0.420m)
+					//if (Core._MQ2MonoVersion < 0.420m)
 					{
 						if (x.match.Groups.Count > 1)
 						{
@@ -463,7 +463,7 @@ namespace E3Core.Processors
 							}
 						}
 						Zoning.SetProcessZone();
-						Zoning.ProcessZoneIfNeeded();
+						//Zoning.ProcessZoneIfNeeded();
 					}
 				});
 			
