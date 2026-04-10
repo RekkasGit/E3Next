@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.PerformanceData;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -2950,6 +2951,35 @@ namespace E3Core.Utility
 			catch (Exception ex)
 			{
 				E3.Log.Write($"Failed to open URL: {url} - {ex.Message}", Logging.LogLevels.Error);
+			}
+		}
+		public static void OpenFolder(string path)
+		{
+			try
+			{
+				if (String.IsNullOrWhiteSpace(path))
+				{
+					E3.Log.Write("Failed to open folder: path was empty.", Logging.LogLevels.Error);
+					return;
+				}
+
+				if (!Directory.Exists(path))
+				{
+					E3.Log.Write($"Failed to open folder: {path} does not exist.", Logging.LogLevels.Error);
+					return;
+				}
+
+				var psi = new ProcessStartInfo
+				{
+					FileName = "explorer.exe",
+					Arguments = $"\"{path}\"",
+					UseShellExecute = true
+				};
+				Process.Start(psi);
+			}
+			catch (Exception ex)
+			{
+				E3.Log.Write($"Failed to open folder: {path} - {ex.Message}", Logging.LogLevels.Error);
 			}
 		}
 		public static bool IsGenericList(this FieldInfo o, Type typeToCheck)

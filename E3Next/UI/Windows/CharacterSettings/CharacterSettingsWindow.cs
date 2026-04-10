@@ -223,10 +223,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TableNextColumn();
 					float cellAvail = imgui_GetContentRegionAvailX();
 					float donateBtnW = 70f;
+					float iniFolderBtnW = 112f;
 					float themeBtnW = 64f;
 					float closeBtnW = 64f;
 					float spacing = 6f;
-					float totalW = donateBtnW + spacing + themeBtnW + spacing + closeBtnW;
+					float totalW = donateBtnW + spacing + iniFolderBtnW + spacing + themeBtnW + spacing + closeBtnW;
 					if (totalW < cellAvail)
 					{
 						imgui_SameLineEx(cellAvail - totalW, 0f);
@@ -235,6 +236,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (imgui_Button("Donate"))
 					{
 						_state.Show_Donate = true;
+					}
+					imgui_SameLine();
+					if (imgui_Button("Open Bot INIs"))
+					{
+						e3util.OpenFolder(BaseSettings.GetBotPath());
 					}
 					imgui_SameLine();
 					if (imgui_Button("Theme"))
