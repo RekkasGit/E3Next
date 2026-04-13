@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.HighPerformance.Buffers;
+using E3Core.Classes;
 using E3Core.Data;
 using E3Core.Server;
 using E3Core.UI.Windows.CharacterSettings;
@@ -1214,7 +1215,20 @@ namespace E3Core.Processors
 					CastSpell(spell);
 					if (spell.MyCastTime > 500)
 					{
-						MQ.Delay(300, IsCasting);
+						Int32 countercheck = 0;
+						while(!IsCasting())
+						{
+							countercheck++;
+							//can't just delay, as e3n is doing the following commands.
+							if(!String.IsNullOrEmpty(Movement.E3FollowTargetName))
+							{
+								Movement.RecordPositions();
+								Movement.Check_E3Follow();
+							}
+							MQ.Delay(50);
+							if (countercheck > 5) break;
+						}
+					
 						if (e3util.IsEQLive())
 						{
 							if (IsCasting())
@@ -1283,11 +1297,11 @@ namespace E3Core.Processors
 					_log.Write($"Doing AfterEvent:{spell.AfterEvent}");
 					MQ.Cmd($"/docommand {spell.AfterEvent}");
 				}
-
-
-				MQ.Delay(300);
-				MQ.Delay((int)spell.MyCastTime);
-
+				//problem here, is that sometimes casting items from a bard doesn't bring up a cast window, so we have to... guess
+				if(String.IsNullOrWhiteSpace(Movement.E3FollowTargetName))
+				{
+					Bard.SetNextBardCast((int)spell.MyCastTime+300);
+				}
 			}
 			else if (spell.CastType == CastingType.AA)
 			{
@@ -2855,7 +2869,7 @@ namespace E3Core.Processors
 				return CastReturn.CAST_SUCCESS;
 			}
 
-			Double endtime = Core.StopWatch.Elapsed.TotalMilliseconds + 500;
+			Double endtime = Core.StopWatch.Elapsed.TotalMilliseconds + 750;
 			while (endtime > Core.StopWatch.Elapsed.TotalMilliseconds)
 			{
 
@@ -2931,8 +2945,11 @@ namespace E3Core.Processors
 								}
 								data = data.Slice(casterNameLength);
 							}
+							//MQ.WriteDelayed($"TimeLeftOnSpells: index:{counter} ID:{spellID} d:{duration} stype:{spellType} casterName:{CasterName}");
+
 							if (spell.SpellID == spellID)
 							{
+								//MQ.WriteDelayed($"Found My Spell:{spell.SpellID} with duration:{duration}");
 								//check if its mine
 								if (E3.CurrentName == CasterName)
 								{
@@ -2941,6 +2958,7 @@ namespace E3Core.Processors
 									return millisecondsLeft;
 								}
 							}
+
 						}
 					}
 				}

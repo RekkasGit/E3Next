@@ -97,6 +97,11 @@ namespace E3Core.Processors
 				e3util.PrintTimerStatus(BuffCheck._buffTimers, "Buff timers");
 
 			});
+			EventProcessor.RegisterCommand("/e3debug_debuffTimers", (x) =>
+			{
+				e3util.PrintTimerStatus(DebuffDot._debuffdotTimers, "Debuff timers");
+
+			});
 			EventProcessor.RegisterCommand("/e3debug_check_spawndelta", x =>
 			{
 

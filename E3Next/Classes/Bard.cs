@@ -541,9 +541,14 @@ namespace E3Core.Classes
                 MQ.Write($"\arTwists-Skip \ag{songToPlay.SpellName}");
             }
         }
-		public static void SetNextBardCast()
+		public static void SetNextBardCast(Int32 castTime=0)
 		{
-			Int32 castTimeLeft = (int)MQ.Query<int>("${Me.CastTimeLeft}");
+
+			//do we already have a timestamp set? if so, just use that
+			if (_nextBardCast > Core.StopWatch.ElapsedMilliseconds) return;
+
+			Int32 castTimeLeft = castTime;
+			if(castTime==0) castTimeLeft=(int)MQ.Query<int>("${Me.CastTimeLeft}");
 			Int32 bardLatency = BardLatency();
 			_nextBardCast = Core.StopWatch.ElapsedMilliseconds + castTimeLeft + bardLatency;
 			//MQ.Write($"CastTime:{castTimeLeft} latency: {bardLatency} nextbardcast:{_nextBardCast}");

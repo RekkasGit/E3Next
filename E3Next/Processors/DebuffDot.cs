@@ -2,6 +2,7 @@
 using E3Core.Data;
 using E3Core.Settings;
 using E3Core.Utility;
+using Google.Protobuf.WellKnownTypes;
 using MonoCore;
 using System;
 using System.Collections.Generic;
@@ -514,6 +515,16 @@ namespace E3Core.Processors
 						}
 					}
 
+					//sanity check to see if the mob still has our debuff, if so just update the timer if needed
+					Casting.TrueTarget(mobid);
+					Int64 timeLeftInMS = Casting.TimeLeftOnMySpell(spell);
+
+					if (timeLeftInMS>0)
+                    {
+						UpdateDotDebuffTimers(mobid, spell, timeLeftInMS, timers);
+                        return;
+					}
+
 					var result = Casting.Cast(mobid, spell);
                     if (result == CastReturn.CAST_INTERRUPTFORHEAL)
                     {
@@ -524,48 +535,57 @@ namespace E3Core.Processors
                     //// The reason for this is, it takes X amount of time to come back from the server , and that X is unreliable as heck. 
                     //// So... for debuffs we are going to do this. If the target you have has the buff, grab its timer from the buffs object
                     //// for total time as as the Duration TLO can be unreliable depending on dot focus duration.  as in it says 72  sec when its 92 sec.
-                    Casting.TrueTarget(mobid);
+                 
+                    //bool populated = MQ.Query<Boolean>("${Target.BuffsPopulated}");
+                    //MQ.WriteDelayed($"Are Buffs Populated?:{populated}");
+					//MQ.Delay(2000, "${Target.BuffsPopulated}");
+					//populated = MQ.Query<Boolean>("${Target.BuffsPopulated}");
+					//MQ.WriteDelayed($"Are Buffs Populatedv2?:{populated}");
 
-                    MQ.Delay(2000, "${Target.BuffsPopulated}");
-                   
-                    MQ.Delay(100);
+					//for good or ill, debuff data should be here by now so we can figure out how much time is left.
+					//sucks having to wait this long
+                    //  MQ.Delay(1000);
                     Int32 buffCount = MQ.Query<Int32>("${Target.BuffCount}");
                     //lets just update our cache with what is on the mob.
-                    Int64 timeLeftInMS = Casting.TimeLeftOnMySpell(spell);
-
+                    timeLeftInMS = Casting.TimeLeftOnMySpell(spell);
 					//On EQ Live 
 					//Refactored the way buffs/debuffs are stored on characters and NPCs, enabling an increase in hostile NPC's maximum from 97 to 200.
                     //This required a one-time clearing of saved buffs on mercenaries and pets, may 2022.
 
                     //if we have any time on it, it means we can see it, so just update. If we don't see it and we are under the default cap, assume its beyond the visable range.
                     //set a timer and continue on.
-					if (timeLeftInMS > 0 || (buffCount < e3util.MobMaxDebuffSlots && E3.CharacterSettings.Misc_VisibleDebuffsDots))
+					if (timeLeftInMS > 0)
                     {
                         UpdateDotDebuffTimers(mobid, spell, timeLeftInMS, timers);
                     }
                     else
                     {
                         Int64 totalTimeToWait;
-                        if (timeLeftInMS > 0)
+                      
+                        if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
                         {
-                            totalTimeToWait = timeLeftInMS;
+                            return;
+                        }
+                        if (result != CastReturn.CAST_SUCCESS)
+                        {
+                            //zero it out
+                            totalTimeToWait = 0;
                         }
                         else
                         {
-                            if (result == CastReturn.CAST_INTERRUPTED || result == CastReturn.CAST_INTERRUPTFORHEAL || result == CastReturn.CAST_FIZZLE)
+							if(E3.CharacterSettings.Misc_VisibleDebuffsDots && buffCount< e3util.MaxNPCBuffSlots)
                             {
-                                return;
-                            }
-                            if (result != CastReturn.CAST_SUCCESS)
-                            {
-                                //zero it out
-                                totalTimeToWait = 0;
-                            }
+                                totalTimeToWait = 3000;//come back in 3 seconds to check
+
+							}
                             else
                             {
-                                totalTimeToWait = (spell.DurationTotalSeconds * 1000);
-                            }
-                        }
+                                //possibly can't see the debuff, just use the spell time.
+								totalTimeToWait = (spell.DurationTotalSeconds * 1000);
+
+							}
+						}
+                       
                         UpdateDotDebuffTimers(mobid, spell, totalTimeToWait, timers);
                     }
                     //onto the next debuff/dot!
