@@ -829,6 +829,7 @@ namespace E3Core.Settings
 
 
 		public string _fileName = String.Empty;
+		public string _fileName_UI = String.Empty;
 		/// <summary>
 		/// Initializes a new instance of the <see cref="CharacterSettings"/> class.
 		/// </summary>
@@ -1392,32 +1393,11 @@ namespace E3Core.Settings
 			// _log.Write($"Finished processing and loading: {fullPathToUse}");
 
 		}
-
-		public IniData createNewINIData(bool forBrandNewFile)
+		public IniData createNew_UI_INIData(bool forBrandNewFile)
 		{
 			IniData newFile = new IniData();
-
-
-			newFile.Sections.AddSection("Misc");
-			var section = newFile.Sections.GetSectionData("Misc");
-			section.Keys.AddKey("AutoFood", "Off");
-			section.Keys.AddKey("Food", "");
-			section.Keys.AddKey("Drink", "");
-			section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
-			section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
-			section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
-			section.Keys.AddKey("Anchor (Char to Anchor to)", "");
-			section.Keys.AddKey("Remove Torpor After Combat", "On");
-			section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
-			section.Keys.AddKey("Dismount On Interrupt (On/Off)", "On");
-			section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
-			section.Keys.AddKey("If FD stay down (true/false)", "False");
-			section.Keys.AddKey("Debuffs/Dots are visible", "True");
-			section.Keys.AddKey("Enhanced rotation speed", "Off");
-			section.Keys.AddKey("Echo Command Received", "True");
-			
 			newFile.Sections.AddSection("UI Theme");
-			section = newFile.Sections.GetSectionData("UI Theme");
+			var section = newFile.Sections.GetSectionData("UI Theme");
 			section.Keys.AddKey("E3 Config", "DarkTeal");
 			section.Keys.AddKey("Rounding", "8.0");
 
@@ -1536,7 +1516,7 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("E3Hud_Hub_HotButtons_Dynamic");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons_Dynamic");
 
-			if(E3Hud_Hub_HotButtons_UseDefaultDynamicButtons)
+			if (E3Hud_Hub_HotButtons_UseDefaultDynamicButtons)
 			{
 				section.Keys.AddKey("Invite", "/invite");
 				section.Keys.AddKey("Disband", "/disband");
@@ -1559,6 +1539,34 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Locked", "False");
 
 
+			
+
+			return newFile;
+		}
+		public IniData createNewINIData(bool forBrandNewFile)
+		{
+			IniData newFile = new IniData();
+
+
+			newFile.Sections.AddSection("Misc");
+			var section = newFile.Sections.GetSectionData("Misc");
+			section.Keys.AddKey("AutoFood", "Off");
+			section.Keys.AddKey("Food", "");
+			section.Keys.AddKey("Drink", "");
+			section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
+			section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
+			section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
+			section.Keys.AddKey("Anchor (Char to Anchor to)", "");
+			section.Keys.AddKey("Remove Torpor After Combat", "On");
+			section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
+			section.Keys.AddKey("Dismount On Interrupt (On/Off)", "On");
+			section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
+			section.Keys.AddKey("If FD stay down (true/false)", "False");
+			section.Keys.AddKey("Debuffs/Dots are visible", "True");
+			section.Keys.AddKey("Enhanced rotation speed", "Off");
+			section.Keys.AddKey("Echo Command Received", "True");
+			
+		
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");
 			section.Keys.AddKey("Override Old Settings and use This(On/Off)", "Off");
@@ -1961,11 +1969,13 @@ namespace E3Core.Settings
 			{
 				fileName = fileName.Replace(".ini", "_" + CurrentSet + ".ini");
 			}
-			IniData newFile = null; 
+			IniData newFile = null;
+			IniData newFile_UI = null;
 			if (!File.Exists(fileName))
 			{
 				
 				newFile = createNewINIData(forBrandNewFile:true);
+				newFile_UI = createNew_UI_INIData(forBrandNewFile: true);
 				if (!Directory.Exists(_configFolder + _botFolder))
 				{
 					Directory.CreateDirectory(_configFolder + _botFolder);
@@ -1975,6 +1985,7 @@ namespace E3Core.Settings
 				_fileLastModified = System.IO.File.GetLastWriteTime(fileName);
 				_fileLastModifiedFileName = fileName;
 				_fileName = fileName;
+				_fileName_UI = _fileName.Replace(".ini", "_UI.ini");
 			}
 			else
 			{
@@ -1982,13 +1993,16 @@ namespace E3Core.Settings
 				//Parse the ini file
 				//Create an instance of a ini file parser
 				FileIniDataParser fileIniData = e3util.CreateIniParser();
+				FileIniDataParser fileIniData_UI = e3util.CreateIniParser();
 				IniData tParsedData = fileIniData.ReadFile(fileName);
+				IniData tPasreDaata_UI = fileIniData_UI.ReadFile(_fileName_UI);
 
 
 				//before we merge, we need to check on hotkey dynamic to see if its set to true or false in the current ini data
 				//this is because there is a filter on createNewINI data
 				LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", tParsedData, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
 				newFile = createNewINIData(false);
+				newFile_UI = createNew_UI_INIData(forBrandNewFile: true);
 
 				if (_mergeUpdates)
 				{
@@ -2003,6 +2017,7 @@ namespace E3Core.Settings
 				_fileLastModified = System.IO.File.GetLastWriteTime(fileName);
 				_fileLastModifiedFileName = fileName;
 				_fileName = fileName;
+				_fileName_UI = _fileName.Replace(".ini", "_UI.ini");
 
 			}
 
