@@ -26,6 +26,14 @@ namespace E3Core.Processors
 		}
 		public static void RegisterEvents()
 		{
+			EventProcessor.RegisterCommand("/e3debug_charactersettings_save", (x) =>
+			{
+
+				E3.CharacterSettings.SaveData();
+
+
+			}, "Force settings save");
+
 			EventProcessor.RegisterCommand("/e3debug_memory_collect", (x) =>
 			{
 
