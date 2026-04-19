@@ -15,6 +15,8 @@ namespace E3Core.Processors
     public static class Zoning
     {
 		[ExposedData("Zoning", "CurrentZone")]
+
+		public static Int64 _lastZoneTimeStamp = 0;
 		public static Zone CurrentZone;
         public static Dictionary<Int32, Zone> ZoneLookup = new Dictionary<Int32, Zone>();
         public static TributeDataFile TributeDataFile = new TributeDataFile();
@@ -43,8 +45,9 @@ namespace E3Core.Processors
 			{
 				if (zoneId != CurrentZone.Id)
 				{
+					_lastZoneTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 					//our zone has changed or is going to change
-					zoneChanged=true;
+					zoneChanged = true;
 					if (E3.ResistSettings != null)
 					{
 						E3.ResistSettings.LoadData(zoneId);
@@ -54,6 +57,7 @@ namespace E3Core.Processors
 			}
 			else
 			{
+				_lastZoneTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 				//doesn't exist, so we count this as a change.
 				zoneChanged = true;
 				if(E3.ResistSettings!=null)
@@ -111,6 +115,7 @@ namespace E3Core.Processors
 				E3.MQ.WriteDelayed("Processing zoning events");
 				using (E3.MQ.GetDelayLock())
 				{
+					_lastZoneTimeStamp = Core.StopWatch.ElapsedMilliseconds;
 					//means we have zoned.
 					_spawns.RefreshList(full: true,resetGM:true);//make sure we get a new refresh of this zone.
 					Loot.Reset();
