@@ -74,7 +74,7 @@ namespace E3Core.Settings
 	/// <seealso cref="BaseSettings" />
 	/// <seealso cref="IBaseSettings" />
 	/// 
-	public class CharacterSettings : BaseSettings, IBaseSettings
+	public class CharacterSettings : BaseSettings
 	{
 		//the reflection lookup so that we can expose all settings data for custom looksup
 		//under the ${E3N.Settings.HEADER.KEY}
@@ -85,6 +85,7 @@ namespace E3Core.Settings
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 		public IniData ParsedData;
+		public IniData ParsedData_UI;
 		private readonly string CharacterName;
 		private readonly string ServerName;
 		private readonly Class CharacterClass;
@@ -829,6 +830,7 @@ namespace E3Core.Settings
 
 
 		public string _fileName = String.Empty;
+		public string _fileName_UI = String.Empty;
 		/// <summary>
 		/// Initializes a new instance of the <see cref="CharacterSettings"/> class.
 		/// </summary>
@@ -876,7 +878,7 @@ namespace E3Core.Settings
 			if (classBasedSettings) _mergeUpdates = false;
 
 			MQ.Write($"Loading settings file: [{filename}]");
-			ParsedData = CreateSettings(filename);
+			ParsedData = CreateSettings(filename, out ParsedData_UI);
 
 
 			//LoadKeyData("CPU", "ProcessLoopDelayInMS", ParsedData, ref CPU_ProcessLoopDelay);
@@ -904,122 +906,122 @@ namespace E3Core.Settings
 			LoadKeyData("Misc", "Enhanced rotation speed", ParsedData, ref Misc_EnhancedRotationSpeed);
 			LoadKeyData("Misc", "Echo Command Received", ParsedData, ref Misc_EchoCommandReceived);
 
-			LoadKeyData("UI Theme", "E3 Config", ParsedData, ref UITheme_E3Config);
-			LoadKeyData("UI Theme", "Rounding", ParsedData, ref UITheme_Rounding);
+			LoadKeyData("UI Theme", "E3 Config", ParsedData_UI, ref UITheme_E3Config);
+			LoadKeyData("UI Theme", "Rounding", ParsedData_UI, ref UITheme_Rounding);
 
-			LoadKeyData("E3Hud_Hub", "Alpha", ParsedData, ref E3Hud_Hub_Alpha);
-			LoadKeyData("E3Hud_Hub", "ShowColumnHP", ParsedData, ref E3Hud_Hub_ShowColumnHP);
-			LoadKeyData("E3Hud_Hub", "ShowColumnEnd", ParsedData, ref E3Hud_Hub_ShowColumnEnd);
-			LoadKeyData("E3Hud_Hub", "ShowColumnMana", ParsedData, ref E3Hud_Hub_ShowColumnMana);
-			LoadKeyData("E3Hud_Hub", "ShowColumnDistance", ParsedData, ref E3Hud_Hub_ShowColumnDistance);
+			LoadKeyData("E3Hud_Hub", "Alpha", ParsedData_UI, ref E3Hud_Hub_Alpha);
+			LoadKeyData("E3Hud_Hub", "ShowColumnHP", ParsedData_UI, ref E3Hud_Hub_ShowColumnHP);
+			LoadKeyData("E3Hud_Hub", "ShowColumnEnd", ParsedData_UI, ref E3Hud_Hub_ShowColumnEnd);
+			LoadKeyData("E3Hud_Hub", "ShowColumnMana", ParsedData_UI, ref E3Hud_Hub_ShowColumnMana);
+			LoadKeyData("E3Hud_Hub", "ShowColumnDistance", ParsedData_UI, ref E3Hud_Hub_ShowColumnDistance);
 
-			LoadKeyData("E3Hud_Hub", "ShowColumnAggro", ParsedData, ref E3Hud_Hub_ShowColumnAggro);
-			LoadKeyData("E3Hud_Hub", "ShowColumnAggroXTarget", ParsedData, ref E3Hud_Hub_ShowColumnAggroXTarget);
-			LoadKeyData("E3Hud_Hub", "ShowColumnAggroMinXTarget", ParsedData, ref E3Hud_Hub_ShowColumnAggroMinXTarget);
+			LoadKeyData("E3Hud_Hub", "ShowColumnAggro", ParsedData_UI, ref E3Hud_Hub_ShowColumnAggro);
+			LoadKeyData("E3Hud_Hub", "ShowColumnAggroXTarget", ParsedData_UI, ref E3Hud_Hub_ShowColumnAggroXTarget);
+			LoadKeyData("E3Hud_Hub", "ShowColumnAggroMinXTarget", ParsedData_UI, ref E3Hud_Hub_ShowColumnAggroMinXTarget);
 
-			LoadKeyData("E3Hud_Hub", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_FadeTimeInMS);
-			LoadKeyData("E3Hud_Hub", "RGBA_NameColor", ParsedData, E3Hud_Hub_RGBA_NameColor);
-			LoadKeyData("E3Hud_Hub", "RGBA_HealthBar", ParsedData, E3Hud_Hub_RGBA_HealthBar);
-			LoadKeyData("E3Hud_Hub", "RGBA_PetHealthBar", ParsedData, E3Hud_Hub_RGBA_PetHealthBar);
-
-
-			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData, ref E3Hud_Hub_SelectedFont);
-			LoadKeyData("E3Hud_Hub", "SelectedFontSize", ParsedData, ref E3Hud_Hub_SelectedFontSize);
-
-			LoadKeyData("E3Hud_Hub", "Locked", ParsedData, ref E3Hud_Hub_Locked);
-			LoadKeyData("E3Hud_Hub", "DisplayHPBar", ParsedData, ref E3Hud_Hub_DisplayHPBar);
-			LoadKeyData("E3Hud_Hub", "LeftClickAction", ParsedData, ref E3Hud_Hub_LeftClickAction);
-			LoadKeyData("E3Hud_Hub", "ShowTickTimer", ParsedData, ref E3Hud_Hub_ShowTickTimer);
-			LoadKeyData("E3Hud_Hub", "ShowHotButtons", ParsedData, ref E3Hud_Hub_ShowHotButtons);
-			LoadKeyData("E3Hud_Hub", "ShowPlayerInfo", ParsedData, ref E3Hud_Hub_ShowPlayerInfo);
-			LoadKeyData("E3Hud_Hub", "ShowTargetInfo", ParsedData, ref E3Hud_Hub_ShowTargetInfo);
-			LoadKeyData("E3Hud_Hub", "PeerSortOrder", ParsedData, ref E3Hud_Hub_PeerSortOrder);
+			LoadKeyData("E3Hud_Hub", "FadeTimeInMS", ParsedData_UI, ref E3Hud_Hub_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub", "RGBA_NameColor", ParsedData_UI, E3Hud_Hub_RGBA_NameColor);
+			LoadKeyData("E3Hud_Hub", "RGBA_HealthBar", ParsedData_UI, E3Hud_Hub_RGBA_HealthBar);
+			LoadKeyData("E3Hud_Hub", "RGBA_PetHealthBar", ParsedData_UI, E3Hud_Hub_RGBA_PetHealthBar);
 
 
+			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_SelectedFont);
+			LoadKeyData("E3Hud_Hub", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_SelectedFontSize);
 
-			LoadKeyData("E3Hud_Casting", "SelectedFont", ParsedData, ref E3Hud_Casting_SelectedFont);
-			LoadKeyData("E3Hud_Casting", "SelectedFontSize", ParsedData, ref E3Hud_Casting_SelectedFontSize);
-
-			LoadKeyData("E3Hud_Casting", "Alpha", ParsedData, ref E3Hud_Casting_Alpha);
-			LoadKeyData("E3Hud_Casting", "Locked", ParsedData, ref E3Hud_Casting_Locked);
-			LoadKeyData("E3Hud_Casting", "RGBA_NameColor", ParsedData, E3Hud_Casting_RGBA_NameColor);
-
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFont", ParsedData, ref E3Hud_Hub_PlayerInfo_SelectedFont);
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFontSize", ParsedData, ref E3Hud_Hub_PlayerInfo_SelectedFontSize);
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "Alpha", ParsedData, ref E3Hud_Hub_PlayerInfo_Alpha);
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "Locked", ParsedData, ref E3Hud_Hub_PlayerInfo_Locked);
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "Detached", ParsedData, ref E3Hud_Hub_PlayerInfo_Detached);
-
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "RGBA_DiscProgressBar", ParsedData, E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar);
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowHPAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowHPAsPercent);
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowManaAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowManaAsPercent);
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowEndAsPercent", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowEndAsPercent);
-			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowProgressBars", ParsedData, ref E3Hud_Hub_PlayerInfo_ShowProgressBars);
-
-			LoadKeyData("E3Hud_Hub_TargetInfo", "Alpha", ParsedData, ref E3Hud_Hub_TargetInfo_Alpha);
-			LoadKeyData("E3Hud_Hub_TargetInfo", "SelectedFont", ParsedData, ref E3Hud_Hub_TargetInfo_SelectedFont);
-			LoadKeyData("E3Hud_Hub_TargetInfo", "SelectedFontSize", ParsedData, ref E3Hud_Hub_TargetInfo_SelectedFontSize);
-			LoadKeyData("E3Hud_Hub_TargetInfo", "IconSize", ParsedData, ref E3Hud_Hub_TargetInfo_IconSize);
-			LoadKeyData("E3Hud_Hub_TargetInfo", "Detached", ParsedData, ref E3Hud_Hub_TargetInfo_Detached);
-			LoadKeyData("E3Hud_Hub_TargetInfo", "Locked", ParsedData, ref E3Hud_Hub_TargetInfo_Locked);
-			LoadKeyData("E3Hud_Hub_TargetInfo", "ConColorBorder", ParsedData, ref E3Hud_Hub_TargetInfo_ConColorBorder);
-
-			LoadKeyData("E3Hud_Hub_Buff", "Alpha", ParsedData, ref E3Hud_Hub_Buff_Alpha);
-			LoadKeyData("E3Hud_Hub_Buff", "Detached", ParsedData, ref E3Hud_Hub_Buff_Detached);
-			LoadKeyData("E3Hud_Hub_Buff", "IconSize", ParsedData, ref E3Hud_Hub_Buff_IconSize);
-			LoadKeyData("E3Hud_Hub_Buff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Buff_FadeTimeInMS);
-			LoadKeyData("E3Hud_Hub_Buff", "Locked", ParsedData, ref E3Hud_Hub_Buff_Locked);
-			LoadKeyData("E3Hud_Hub_Buff", "ListView", ParsedData, ref E3Hud_Hub_Buff_ListView);
-			LoadKeyData("E3Hud_Hub_Buff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Buff_ShowProgressBars);
-			LoadKeyData("E3Hud_Hub_Buff", "SelectedFont", ParsedData, ref E3Hud_Hub_Buff_SelectedFont);
-			LoadKeyData("E3Hud_Hub_Buff", "SelectedFontSize", ParsedData, ref E3Hud_Hub_Buff_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub", "Locked", ParsedData_UI, ref E3Hud_Hub_Locked);
+			LoadKeyData("E3Hud_Hub", "DisplayHPBar", ParsedData_UI, ref E3Hud_Hub_DisplayHPBar);
+			LoadKeyData("E3Hud_Hub", "LeftClickAction", ParsedData_UI, ref E3Hud_Hub_LeftClickAction);
+			LoadKeyData("E3Hud_Hub", "ShowTickTimer", ParsedData_UI, ref E3Hud_Hub_ShowTickTimer);
+			LoadKeyData("E3Hud_Hub", "ShowHotButtons", ParsedData_UI, ref E3Hud_Hub_ShowHotButtons);
+			LoadKeyData("E3Hud_Hub", "ShowPlayerInfo", ParsedData_UI, ref E3Hud_Hub_ShowPlayerInfo);
+			LoadKeyData("E3Hud_Hub", "ShowTargetInfo", ParsedData_UI, ref E3Hud_Hub_ShowTargetInfo);
+			LoadKeyData("E3Hud_Hub", "PeerSortOrder", ParsedData_UI, ref E3Hud_Hub_PeerSortOrder);
 
 
-			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor);
-			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor);
-			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_NameColor", ParsedData, E3Hud_Hub_Buff_RGBA_ListView_NameColor);
 
-			LoadKeyData("E3Hud_Hub_PetBuff", "Alpha", ParsedData, ref E3Hud_Hub_PetBuff_Alpha);
-			LoadKeyData("E3Hud_Hub_PetBuff", "Detached", ParsedData, ref E3Hud_Hub_PetBuff_Detached);
-			LoadKeyData("E3Hud_Hub_PetBuff", "IconSize", ParsedData, ref E3Hud_Hub_PetBuff_IconSize);
-			LoadKeyData("E3Hud_Hub_PetBuff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_PetBuff_FadeTimeInMS);
-			LoadKeyData("E3Hud_Hub_PetBuff", "Locked", ParsedData, ref E3Hud_Hub_PetBuff_Locked);
-			LoadKeyData("E3Hud_Hub_PetBuff", "ListView", ParsedData, ref E3Hud_Hub_PetBuff_ListView);
-			LoadKeyData("E3Hud_Hub_PetBuff", "ShowProgressBars", ParsedData, ref E3Hud_Hub_PetBuff_ShowProgressBars);
-			LoadKeyData("E3Hud_Hub_PetBuff", "SelectedFont", ParsedData, ref E3Hud_Hub_PetBuff_SelectedFont);
-			LoadKeyData("E3Hud_Hub_PetBuff", "SelectedFontSize", ParsedData, ref E3Hud_Hub_PetBuff_SelectedFontSize);
+			LoadKeyData("E3Hud_Casting", "SelectedFont", ParsedData_UI, ref E3Hud_Casting_SelectedFont);
+			LoadKeyData("E3Hud_Casting", "SelectedFontSize", ParsedData_UI, ref E3Hud_Casting_SelectedFontSize);
+
+			LoadKeyData("E3Hud_Casting", "Alpha", ParsedData_UI, ref E3Hud_Casting_Alpha);
+			LoadKeyData("E3Hud_Casting", "Locked", ParsedData_UI, ref E3Hud_Casting_Locked);
+			LoadKeyData("E3Hud_Casting", "RGBA_NameColor", ParsedData_UI, E3Hud_Casting_RGBA_NameColor);
+
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_SelectedFont);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "Alpha", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_Alpha);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "Locked", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_Locked);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "Detached", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_Detached);
+
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "RGBA_DiscProgressBar", ParsedData_UI, E3Hud_Hub_PlayerInfo_RGBA_DiscProgressBar);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowHPAsPercent", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_ShowHPAsPercent);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowManaAsPercent", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_ShowManaAsPercent);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowEndAsPercent", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_ShowEndAsPercent);
+			LoadKeyData("E3Hud_Hub_PlayerInfo", "ShowProgressBars", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_ShowProgressBars);
+
+			LoadKeyData("E3Hud_Hub_TargetInfo", "Alpha", ParsedData_UI, ref E3Hud_Hub_TargetInfo_Alpha);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_TargetInfo_SelectedFont);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_TargetInfo_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "IconSize", ParsedData_UI, ref E3Hud_Hub_TargetInfo_IconSize);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "Detached", ParsedData_UI, ref E3Hud_Hub_TargetInfo_Detached);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "Locked", ParsedData_UI, ref E3Hud_Hub_TargetInfo_Locked);
+			LoadKeyData("E3Hud_Hub_TargetInfo", "ConColorBorder", ParsedData_UI, ref E3Hud_Hub_TargetInfo_ConColorBorder);
+
+			LoadKeyData("E3Hud_Hub_Buff", "Alpha", ParsedData_UI, ref E3Hud_Hub_Buff_Alpha);
+			LoadKeyData("E3Hud_Hub_Buff", "Detached", ParsedData_UI, ref E3Hud_Hub_Buff_Detached);
+			LoadKeyData("E3Hud_Hub_Buff", "IconSize", ParsedData_UI, ref E3Hud_Hub_Buff_IconSize);
+			LoadKeyData("E3Hud_Hub_Buff", "FadeTimeInMS", ParsedData_UI, ref E3Hud_Hub_Buff_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_Buff", "Locked", ParsedData_UI, ref E3Hud_Hub_Buff_Locked);
+			LoadKeyData("E3Hud_Hub_Buff", "ListView", ParsedData_UI, ref E3Hud_Hub_Buff_ListView);
+			LoadKeyData("E3Hud_Hub_Buff", "ShowProgressBars", ParsedData_UI, ref E3Hud_Hub_Buff_ShowProgressBars);
+			LoadKeyData("E3Hud_Hub_Buff", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_Buff_SelectedFont);
+			LoadKeyData("E3Hud_Hub_Buff", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_Buff_SelectedFontSize);
 
 
-			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData, ref E3Hud_Hub_Song_Alpha);
-			LoadKeyData("E3Hud_Hub_Song", "Detached", ParsedData, ref E3Hud_Hub_Song_Detached);
-			LoadKeyData("E3Hud_Hub_Song", "IconSize", ParsedData, ref E3Hud_Hub_Song_IconSize);
-			LoadKeyData("E3Hud_Hub_Song", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Song_FadeTimeInMS);
-			LoadKeyData("E3Hud_Hub_Song", "Locked", ParsedData, ref E3Hud_Hub_Song_Locked);
-			LoadKeyData("E3Hud_Hub_Song", "ListView", ParsedData, ref E3Hud_Hub_Song_ListView);
-			LoadKeyData("E3Hud_Hub_Song", "ShowProgressBars", ParsedData, ref E3Hud_Hub_Song_ShowProgressBars);
-			LoadKeyData("E3Hud_Hub_Song", "SelectedFont", ParsedData, ref E3Hud_Hub_Song_SelectedFont);
-			LoadKeyData("E3Hud_Hub_Song", "SelectedFontSize", ParsedData, ref E3Hud_Hub_Song_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor", ParsedData_UI, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor);
+			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor", ParsedData_UI, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor);
+			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_NameColor", ParsedData_UI, E3Hud_Hub_Buff_RGBA_ListView_NameColor);
 
-			LoadKeyData("E3Hud_Hub_HotButtons", "Alpha", ParsedData, ref E3Hud_Hub_HotButtons_Alpha);
-			LoadKeyData("E3Hud_Hub_HotButtons", "Detached", ParsedData, ref E3Hud_Hub_HotButtons_Detached);
-			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeX", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeX);
-			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeY", ParsedData, ref E3Hud_Hub_HotButtons_ButtonSizeY);
-			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFont", ParsedData, ref E3Hud_Hub_HotButtons_SelectedFont);
-			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFontSize", ParsedData, ref E3Hud_Hub_HotButtons_SelectedFontSize);
-			LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", ParsedData, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
-			LoadKeyData("E3Hud_Hub_HotButtons", "Locked", ParsedData, ref E3Hud_Hub_HotButtons_Locked);
+			LoadKeyData("E3Hud_Hub_PetBuff", "Alpha", ParsedData_UI, ref E3Hud_Hub_PetBuff_Alpha);
+			LoadKeyData("E3Hud_Hub_PetBuff", "Detached", ParsedData_UI, ref E3Hud_Hub_PetBuff_Detached);
+			LoadKeyData("E3Hud_Hub_PetBuff", "IconSize", ParsedData_UI, ref E3Hud_Hub_PetBuff_IconSize);
+			LoadKeyData("E3Hud_Hub_PetBuff", "FadeTimeInMS", ParsedData_UI, ref E3Hud_Hub_PetBuff_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_PetBuff", "Locked", ParsedData_UI, ref E3Hud_Hub_PetBuff_Locked);
+			LoadKeyData("E3Hud_Hub_PetBuff", "ListView", ParsedData_UI, ref E3Hud_Hub_PetBuff_ListView);
+			LoadKeyData("E3Hud_Hub_PetBuff", "ShowProgressBars", ParsedData_UI, ref E3Hud_Hub_PetBuff_ShowProgressBars);
+			LoadKeyData("E3Hud_Hub_PetBuff", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_PetBuff_SelectedFont);
+			LoadKeyData("E3Hud_Hub_PetBuff", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_PetBuff_SelectedFontSize);
 
 
-			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic", ParsedData, E3Hud_Hub_HotButtons_DynamicButtons);
+			LoadKeyData("E3Hud_Hub_Song", "Alpha", ParsedData_UI, ref E3Hud_Hub_Song_Alpha);
+			LoadKeyData("E3Hud_Hub_Song", "Detached", ParsedData_UI, ref E3Hud_Hub_Song_Detached);
+			LoadKeyData("E3Hud_Hub_Song", "IconSize", ParsedData_UI, ref E3Hud_Hub_Song_IconSize);
+			LoadKeyData("E3Hud_Hub_Song", "FadeTimeInMS", ParsedData_UI, ref E3Hud_Hub_Song_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_Song", "Locked", ParsedData_UI, ref E3Hud_Hub_Song_Locked);
+			LoadKeyData("E3Hud_Hub_Song", "ListView", ParsedData_UI, ref E3Hud_Hub_Song_ListView);
+			LoadKeyData("E3Hud_Hub_Song", "ShowProgressBars", ParsedData_UI, ref E3Hud_Hub_Song_ShowProgressBars);
+			LoadKeyData("E3Hud_Hub_Song", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_Song_SelectedFont);
+			LoadKeyData("E3Hud_Hub_Song", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_Song_SelectedFontSize);
 
-			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData, ref E3Hud_Hub_Debuff_Alpha);
-			LoadKeyData("E3Hud_Hub_Debuff", "Detached", ParsedData, ref E3Hud_Hub_Debuff_Detached);
-			LoadKeyData("E3Hud_Hub_Debuff", "IconSize", ParsedData, ref E3Hud_Hub_Debuff_IconSize);
-			LoadKeyData("E3Hud_Hub_Debuff", "FadeTimeInMS", ParsedData, ref E3Hud_Hub_Debuff_FadeTimeInMS);
-			LoadKeyData("E3Hud_Hub_Debuff", "Locked", ParsedData, ref E3Hud_Hub_Debuff_Locked);
-			LoadKeyData("E3Hud_Hub_Debuff", "ListView", ParsedData, ref E3Hud_Hub_Debuff_ListView);
-			LoadKeyData("E3Hud_Hub_Debuff", "SelectedFont", ParsedData, ref E3Hud_Hub_Debuff_SelectedFont);
-			LoadKeyData("E3Hud_Hub_Debuff", "SelectedFontSize", ParsedData, ref E3Hud_Hub_Debuff_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub_HotButtons", "Alpha", ParsedData_UI, ref E3Hud_Hub_HotButtons_Alpha);
+			LoadKeyData("E3Hud_Hub_HotButtons", "Detached", ParsedData_UI, ref E3Hud_Hub_HotButtons_Detached);
+			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeX", ParsedData_UI, ref E3Hud_Hub_HotButtons_ButtonSizeX);
+			LoadKeyData("E3Hud_Hub_HotButtons", "ButtonSizeY", ParsedData_UI, ref E3Hud_Hub_HotButtons_ButtonSizeY);
+			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_HotButtons_SelectedFont);
+			LoadKeyData("E3Hud_Hub_HotButtons", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_HotButtons_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", ParsedData_UI, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
+			LoadKeyData("E3Hud_Hub_HotButtons", "Locked", ParsedData_UI, ref E3Hud_Hub_HotButtons_Locked);
+
+
+			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic", ParsedData_UI, E3Hud_Hub_HotButtons_DynamicButtons);
+
+			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData_UI, ref E3Hud_Hub_Debuff_Alpha);
+			LoadKeyData("E3Hud_Hub_Debuff", "Detached", ParsedData_UI, ref E3Hud_Hub_Debuff_Detached);
+			LoadKeyData("E3Hud_Hub_Debuff", "IconSize", ParsedData_UI, ref E3Hud_Hub_Debuff_IconSize);
+			LoadKeyData("E3Hud_Hub_Debuff", "FadeTimeInMS", ParsedData_UI, ref E3Hud_Hub_Debuff_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_Debuff", "Locked", ParsedData_UI, ref E3Hud_Hub_Debuff_Locked);
+			LoadKeyData("E3Hud_Hub_Debuff", "ListView", ParsedData_UI, ref E3Hud_Hub_Debuff_ListView);
+			LoadKeyData("E3Hud_Hub_Debuff", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_Debuff_SelectedFont);
+			LoadKeyData("E3Hud_Hub_Debuff", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_Debuff_SelectedFontSize);
 
 
 
@@ -1392,32 +1394,11 @@ namespace E3Core.Settings
 			// _log.Write($"Finished processing and loading: {fullPathToUse}");
 
 		}
-
-		public IniData createNewINIData(bool forBrandNewFile)
+		public IniData createNew_UI_INIData(bool forBrandNewFile)
 		{
 			IniData newFile = new IniData();
-
-
-			newFile.Sections.AddSection("Misc");
-			var section = newFile.Sections.GetSectionData("Misc");
-			section.Keys.AddKey("AutoFood", "Off");
-			section.Keys.AddKey("Food", "");
-			section.Keys.AddKey("Drink", "");
-			section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
-			section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
-			section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
-			section.Keys.AddKey("Anchor (Char to Anchor to)", "");
-			section.Keys.AddKey("Remove Torpor After Combat", "On");
-			section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
-			section.Keys.AddKey("Dismount On Interrupt (On/Off)", "On");
-			section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
-			section.Keys.AddKey("If FD stay down (true/false)", "False");
-			section.Keys.AddKey("Debuffs/Dots are visible", "True");
-			section.Keys.AddKey("Enhanced rotation speed", "Off");
-			section.Keys.AddKey("Echo Command Received", "True");
-			
 			newFile.Sections.AddSection("UI Theme");
-			section = newFile.Sections.GetSectionData("UI Theme");
+			var section = newFile.Sections.GetSectionData("UI Theme");
 			section.Keys.AddKey("E3 Config", "DarkTeal");
 			section.Keys.AddKey("Rounding", "8.0");
 
@@ -1536,7 +1517,7 @@ namespace E3Core.Settings
 			newFile.Sections.AddSection("E3Hud_Hub_HotButtons_Dynamic");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons_Dynamic");
 
-			if(E3Hud_Hub_HotButtons_UseDefaultDynamicButtons)
+			if (E3Hud_Hub_HotButtons_UseDefaultDynamicButtons)
 			{
 				section.Keys.AddKey("Invite", "/invite");
 				section.Keys.AddKey("Disband", "/disband");
@@ -1559,6 +1540,34 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Locked", "False");
 
 
+			
+
+			return newFile;
+		}
+		public IniData createNewINIData(bool forBrandNewFile)
+		{
+			IniData newFile = new IniData();
+
+
+			newFile.Sections.AddSection("Misc");
+			var section = newFile.Sections.GetSectionData("Misc");
+			section.Keys.AddKey("AutoFood", "Off");
+			section.Keys.AddKey("Food", "");
+			section.Keys.AddKey("Drink", "");
+			section.Keys.AddKey("End MedBreak in Combat(On/Off)", "On");
+			section.Keys.AddKey("AutoMedBreak (On/Off)", "Off");
+			section.Keys.AddKey("Auto-Loot (On/Off)", "Off");
+			section.Keys.AddKey("Anchor (Char to Anchor to)", "");
+			section.Keys.AddKey("Remove Torpor After Combat", "On");
+			section.Keys.AddKey("Auto-Forage (On/Off)", "Off");
+			section.Keys.AddKey("Dismount On Interrupt (On/Off)", "On");
+			section.Keys.AddKey("Delay in MS After CastWindow Drops For Spell Completion", "0");
+			section.Keys.AddKey("If FD stay down (true/false)", "False");
+			section.Keys.AddKey("Debuffs/Dots are visible", "True");
+			section.Keys.AddKey("Enhanced rotation speed", "Off");
+			section.Keys.AddKey("Echo Command Received", "True");
+			
+		
 			newFile.Sections.AddSection("AutoMed");
 			section = newFile.Sections.GetSectionData("AutoMed");
 			section.Keys.AddKey("Override Old Settings and use This(On/Off)", "Off");
@@ -1949,32 +1958,39 @@ namespace E3Core.Settings
 		/// Creates the settings file.
 		/// </summary>
 		/// <returns></returns>
-		public IniData CreateSettings(string fileName)
+		public IniData CreateSettings(string fileName, out IniData uiFileData)
 		{
 			//if we need to , its easier to just output the entire file. 
 
 			FileIniDataParser parser = e3util.CreateIniParser();
 
-			
-
 			if (!String.IsNullOrEmpty(CurrentSet))
 			{
 				fileName = fileName.Replace(".ini", "_" + CurrentSet + ".ini");
 			}
-			IniData newFile = null; 
+
+			_fileName = fileName;
+			_fileName_UI = _fileName.Replace(".ini", "_UI.ini");
+
+			IniData newFile = null;
+			IniData newFile_UI = null;
 			if (!File.Exists(fileName))
 			{
-				
 				newFile = createNewINIData(forBrandNewFile:true);
+				newFile_UI = createNew_UI_INIData(forBrandNewFile: true);
 				if (!Directory.Exists(_configFolder + _botFolder))
 				{
 					Directory.CreateDirectory(_configFolder + _botFolder);
 				}
 				//file straight up doesn't exist, lets create it
-				parser.WriteFile(fileName, newFile);
+				parser.WriteFile(_fileName, newFile);
+				parser.WriteFile(_fileName_UI, newFile_UI);
+				
+				//modification tracking stuff
 				_fileLastModified = System.IO.File.GetLastWriteTime(fileName);
-				_fileLastModifiedFileName = fileName;
-				_fileName = fileName;
+				_fileLastModifiedFileName = _fileName;
+				_fileLastModified_UI = System.IO.File.GetLastWriteTime(_fileName_UI);
+				_fileLastModifiedFileName_UI = _fileName_UI;
 			}
 			else
 			{
@@ -1982,31 +1998,63 @@ namespace E3Core.Settings
 				//Parse the ini file
 				//Create an instance of a ini file parser
 				FileIniDataParser fileIniData = e3util.CreateIniParser();
+				FileIniDataParser fileIniData_UI = e3util.CreateIniParser();
 				IniData tParsedData = fileIniData.ReadFile(fileName);
 
+				List<SectionData> sectionsToRemove = new List<SectionData>();
+				if (!System.IO.File.Exists(_fileName_UI))
+				{
+					//need to transfer all the data to the new UI file. 
+					newFile_UI = createNew_UI_INIData(forBrandNewFile: true);
+					foreach (var section in tParsedData.Sections)
+					{
+						if(section.SectionName.StartsWith("E3Hud_") || section.SectionName.StartsWith("UI "))
+						{
+							newFile_UI.Sections.Add(section);
+							sectionsToRemove.Add(section);
+						
+						}
+					}
+					parser.WriteFile(_fileName_UI, newFile_UI);
+
+					foreach(var section in sectionsToRemove)
+					{
+						tParsedData.Sections.RemoveSection(section.SectionName);
+					}
+				}
+
+				IniData tParsedData_UI = fileIniData_UI.ReadFile(_fileName_UI);
+				
 
 				//before we merge, we need to check on hotkey dynamic to see if its set to true or false in the current ini data
 				//this is because there is a filter on createNewINI data
-				LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", tParsedData, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
+				LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", tParsedData_UI, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
 				newFile = createNewINIData(false);
+				newFile_UI = createNew_UI_INIData(forBrandNewFile: false);
 
 				if (_mergeUpdates)
 				{
 					//overwrite newfile with what was already there
 					tParsedData.Merge(newFile);
-					//save it it out now
 					File.Delete(fileName);
 					parser.WriteFile(fileName, tParsedData);
 
+					//do the same for the UI file.
+					tParsedData_UI.Merge(newFile_UI);
+					File.Delete(_fileName_UI);
+					parser.WriteFile(_fileName_UI, tParsedData_UI);
+
 				}
 				newFile = tParsedData;
-				_fileLastModified = System.IO.File.GetLastWriteTime(fileName);
-				_fileLastModifiedFileName = fileName;
-				_fileName = fileName;
+				newFile_UI = tParsedData_UI;
+			
+				_fileLastModified = System.IO.File.GetLastWriteTime(_fileName);
+				_fileLastModifiedFileName = _fileName;
+				_fileLastModified_UI = System.IO.File.GetLastWriteTime(_fileName_UI);
+				_fileLastModifiedFileName_UI = _fileName_UI;
 
 			}
-
-
+			uiFileData = newFile_UI;
 			return newFile;
 		}
 
@@ -2020,17 +2068,38 @@ namespace E3Core.Settings
 			List<string> transferedKeyComments = new List<string>();
 
 			IniData defaultFile = createNewINIData(forBrandNewFile:false);
-
-
+			IniData defaultFile_IU = createNew_UI_INIData(forBrandNewFile: false);
 
 			//lets save the normal stuff
 			foreach (var pair in charSettings)
 			{
-				string header = pair.Key;
+				string  header= pair.Key;
 
-				var section = defaultFile.Sections.GetSectionData(header);
+
+				IniData currentIniData = null;
+				IniData currentIniDataForCS = null;
+				
+				bool uidata = false;
+				if (header.StartsWith("E3Hud_") || header.StartsWith("UI "))
+				{
+					uidata = true;
+					currentIniData = defaultFile_IU;
+					currentIniDataForCS = ParsedData_UI;
+				}
+				else
+				{
+					currentIniData = defaultFile;
+					currentIniDataForCS = ParsedData;
+				}
+
 				//copy over comments from loaded section
-				var loadeddata_section = ParsedData.Sections.GetSectionData(header);
+				SectionData loadeddata_section = null;
+				SectionData section = null;
+
+				section = currentIniData.Sections.GetSectionData(header);
+				loadeddata_section = currentIniDataForCS.Sections.GetSectionData(header);
+			
+
 				if (loadeddata_section != null && section != null)
 				{
 					section.Comments.AddRange(loadeddata_section.Comments);
@@ -2047,7 +2116,7 @@ namespace E3Core.Settings
 
 					if (section != null)
 					{
-						var section_keyCollection = defaultFile.Sections[header];
+						var section_keyCollection = currentIniData.Sections[header];
 
 						try
 						{
@@ -2309,7 +2378,9 @@ namespace E3Core.Settings
 			}
 			FileIniDataParser fileIniData = e3util.CreateIniParser();
 			File.Delete(_fileName);
+			File.Delete(_fileName_UI);
 			fileIniData.WriteFile(_fileName, defaultFile);
+			fileIniData.WriteFile(_fileName_UI, defaultFile_IU);
 		}
 		private void GetSettingsMappedToDictionary()
 		{

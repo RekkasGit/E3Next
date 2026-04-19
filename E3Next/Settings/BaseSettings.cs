@@ -25,7 +25,9 @@ namespace E3Core.Settings
         protected static string _botFolder = @"\e3 Bot Inis\";
 
         public DateTime _fileLastModified;
+        public DateTime _fileLastModified_UI;
         public string _fileLastModifiedFileName;
+        public string _fileLastModifiedFileName_UI;
         private static string _currentSet = String.Empty;
 
         public static string CurrentSet { get { return _currentSet; } set { _currentSet = value; } }
@@ -667,8 +669,21 @@ namespace E3Core.Settings
                     return true;
                 }
             }
+			if (!string.IsNullOrEmpty(_fileLastModifiedFileName_UI))
+			{
+				var currentLastModified = System.IO.File.GetLastWriteTime(_fileLastModifiedFileName_UI);
 
-            return false;
+				if (System.Diagnostics.Debugger.IsAttached)
+				{
+					return false;
+				}
+
+				if (_fileLastModified_UI != currentLastModified)
+				{
+					return true;
+				}
+			}
+			return false;
         }
     }
     interface IBaseSettings

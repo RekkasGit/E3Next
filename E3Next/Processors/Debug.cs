@@ -26,6 +26,14 @@ namespace E3Core.Processors
 		}
 		public static void RegisterEvents()
 		{
+			EventProcessor.RegisterCommand("/e3debug_charactersettings_save", (x) =>
+			{
+
+				E3.CharacterSettings.SaveData();
+
+
+			}, "Force settings save");
+
 			EventProcessor.RegisterCommand("/e3debug_memory_collect", (x) =>
 			{
 
@@ -95,6 +103,11 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3debug_buffTimers", (x) =>
 			{
 				e3util.PrintTimerStatus(BuffCheck._buffTimers, "Buff timers");
+
+			});
+			EventProcessor.RegisterCommand("/e3debug_debuffTimers", (x) =>
+			{
+				e3util.PrintTimerStatus(DebuffDot._debuffdotTimers, "Debuff timers");
 
 			});
 			EventProcessor.RegisterCommand("/e3debug_check_spawndelta", x =>

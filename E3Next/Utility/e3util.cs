@@ -2145,7 +2145,7 @@ namespace E3Core.Utility
 							if (spawn.TypeDesc == "NPC")
 							{
 
-								E3.Bots.BroadcastCommandToGroup($"{command} {targetID}", x);
+								E3.Bots.BroadcastCommandToGroupZone($"{command} {targetID}", x);
 								if (e3util.FilterMe(x)) return;
 								FunctionToExecute(targetID);
 							}

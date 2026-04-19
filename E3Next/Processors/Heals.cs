@@ -1245,6 +1245,10 @@ namespace E3Core.Processors
 		public static bool Check_LifeSupport(bool JustCheck = false)
 		{
 			if (Zoning.CurrentZone.IsSafeZone) return false;
+			
+			//if we have just zoned, give a moment for buffs to be recalculated before we go wasting cooldowns.
+			if (Core.StopWatch.ElapsedMilliseconds - Zoning._lastZoneTimeStamp < 2000) return false;
+
 			Int32 pctHps = E3.PctHPs;
 			Int32 myID = E3.CurrentId;
 			Int32 targetID = MQ.Query<Int32>("${Target.ID}");

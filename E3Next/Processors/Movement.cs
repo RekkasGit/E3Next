@@ -199,11 +199,16 @@ namespace E3Core.Processors
                 {
                     _e3followpaths.Add(user, new LinkedList<(float, float, float)>());
                 }
-                //we can see them, just take this is the final location.
-				//if (MQ.Query<bool>($"${{Spawn[{FollowTargetName}].LineOfSight}}"))
-    //            {
-    //                path.Clear();
-    //            }
+                if(!_e3follow_replay)
+                { 
+                    //we can see them, just take this is the final location.
+                    if (MQ.Query<bool>($"${{Spawn[{FollowTargetName}].LineOfSight}}"))
+                    {
+                        path.Clear();
+                    }
+
+                }
+
 
 				if (path.Count>0)
                 {
@@ -277,7 +282,7 @@ namespace E3Core.Processors
                 var distance = e3util.GetDistanceFromMe(c_x, c_y, c_z);
                 var inLoS = MQ.Query<bool>($"${{Spawn[{E3FollowTargetName}].LineOfSight}}");
                 bool isStuck = MQ.Query<bool>("${MoveUtils.Stuck}");
-				if (distance > 200)
+				if (distance > 400)
                 {
                     //distance is way too far
                     path.Clear();
@@ -315,7 +320,7 @@ namespace E3Core.Processors
                         MQ.Cmd($"/squelch /moveto loc {c_y} {c_x} mdist {_followMeDistance}");
 						MQ.Write($"Distance is {distance} trying to to move to {c_x},{c_y}, {c_z}");
                        
-                        if(_e3follow_replay|| !inLoS)
+                        if(_e3follow_replay)
 						{
 							//MQ.Delay(2000, "${MoveUtils.Command.Equal[MOVETO]}");
 							MQ.Delay(2000, "${MoveTo.Stopped}");
