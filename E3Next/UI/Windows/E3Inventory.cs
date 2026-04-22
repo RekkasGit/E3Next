@@ -28,6 +28,7 @@ namespace E3Core.UI.Windows
 
         private static string _searchText = string.Empty;
         private static string _activeTab = "Equipped";
+        private static string _selectedPeerName = string.Empty;
         private static bool _bankWindowOpen;
 
         private static int _selectedSlotId = -1;
@@ -263,6 +264,8 @@ namespace E3Core.UI.Windows
 
         private static void RenderSearchBar()
         {
+            RenderPeerSelector();
+            imgui_SameLine();
             imgui_Text("Search:");
             imgui_SameLine();
             imgui_SetNextItemWidth(250f);
@@ -279,7 +282,56 @@ namespace E3Core.UI.Windows
             }
 
             imgui_SameLine();
-            imgui_Text($"Items: {_localItems.Count} | Peers: {_peerInventories.Count}");
+            imgui_Text($"Items: {GetSelectedInventory().Count} | Peers: {_peerInventories.Count}");
+        }
+
+        private static void RenderPeerSelector()
+        {
+            var peers = GetAvailablePeerNames();
+            string preview = string.IsNullOrEmpty(_selectedPeerName) || _selectedPeerName == E3.CurrentName
+                ? $"Current ({E3.CurrentName})"
+                : _selectedPeerName;
+
+            imgui_SetNextItemWidth(160f);
+            using (var combo = ImGUICombo.Aquire())
+            {
+                if (combo.BeginCombo("##peer_select", preview))
+                {
+                    if (imgui_Selectable($"Current ({E3.CurrentName})", _selectedPeerName == E3.CurrentName || string.IsNullOrEmpty(_selectedPeerName)))
+                    {
+                        _selectedPeerName = E3.CurrentName;
+                    }
+
+                    foreach (var peer in peers)
+                    {
+                        if (imgui_Selectable(peer, _selectedPeerName == peer))
+                        {
+                            _selectedPeerName = peer;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static List<string> GetAvailablePeerNames()
+        {
+            var names = new List<string>();
+            foreach (var peer in _peerInventories)
+            {
+                if (!string.IsNullOrWhiteSpace(peer.Name))
+                    names.Add(peer.Name);
+            }
+            return names;
+        }
+
+        private static List<InventoryItem> GetSelectedInventory()
+        {
+            if (string.IsNullOrEmpty(_selectedPeerName) || _selectedPeerName == E3.CurrentName)
+                return _localItems;
+
+            var peer = _peerInventories.FirstOrDefault(p =>
+                string.Equals(p.Name, _selectedPeerName, StringComparison.OrdinalIgnoreCase));
+            return peer?.Items ?? new List<InventoryItem>();
         }
 
         private static void RenderTabs()
@@ -351,7 +403,8 @@ namespace E3Core.UI.Windows
 
         private static void RenderEquippedGrid()
         {
-            var equipped = _localItems.Where(i => i.Location == "Equipped").ToList();
+            var inventory = GetSelectedInventory();
+            var equipped = inventory.Where(i => i.Location == "Equipped").ToList();
             var equippedLookup = equipped.ToDictionary(i => i.SlotId);
             int cols = 4;
 
@@ -406,18 +459,36 @@ namespace E3Core.UI.Windows
             }
 
             string slotName = _invSlots[_selectedSlotId];
-            var localItem = _localItems.FirstOrDefault(i =>
-                i.Location == "Equipped" && i.SlotId == _selectedSlotId);
 
             imgui_TextColored(0.9f, 0.9f, 0.5f, 1f, slotName);
             imgui_Separator();
 
             var entries = new List<(string Source, InventoryItem Item)>();
+
+            // Selected peer first (if not local)
+            bool selectedIsLocal = string.IsNullOrEmpty(_selectedPeerName) || _selectedPeerName == E3.CurrentName;
+            if (!selectedIsLocal)
+            {
+                var selectedPeer = _peerInventories.FirstOrDefault(p =>
+                    string.Equals(p.Name, _selectedPeerName, StringComparison.OrdinalIgnoreCase));
+                var selectedItem = selectedPeer?.Items.FirstOrDefault(i =>
+                    i.Location == "Equipped" && i.SlotId == _selectedSlotId);
+                if (selectedItem != null)
+                    entries.Add((_selectedPeerName, selectedItem));
+            }
+
+            // Local character
+            var localItem = _localItems.FirstOrDefault(i =>
+                i.Location == "Equipped" && i.SlotId == _selectedSlotId);
             if (localItem != null)
                 entries.Add((E3.CurrentName, localItem));
 
+            // Other peers
             foreach (var peer in _peerInventories)
             {
+                if (string.Equals(peer.Name, _selectedPeerName, StringComparison.OrdinalIgnoreCase))
+                    continue; // already added above
+
                 var peerItem = peer.Items.FirstOrDefault(i =>
                     i.Location == "Equipped" && i.SlotId == _selectedSlotId);
                 if (peerItem != null)
@@ -438,13 +509,15 @@ namespace E3Core.UI.Windows
 
             using (var table = ImGUITable.Aquire())
             {
-                if (!table.BeginTable("SlotComparison", 4, tableFlags, 0f, 0f))
+                if (!table.BeginTable("SlotComparison", 6, tableFlags, 0f, 0f))
                     return;
 
                 imgui_TableSetupColumn("Icon", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 28f);
-                imgui_TableSetupColumn("Character", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 110f);
+                imgui_TableSetupColumn("Character", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 90f);
                 imgui_TableSetupColumn("Item", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 160f);
-                imgui_TableSetupColumn("Augments", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 140f);
+                imgui_TableSetupColumn("AC", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 40f);
+                imgui_TableSetupColumn("HP", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
+                imgui_TableSetupColumn("Mana", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
                 imgui_TableHeadersRow();
 
                 foreach (var entry in entries)
@@ -462,15 +535,13 @@ namespace E3Core.UI.Windows
                     RenderItemNameCell(entry.Item, clickable: true);
 
                     imgui_TableNextColumn();
-                    if (entry.Item.Augs.Count > 0)
-                    {
-                        string augText = string.Join(", ", entry.Item.Augs.Select(a => $"[{a.Slot}] {a.Name}"));
-                        imgui_TextColored(AugmentColor.R, AugmentColor.G, AugmentColor.B, 1f, augText);
-                    }
-                    else
-                    {
-                        imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "-");
-                    }
+                    RenderStatCell(entry.Item.Ac, 1.0f, 0.84f, 0.0f);   // Gold
+
+                    imgui_TableNextColumn();
+                    RenderStatCell(entry.Item.Hp, 0.0f, 0.8f, 0.0f);     // Green
+
+                    imgui_TableNextColumn();
+                    RenderStatCell(entry.Item.Mana, 0.2f, 0.4f, 1.0f);   // Blue
                 }
             }
         }
@@ -481,7 +552,8 @@ namespace E3Core.UI.Windows
 
         private static void RenderBagsTab()
         {
-            var items = FilterItems(_localItems.Where(i => i.Location == "Bag")).ToList();
+            var inventory = GetSelectedInventory();
+            var items = FilterItems(inventory.Where(i => i.Location == "Bag")).ToList();
             if (items.Count == 0)
             {
                 imgui_TextColored(0.75f, 0.75f, 0.75f, 1f, "No bag items found.");
@@ -497,7 +569,8 @@ namespace E3Core.UI.Windows
 
         private static void RenderBankTab()
         {
-            if (!_bankWindowOpen && _localItems.Count(i => i.Location == "Bank") == 0)
+            var inventory = GetSelectedInventory();
+            if (!_bankWindowOpen && inventory.Count(i => i.Location == "Bank") == 0)
             {
                 imgui_TextColored(0.75f, 0.75f, 0.75f, 1f, "Open the bank window to load bank data.");
                 return;
@@ -509,7 +582,7 @@ namespace E3Core.UI.Windows
                 imgui_Separator();
             }
 
-            var items = FilterItems(_localItems.Where(i => i.Location == "Bank")).ToList();
+            var items = FilterItems(inventory.Where(i => i.Location == "Bank")).ToList();
             if (items.Count == 0)
             {
                 imgui_TextColored(0.75f, 0.75f, 0.75f, 1f, "No bank items found.");
@@ -743,6 +816,14 @@ namespace E3Core.UI.Windows
                     }
                 }
             }
+        }
+
+        private static void RenderStatCell(int value, float r, float g, float b)
+        {
+            if (value > 0)
+                imgui_TextColored(r, g, b, 1f, value.ToString());
+            else
+                imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "--");
         }
 
         #endregion

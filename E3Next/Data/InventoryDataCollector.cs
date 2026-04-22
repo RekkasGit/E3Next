@@ -82,6 +82,7 @@ namespace E3Core.Data
                 };
 
                 CaptureAugments(mq, $"${{Me.Inventory[{i}]}}", $"${{InvSlot[{i}].Item}}", item);
+                CaptureStats(mq, $"${{Me.Inventory[{i}]}}", item);
                 results.Add(item);
             }
         }
@@ -120,6 +121,7 @@ namespace E3Core.Data
                         };
 
                         CaptureAugments(mq, $"${{Me.Inventory[pack{i}].Item[{e}]}}", $"${{Me.Inventory[pack{i}].Item[{e}]}}", item);
+                        CaptureStats(mq, $"${{Me.Inventory[pack{i}].Item[{e}]}}", item);
                         results.Add(item);
                     }
                 }
@@ -141,6 +143,7 @@ namespace E3Core.Data
                     };
 
                     CaptureAugments(mq, $"${{Me.Inventory[pack{i}]}}", $"${{Me.Inventory[pack{i}]}}", item);
+                    CaptureStats(mq, $"${{Me.Inventory[pack{i}]}}", item);
                     results.Add(item);
                 }
             }
@@ -179,6 +182,7 @@ namespace E3Core.Data
                         };
 
                         CaptureAugments(mq, $"${{Me.Bank[{i}].Item[{e}]}}", $"${{Me.Bank[{i}].Item[{e}]}}", item);
+                        CaptureStats(mq, $"${{Me.Bank[{i}].Item[{e}]}}", item);
                         results.Add(item);
                     }
                 }
@@ -199,6 +203,7 @@ namespace E3Core.Data
                     };
 
                     CaptureAugments(mq, $"${{Me.Bank[{i}]}}", $"${{Me.Bank[{i}]}}", item);
+                    CaptureStats(mq, $"${{Me.Bank[{i}]}}", item);
                     results.Add(item);
                 }
             }
@@ -223,6 +228,26 @@ namespace E3Core.Data
                     ItemLink = augLink
                 });
             }
+        }
+
+        private static void CaptureStats(IMQ mq, string basePath, InventoryItem item)
+        {
+            // basePath is like "${Me.Inventory[0]}" — insert stat before last "}"
+            int insertPos = basePath.LastIndexOf('}');
+            string prefix = insertPos >= 0 ? basePath.Substring(0, insertPos) : basePath;
+            string suffix = insertPos >= 0 ? basePath.Substring(insertPos) : "";
+
+            item.Ac = SafeQueryInt(mq, $"{prefix}.AC{suffix}");
+            item.Hp = SafeQueryInt(mq, $"{prefix}.HP{suffix}");
+            item.Mana = SafeQueryInt(mq, $"{prefix}.Mana{suffix}");
+            item.Endurance = SafeQueryInt(mq, $"{prefix}.Endurance{suffix}");
+            item.Str = SafeQueryInt(mq, $"{prefix}.STR{suffix}");
+            item.Sta = SafeQueryInt(mq, $"{prefix}.STA{suffix}");
+            item.Agi = SafeQueryInt(mq, $"{prefix}.AGI{suffix}");
+            item.Dex = SafeQueryInt(mq, $"{prefix}.DEX{suffix}");
+            item.Wis = SafeQueryInt(mq, $"{prefix}.WIS{suffix}");
+            item.Intel = SafeQueryInt(mq, $"{prefix}.INT{suffix}");
+            item.Cha = SafeQueryInt(mq, $"{prefix}.CHA{suffix}");
         }
 
         private static string SafeQueryString(IMQ mq, string query)

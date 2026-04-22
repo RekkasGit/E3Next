@@ -23,19 +23,22 @@ public static partial class InventoryDataReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "ChNJbnZlbnRvcnlEYXRhLnByb3RvIjIKEUludmVudG9yeURhdGFMaXN0Eh0K",
-          "BWl0ZW1zGAEgAygLMg4uSW52ZW50b3J5SXRlbSLbAQoNSW52ZW50b3J5SXRl",
+          "BWl0ZW1zGAEgAygLMg4uSW52ZW50b3J5SXRlbSLxAgoNSW52ZW50b3J5SXRl",
           "bRIMCgRuYW1lGAEgASgJEg8KB2l0ZW1faWQYAiABKAUSDAoEaWNvbhgDIAEo",
           "BRIQCghxdWFudGl0eRgEIAEoBRIQCghsb2NhdGlvbhgFIAEoCRIRCglzbG90",
           "X25hbWUYBiABKAkSDwoHc2xvdF9pZBgHIAEoBRIQCghzbG90X2lkMhgIIAEo",
           "BRIRCglpdGVtX2xpbmsYCSABKAkSDwoHbm9fZHJvcBgKIAEoCBIfCgRhdWdz",
-          "GAsgAygLMhEuSW52ZW50b3J5QXVnbWVudCJBChBJbnZlbnRvcnlBdWdtZW50",
-          "EgwKBHNsb3QYASABKAUSDAoEbmFtZRgCIAEoCRIRCglpdGVtX2xpbmsYAyAB",
-          "KAliBnByb3RvMw=="));
+          "GAsgAygLMhEuSW52ZW50b3J5QXVnbWVudBIKCgJhYxgMIAEoBRIKCgJocBgN",
+          "IAEoBRIMCgRtYW5hGA4gASgFEhEKCWVuZHVyYW5jZRgPIAEoBRILCgNzdHIY",
+          "ECABKAUSCwoDc3RhGBEgASgFEgsKA2FnaRgSIAEoBRILCgNkZXgYEyABKAUS",
+          "CwoDd2lzGBQgASgFEg0KBWludGVsGBUgASgFEgsKA2NoYRgWIAEoBSJBChBJ",
+          "bnZlbnRvcnlBdWdtZW50EgwKBHNsb3QYASABKAUSDAoEbmFtZRgCIAEoCRIR",
+          "CglpdGVtX2xpbmsYAyABKAliBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::InventoryDataList), global::InventoryDataList.Parser, new[]{ "Items" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::InventoryItem), global::InventoryItem.Parser, new[]{ "Name", "ItemId", "Icon", "Quantity", "Location", "SlotName", "SlotId", "SlotId2", "ItemLink", "NoDrop", "Augs" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::InventoryItem), global::InventoryItem.Parser, new[]{ "Name", "ItemId", "Icon", "Quantity", "Location", "SlotName", "SlotId", "SlotId2", "ItemLink", "NoDrop", "Augs", "Ac", "Hp", "Mana", "Endurance", "Str", "Sta", "Agi", "Dex", "Wis", "Intel", "Cha" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::InventoryAugment), global::InventoryAugment.Parser, new[]{ "Slot", "Name", "ItemLink" }, null, null, null, null)
         }));
   }
@@ -268,6 +271,17 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
     itemLink_ = other.itemLink_;
     noDrop_ = other.noDrop_;
     augs_ = other.augs_.Clone();
+    ac_ = other.ac_;
+    hp_ = other.hp_;
+    mana_ = other.mana_;
+    endurance_ = other.endurance_;
+    str_ = other.str_;
+    sta_ = other.sta_;
+    agi_ = other.agi_;
+    dex_ = other.dex_;
+    wis_ = other.wis_;
+    intel_ = other.intel_;
+    cha_ = other.cha_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -408,6 +422,138 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
     get { return augs_; }
   }
 
+  /// <summary>Field number for the "ac" field.</summary>
+  public const int AcFieldNumber = 12;
+  private int ac_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Ac {
+    get { return ac_; }
+    set {
+      ac_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "hp" field.</summary>
+  public const int HpFieldNumber = 13;
+  private int hp_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Hp {
+    get { return hp_; }
+    set {
+      hp_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "mana" field.</summary>
+  public const int ManaFieldNumber = 14;
+  private int mana_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Mana {
+    get { return mana_; }
+    set {
+      mana_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "endurance" field.</summary>
+  public const int EnduranceFieldNumber = 15;
+  private int endurance_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Endurance {
+    get { return endurance_; }
+    set {
+      endurance_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "str" field.</summary>
+  public const int StrFieldNumber = 16;
+  private int str_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Str {
+    get { return str_; }
+    set {
+      str_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sta" field.</summary>
+  public const int StaFieldNumber = 17;
+  private int sta_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Sta {
+    get { return sta_; }
+    set {
+      sta_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "agi" field.</summary>
+  public const int AgiFieldNumber = 18;
+  private int agi_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Agi {
+    get { return agi_; }
+    set {
+      agi_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "dex" field.</summary>
+  public const int DexFieldNumber = 19;
+  private int dex_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Dex {
+    get { return dex_; }
+    set {
+      dex_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "wis" field.</summary>
+  public const int WisFieldNumber = 20;
+  private int wis_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Wis {
+    get { return wis_; }
+    set {
+      wis_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "intel" field.</summary>
+  public const int IntelFieldNumber = 21;
+  private int intel_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Intel {
+    get { return intel_; }
+    set {
+      intel_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "cha" field.</summary>
+  public const int ChaFieldNumber = 22;
+  private int cha_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Cha {
+    get { return cha_; }
+    set {
+      cha_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -434,6 +580,17 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
     if (ItemLink != other.ItemLink) return false;
     if (NoDrop != other.NoDrop) return false;
     if(!augs_.Equals(other.augs_)) return false;
+    if (Ac != other.Ac) return false;
+    if (Hp != other.Hp) return false;
+    if (Mana != other.Mana) return false;
+    if (Endurance != other.Endurance) return false;
+    if (Str != other.Str) return false;
+    if (Sta != other.Sta) return false;
+    if (Agi != other.Agi) return false;
+    if (Dex != other.Dex) return false;
+    if (Wis != other.Wis) return false;
+    if (Intel != other.Intel) return false;
+    if (Cha != other.Cha) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -452,6 +609,17 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
     if (ItemLink.Length != 0) hash ^= ItemLink.GetHashCode();
     if (NoDrop != false) hash ^= NoDrop.GetHashCode();
     hash ^= augs_.GetHashCode();
+    if (Ac != 0) hash ^= Ac.GetHashCode();
+    if (Hp != 0) hash ^= Hp.GetHashCode();
+    if (Mana != 0) hash ^= Mana.GetHashCode();
+    if (Endurance != 0) hash ^= Endurance.GetHashCode();
+    if (Str != 0) hash ^= Str.GetHashCode();
+    if (Sta != 0) hash ^= Sta.GetHashCode();
+    if (Agi != 0) hash ^= Agi.GetHashCode();
+    if (Dex != 0) hash ^= Dex.GetHashCode();
+    if (Wis != 0) hash ^= Wis.GetHashCode();
+    if (Intel != 0) hash ^= Intel.GetHashCode();
+    if (Cha != 0) hash ^= Cha.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -511,6 +679,50 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
       output.WriteBool(NoDrop);
     }
     augs_.WriteTo(output, _repeated_augs_codec);
+    if (Ac != 0) {
+      output.WriteRawTag(96);
+      output.WriteInt32(Ac);
+    }
+    if (Hp != 0) {
+      output.WriteRawTag(104);
+      output.WriteInt32(Hp);
+    }
+    if (Mana != 0) {
+      output.WriteRawTag(112);
+      output.WriteInt32(Mana);
+    }
+    if (Endurance != 0) {
+      output.WriteRawTag(120);
+      output.WriteInt32(Endurance);
+    }
+    if (Str != 0) {
+      output.WriteRawTag(128, 1);
+      output.WriteInt32(Str);
+    }
+    if (Sta != 0) {
+      output.WriteRawTag(136, 1);
+      output.WriteInt32(Sta);
+    }
+    if (Agi != 0) {
+      output.WriteRawTag(144, 1);
+      output.WriteInt32(Agi);
+    }
+    if (Dex != 0) {
+      output.WriteRawTag(152, 1);
+      output.WriteInt32(Dex);
+    }
+    if (Wis != 0) {
+      output.WriteRawTag(160, 1);
+      output.WriteInt32(Wis);
+    }
+    if (Intel != 0) {
+      output.WriteRawTag(168, 1);
+      output.WriteInt32(Intel);
+    }
+    if (Cha != 0) {
+      output.WriteRawTag(176, 1);
+      output.WriteInt32(Cha);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -562,6 +774,50 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
       output.WriteBool(NoDrop);
     }
     augs_.WriteTo(ref output, _repeated_augs_codec);
+    if (Ac != 0) {
+      output.WriteRawTag(96);
+      output.WriteInt32(Ac);
+    }
+    if (Hp != 0) {
+      output.WriteRawTag(104);
+      output.WriteInt32(Hp);
+    }
+    if (Mana != 0) {
+      output.WriteRawTag(112);
+      output.WriteInt32(Mana);
+    }
+    if (Endurance != 0) {
+      output.WriteRawTag(120);
+      output.WriteInt32(Endurance);
+    }
+    if (Str != 0) {
+      output.WriteRawTag(128, 1);
+      output.WriteInt32(Str);
+    }
+    if (Sta != 0) {
+      output.WriteRawTag(136, 1);
+      output.WriteInt32(Sta);
+    }
+    if (Agi != 0) {
+      output.WriteRawTag(144, 1);
+      output.WriteInt32(Agi);
+    }
+    if (Dex != 0) {
+      output.WriteRawTag(152, 1);
+      output.WriteInt32(Dex);
+    }
+    if (Wis != 0) {
+      output.WriteRawTag(160, 1);
+      output.WriteInt32(Wis);
+    }
+    if (Intel != 0) {
+      output.WriteRawTag(168, 1);
+      output.WriteInt32(Intel);
+    }
+    if (Cha != 0) {
+      output.WriteRawTag(176, 1);
+      output.WriteInt32(Cha);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -603,6 +859,39 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
       size += 1 + 1;
     }
     size += augs_.CalculateSize(_repeated_augs_codec);
+    if (Ac != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Ac);
+    }
+    if (Hp != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Hp);
+    }
+    if (Mana != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Mana);
+    }
+    if (Endurance != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Endurance);
+    }
+    if (Str != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(Str);
+    }
+    if (Sta != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(Sta);
+    }
+    if (Agi != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(Agi);
+    }
+    if (Dex != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(Dex);
+    }
+    if (Wis != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(Wis);
+    }
+    if (Intel != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(Intel);
+    }
+    if (Cha != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(Cha);
+    }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -646,6 +935,39 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
       NoDrop = other.NoDrop;
     }
     augs_.Add(other.augs_);
+    if (other.Ac != 0) {
+      Ac = other.Ac;
+    }
+    if (other.Hp != 0) {
+      Hp = other.Hp;
+    }
+    if (other.Mana != 0) {
+      Mana = other.Mana;
+    }
+    if (other.Endurance != 0) {
+      Endurance = other.Endurance;
+    }
+    if (other.Str != 0) {
+      Str = other.Str;
+    }
+    if (other.Sta != 0) {
+      Sta = other.Sta;
+    }
+    if (other.Agi != 0) {
+      Agi = other.Agi;
+    }
+    if (other.Dex != 0) {
+      Dex = other.Dex;
+    }
+    if (other.Wis != 0) {
+      Wis = other.Wis;
+    }
+    if (other.Intel != 0) {
+      Intel = other.Intel;
+    }
+    if (other.Cha != 0) {
+      Cha = other.Cha;
+    }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -705,6 +1027,50 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
           augs_.AddEntriesFrom(input, _repeated_augs_codec);
           break;
         }
+        case 96: {
+          Ac = input.ReadInt32();
+          break;
+        }
+        case 104: {
+          Hp = input.ReadInt32();
+          break;
+        }
+        case 112: {
+          Mana = input.ReadInt32();
+          break;
+        }
+        case 120: {
+          Endurance = input.ReadInt32();
+          break;
+        }
+        case 128: {
+          Str = input.ReadInt32();
+          break;
+        }
+        case 136: {
+          Sta = input.ReadInt32();
+          break;
+        }
+        case 144: {
+          Agi = input.ReadInt32();
+          break;
+        }
+        case 152: {
+          Dex = input.ReadInt32();
+          break;
+        }
+        case 160: {
+          Wis = input.ReadInt32();
+          break;
+        }
+        case 168: {
+          Intel = input.ReadInt32();
+          break;
+        }
+        case 176: {
+          Cha = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -762,6 +1128,50 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
         }
         case 90: {
           augs_.AddEntriesFrom(ref input, _repeated_augs_codec);
+          break;
+        }
+        case 96: {
+          Ac = input.ReadInt32();
+          break;
+        }
+        case 104: {
+          Hp = input.ReadInt32();
+          break;
+        }
+        case 112: {
+          Mana = input.ReadInt32();
+          break;
+        }
+        case 120: {
+          Endurance = input.ReadInt32();
+          break;
+        }
+        case 128: {
+          Str = input.ReadInt32();
+          break;
+        }
+        case 136: {
+          Sta = input.ReadInt32();
+          break;
+        }
+        case 144: {
+          Agi = input.ReadInt32();
+          break;
+        }
+        case 152: {
+          Dex = input.ReadInt32();
+          break;
+        }
+        case 160: {
+          Wis = input.ReadInt32();
+          break;
+        }
+        case 168: {
+          Intel = input.ReadInt32();
+          break;
+        }
+        case 176: {
+          Cha = input.ReadInt32();
           break;
         }
       }

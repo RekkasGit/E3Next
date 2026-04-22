@@ -16,6 +16,17 @@ message InventoryItem {
     string item_link = 9;
     bool no_drop = 10;
     repeated InventoryAugment augs = 11;
+    int32 ac = 12;
+    int32 hp = 13;
+    int32 mana = 14;
+    int32 endurance = 15;
+    int32 str = 16;
+    int32 sta = 17;
+    int32 agi = 18;
+    int32 dex = 19;
+    int32 wis = 20;
+    int32 intel = 21;
+    int32 cha = 22;
 }
 
 message InventoryAugment {
