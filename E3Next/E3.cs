@@ -462,6 +462,7 @@ namespace E3Core.Processors
 
 					E3ImGUI.ProcessMQCommands();
 					E3TasksWindow.Pulse();
+					E3InventoryWindow.Pulse();
 					//hp, mana, counters, etc, should send out quickly, but no more than say 50 milliseconds
 					if (e3util.ShouldCheck(ref _nextStateUpdateCheckTime, E3.CharacterSettings.CPU_PublishStateDataInMS))
 					{

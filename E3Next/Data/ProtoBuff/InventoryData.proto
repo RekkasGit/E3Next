@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+message InventoryDataList {
+    repeated InventoryItem items = 1;
+}
+
+message InventoryItem {
+    string name = 1;
+    int32 item_id = 2;
+    int32 icon = 3;
+    int32 quantity = 4;
+    string location = 5;
+    string slot_name = 6;
+    int32 slot_id = 7;
+    int32 slot_id2 = 8;
+    string item_link = 9;
+    bool no_drop = 10;
+    repeated InventoryAugment augs = 11;
+}
+
+message InventoryAugment {
+    int32 slot = 1;
+    string name = 2;
+    string item_link = 3;
+}

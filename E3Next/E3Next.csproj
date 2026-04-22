@@ -132,11 +132,13 @@
     <Compile Include="Data\ProtoBuff\BuffData.cs" />
     <Compile Include="Data\ProtoBuff\SpellData.cs" />
     <Compile Include="Data\ProtoBuff\TaskData.cs" />
+    <Compile Include="Data\ProtoBuff\InventoryData.cs" />
     <Compile Include="Data\ResistCounter.cs" />
     <Compile Include="Data\Skills.cs" />
     <Compile Include="Data\SpellRequest.cs" />
     <Compile Include="Data\SpellTimer.cs" />
     <Compile Include="Data\TaskDataCollector.cs" />
+    <Compile Include="Data\InventoryDataCollector.cs" />
     <Compile Include="Data\Zone.cs" />
     <Compile Include="Processors\BaseProcessor.cs" />
     <Compile Include="Processors\Bots.cs" />
@@ -214,6 +216,7 @@
     <Compile Include="UI\Windows\MemStats\MemoryStatsWindow.cs" />
     <Compile Include="UI\Windows\NetworkingStats\NetStatWindow.cs" />
     <Compile Include="UI\Windows\E3Tasks.cs" />
+    <Compile Include="UI\Windows\E3Inventory.cs" />
     <Compile Include="Utility\ArrayBufferPool.cs" />
     <Compile Include="Utility\ByteArrayComparer.cs" />
     <Compile Include="Utility\e3util.cs" />

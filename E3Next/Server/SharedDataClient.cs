@@ -270,6 +270,14 @@ namespace E3Core.Server
 								E3Core.UI.Windows.E3TasksWindow.ProcessTaskDataRequest(messageTopicReceived);
 							}
 						}
+						else if (typeInfo == OnCommandData.CommandType.OnE3InventoryRequest)
+						{
+							// Handle inventory data request from another peer
+							if (!string.IsNullOrEmpty(messageTopicReceived))
+							{
+								E3Core.UI.Windows.E3InventoryWindow.ProcessInventoryRequest(messageTopicReceived);
+							}
+						}
 					}
 					catch (Exception ex)
 					{
@@ -674,6 +682,8 @@ namespace E3Core.Server
 				subSocket.Subscribe("BroadCastMessageZone");
 				subSocket.Subscribe("E3Tasks");
 			subSocket.Subscribe("E3TasksReq");
+				subSocket.Subscribe("E3Inventory");
+				subSocket.Subscribe("E3InventoryReq");
 				// e3imgui Add From Catalog peer relay topics
 				// Requests addressed to specific toons and responses back to requester
 				subSocket.Subscribe($"CatalogReq-{E3.CurrentName.ToLower()}");
@@ -1017,6 +1027,15 @@ namespace E3Core.Server
 									data.TypeOfCommand = OnCommandData.CommandType.OnE3TasksRequest;
 									IMGUICommands.Enqueue(data);
 								}
+								else if (messageTopicReceived == "E3InventoryReq")
+								{
+									// Request for inventory data - queue it for processing
+									var data = OnCommandData.Aquire();
+									data.Data = payloaduser; // Who requested the data
+									data.Data2 = payloaduser;
+									data.TypeOfCommand = OnCommandData.CommandType.OnE3InventoryRequest;
+									IMGUICommands.Enqueue(data);
+								}
 								else
 								{
 									ProcessTopicMessage(payloaduser, messageTopicReceived, messageReceivedAsSpan);
@@ -1198,7 +1217,8 @@ namespace E3Core.Server
 				OnIMGUICommand_GetItemsByType,
 				OnIMGUICommand_ConfigValueReq,
 				OnIMGUICommand_ConfigValueUpdate,
-				OnE3TasksRequest
+				OnE3TasksRequest,
+				OnE3InventoryRequest
 
 			}
 			public string Data { get; set; }

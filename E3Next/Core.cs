@@ -1565,6 +1565,8 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void mq_DoCommandDelayed(string msg);
 		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void mq_ExecuteItemLink(string link);
+		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void mq_Delay(int delay);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool mq_AddCommand(string command);

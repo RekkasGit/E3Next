@@ -2404,6 +2404,12 @@ namespace MonoCore
 		public extern static void imgui_DrawSpellIconByIconIndex(int iconIndex, float size);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_DrawSpellIconBySpellID(int spellId, float size);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_DrawItemIconByIconIndex(int iconIndex, float size);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static IntPtr mq_GetItemIconTextureByIconIndex(int iconIndex);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_InventorySlotTile(string id, string label, int iconIndex, float width, float height, bool selected);
 		// Drawing functions for custom backgrounds
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetCursorPosY();
