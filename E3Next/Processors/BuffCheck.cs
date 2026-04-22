@@ -1325,7 +1325,7 @@ namespace E3Core.Processors
 
 												if(currentBuffCount==maxbuffsCount)
 												{
-													MQ.Write($"\ayStacking logic failed on buff \aw{spell.SpellName} \aybecause I have max buff count. \aw{currentBuffCount}\ay out of \ay{maxbuffsCount}. \agTrying again in 15 seconds");
+													MQ.Write($"\ayStacking logic failed on buff \aw{spell.SpellName} \aybecause I have max buff count. \aw{currentBuffCount}\ay out of \aw{maxbuffsCount}\ay. \agTrying again in 15 seconds");
 
 												}
 												else
