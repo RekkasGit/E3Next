@@ -2,6 +2,7 @@ syntax = "proto3";
 
 message InventoryDataList {
     repeated InventoryItem items = 1;
+    repeated BagInfo bags = 2;
 }
 
 message InventoryItem {
@@ -27,10 +28,38 @@ message InventoryItem {
     int32 wis = 20;
     int32 intel = 21;
     int32 cha = 22;
+    repeated InventoryAugmentSlot aug_slots = 23;
+    string item_type = 24;
+    int32 classes = 25;
+    int32 races = 26;
+    int64 value = 27;
+    int32 tribute = 28;
+    bool tradeskills = 29;
 }
 
 message InventoryAugment {
     int32 slot = 1;
     string name = 2;
     string item_link = 3;
+    int32 icon = 4;
+    int32 item_id = 5;
+    int32 ac = 6;
+    int32 hp = 7;
+    int32 mana = 8;
+    int32 aug_type = 9;
+}
+
+message InventoryAugmentSlot {
+    int32 slot = 1;
+    int32 type = 2;
+    bool visible = 3;
+    bool empty = 4;
+}
+
+message BagInfo {
+    int32 slot_id = 1;
+    string name = 2;
+    int32 icon = 3;
+    int32 capacity = 4;
+    string item_link = 5;
 }

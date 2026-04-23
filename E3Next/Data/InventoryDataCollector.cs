@@ -15,51 +15,42 @@ namespace E3Core.Data
             "rightfinger", "chest", "legs", "feet", "waist", "powersource", "ammo"
         };
 
-        public static List<InventoryItem> Capture(IMQ mq)
+        public static InventoryDataList Capture(IMQ mq)
         {
-            var results = new List<InventoryItem>();
-            if (mq == null) return results;
+            var result = new InventoryDataList();
+            if (mq == null) return result;
 
-            CaptureEquipped(mq, results);
-            CaptureBags(mq, results);
-            CaptureBank(mq, results);
+            CaptureEquipped(mq, result.Items);
+            CaptureBags(mq, result.Items, result.Bags);
+            CaptureBank(mq, result.Items);
 
-            return results;
+            return result;
         }
 
-        public static string SerializeForWire(IEnumerable<InventoryItem> items)
+        public static string SerializeForWire(InventoryDataList data)
         {
-            if (items == null) return string.Empty;
-
-            var list = new InventoryDataList();
-            foreach (var item in items)
-            {
-                list.Items.Add(item);
-            }
-
-            return Convert.ToBase64String(list.ToByteArray());
+            if (data == null) return string.Empty;
+            return Convert.ToBase64String(data.ToByteArray());
         }
 
-        public static List<InventoryItem> DeserializeFromWire(string payload)
+        public static InventoryDataList DeserializeFromWire(string payload)
         {
-            var results = new List<InventoryItem>();
-            if (string.IsNullOrWhiteSpace(payload)) return results;
+            var result = new InventoryDataList();
+            if (string.IsNullOrWhiteSpace(payload)) return result;
 
             try
             {
-                var list = new InventoryDataList();
-                list.MergeFrom(ByteString.FromBase64(payload));
-                results.AddRange(list.Items);
+                result.MergeFrom(ByteString.FromBase64(payload));
             }
             catch
             {
                 // silently ignore corrupt payloads
             }
 
-            return results;
+            return result;
         }
 
-        private static void CaptureEquipped(IMQ mq, List<InventoryItem> results)
+        private static void CaptureEquipped(IMQ mq, IList<InventoryItem> results)
         {
             for (int i = 0; i < _invSlots.Count; i++)
             {
@@ -81,13 +72,14 @@ namespace E3Core.Data
                     NoDrop = SafeQueryBool(mq, $"${{Me.Inventory[{i}].NoDrop}}")
                 };
 
-                CaptureAugments(mq, $"${{Me.Inventory[{i}]}}", $"${{InvSlot[{i}].Item}}", item);
+                CaptureAugments(mq, $"${{Me.Inventory[{i}]}}", item);
+                CaptureAugmentSlots(mq, $"${{Me.Inventory[{i}]}}", item);
                 CaptureStats(mq, $"${{Me.Inventory[{i}]}}", item);
                 results.Add(item);
             }
         }
 
-        private static void CaptureBags(IMQ mq, List<InventoryItem> results)
+        private static void CaptureBags(IMQ mq, IList<InventoryItem> results, IList<BagInfo> bags)
         {
             for (int i = 1; i <= 10; i++)
             {
@@ -100,6 +92,15 @@ namespace E3Core.Data
 
                 if (containerSlots > 0)
                 {
+                    bags.Add(new BagInfo
+                    {
+                        SlotId = bagSlotId,
+                        Name = bagName,
+                        Icon = SafeQueryInt(mq, $"${{Me.Inventory[pack{i}].Icon}}"),
+                        Capacity = containerSlots,
+                        ItemLink = SafeQueryString(mq, $"${{Me.Inventory[pack{i}].ItemLink[CLICKABLE]}}")
+                    });
+
                     for (int e = 1; e <= containerSlots; e++)
                     {
                         string itemName = SafeQueryString(mq, $"${{Me.Inventory[pack{i}].Item[{e}]}}");
@@ -120,7 +121,8 @@ namespace E3Core.Data
                             NoDrop = SafeQueryBool(mq, $"${{Me.Inventory[pack{i}].Item[{e}].NoDrop}}")
                         };
 
-                        CaptureAugments(mq, $"${{Me.Inventory[pack{i}].Item[{e}]}}", $"${{Me.Inventory[pack{i}].Item[{e}]}}", item);
+                        CaptureAugments(mq, $"${{Me.Inventory[pack{i}].Item[{e}]}}", item);
+                        CaptureAugmentSlots(mq, $"${{Me.Inventory[pack{i}].Item[{e}]}}", item);
                         CaptureStats(mq, $"${{Me.Inventory[pack{i}].Item[{e}]}}", item);
                         results.Add(item);
                     }
@@ -142,14 +144,15 @@ namespace E3Core.Data
                         NoDrop = SafeQueryBool(mq, $"${{Me.Inventory[pack{i}].NoDrop}}")
                     };
 
-                    CaptureAugments(mq, $"${{Me.Inventory[pack{i}]}}", $"${{Me.Inventory[pack{i}]}}", item);
+                    CaptureAugments(mq, $"${{Me.Inventory[pack{i}]}}", item);
+                    CaptureAugmentSlots(mq, $"${{Me.Inventory[pack{i}]}}", item);
                     CaptureStats(mq, $"${{Me.Inventory[pack{i}]}}", item);
                     results.Add(item);
                 }
             }
         }
 
-        private static void CaptureBank(IMQ mq, List<InventoryItem> results)
+        private static void CaptureBank(IMQ mq, IList<InventoryItem> results)
         {
             for (int i = 1; i <= 26; i++)
             {
@@ -181,7 +184,8 @@ namespace E3Core.Data
                             NoDrop = SafeQueryBool(mq, $"${{Me.Bank[{i}].Item[{e}].NoDrop}}")
                         };
 
-                        CaptureAugments(mq, $"${{Me.Bank[{i}].Item[{e}]}}", $"${{Me.Bank[{i}].Item[{e}]}}", item);
+                        CaptureAugments(mq, $"${{Me.Bank[{i}].Item[{e}]}}", item);
+                        CaptureAugmentSlots(mq, $"${{Me.Bank[{i}].Item[{e}]}}", item);
                         CaptureStats(mq, $"${{Me.Bank[{i}].Item[{e}]}}", item);
                         results.Add(item);
                     }
@@ -202,30 +206,70 @@ namespace E3Core.Data
                         NoDrop = SafeQueryBool(mq, $"${{Me.Bank[{i}].NoDrop}}")
                     };
 
-                    CaptureAugments(mq, $"${{Me.Bank[{i}]}}", $"${{Me.Bank[{i}]}}", item);
+                    CaptureAugments(mq, $"${{Me.Bank[{i}]}}", item);
+                    CaptureAugmentSlots(mq, $"${{Me.Bank[{i}]}}", item);
                     CaptureStats(mq, $"${{Me.Bank[{i}]}}", item);
                     results.Add(item);
                 }
             }
         }
 
-        private static void CaptureAugments(IMQ mq, string itemTloPrefix, string augTloPrefix, InventoryItem target)
+        private static void CaptureAugments(IMQ mq, string itemTloPrefix, InventoryItem target)
         {
-            int augCount = SafeQueryInt(mq, $"{itemTloPrefix}.Augs");
+            int insertPos = itemTloPrefix.LastIndexOf('}');
+            string prefix = insertPos >= 0 ? itemTloPrefix.Substring(0, insertPos) : itemTloPrefix;
+            string suffix = insertPos >= 0 ? itemTloPrefix.Substring(insertPos) : "";
+
+            int augCount = SafeQueryInt(mq, $"{prefix}.Augs{suffix}");
             if (augCount <= 0) return;
 
             for (int a = 1; a <= 6; a++)
             {
-                string augName = SafeQueryString(mq, $"{itemTloPrefix}.AugSlot[{a}].Name");
+                string augName = SafeQueryString(mq, $"{prefix}.AugSlot[{a}].Name{suffix}");
                 if (string.IsNullOrWhiteSpace(augName) || string.Equals(augName, "NULL", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                string augLink = SafeQueryString(mq, $"{augTloPrefix}.AugSlot[{a}].Item.ItemLink[CLICKABLE]");
+                string augLink = SafeQueryString(mq, $"{prefix}.AugSlot[{a}].Item.ItemLink[CLICKABLE]{suffix}");
+                int augIcon = SafeQueryInt(mq, $"{prefix}.AugSlot[{a}].Item.Icon{suffix}");
+                int augId = SafeQueryInt(mq, $"{prefix}.AugSlot[{a}].Item.ID{suffix}");
+                int augAc = SafeQueryInt(mq, $"{prefix}.AugSlot[{a}].Item.AC{suffix}");
+                int augHp = SafeQueryInt(mq, $"{prefix}.AugSlot[{a}].Item.HP{suffix}");
+                int augMana = SafeQueryInt(mq, $"{prefix}.AugSlot[{a}].Item.Mana{suffix}");
+                int augType = SafeQueryInt(mq, $"{prefix}.AugSlot[{a}].Item.AugType{suffix}");
+
                 target.Augs.Add(new InventoryAugment
                 {
                     Slot = a,
                     Name = augName,
-                    ItemLink = augLink
+                    ItemLink = augLink,
+                    Icon = augIcon,
+                    ItemId = augId,
+                    Ac = augAc,
+                    Hp = augHp,
+                    Mana = augMana,
+                    AugType = augType
+                });
+            }
+        }
+
+        private static void CaptureAugmentSlots(IMQ mq, string itemTloPrefix, InventoryItem target)
+        {
+            int insertPos = itemTloPrefix.LastIndexOf('}');
+            string prefix = insertPos >= 0 ? itemTloPrefix.Substring(0, insertPos) : itemTloPrefix;
+            string suffix = insertPos >= 0 ? itemTloPrefix.Substring(insertPos) : "";
+
+            for (int a = 1; a <= 6; a++)
+            {
+                bool visible = SafeQueryBool(mq, $"{prefix}.AugSlot[{a}].Visible{suffix}");
+                bool empty = SafeQueryBool(mq, $"{prefix}.AugSlot[{a}].Empty{suffix}");
+                int type = SafeQueryInt(mq, $"{prefix}.AugSlot[{a}].Type{suffix}");
+
+                target.AugSlots.Add(new InventoryAugmentSlot
+                {
+                    Slot = a,
+                    Type = type,
+                    Visible = visible,
+                    Empty = empty
                 });
             }
         }
@@ -248,6 +292,13 @@ namespace E3Core.Data
             item.Wis = SafeQueryInt(mq, $"{prefix}.WIS{suffix}");
             item.Intel = SafeQueryInt(mq, $"{prefix}.INT{suffix}");
             item.Cha = SafeQueryInt(mq, $"{prefix}.CHA{suffix}");
+
+            item.ItemType = SafeQueryString(mq, $"{prefix}.Type{suffix}");
+            item.Classes = SafeQueryInt(mq, $"{prefix}.Classes{suffix}");
+            item.Races = SafeQueryInt(mq, $"{prefix}.Races{suffix}");
+            item.Value = SafeQueryInt(mq, $"{prefix}.Value{suffix}");
+            item.Tribute = SafeQueryInt(mq, $"{prefix}.Tribute{suffix}");
+            item.Tradeskills = SafeQueryBool(mq, $"{prefix}.Tradeskills{suffix}");
         }
 
         private static string SafeQueryString(IMQ mq, string query)
