@@ -1,0 +1,1 @@
+ ..\..\..\resources\mono\32bit\bin\mcs /out:Core.dll /target:library /recurse:*.cs

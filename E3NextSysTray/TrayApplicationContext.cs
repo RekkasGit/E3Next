@@ -16,7 +16,6 @@ using System.Windows.Forms;
 using Windows.Networking.NetworkOperators;
 using Windows.UI.Notifications;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using Microsoft.Toolkit.Uwp.Notifications;
 
 namespace E3NextSysTray
 {
@@ -40,14 +39,101 @@ namespace E3NextSysTray
 				return new Icon(ms);
 			}
 		}
+		public void DeleteSelfAndStartupNew()
+		{
+			string currentExePath = Process.GetCurrentProcess().MainModule.FileName;
+			// 2. Build a chain of commands for cmd.exe:
+			// - 'waitfor /t 3' forces cmd to silently wait for 3 seconds
+			// - 'del /f /q' force-deletes the file silently without prompting
+			string command = $"/c waitfor /t 2 nonExistentSignal 2>nul & del /f /q \"{currentExePath}\"";
+			ProcessStartInfo startInfo = new ProcessStartInfo
+			{
+				FileName = "cmd.exe",
+				Arguments = command,
+				CreateNoWindow = true,       // Keeps the command prompt window invisible
+				UseShellExecute = false      // Required to keep it hidden and independent
+			};
+			// 3. Launch the delete task
+			Process.Start(startInfo);
+			string currentDirectory = Path.GetDirectoryName(currentExePath);
+			// 2. Define the exact path for the duplicated target
+			string newExeName = "E3NextSysTray.exe";
+			string targetApp = Path.Combine(currentDirectory, newExeName);
+			command = $"/c waitfor /t 3 nonExistentSignal2 2>nul & start \"\" \"{targetApp}\"";
+			ProcessStartInfo startInfo2 = new ProcessStartInfo
+			{
+				FileName = "cmd.exe",
+				Arguments = command,
+				CreateNoWindow = true,       // Keeps the command prompt window invisible
+				UseShellExecute = false      // Required to keep it hidden and independent
+			};
+			// 3. Launch the delete task
+			Process.Start(startInfo2);
+			// 4. Force the C# app to close IMMEDIATELY
+			// This releases the operating system lock on the file so cmd can delete it
+			Environment.Exit(0);
+		}
+		public void RenameAndStartProcess()
+		{
+
+			string currentExePath = Process.GetCurrentProcess().MainModule.FileName;
+			string currentDirectory = Path.GetDirectoryName(currentExePath);
+
+			// 2. Define the exact path for the duplicated target
+			string newExeName = "E3NextSysTray_Working.exe";
+			string newExePath = Path.Combine(currentDirectory, newExeName);
+
+			// 3. Duplicate the current executable over to the new file path
+			// (Setting 'overwrite' to true cleans up any remnants of prior runs)
+			Console.WriteLine("Copying active executable...");
+			File.Copy(currentExePath, newExePath, overwrite: true);
+
+
+			int delayInSeconds = 3;
+			string targetApp = newExeName;
+
+			// Use 'waitfor' mapped to a dummy string instead of 'timeout'.
+			// This is safe to run in a non-interactive, hidden shell!
+			string command = $"/c waitfor /t {delayInSeconds} nonExistentSignal 2>nul & start \"\" \"{targetApp}\"";
+
+			ProcessStartInfo startInfo = new ProcessStartInfo
+			{
+				FileName = "cmd.exe",
+				Arguments = command,
+				CreateNoWindow = true,       // Runs completely hidden
+				UseShellExecute = false,     // MUST be false to use CreateNoWindow in .NET Core/.NET 5+
+				RedirectStandardOutput = false,
+				RedirectStandardError = false
+			};
+
+			Process.Start(startInfo);
+
+			Console.WriteLine("Command sent. Terminating this process now...");
+			Environment.Exit(0);
+		}
 		public TrayApplicationContext()
 		{
+
+			if (!System.Diagnostics.Debugger.IsAttached)
+			{
+
+				string currentExe = Process.GetCurrentProcess().MainModule.ModuleName;
+				if(currentExe!= "E3NextSysTray_Working.exe")
+				{
+					RenameAndStartProcess();
+					return;
+				}
+
+			}
+
+
+
 			// 1. Initialize the Context Menu
 			contextMenu = new ContextMenuStrip();
 
-			 openItem = new ToolStripMenuItem("Open App", null, OnOpen);
-			 exitItem = new ToolStripMenuItem("Exit", null, OnExit);
-			 updateItem = new ToolStripMenuItem("Update", null, OnUpdate);
+			openItem = new ToolStripMenuItem("Open App", null, OnOpen);
+			exitItem = new ToolStripMenuItem("Exit", null, OnExit);
+			updateItem = new ToolStripMenuItem("Update", null, OnUpdate);
 			progressItem = new ToolStripMenuItem("Show Progress", null, OnShowProgress);
 			progressItem.Enabled = false;
 			contextMenu.Items.Add(openItem);
@@ -76,12 +162,12 @@ namespace E3NextSysTray
 
 		private void OnOpen(object sender, EventArgs e)
 		{
-			// Example: Show a standard form when requested
-			Form1 mainForm = new Form1();
-			mainForm.Show();
+			//// Example: Show a standard form when requested
+			//Form1 mainForm = new Form1();
+			//mainForm.Show();
 
-			// Bring it to the foreground if minimized
-			mainForm.Activate();
+			//// Bring it to the foreground if minimized
+			//mainForm.Activate();
 		}
 
 		private void OnExit(object sender, EventArgs e)
@@ -183,6 +269,7 @@ namespace E3NextSysTray
 						using (var stream = response.Content.ReadAsStreamAsync().Result)
 						using (var fileStream = new FileStream("source_code.zip", System.IO.FileMode.Create, FileAccess.Write, FileShare.None))
 						{
+							//set a decent buffer, else there is just too much churn, 1mb is more than enough for fiber download
 							byte[] buffer = new byte[1024*1024];
 							long totalReadBytes = 0;
 							int readBytes;
@@ -193,11 +280,11 @@ namespace E3NextSysTray
 								totalReadBytes += readBytes;
 
 								// Render the progress bar
-
+								//throttle it
 								if(stopwatch.ElapsedMilliseconds-startTime>750)
 								{
 									startTime = stopwatch.ElapsedMilliseconds;
-									DrawProgressBar(totalReadBytes, totalBytes);
+									DrawProgressBar(totalReadBytes);
 								}
 							}
 						}
@@ -230,7 +317,11 @@ namespace E3NextSysTray
 				trayIcon.Text = $"E3Next";
 				progressItem.Enabled = false;
 			}, null);
-	
+
+
+			//we should have been done with downloading and decompressing the software
+			DeleteSelfAndStartupNew();
+
 		}
 		private void UpdateTrayProgress(double megabytes)
 		{
@@ -246,24 +337,13 @@ namespace E3NextSysTray
 			}, null);
 
 		}
-		private  void DrawProgressBar(long totalReadBytes, long? totalBytes)
+		private  void DrawProgressBar(long totalReadBytes)
 		{
-			//if (totalBytes.HasValue)
-			//{
-			//	// If Content-Length is provided, show progress percentage
-			//	double percentage = (double)totalReadBytes / totalBytes.Value * 100;
-			//	int progressBlocks = (int)(percentage / 2);
-			//	double mbRead = totalReadBytes / 1024.0 / 1024.0;
-			//	UpdateTrayProgress(percentage,mbRead);
-			//	Debug.WriteLine($"\r[{new string('#', progressBlocks)}{new string('-', 50 - progressBlocks)}] {percentage:F1}%");
-			//}
-			//else
-			//{
 				// If Content-Length is missing (common with dynamic zip streams), show accumulated megabytes
 				double mbRead = totalReadBytes / 1024.0 / 1024.0;
 				UpdateTrayProgress(mbRead);
 				Debug.WriteLine($"\rDownloading: {mbRead:F2} MB retrieved...");
-			//}
+			
 		}
 
 
