@@ -35,6 +35,11 @@
             "projectReferences": {}
           }
         },
+        "warningProperties": {
+          "noWarn": [
+            "NU1901"
+          ]
+        },
         "restoreAuditProperties": {
           "enableAudit": "true",
           "auditLevel": "low",
@@ -49,6 +54,10 @@
               "suppressParent": "All",
               "target": "Package",
               "version": "[6.0.0, )"
+            },
+            "DotNetZip.Original": {
+              "target": "Package",
+              "version": "[2025.2.15, )"
             },
             "Microsoft.Toolkit.Uwp.Notifications": {
               "target": "Package",

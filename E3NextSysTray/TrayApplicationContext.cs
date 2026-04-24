@@ -1,21 +1,16 @@
-﻿using Microsoft.Toolkit.Uwp.Notifications;
+﻿using Ionic.Zip;
+using Microsoft.Toolkit.Uwp.Notifications;
 using Octokit;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Runtime.Remoting.Lifetime;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Windows.Networking.NetworkOperators;
 using Windows.UI.Notifications;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace E3NextSysTray
 {
@@ -30,6 +25,13 @@ namespace E3NextSysTray
 		ToolStripMenuItem exitItem;
 		ToolStripMenuItem updateItem;
 		ToolStripMenuItem progressItem;
+		private string _toatsTag = "zip-download";
+		private string _toatsGroupTag = "e3n-updates";
+		private string _mqLocation = String.Empty;
+		private string _downloadFullFileName = "full_e3n_mq_download.zip";
+		private string _currentExePath = Process.GetCurrentProcess().MainModule.FileName;
+		private string _currentDirectory = String.Empty;
+
 		public Icon BytesToIcon(byte[] bytes)
 		{
 			// Pass the byte array directly into a memory stream
@@ -45,7 +47,7 @@ namespace E3NextSysTray
 			// 2. Build a chain of commands for cmd.exe:
 			// - 'waitfor /t 3' forces cmd to silently wait for 3 seconds
 			// - 'del /f /q' force-deletes the file silently without prompting
-			string command = $"/c waitfor /t 2 nonExistentSignal 2>nul & del /f /q \"{currentExePath}\"";
+			string command = $"/c waitfor /t 2 e3ntrayDeleteSignal 2>nul & del /f /q \"{currentExePath}\"";
 			ProcessStartInfo startInfo = new ProcessStartInfo
 			{
 				FileName = "cmd.exe",
@@ -59,7 +61,7 @@ namespace E3NextSysTray
 			// 2. Define the exact path for the duplicated target
 			string newExeName = "E3NextSysTray.exe";
 			string targetApp = Path.Combine(currentDirectory, newExeName);
-			command = $"/c waitfor /t 3 nonExistentSignal2 2>nul & start \"\" \"{targetApp}\"";
+			command = $"/c waitfor /t 3 e3ntrayStartupSignal 2>nul & start \"\" \"{targetApp}\"";
 			ProcessStartInfo startInfo2 = new ProcessStartInfo
 			{
 				FileName = "cmd.exe",
@@ -75,18 +77,16 @@ namespace E3NextSysTray
 		}
 		public void RenameAndStartProcess()
 		{
-
-			string currentExePath = Process.GetCurrentProcess().MainModule.FileName;
-			string currentDirectory = Path.GetDirectoryName(currentExePath);
+			_currentDirectory = Path.GetDirectoryName(_currentExePath);
 
 			// 2. Define the exact path for the duplicated target
 			string newExeName = "E3NextSysTray_Working.exe";
-			string newExePath = Path.Combine(currentDirectory, newExeName);
+			string newExePath = Path.Combine(_currentDirectory, newExeName);
 
 			// 3. Duplicate the current executable over to the new file path
 			// (Setting 'overwrite' to true cleans up any remnants of prior runs)
 			Console.WriteLine("Copying active executable...");
-			File.Copy(currentExePath, newExePath, overwrite: true);
+			File.Copy(_currentExePath, newExePath, overwrite: true);
 
 
 			int delayInSeconds = 3;
@@ -94,7 +94,7 @@ namespace E3NextSysTray
 
 			// Use 'waitfor' mapped to a dummy string instead of 'timeout'.
 			// This is safe to run in a non-interactive, hidden shell!
-			string command = $"/c waitfor /t {delayInSeconds} nonExistentSignal 2>nul & start \"\" \"{targetApp}\"";
+			string command = $"/c waitfor /t {delayInSeconds} e3ntrayStartupSignal 2>nul & start \"\" \"{targetApp}\"";
 
 			ProcessStartInfo startInfo = new ProcessStartInfo
 			{
@@ -113,7 +113,13 @@ namespace E3NextSysTray
 		}
 		public TrayApplicationContext()
 		{
+			_mqLocation = Process.GetCurrentProcess().MainModule.FileName;
 
+			_mqLocation = Path.GetDirectoryName(_mqLocation).Replace(@"\mono\macros\e3", "").Replace(@"/mono/macros/e3", "");
+			if (Debugger.IsAttached)
+			{
+				_mqLocation = @"D:\EQ\MQEmu\";
+			}
 			if (!System.Diagnostics.Debugger.IsAttached)
 			{
 
@@ -125,9 +131,7 @@ namespace E3NextSysTray
 				}
 
 			}
-
-
-
+			
 			// 1. Initialize the Context Menu
 			contextMenu = new ContextMenuStrip();
 
@@ -175,7 +179,7 @@ namespace E3NextSysTray
 			// Hide tray icon, otherwise it lingers until mouseover
 			trayIcon.Visible = false;
 			trayIcon.Dispose();
-			ToastNotificationManagerCompat.History.Remove("zip-download", "github-downloads");
+			ToastNotificationManagerCompat.History.Remove(_toatsTag, _toatsGroupTag);
 			// Safely terminate the application message loop
 			System.Windows.Forms.Application.Exit();
 		}
@@ -197,8 +201,8 @@ namespace E3NextSysTray
 			 .AddButton(new ToastButton("Hide", "dismissed"))
 			.Show(toast =>
 			{
-				toast.Tag = "zip-download";
-				toast.Group = "github-downloads";
+				toast.Tag = _toatsTag;
+				toast.Group = _toatsGroupTag;
 				toast.Data = new NotificationData();
 				toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
 				toast.Data.Values["statusText"] = "Connecting...";
@@ -206,6 +210,21 @@ namespace E3NextSysTray
 			});
 
 		}
+
+		private void UpdateToastStatus(string status)
+		{
+			_syncContext.Post(_ =>
+			{
+				var data = new NotificationData();
+				data.Values["percentValue"] = "indeterminate";
+				data.Values["statusText"] = status;
+				trayIcon.Text = status;
+				data.Values["percentString"] = " ";
+				ToastNotificationManagerCompat.CreateToastNotifier()
+					.Update(data, _toatsTag, _toatsGroupTag);
+			}, null);
+		}
+
 		private void OnUpdate(object sender, EventArgs e)
 		{
 			updateItem.Enabled = false;
@@ -214,7 +233,7 @@ namespace E3NextSysTray
 			Uri fileUri = new Uri("file:///" + tempPngPath.Replace("\\", "/"), UriKind.Absolute);
 
 			new ToastContentBuilder()
-			  .AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
+			.AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
 			.SetToastScenario(ToastScenario.Reminder)
 			.AddText("Downloading update...")
 			.AddVisualChild(new AdaptiveProgressBar()
@@ -226,8 +245,8 @@ namespace E3NextSysTray
 			 .AddButton(new ToastButton("Hide", "dismissed"))
 			.Show(toast =>
 			{
-				toast.Tag = "zip-download";
-				toast.Group = "github-downloads";
+				toast.Tag = _toatsTag;
+				toast.Group = _toatsGroupTag;
 				toast.Data = new NotificationData();
 				toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
 				toast.Data.Values["statusText"] = "Connecting...";
@@ -240,7 +259,7 @@ namespace E3NextSysTray
 		{
 			try
 			{
-				
+		
 				GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
 				var latestRelease = client.Repository.Release.GetLatest("RekkasGit", "E3NextAndMQNextBinary").Result;
 
@@ -295,7 +314,7 @@ namespace E3NextSysTray
 			{
 				_syncContext.Post(_ =>
 				{
-					ToastNotificationManagerCompat.History.Remove("zip-download", "github-downloads");
+					ToastNotificationManagerCompat.History.Remove(_toatsTag, _toatsGroupTag);
 					MessageBox.Show($"Download failed! {ex.Message}");
 					trayIcon.Text = $"E3Next";
 					updateItem.Enabled = true;
@@ -310,40 +329,114 @@ namespace E3NextSysTray
 					data.Values["statusText"] = $"Complete!!";
 					data.Values["percentString"] = " ";
 					ToastNotificationManagerCompat.CreateToastNotifier()
-						.Update(data, "zip-download", "github-downloads");
+						.Update(data, _toatsTag, "github-downloads");
 				System.Threading.Thread.Sleep(2000);
-				ToastNotificationManagerCompat.History.Remove("zip-download", "github-downloads");
+				ToastNotificationManagerCompat.History.Remove(_toatsTag, _toatsGroupTag);
 				updateItem.Enabled = true;
 				trayIcon.Text = $"E3Next";
 				progressItem.Enabled = false;
 			}, null);
 
+			//file is downloaded, lets decompress it
 
+
+
+			CloseAllEQAndMQ();
+			ReadDownloadedZipAndExtract(Path.Combine(_currentDirectory,_downloadFullFileName), _mqLocation);
 			//we should have been done with downloading and decompressing the software
 			DeleteSelfAndStartupNew();
 
 		}
-		private void UpdateTrayProgress(double megabytes)
+		private void CloseAllEQAndMQ()
 		{
-			_syncContext.Post(_ =>
-			{
-				var data = new NotificationData();
-				data.Values["percentValue"] = "indeterminate";
-				data.Values["statusText"] = $"Total Downloaded:{megabytes:F2} MB";
-				trayIcon.Text = $"Total Downloaded:{megabytes:F2} MB";
-				data.Values["percentString"] = " ";
-				ToastNotificationManagerCompat.CreateToastNotifier()
-					.Update(data, "zip-download", "github-downloads");
-			}, null);
+			UpdateToastStatus($"Killing all EQ/MQ programs in 5 seconds....");
+			System.Threading.Thread.Sleep(5000);
+			//lets get the current application
+			
+			var exePaths = Directory.GetFiles(_mqLocation, "*.exe", SearchOption.AllDirectories)
+								   .Select(f => f.ToLower())
+								   .ToHashSet();
 
+			//kill all proceesses that are in the mq directory, or are equal to eqgame.xe
+			foreach (var p in Process.GetProcesses())
+			{
+				if (p.ProcessName != "eqgame.exe" && !exePaths.Contains(p.ProcessName))
+				{
+					continue;
+				}
+				try
+				{
+					// Skip the current process to avoid self-termination
+					UpdateToastStatus($"Closing process: {p.ProcessName} (ID: {p.Id})");
+					p.Kill();
+				}
+				catch (Exception ex)
+				{
+					// Usually happens for system processes you don't have permission to touch
+					UpdateToastStatus($"Could not close {p.ProcessName}. Sleeping for 5 seconds. Error Message: {ex.Message}");
+					System.Threading.Thread.Sleep(5000);
+				}
+			}
+			
+		}
+		private void ReadDownloadedZipAndExtract(string zipLocation, string zipDest)
+		{
+			using (ZipFile zip = ZipFile.Read(zipLocation))
+			{
+				var result = zip.Any(entry => entry.FileName.Contains("RekkasGit-E3NextAndMQNextBinary"));
+				if (!result)
+				{
+					UpdateToastStatus("$Error could not find Sub folder in zip file.");
+					return;
+				}
+				var selection = (from e in zip.Entries
+								 where (e.FileName).StartsWith("E3NextAndMQNextBinary-main/")
+
+								 select e);
+
+				UpdateToastStatus($"Extracting files....");
+				//we don't want the github generated name, so we will just strip it out
+
+				//selection count is updated each time we extract, so we  only increment when we are going to skip one
+				for (Int32 i = 0; i < selection.Count();)
+				{
+					var e = selection.ElementAt(i);
+					if (e.FileName == "E3NextAndMQNextBinary-main/")
+					{
+						i++;
+						continue;
+					}
+					e.FileName = e.FileName.Replace("E3NextAndMQNextBinary-main/", "");
+					UpdateToastStatus($"Extracting {e.FileName}");
+					if (e.FileName.IndexOf("config/", 0, StringComparison.OrdinalIgnoreCase) > -1)
+					{
+						e.Extract(zipDest, ExtractExistingFileAction.DoNotOverwrite);
+					}
+					else if (e.FileName.IndexOf("resources/", 0, StringComparison.OrdinalIgnoreCase) > -1)
+					{
+						e.Extract(zipDest, ExtractExistingFileAction.DoNotOverwrite);
+					}
+					else
+					{
+						e.Extract(zipDest, ExtractExistingFileAction.OverwriteSilently);
+					}
+				}
+			}
+
+			try
+			{
+				File.Delete(zipLocation);
+			}
+			catch (Exception)
+			{
+
+			}
 		}
 		private  void DrawProgressBar(long totalReadBytes)
 		{
 				// If Content-Length is missing (common with dynamic zip streams), show accumulated megabytes
 				double mbRead = totalReadBytes / 1024.0 / 1024.0;
-				UpdateTrayProgress(mbRead);
-				Debug.WriteLine($"\rDownloading: {mbRead:F2} MB retrieved...");
-			
+				UpdateToastStatus($"Total Downloaded:{mbRead:F2} MB");
 		}
 
 
