@@ -24,7 +24,7 @@ public static partial class InventoryDataReflection {
         string.Concat(
           "ChNJbnZlbnRvcnlEYXRhLnByb3RvIkoKEUludmVudG9yeURhdGFMaXN0Eh0K",
           "BWl0ZW1zGAEgAygLMg4uSW52ZW50b3J5SXRlbRIWCgRiYWdzGAIgAygLMggu",
-          "QmFnSW5mbyKDBAoNSW52ZW50b3J5SXRlbRIMCgRuYW1lGAEgASgJEg8KB2l0",
+          "QmFnSW5mbyKdBwoNSW52ZW50b3J5SXRlbRIMCgRuYW1lGAEgASgJEg8KB2l0",
           "ZW1faWQYAiABKAUSDAoEaWNvbhgDIAEoBRIQCghxdWFudGl0eRgEIAEoBRIQ",
           "Cghsb2NhdGlvbhgFIAEoCRIRCglzbG90X25hbWUYBiABKAkSDwoHc2xvdF9p",
           "ZBgHIAEoBRIQCghzbG90X2lkMhgIIAEoBRIRCglpdGVtX2xpbmsYCSABKAkS",
@@ -35,21 +35,41 @@ public static partial class InventoryDataReflection {
           "GBUgASgFEgsKA2NoYRgWIAEoBRIoCglhdWdfc2xvdHMYFyADKAsyFS5JbnZl",
           "bnRvcnlBdWdtZW50U2xvdBIRCglpdGVtX3R5cGUYGCABKAkSDwoHY2xhc3Nl",
           "cxgZIAEoBRINCgVyYWNlcxgaIAEoBRINCgV2YWx1ZRgbIAEoAxIPCgd0cmli",
-          "dXRlGBwgASgFEhMKC3RyYWRlc2tpbGxzGB0gASgIIpgBChBJbnZlbnRvcnlB",
-          "dWdtZW50EgwKBHNsb3QYASABKAUSDAoEbmFtZRgCIAEoCRIRCglpdGVtX2xp",
-          "bmsYAyABKAkSDAoEaWNvbhgEIAEoBRIPCgdpdGVtX2lkGAUgASgFEgoKAmFj",
-          "GAYgASgFEgoKAmhwGAcgASgFEgwKBG1hbmEYCCABKAUSEAoIYXVnX3R5cGUY",
-          "CSABKAUiUgoUSW52ZW50b3J5QXVnbWVudFNsb3QSDAoEc2xvdBgBIAEoBRIM",
-          "CgR0eXBlGAIgASgFEg8KB3Zpc2libGUYAyABKAgSDQoFZW1wdHkYBCABKAgi",
-          "WwoHQmFnSW5mbxIPCgdzbG90X2lkGAEgASgFEgwKBG5hbWUYAiABKAkSDAoE",
-          "aWNvbhgDIAEoBRIQCghjYXBhY2l0eRgEIAEoBRIRCglpdGVtX2xpbmsYBSAB",
-          "KAliBnByb3RvMw=="));
+          "dXRlGBwgASgFEhMKC3RyYWRlc2tpbGxzGB0gASgIEhIKCmhlcm9pY19zdHIY",
+          "HiABKAUSEgoKaGVyb2ljX3N0YRgfIAEoBRISCgpoZXJvaWNfYWdpGCAgASgF",
+          "EhIKCmhlcm9pY19kZXgYISABKAUSEgoKaGVyb2ljX3dpcxgiIAEoBRISCgpo",
+          "ZXJvaWNfaW50GCMgASgFEhIKCmhlcm9pY19jaGEYJCABKAUSEAoIc3ZfbWFn",
+          "aWMYJSABKAUSDwoHc3ZfZmlyZRgmIAEoBRIPCgdzdl9jb2xkGCcgASgFEhIK",
+          "CnN2X2Rpc2Vhc2UYKCABKAUSEQoJc3ZfcG9pc29uGCkgASgFEhUKDXN2X2Nv",
+          "cnJ1cHRpb24YKiABKAUSFwoPaGVyb2ljX3N2X21hZ2ljGCsgASgFEhYKDmhl",
+          "cm9pY19zdl9maXJlGCwgASgFEhYKDmhlcm9pY19zdl9jb2xkGC0gASgFEhkK",
+          "EWhlcm9pY19zdl9kaXNlYXNlGC4gASgFEhgKEGhlcm9pY19zdl9wb2lzb24Y",
+          "LyABKAUSHAoUaGVyb2ljX3N2X2NvcnJ1cHRpb24YMCABKAUijwUKEEludmVu",
+          "dG9yeUF1Z21lbnQSDAoEc2xvdBgBIAEoBRIMCgRuYW1lGAIgASgJEhEKCWl0",
+          "ZW1fbGluaxgDIAEoCRIMCgRpY29uGAQgASgFEg8KB2l0ZW1faWQYBSABKAUS",
+          "CgoCYWMYBiABKAUSCgoCaHAYByABKAUSDAoEbWFuYRgIIAEoBRIQCghhdWdf",
+          "dHlwZRgJIAEoBRILCgNzdHIYCiABKAUSCwoDc3RhGAsgASgFEgsKA2FnaRgM",
+          "IAEoBRILCgNkZXgYDSABKAUSCwoDd2lzGA4gASgFEg0KBWludGVsGA8gASgF",
+          "EgsKA2NoYRgQIAEoBRISCgpoZXJvaWNfc3RyGBEgASgFEhIKCmhlcm9pY19z",
+          "dGEYEiABKAUSEgoKaGVyb2ljX2FnaRgTIAEoBRISCgpoZXJvaWNfZGV4GBQg",
+          "ASgFEhIKCmhlcm9pY193aXMYFSABKAUSEgoKaGVyb2ljX2ludBgWIAEoBRIS",
+          "CgpoZXJvaWNfY2hhGBcgASgFEhAKCHN2X21hZ2ljGBggASgFEg8KB3N2X2Zp",
+          "cmUYGSABKAUSDwoHc3ZfY29sZBgaIAEoBRISCgpzdl9kaXNlYXNlGBsgASgF",
+          "EhEKCXN2X3BvaXNvbhgcIAEoBRIVCg1zdl9jb3JydXB0aW9uGB0gASgFEhcK",
+          "D2hlcm9pY19zdl9tYWdpYxgeIAEoBRIWCg5oZXJvaWNfc3ZfZmlyZRgfIAEo",
+          "BRIWCg5oZXJvaWNfc3ZfY29sZBggIAEoBRIZChFoZXJvaWNfc3ZfZGlzZWFz",
+          "ZRghIAEoBRIYChBoZXJvaWNfc3ZfcG9pc29uGCIgASgFEhwKFGhlcm9pY19z",
+          "dl9jb3JydXB0aW9uGCMgASgFIlIKFEludmVudG9yeUF1Z21lbnRTbG90EgwK",
+          "BHNsb3QYASABKAUSDAoEdHlwZRgCIAEoBRIPCgd2aXNpYmxlGAMgASgIEg0K",
+          "BWVtcHR5GAQgASgIIlsKB0JhZ0luZm8SDwoHc2xvdF9pZBgBIAEoBRIMCgRu",
+          "YW1lGAIgASgJEgwKBGljb24YAyABKAUSEAoIY2FwYWNpdHkYBCABKAUSEQoJ",
+          "aXRlbV9saW5rGAUgASgJYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::InventoryDataList), global::InventoryDataList.Parser, new[]{ "Items", "Bags" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::InventoryItem), global::InventoryItem.Parser, new[]{ "Name", "ItemId", "Icon", "Quantity", "Location", "SlotName", "SlotId", "SlotId2", "ItemLink", "NoDrop", "Augs", "Ac", "Hp", "Mana", "Endurance", "Str", "Sta", "Agi", "Dex", "Wis", "Intel", "Cha", "AugSlots", "ItemType", "Classes", "Races", "Value", "Tribute", "Tradeskills" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::InventoryAugment), global::InventoryAugment.Parser, new[]{ "Slot", "Name", "ItemLink", "Icon", "ItemId", "Ac", "Hp", "Mana", "AugType" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::InventoryItem), global::InventoryItem.Parser, new[]{ "Name", "ItemId", "Icon", "Quantity", "Location", "SlotName", "SlotId", "SlotId2", "ItemLink", "NoDrop", "Augs", "Ac", "Hp", "Mana", "Endurance", "Str", "Sta", "Agi", "Dex", "Wis", "Intel", "Cha", "AugSlots", "ItemType", "Classes", "Races", "Value", "Tribute", "Tradeskills", "HeroicStr", "HeroicSta", "HeroicAgi", "HeroicDex", "HeroicWis", "HeroicInt", "HeroicCha", "SvMagic", "SvFire", "SvCold", "SvDisease", "SvPoison", "SvCorruption", "HeroicSvMagic", "HeroicSvFire", "HeroicSvCold", "HeroicSvDisease", "HeroicSvPoison", "HeroicSvCorruption" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::InventoryAugment), global::InventoryAugment.Parser, new[]{ "Slot", "Name", "ItemLink", "Icon", "ItemId", "Ac", "Hp", "Mana", "AugType", "Str", "Sta", "Agi", "Dex", "Wis", "Intel", "Cha", "HeroicStr", "HeroicSta", "HeroicAgi", "HeroicDex", "HeroicWis", "HeroicInt", "HeroicCha", "SvMagic", "SvFire", "SvCold", "SvDisease", "SvPoison", "SvCorruption", "HeroicSvMagic", "HeroicSvFire", "HeroicSvCold", "HeroicSvDisease", "HeroicSvPoison", "HeroicSvCorruption" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::InventoryAugmentSlot), global::InventoryAugmentSlot.Parser, new[]{ "Slot", "Type", "Visible", "Empty" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::BagInfo), global::BagInfo.Parser, new[]{ "SlotId", "Name", "Icon", "Capacity", "ItemLink" }, null, null, null, null)
         }));
@@ -327,6 +347,25 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
     value_ = other.value_;
     tribute_ = other.tribute_;
     tradeskills_ = other.tradeskills_;
+    heroicStr_ = other.heroicStr_;
+    heroicSta_ = other.heroicSta_;
+    heroicAgi_ = other.heroicAgi_;
+    heroicDex_ = other.heroicDex_;
+    heroicWis_ = other.heroicWis_;
+    heroicInt_ = other.heroicInt_;
+    heroicCha_ = other.heroicCha_;
+    svMagic_ = other.svMagic_;
+    svFire_ = other.svFire_;
+    svCold_ = other.svCold_;
+    svDisease_ = other.svDisease_;
+    svPoison_ = other.svPoison_;
+    svCorruption_ = other.svCorruption_;
+    heroicSvMagic_ = other.heroicSvMagic_;
+    heroicSvFire_ = other.heroicSvFire_;
+    heroicSvCold_ = other.heroicSvCold_;
+    heroicSvDisease_ = other.heroicSvDisease_;
+    heroicSvPoison_ = other.heroicSvPoison_;
+    heroicSvCorruption_ = other.heroicSvCorruption_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -682,6 +721,234 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
     }
   }
 
+  /// <summary>Field number for the "heroic_str" field.</summary>
+  public const int HeroicStrFieldNumber = 30;
+  private int heroicStr_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicStr {
+    get { return heroicStr_; }
+    set {
+      heroicStr_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sta" field.</summary>
+  public const int HeroicStaFieldNumber = 31;
+  private int heroicSta_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSta {
+    get { return heroicSta_; }
+    set {
+      heroicSta_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_agi" field.</summary>
+  public const int HeroicAgiFieldNumber = 32;
+  private int heroicAgi_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicAgi {
+    get { return heroicAgi_; }
+    set {
+      heroicAgi_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_dex" field.</summary>
+  public const int HeroicDexFieldNumber = 33;
+  private int heroicDex_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicDex {
+    get { return heroicDex_; }
+    set {
+      heroicDex_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_wis" field.</summary>
+  public const int HeroicWisFieldNumber = 34;
+  private int heroicWis_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicWis {
+    get { return heroicWis_; }
+    set {
+      heroicWis_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_int" field.</summary>
+  public const int HeroicIntFieldNumber = 35;
+  private int heroicInt_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicInt {
+    get { return heroicInt_; }
+    set {
+      heroicInt_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_cha" field.</summary>
+  public const int HeroicChaFieldNumber = 36;
+  private int heroicCha_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicCha {
+    get { return heroicCha_; }
+    set {
+      heroicCha_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_magic" field.</summary>
+  public const int SvMagicFieldNumber = 37;
+  private int svMagic_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvMagic {
+    get { return svMagic_; }
+    set {
+      svMagic_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_fire" field.</summary>
+  public const int SvFireFieldNumber = 38;
+  private int svFire_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvFire {
+    get { return svFire_; }
+    set {
+      svFire_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_cold" field.</summary>
+  public const int SvColdFieldNumber = 39;
+  private int svCold_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvCold {
+    get { return svCold_; }
+    set {
+      svCold_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_disease" field.</summary>
+  public const int SvDiseaseFieldNumber = 40;
+  private int svDisease_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvDisease {
+    get { return svDisease_; }
+    set {
+      svDisease_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_poison" field.</summary>
+  public const int SvPoisonFieldNumber = 41;
+  private int svPoison_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvPoison {
+    get { return svPoison_; }
+    set {
+      svPoison_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_corruption" field.</summary>
+  public const int SvCorruptionFieldNumber = 42;
+  private int svCorruption_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvCorruption {
+    get { return svCorruption_; }
+    set {
+      svCorruption_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_magic" field.</summary>
+  public const int HeroicSvMagicFieldNumber = 43;
+  private int heroicSvMagic_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvMagic {
+    get { return heroicSvMagic_; }
+    set {
+      heroicSvMagic_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_fire" field.</summary>
+  public const int HeroicSvFireFieldNumber = 44;
+  private int heroicSvFire_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvFire {
+    get { return heroicSvFire_; }
+    set {
+      heroicSvFire_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_cold" field.</summary>
+  public const int HeroicSvColdFieldNumber = 45;
+  private int heroicSvCold_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvCold {
+    get { return heroicSvCold_; }
+    set {
+      heroicSvCold_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_disease" field.</summary>
+  public const int HeroicSvDiseaseFieldNumber = 46;
+  private int heroicSvDisease_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvDisease {
+    get { return heroicSvDisease_; }
+    set {
+      heroicSvDisease_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_poison" field.</summary>
+  public const int HeroicSvPoisonFieldNumber = 47;
+  private int heroicSvPoison_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvPoison {
+    get { return heroicSvPoison_; }
+    set {
+      heroicSvPoison_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_corruption" field.</summary>
+  public const int HeroicSvCorruptionFieldNumber = 48;
+  private int heroicSvCorruption_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvCorruption {
+    get { return heroicSvCorruption_; }
+    set {
+      heroicSvCorruption_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -726,6 +993,25 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
     if (Value != other.Value) return false;
     if (Tribute != other.Tribute) return false;
     if (Tradeskills != other.Tradeskills) return false;
+    if (HeroicStr != other.HeroicStr) return false;
+    if (HeroicSta != other.HeroicSta) return false;
+    if (HeroicAgi != other.HeroicAgi) return false;
+    if (HeroicDex != other.HeroicDex) return false;
+    if (HeroicWis != other.HeroicWis) return false;
+    if (HeroicInt != other.HeroicInt) return false;
+    if (HeroicCha != other.HeroicCha) return false;
+    if (SvMagic != other.SvMagic) return false;
+    if (SvFire != other.SvFire) return false;
+    if (SvCold != other.SvCold) return false;
+    if (SvDisease != other.SvDisease) return false;
+    if (SvPoison != other.SvPoison) return false;
+    if (SvCorruption != other.SvCorruption) return false;
+    if (HeroicSvMagic != other.HeroicSvMagic) return false;
+    if (HeroicSvFire != other.HeroicSvFire) return false;
+    if (HeroicSvCold != other.HeroicSvCold) return false;
+    if (HeroicSvDisease != other.HeroicSvDisease) return false;
+    if (HeroicSvPoison != other.HeroicSvPoison) return false;
+    if (HeroicSvCorruption != other.HeroicSvCorruption) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -762,6 +1048,25 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
     if (Value != 0L) hash ^= Value.GetHashCode();
     if (Tribute != 0) hash ^= Tribute.GetHashCode();
     if (Tradeskills != false) hash ^= Tradeskills.GetHashCode();
+    if (HeroicStr != 0) hash ^= HeroicStr.GetHashCode();
+    if (HeroicSta != 0) hash ^= HeroicSta.GetHashCode();
+    if (HeroicAgi != 0) hash ^= HeroicAgi.GetHashCode();
+    if (HeroicDex != 0) hash ^= HeroicDex.GetHashCode();
+    if (HeroicWis != 0) hash ^= HeroicWis.GetHashCode();
+    if (HeroicInt != 0) hash ^= HeroicInt.GetHashCode();
+    if (HeroicCha != 0) hash ^= HeroicCha.GetHashCode();
+    if (SvMagic != 0) hash ^= SvMagic.GetHashCode();
+    if (SvFire != 0) hash ^= SvFire.GetHashCode();
+    if (SvCold != 0) hash ^= SvCold.GetHashCode();
+    if (SvDisease != 0) hash ^= SvDisease.GetHashCode();
+    if (SvPoison != 0) hash ^= SvPoison.GetHashCode();
+    if (SvCorruption != 0) hash ^= SvCorruption.GetHashCode();
+    if (HeroicSvMagic != 0) hash ^= HeroicSvMagic.GetHashCode();
+    if (HeroicSvFire != 0) hash ^= HeroicSvFire.GetHashCode();
+    if (HeroicSvCold != 0) hash ^= HeroicSvCold.GetHashCode();
+    if (HeroicSvDisease != 0) hash ^= HeroicSvDisease.GetHashCode();
+    if (HeroicSvPoison != 0) hash ^= HeroicSvPoison.GetHashCode();
+    if (HeroicSvCorruption != 0) hash ^= HeroicSvCorruption.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -890,6 +1195,82 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
       output.WriteRawTag(232, 1);
       output.WriteBool(Tradeskills);
     }
+    if (HeroicStr != 0) {
+      output.WriteRawTag(240, 1);
+      output.WriteInt32(HeroicStr);
+    }
+    if (HeroicSta != 0) {
+      output.WriteRawTag(248, 1);
+      output.WriteInt32(HeroicSta);
+    }
+    if (HeroicAgi != 0) {
+      output.WriteRawTag(128, 2);
+      output.WriteInt32(HeroicAgi);
+    }
+    if (HeroicDex != 0) {
+      output.WriteRawTag(136, 2);
+      output.WriteInt32(HeroicDex);
+    }
+    if (HeroicWis != 0) {
+      output.WriteRawTag(144, 2);
+      output.WriteInt32(HeroicWis);
+    }
+    if (HeroicInt != 0) {
+      output.WriteRawTag(152, 2);
+      output.WriteInt32(HeroicInt);
+    }
+    if (HeroicCha != 0) {
+      output.WriteRawTag(160, 2);
+      output.WriteInt32(HeroicCha);
+    }
+    if (SvMagic != 0) {
+      output.WriteRawTag(168, 2);
+      output.WriteInt32(SvMagic);
+    }
+    if (SvFire != 0) {
+      output.WriteRawTag(176, 2);
+      output.WriteInt32(SvFire);
+    }
+    if (SvCold != 0) {
+      output.WriteRawTag(184, 2);
+      output.WriteInt32(SvCold);
+    }
+    if (SvDisease != 0) {
+      output.WriteRawTag(192, 2);
+      output.WriteInt32(SvDisease);
+    }
+    if (SvPoison != 0) {
+      output.WriteRawTag(200, 2);
+      output.WriteInt32(SvPoison);
+    }
+    if (SvCorruption != 0) {
+      output.WriteRawTag(208, 2);
+      output.WriteInt32(SvCorruption);
+    }
+    if (HeroicSvMagic != 0) {
+      output.WriteRawTag(216, 2);
+      output.WriteInt32(HeroicSvMagic);
+    }
+    if (HeroicSvFire != 0) {
+      output.WriteRawTag(224, 2);
+      output.WriteInt32(HeroicSvFire);
+    }
+    if (HeroicSvCold != 0) {
+      output.WriteRawTag(232, 2);
+      output.WriteInt32(HeroicSvCold);
+    }
+    if (HeroicSvDisease != 0) {
+      output.WriteRawTag(240, 2);
+      output.WriteInt32(HeroicSvDisease);
+    }
+    if (HeroicSvPoison != 0) {
+      output.WriteRawTag(248, 2);
+      output.WriteInt32(HeroicSvPoison);
+    }
+    if (HeroicSvCorruption != 0) {
+      output.WriteRawTag(128, 3);
+      output.WriteInt32(HeroicSvCorruption);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -1010,6 +1391,82 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
       output.WriteRawTag(232, 1);
       output.WriteBool(Tradeskills);
     }
+    if (HeroicStr != 0) {
+      output.WriteRawTag(240, 1);
+      output.WriteInt32(HeroicStr);
+    }
+    if (HeroicSta != 0) {
+      output.WriteRawTag(248, 1);
+      output.WriteInt32(HeroicSta);
+    }
+    if (HeroicAgi != 0) {
+      output.WriteRawTag(128, 2);
+      output.WriteInt32(HeroicAgi);
+    }
+    if (HeroicDex != 0) {
+      output.WriteRawTag(136, 2);
+      output.WriteInt32(HeroicDex);
+    }
+    if (HeroicWis != 0) {
+      output.WriteRawTag(144, 2);
+      output.WriteInt32(HeroicWis);
+    }
+    if (HeroicInt != 0) {
+      output.WriteRawTag(152, 2);
+      output.WriteInt32(HeroicInt);
+    }
+    if (HeroicCha != 0) {
+      output.WriteRawTag(160, 2);
+      output.WriteInt32(HeroicCha);
+    }
+    if (SvMagic != 0) {
+      output.WriteRawTag(168, 2);
+      output.WriteInt32(SvMagic);
+    }
+    if (SvFire != 0) {
+      output.WriteRawTag(176, 2);
+      output.WriteInt32(SvFire);
+    }
+    if (SvCold != 0) {
+      output.WriteRawTag(184, 2);
+      output.WriteInt32(SvCold);
+    }
+    if (SvDisease != 0) {
+      output.WriteRawTag(192, 2);
+      output.WriteInt32(SvDisease);
+    }
+    if (SvPoison != 0) {
+      output.WriteRawTag(200, 2);
+      output.WriteInt32(SvPoison);
+    }
+    if (SvCorruption != 0) {
+      output.WriteRawTag(208, 2);
+      output.WriteInt32(SvCorruption);
+    }
+    if (HeroicSvMagic != 0) {
+      output.WriteRawTag(216, 2);
+      output.WriteInt32(HeroicSvMagic);
+    }
+    if (HeroicSvFire != 0) {
+      output.WriteRawTag(224, 2);
+      output.WriteInt32(HeroicSvFire);
+    }
+    if (HeroicSvCold != 0) {
+      output.WriteRawTag(232, 2);
+      output.WriteInt32(HeroicSvCold);
+    }
+    if (HeroicSvDisease != 0) {
+      output.WriteRawTag(240, 2);
+      output.WriteInt32(HeroicSvDisease);
+    }
+    if (HeroicSvPoison != 0) {
+      output.WriteRawTag(248, 2);
+      output.WriteInt32(HeroicSvPoison);
+    }
+    if (HeroicSvCorruption != 0) {
+      output.WriteRawTag(128, 3);
+      output.WriteInt32(HeroicSvCorruption);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -1102,6 +1559,63 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
     }
     if (Tradeskills != false) {
       size += 2 + 1;
+    }
+    if (HeroicStr != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicStr);
+    }
+    if (HeroicSta != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSta);
+    }
+    if (HeroicAgi != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicAgi);
+    }
+    if (HeroicDex != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicDex);
+    }
+    if (HeroicWis != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicWis);
+    }
+    if (HeroicInt != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicInt);
+    }
+    if (HeroicCha != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicCha);
+    }
+    if (SvMagic != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvMagic);
+    }
+    if (SvFire != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvFire);
+    }
+    if (SvCold != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvCold);
+    }
+    if (SvDisease != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvDisease);
+    }
+    if (SvPoison != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvPoison);
+    }
+    if (SvCorruption != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvCorruption);
+    }
+    if (HeroicSvMagic != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvMagic);
+    }
+    if (HeroicSvFire != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvFire);
+    }
+    if (HeroicSvCold != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvCold);
+    }
+    if (HeroicSvDisease != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvDisease);
+    }
+    if (HeroicSvPoison != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvPoison);
+    }
+    if (HeroicSvCorruption != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvCorruption);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -1197,6 +1711,63 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
     }
     if (other.Tradeskills != false) {
       Tradeskills = other.Tradeskills;
+    }
+    if (other.HeroicStr != 0) {
+      HeroicStr = other.HeroicStr;
+    }
+    if (other.HeroicSta != 0) {
+      HeroicSta = other.HeroicSta;
+    }
+    if (other.HeroicAgi != 0) {
+      HeroicAgi = other.HeroicAgi;
+    }
+    if (other.HeroicDex != 0) {
+      HeroicDex = other.HeroicDex;
+    }
+    if (other.HeroicWis != 0) {
+      HeroicWis = other.HeroicWis;
+    }
+    if (other.HeroicInt != 0) {
+      HeroicInt = other.HeroicInt;
+    }
+    if (other.HeroicCha != 0) {
+      HeroicCha = other.HeroicCha;
+    }
+    if (other.SvMagic != 0) {
+      SvMagic = other.SvMagic;
+    }
+    if (other.SvFire != 0) {
+      SvFire = other.SvFire;
+    }
+    if (other.SvCold != 0) {
+      SvCold = other.SvCold;
+    }
+    if (other.SvDisease != 0) {
+      SvDisease = other.SvDisease;
+    }
+    if (other.SvPoison != 0) {
+      SvPoison = other.SvPoison;
+    }
+    if (other.SvCorruption != 0) {
+      SvCorruption = other.SvCorruption;
+    }
+    if (other.HeroicSvMagic != 0) {
+      HeroicSvMagic = other.HeroicSvMagic;
+    }
+    if (other.HeroicSvFire != 0) {
+      HeroicSvFire = other.HeroicSvFire;
+    }
+    if (other.HeroicSvCold != 0) {
+      HeroicSvCold = other.HeroicSvCold;
+    }
+    if (other.HeroicSvDisease != 0) {
+      HeroicSvDisease = other.HeroicSvDisease;
+    }
+    if (other.HeroicSvPoison != 0) {
+      HeroicSvPoison = other.HeroicSvPoison;
+    }
+    if (other.HeroicSvCorruption != 0) {
+      HeroicSvCorruption = other.HeroicSvCorruption;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -1327,6 +1898,82 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
         }
         case 232: {
           Tradeskills = input.ReadBool();
+          break;
+        }
+        case 240: {
+          HeroicStr = input.ReadInt32();
+          break;
+        }
+        case 248: {
+          HeroicSta = input.ReadInt32();
+          break;
+        }
+        case 256: {
+          HeroicAgi = input.ReadInt32();
+          break;
+        }
+        case 264: {
+          HeroicDex = input.ReadInt32();
+          break;
+        }
+        case 272: {
+          HeroicWis = input.ReadInt32();
+          break;
+        }
+        case 280: {
+          HeroicInt = input.ReadInt32();
+          break;
+        }
+        case 288: {
+          HeroicCha = input.ReadInt32();
+          break;
+        }
+        case 296: {
+          SvMagic = input.ReadInt32();
+          break;
+        }
+        case 304: {
+          SvFire = input.ReadInt32();
+          break;
+        }
+        case 312: {
+          SvCold = input.ReadInt32();
+          break;
+        }
+        case 320: {
+          SvDisease = input.ReadInt32();
+          break;
+        }
+        case 328: {
+          SvPoison = input.ReadInt32();
+          break;
+        }
+        case 336: {
+          SvCorruption = input.ReadInt32();
+          break;
+        }
+        case 344: {
+          HeroicSvMagic = input.ReadInt32();
+          break;
+        }
+        case 352: {
+          HeroicSvFire = input.ReadInt32();
+          break;
+        }
+        case 360: {
+          HeroicSvCold = input.ReadInt32();
+          break;
+        }
+        case 368: {
+          HeroicSvDisease = input.ReadInt32();
+          break;
+        }
+        case 376: {
+          HeroicSvPoison = input.ReadInt32();
+          break;
+        }
+        case 384: {
+          HeroicSvCorruption = input.ReadInt32();
           break;
         }
       }
@@ -1460,6 +2107,82 @@ public sealed partial class InventoryItem : pb::IMessage<InventoryItem>
           Tradeskills = input.ReadBool();
           break;
         }
+        case 240: {
+          HeroicStr = input.ReadInt32();
+          break;
+        }
+        case 248: {
+          HeroicSta = input.ReadInt32();
+          break;
+        }
+        case 256: {
+          HeroicAgi = input.ReadInt32();
+          break;
+        }
+        case 264: {
+          HeroicDex = input.ReadInt32();
+          break;
+        }
+        case 272: {
+          HeroicWis = input.ReadInt32();
+          break;
+        }
+        case 280: {
+          HeroicInt = input.ReadInt32();
+          break;
+        }
+        case 288: {
+          HeroicCha = input.ReadInt32();
+          break;
+        }
+        case 296: {
+          SvMagic = input.ReadInt32();
+          break;
+        }
+        case 304: {
+          SvFire = input.ReadInt32();
+          break;
+        }
+        case 312: {
+          SvCold = input.ReadInt32();
+          break;
+        }
+        case 320: {
+          SvDisease = input.ReadInt32();
+          break;
+        }
+        case 328: {
+          SvPoison = input.ReadInt32();
+          break;
+        }
+        case 336: {
+          SvCorruption = input.ReadInt32();
+          break;
+        }
+        case 344: {
+          HeroicSvMagic = input.ReadInt32();
+          break;
+        }
+        case 352: {
+          HeroicSvFire = input.ReadInt32();
+          break;
+        }
+        case 360: {
+          HeroicSvCold = input.ReadInt32();
+          break;
+        }
+        case 368: {
+          HeroicSvDisease = input.ReadInt32();
+          break;
+        }
+        case 376: {
+          HeroicSvPoison = input.ReadInt32();
+          break;
+        }
+        case 384: {
+          HeroicSvCorruption = input.ReadInt32();
+          break;
+        }
       }
     }
   }
@@ -1511,6 +2234,32 @@ public sealed partial class InventoryAugment : pb::IMessage<InventoryAugment>
     hp_ = other.hp_;
     mana_ = other.mana_;
     augType_ = other.augType_;
+    str_ = other.str_;
+    sta_ = other.sta_;
+    agi_ = other.agi_;
+    dex_ = other.dex_;
+    wis_ = other.wis_;
+    intel_ = other.intel_;
+    cha_ = other.cha_;
+    heroicStr_ = other.heroicStr_;
+    heroicSta_ = other.heroicSta_;
+    heroicAgi_ = other.heroicAgi_;
+    heroicDex_ = other.heroicDex_;
+    heroicWis_ = other.heroicWis_;
+    heroicInt_ = other.heroicInt_;
+    heroicCha_ = other.heroicCha_;
+    svMagic_ = other.svMagic_;
+    svFire_ = other.svFire_;
+    svCold_ = other.svCold_;
+    svDisease_ = other.svDisease_;
+    svPoison_ = other.svPoison_;
+    svCorruption_ = other.svCorruption_;
+    heroicSvMagic_ = other.heroicSvMagic_;
+    heroicSvFire_ = other.heroicSvFire_;
+    heroicSvCold_ = other.heroicSvCold_;
+    heroicSvDisease_ = other.heroicSvDisease_;
+    heroicSvPoison_ = other.heroicSvPoison_;
+    heroicSvCorruption_ = other.heroicSvCorruption_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -1628,6 +2377,318 @@ public sealed partial class InventoryAugment : pb::IMessage<InventoryAugment>
     }
   }
 
+  /// <summary>Field number for the "str" field.</summary>
+  public const int StrFieldNumber = 10;
+  private int str_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Str {
+    get { return str_; }
+    set {
+      str_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sta" field.</summary>
+  public const int StaFieldNumber = 11;
+  private int sta_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Sta {
+    get { return sta_; }
+    set {
+      sta_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "agi" field.</summary>
+  public const int AgiFieldNumber = 12;
+  private int agi_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Agi {
+    get { return agi_; }
+    set {
+      agi_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "dex" field.</summary>
+  public const int DexFieldNumber = 13;
+  private int dex_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Dex {
+    get { return dex_; }
+    set {
+      dex_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "wis" field.</summary>
+  public const int WisFieldNumber = 14;
+  private int wis_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Wis {
+    get { return wis_; }
+    set {
+      wis_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "intel" field.</summary>
+  public const int IntelFieldNumber = 15;
+  private int intel_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Intel {
+    get { return intel_; }
+    set {
+      intel_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "cha" field.</summary>
+  public const int ChaFieldNumber = 16;
+  private int cha_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Cha {
+    get { return cha_; }
+    set {
+      cha_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_str" field.</summary>
+  public const int HeroicStrFieldNumber = 17;
+  private int heroicStr_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicStr {
+    get { return heroicStr_; }
+    set {
+      heroicStr_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sta" field.</summary>
+  public const int HeroicStaFieldNumber = 18;
+  private int heroicSta_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSta {
+    get { return heroicSta_; }
+    set {
+      heroicSta_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_agi" field.</summary>
+  public const int HeroicAgiFieldNumber = 19;
+  private int heroicAgi_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicAgi {
+    get { return heroicAgi_; }
+    set {
+      heroicAgi_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_dex" field.</summary>
+  public const int HeroicDexFieldNumber = 20;
+  private int heroicDex_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicDex {
+    get { return heroicDex_; }
+    set {
+      heroicDex_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_wis" field.</summary>
+  public const int HeroicWisFieldNumber = 21;
+  private int heroicWis_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicWis {
+    get { return heroicWis_; }
+    set {
+      heroicWis_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_int" field.</summary>
+  public const int HeroicIntFieldNumber = 22;
+  private int heroicInt_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicInt {
+    get { return heroicInt_; }
+    set {
+      heroicInt_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_cha" field.</summary>
+  public const int HeroicChaFieldNumber = 23;
+  private int heroicCha_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicCha {
+    get { return heroicCha_; }
+    set {
+      heroicCha_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_magic" field.</summary>
+  public const int SvMagicFieldNumber = 24;
+  private int svMagic_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvMagic {
+    get { return svMagic_; }
+    set {
+      svMagic_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_fire" field.</summary>
+  public const int SvFireFieldNumber = 25;
+  private int svFire_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvFire {
+    get { return svFire_; }
+    set {
+      svFire_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_cold" field.</summary>
+  public const int SvColdFieldNumber = 26;
+  private int svCold_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvCold {
+    get { return svCold_; }
+    set {
+      svCold_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_disease" field.</summary>
+  public const int SvDiseaseFieldNumber = 27;
+  private int svDisease_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvDisease {
+    get { return svDisease_; }
+    set {
+      svDisease_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_poison" field.</summary>
+  public const int SvPoisonFieldNumber = 28;
+  private int svPoison_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvPoison {
+    get { return svPoison_; }
+    set {
+      svPoison_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "sv_corruption" field.</summary>
+  public const int SvCorruptionFieldNumber = 29;
+  private int svCorruption_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SvCorruption {
+    get { return svCorruption_; }
+    set {
+      svCorruption_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_magic" field.</summary>
+  public const int HeroicSvMagicFieldNumber = 30;
+  private int heroicSvMagic_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvMagic {
+    get { return heroicSvMagic_; }
+    set {
+      heroicSvMagic_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_fire" field.</summary>
+  public const int HeroicSvFireFieldNumber = 31;
+  private int heroicSvFire_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvFire {
+    get { return heroicSvFire_; }
+    set {
+      heroicSvFire_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_cold" field.</summary>
+  public const int HeroicSvColdFieldNumber = 32;
+  private int heroicSvCold_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvCold {
+    get { return heroicSvCold_; }
+    set {
+      heroicSvCold_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_disease" field.</summary>
+  public const int HeroicSvDiseaseFieldNumber = 33;
+  private int heroicSvDisease_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvDisease {
+    get { return heroicSvDisease_; }
+    set {
+      heroicSvDisease_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_poison" field.</summary>
+  public const int HeroicSvPoisonFieldNumber = 34;
+  private int heroicSvPoison_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvPoison {
+    get { return heroicSvPoison_; }
+    set {
+      heroicSvPoison_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heroic_sv_corruption" field.</summary>
+  public const int HeroicSvCorruptionFieldNumber = 35;
+  private int heroicSvCorruption_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int HeroicSvCorruption {
+    get { return heroicSvCorruption_; }
+    set {
+      heroicSvCorruption_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -1652,6 +2713,32 @@ public sealed partial class InventoryAugment : pb::IMessage<InventoryAugment>
     if (Hp != other.Hp) return false;
     if (Mana != other.Mana) return false;
     if (AugType != other.AugType) return false;
+    if (Str != other.Str) return false;
+    if (Sta != other.Sta) return false;
+    if (Agi != other.Agi) return false;
+    if (Dex != other.Dex) return false;
+    if (Wis != other.Wis) return false;
+    if (Intel != other.Intel) return false;
+    if (Cha != other.Cha) return false;
+    if (HeroicStr != other.HeroicStr) return false;
+    if (HeroicSta != other.HeroicSta) return false;
+    if (HeroicAgi != other.HeroicAgi) return false;
+    if (HeroicDex != other.HeroicDex) return false;
+    if (HeroicWis != other.HeroicWis) return false;
+    if (HeroicInt != other.HeroicInt) return false;
+    if (HeroicCha != other.HeroicCha) return false;
+    if (SvMagic != other.SvMagic) return false;
+    if (SvFire != other.SvFire) return false;
+    if (SvCold != other.SvCold) return false;
+    if (SvDisease != other.SvDisease) return false;
+    if (SvPoison != other.SvPoison) return false;
+    if (SvCorruption != other.SvCorruption) return false;
+    if (HeroicSvMagic != other.HeroicSvMagic) return false;
+    if (HeroicSvFire != other.HeroicSvFire) return false;
+    if (HeroicSvCold != other.HeroicSvCold) return false;
+    if (HeroicSvDisease != other.HeroicSvDisease) return false;
+    if (HeroicSvPoison != other.HeroicSvPoison) return false;
+    if (HeroicSvCorruption != other.HeroicSvCorruption) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -1668,6 +2755,32 @@ public sealed partial class InventoryAugment : pb::IMessage<InventoryAugment>
     if (Hp != 0) hash ^= Hp.GetHashCode();
     if (Mana != 0) hash ^= Mana.GetHashCode();
     if (AugType != 0) hash ^= AugType.GetHashCode();
+    if (Str != 0) hash ^= Str.GetHashCode();
+    if (Sta != 0) hash ^= Sta.GetHashCode();
+    if (Agi != 0) hash ^= Agi.GetHashCode();
+    if (Dex != 0) hash ^= Dex.GetHashCode();
+    if (Wis != 0) hash ^= Wis.GetHashCode();
+    if (Intel != 0) hash ^= Intel.GetHashCode();
+    if (Cha != 0) hash ^= Cha.GetHashCode();
+    if (HeroicStr != 0) hash ^= HeroicStr.GetHashCode();
+    if (HeroicSta != 0) hash ^= HeroicSta.GetHashCode();
+    if (HeroicAgi != 0) hash ^= HeroicAgi.GetHashCode();
+    if (HeroicDex != 0) hash ^= HeroicDex.GetHashCode();
+    if (HeroicWis != 0) hash ^= HeroicWis.GetHashCode();
+    if (HeroicInt != 0) hash ^= HeroicInt.GetHashCode();
+    if (HeroicCha != 0) hash ^= HeroicCha.GetHashCode();
+    if (SvMagic != 0) hash ^= SvMagic.GetHashCode();
+    if (SvFire != 0) hash ^= SvFire.GetHashCode();
+    if (SvCold != 0) hash ^= SvCold.GetHashCode();
+    if (SvDisease != 0) hash ^= SvDisease.GetHashCode();
+    if (SvPoison != 0) hash ^= SvPoison.GetHashCode();
+    if (SvCorruption != 0) hash ^= SvCorruption.GetHashCode();
+    if (HeroicSvMagic != 0) hash ^= HeroicSvMagic.GetHashCode();
+    if (HeroicSvFire != 0) hash ^= HeroicSvFire.GetHashCode();
+    if (HeroicSvCold != 0) hash ^= HeroicSvCold.GetHashCode();
+    if (HeroicSvDisease != 0) hash ^= HeroicSvDisease.GetHashCode();
+    if (HeroicSvPoison != 0) hash ^= HeroicSvPoison.GetHashCode();
+    if (HeroicSvCorruption != 0) hash ^= HeroicSvCorruption.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -1722,6 +2835,110 @@ public sealed partial class InventoryAugment : pb::IMessage<InventoryAugment>
       output.WriteRawTag(72);
       output.WriteInt32(AugType);
     }
+    if (Str != 0) {
+      output.WriteRawTag(80);
+      output.WriteInt32(Str);
+    }
+    if (Sta != 0) {
+      output.WriteRawTag(88);
+      output.WriteInt32(Sta);
+    }
+    if (Agi != 0) {
+      output.WriteRawTag(96);
+      output.WriteInt32(Agi);
+    }
+    if (Dex != 0) {
+      output.WriteRawTag(104);
+      output.WriteInt32(Dex);
+    }
+    if (Wis != 0) {
+      output.WriteRawTag(112);
+      output.WriteInt32(Wis);
+    }
+    if (Intel != 0) {
+      output.WriteRawTag(120);
+      output.WriteInt32(Intel);
+    }
+    if (Cha != 0) {
+      output.WriteRawTag(128, 1);
+      output.WriteInt32(Cha);
+    }
+    if (HeroicStr != 0) {
+      output.WriteRawTag(136, 1);
+      output.WriteInt32(HeroicStr);
+    }
+    if (HeroicSta != 0) {
+      output.WriteRawTag(144, 1);
+      output.WriteInt32(HeroicSta);
+    }
+    if (HeroicAgi != 0) {
+      output.WriteRawTag(152, 1);
+      output.WriteInt32(HeroicAgi);
+    }
+    if (HeroicDex != 0) {
+      output.WriteRawTag(160, 1);
+      output.WriteInt32(HeroicDex);
+    }
+    if (HeroicWis != 0) {
+      output.WriteRawTag(168, 1);
+      output.WriteInt32(HeroicWis);
+    }
+    if (HeroicInt != 0) {
+      output.WriteRawTag(176, 1);
+      output.WriteInt32(HeroicInt);
+    }
+    if (HeroicCha != 0) {
+      output.WriteRawTag(184, 1);
+      output.WriteInt32(HeroicCha);
+    }
+    if (SvMagic != 0) {
+      output.WriteRawTag(192, 1);
+      output.WriteInt32(SvMagic);
+    }
+    if (SvFire != 0) {
+      output.WriteRawTag(200, 1);
+      output.WriteInt32(SvFire);
+    }
+    if (SvCold != 0) {
+      output.WriteRawTag(208, 1);
+      output.WriteInt32(SvCold);
+    }
+    if (SvDisease != 0) {
+      output.WriteRawTag(216, 1);
+      output.WriteInt32(SvDisease);
+    }
+    if (SvPoison != 0) {
+      output.WriteRawTag(224, 1);
+      output.WriteInt32(SvPoison);
+    }
+    if (SvCorruption != 0) {
+      output.WriteRawTag(232, 1);
+      output.WriteInt32(SvCorruption);
+    }
+    if (HeroicSvMagic != 0) {
+      output.WriteRawTag(240, 1);
+      output.WriteInt32(HeroicSvMagic);
+    }
+    if (HeroicSvFire != 0) {
+      output.WriteRawTag(248, 1);
+      output.WriteInt32(HeroicSvFire);
+    }
+    if (HeroicSvCold != 0) {
+      output.WriteRawTag(128, 2);
+      output.WriteInt32(HeroicSvCold);
+    }
+    if (HeroicSvDisease != 0) {
+      output.WriteRawTag(136, 2);
+      output.WriteInt32(HeroicSvDisease);
+    }
+    if (HeroicSvPoison != 0) {
+      output.WriteRawTag(144, 2);
+      output.WriteInt32(HeroicSvPoison);
+    }
+    if (HeroicSvCorruption != 0) {
+      output.WriteRawTag(152, 2);
+      output.WriteInt32(HeroicSvCorruption);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -1768,6 +2985,110 @@ public sealed partial class InventoryAugment : pb::IMessage<InventoryAugment>
       output.WriteRawTag(72);
       output.WriteInt32(AugType);
     }
+    if (Str != 0) {
+      output.WriteRawTag(80);
+      output.WriteInt32(Str);
+    }
+    if (Sta != 0) {
+      output.WriteRawTag(88);
+      output.WriteInt32(Sta);
+    }
+    if (Agi != 0) {
+      output.WriteRawTag(96);
+      output.WriteInt32(Agi);
+    }
+    if (Dex != 0) {
+      output.WriteRawTag(104);
+      output.WriteInt32(Dex);
+    }
+    if (Wis != 0) {
+      output.WriteRawTag(112);
+      output.WriteInt32(Wis);
+    }
+    if (Intel != 0) {
+      output.WriteRawTag(120);
+      output.WriteInt32(Intel);
+    }
+    if (Cha != 0) {
+      output.WriteRawTag(128, 1);
+      output.WriteInt32(Cha);
+    }
+    if (HeroicStr != 0) {
+      output.WriteRawTag(136, 1);
+      output.WriteInt32(HeroicStr);
+    }
+    if (HeroicSta != 0) {
+      output.WriteRawTag(144, 1);
+      output.WriteInt32(HeroicSta);
+    }
+    if (HeroicAgi != 0) {
+      output.WriteRawTag(152, 1);
+      output.WriteInt32(HeroicAgi);
+    }
+    if (HeroicDex != 0) {
+      output.WriteRawTag(160, 1);
+      output.WriteInt32(HeroicDex);
+    }
+    if (HeroicWis != 0) {
+      output.WriteRawTag(168, 1);
+      output.WriteInt32(HeroicWis);
+    }
+    if (HeroicInt != 0) {
+      output.WriteRawTag(176, 1);
+      output.WriteInt32(HeroicInt);
+    }
+    if (HeroicCha != 0) {
+      output.WriteRawTag(184, 1);
+      output.WriteInt32(HeroicCha);
+    }
+    if (SvMagic != 0) {
+      output.WriteRawTag(192, 1);
+      output.WriteInt32(SvMagic);
+    }
+    if (SvFire != 0) {
+      output.WriteRawTag(200, 1);
+      output.WriteInt32(SvFire);
+    }
+    if (SvCold != 0) {
+      output.WriteRawTag(208, 1);
+      output.WriteInt32(SvCold);
+    }
+    if (SvDisease != 0) {
+      output.WriteRawTag(216, 1);
+      output.WriteInt32(SvDisease);
+    }
+    if (SvPoison != 0) {
+      output.WriteRawTag(224, 1);
+      output.WriteInt32(SvPoison);
+    }
+    if (SvCorruption != 0) {
+      output.WriteRawTag(232, 1);
+      output.WriteInt32(SvCorruption);
+    }
+    if (HeroicSvMagic != 0) {
+      output.WriteRawTag(240, 1);
+      output.WriteInt32(HeroicSvMagic);
+    }
+    if (HeroicSvFire != 0) {
+      output.WriteRawTag(248, 1);
+      output.WriteInt32(HeroicSvFire);
+    }
+    if (HeroicSvCold != 0) {
+      output.WriteRawTag(128, 2);
+      output.WriteInt32(HeroicSvCold);
+    }
+    if (HeroicSvDisease != 0) {
+      output.WriteRawTag(136, 2);
+      output.WriteInt32(HeroicSvDisease);
+    }
+    if (HeroicSvPoison != 0) {
+      output.WriteRawTag(144, 2);
+      output.WriteInt32(HeroicSvPoison);
+    }
+    if (HeroicSvCorruption != 0) {
+      output.WriteRawTag(152, 2);
+      output.WriteInt32(HeroicSvCorruption);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -1804,6 +3125,84 @@ public sealed partial class InventoryAugment : pb::IMessage<InventoryAugment>
     }
     if (AugType != 0) {
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(AugType);
+    }
+    if (Str != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Str);
+    }
+    if (Sta != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Sta);
+    }
+    if (Agi != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Agi);
+    }
+    if (Dex != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Dex);
+    }
+    if (Wis != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Wis);
+    }
+    if (Intel != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Intel);
+    }
+    if (Cha != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(Cha);
+    }
+    if (HeroicStr != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicStr);
+    }
+    if (HeroicSta != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSta);
+    }
+    if (HeroicAgi != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicAgi);
+    }
+    if (HeroicDex != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicDex);
+    }
+    if (HeroicWis != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicWis);
+    }
+    if (HeroicInt != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicInt);
+    }
+    if (HeroicCha != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicCha);
+    }
+    if (SvMagic != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvMagic);
+    }
+    if (SvFire != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvFire);
+    }
+    if (SvCold != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvCold);
+    }
+    if (SvDisease != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvDisease);
+    }
+    if (SvPoison != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvPoison);
+    }
+    if (SvCorruption != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(SvCorruption);
+    }
+    if (HeroicSvMagic != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvMagic);
+    }
+    if (HeroicSvFire != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvFire);
+    }
+    if (HeroicSvCold != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvCold);
+    }
+    if (HeroicSvDisease != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvDisease);
+    }
+    if (HeroicSvPoison != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvPoison);
+    }
+    if (HeroicSvCorruption != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(HeroicSvCorruption);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -1843,6 +3242,84 @@ public sealed partial class InventoryAugment : pb::IMessage<InventoryAugment>
     }
     if (other.AugType != 0) {
       AugType = other.AugType;
+    }
+    if (other.Str != 0) {
+      Str = other.Str;
+    }
+    if (other.Sta != 0) {
+      Sta = other.Sta;
+    }
+    if (other.Agi != 0) {
+      Agi = other.Agi;
+    }
+    if (other.Dex != 0) {
+      Dex = other.Dex;
+    }
+    if (other.Wis != 0) {
+      Wis = other.Wis;
+    }
+    if (other.Intel != 0) {
+      Intel = other.Intel;
+    }
+    if (other.Cha != 0) {
+      Cha = other.Cha;
+    }
+    if (other.HeroicStr != 0) {
+      HeroicStr = other.HeroicStr;
+    }
+    if (other.HeroicSta != 0) {
+      HeroicSta = other.HeroicSta;
+    }
+    if (other.HeroicAgi != 0) {
+      HeroicAgi = other.HeroicAgi;
+    }
+    if (other.HeroicDex != 0) {
+      HeroicDex = other.HeroicDex;
+    }
+    if (other.HeroicWis != 0) {
+      HeroicWis = other.HeroicWis;
+    }
+    if (other.HeroicInt != 0) {
+      HeroicInt = other.HeroicInt;
+    }
+    if (other.HeroicCha != 0) {
+      HeroicCha = other.HeroicCha;
+    }
+    if (other.SvMagic != 0) {
+      SvMagic = other.SvMagic;
+    }
+    if (other.SvFire != 0) {
+      SvFire = other.SvFire;
+    }
+    if (other.SvCold != 0) {
+      SvCold = other.SvCold;
+    }
+    if (other.SvDisease != 0) {
+      SvDisease = other.SvDisease;
+    }
+    if (other.SvPoison != 0) {
+      SvPoison = other.SvPoison;
+    }
+    if (other.SvCorruption != 0) {
+      SvCorruption = other.SvCorruption;
+    }
+    if (other.HeroicSvMagic != 0) {
+      HeroicSvMagic = other.HeroicSvMagic;
+    }
+    if (other.HeroicSvFire != 0) {
+      HeroicSvFire = other.HeroicSvFire;
+    }
+    if (other.HeroicSvCold != 0) {
+      HeroicSvCold = other.HeroicSvCold;
+    }
+    if (other.HeroicSvDisease != 0) {
+      HeroicSvDisease = other.HeroicSvDisease;
+    }
+    if (other.HeroicSvPoison != 0) {
+      HeroicSvPoison = other.HeroicSvPoison;
+    }
+    if (other.HeroicSvCorruption != 0) {
+      HeroicSvCorruption = other.HeroicSvCorruption;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -1895,6 +3372,110 @@ public sealed partial class InventoryAugment : pb::IMessage<InventoryAugment>
           AugType = input.ReadInt32();
           break;
         }
+        case 80: {
+          Str = input.ReadInt32();
+          break;
+        }
+        case 88: {
+          Sta = input.ReadInt32();
+          break;
+        }
+        case 96: {
+          Agi = input.ReadInt32();
+          break;
+        }
+        case 104: {
+          Dex = input.ReadInt32();
+          break;
+        }
+        case 112: {
+          Wis = input.ReadInt32();
+          break;
+        }
+        case 120: {
+          Intel = input.ReadInt32();
+          break;
+        }
+        case 128: {
+          Cha = input.ReadInt32();
+          break;
+        }
+        case 136: {
+          HeroicStr = input.ReadInt32();
+          break;
+        }
+        case 144: {
+          HeroicSta = input.ReadInt32();
+          break;
+        }
+        case 152: {
+          HeroicAgi = input.ReadInt32();
+          break;
+        }
+        case 160: {
+          HeroicDex = input.ReadInt32();
+          break;
+        }
+        case 168: {
+          HeroicWis = input.ReadInt32();
+          break;
+        }
+        case 176: {
+          HeroicInt = input.ReadInt32();
+          break;
+        }
+        case 184: {
+          HeroicCha = input.ReadInt32();
+          break;
+        }
+        case 192: {
+          SvMagic = input.ReadInt32();
+          break;
+        }
+        case 200: {
+          SvFire = input.ReadInt32();
+          break;
+        }
+        case 208: {
+          SvCold = input.ReadInt32();
+          break;
+        }
+        case 216: {
+          SvDisease = input.ReadInt32();
+          break;
+        }
+        case 224: {
+          SvPoison = input.ReadInt32();
+          break;
+        }
+        case 232: {
+          SvCorruption = input.ReadInt32();
+          break;
+        }
+        case 240: {
+          HeroicSvMagic = input.ReadInt32();
+          break;
+        }
+        case 248: {
+          HeroicSvFire = input.ReadInt32();
+          break;
+        }
+        case 256: {
+          HeroicSvCold = input.ReadInt32();
+          break;
+        }
+        case 264: {
+          HeroicSvDisease = input.ReadInt32();
+          break;
+        }
+        case 272: {
+          HeroicSvPoison = input.ReadInt32();
+          break;
+        }
+        case 280: {
+          HeroicSvCorruption = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -1944,6 +3525,110 @@ public sealed partial class InventoryAugment : pb::IMessage<InventoryAugment>
         }
         case 72: {
           AugType = input.ReadInt32();
+          break;
+        }
+        case 80: {
+          Str = input.ReadInt32();
+          break;
+        }
+        case 88: {
+          Sta = input.ReadInt32();
+          break;
+        }
+        case 96: {
+          Agi = input.ReadInt32();
+          break;
+        }
+        case 104: {
+          Dex = input.ReadInt32();
+          break;
+        }
+        case 112: {
+          Wis = input.ReadInt32();
+          break;
+        }
+        case 120: {
+          Intel = input.ReadInt32();
+          break;
+        }
+        case 128: {
+          Cha = input.ReadInt32();
+          break;
+        }
+        case 136: {
+          HeroicStr = input.ReadInt32();
+          break;
+        }
+        case 144: {
+          HeroicSta = input.ReadInt32();
+          break;
+        }
+        case 152: {
+          HeroicAgi = input.ReadInt32();
+          break;
+        }
+        case 160: {
+          HeroicDex = input.ReadInt32();
+          break;
+        }
+        case 168: {
+          HeroicWis = input.ReadInt32();
+          break;
+        }
+        case 176: {
+          HeroicInt = input.ReadInt32();
+          break;
+        }
+        case 184: {
+          HeroicCha = input.ReadInt32();
+          break;
+        }
+        case 192: {
+          SvMagic = input.ReadInt32();
+          break;
+        }
+        case 200: {
+          SvFire = input.ReadInt32();
+          break;
+        }
+        case 208: {
+          SvCold = input.ReadInt32();
+          break;
+        }
+        case 216: {
+          SvDisease = input.ReadInt32();
+          break;
+        }
+        case 224: {
+          SvPoison = input.ReadInt32();
+          break;
+        }
+        case 232: {
+          SvCorruption = input.ReadInt32();
+          break;
+        }
+        case 240: {
+          HeroicSvMagic = input.ReadInt32();
+          break;
+        }
+        case 248: {
+          HeroicSvFire = input.ReadInt32();
+          break;
+        }
+        case 256: {
+          HeroicSvCold = input.ReadInt32();
+          break;
+        }
+        case 264: {
+          HeroicSvDisease = input.ReadInt32();
+          break;
+        }
+        case 272: {
+          HeroicSvPoison = input.ReadInt32();
+          break;
+        }
+        case 280: {
+          HeroicSvCorruption = input.ReadInt32();
           break;
         }
       }

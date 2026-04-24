@@ -2213,9 +2213,21 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_Separator();
 		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SeparatorText(string text);
+		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_SameLine();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_SameLineEx(float offsetFromStartX, float spacing);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_Spacing();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_NewLine();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_Dummy(float width, float height);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_BeginGroup();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_EndGroup();
 		public static void imgui_SameLine(float offsetFromStartX)
 	=> imgui_SameLineEx(offsetFromStartX, -1f);
 
@@ -2390,6 +2402,8 @@ namespace MonoCore
 		public extern static void imgui_EndTooltip();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_TextWrapped(string text);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_TextDisabled(string text);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_PushTextWrapPos(float wrapLocalPosX);
 		[MethodImpl(MethodImplOptions.InternalCall)]

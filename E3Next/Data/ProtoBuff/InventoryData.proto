@@ -35,6 +35,25 @@ message InventoryItem {
     int64 value = 27;
     int32 tribute = 28;
     bool tradeskills = 29;
+    int32 heroic_str = 30;
+    int32 heroic_sta = 31;
+    int32 heroic_agi = 32;
+    int32 heroic_dex = 33;
+    int32 heroic_wis = 34;
+    int32 heroic_int = 35;
+    int32 heroic_cha = 36;
+    int32 sv_magic = 37;
+    int32 sv_fire = 38;
+    int32 sv_cold = 39;
+    int32 sv_disease = 40;
+    int32 sv_poison = 41;
+    int32 sv_corruption = 42;
+    int32 heroic_sv_magic = 43;
+    int32 heroic_sv_fire = 44;
+    int32 heroic_sv_cold = 45;
+    int32 heroic_sv_disease = 46;
+    int32 heroic_sv_poison = 47;
+    int32 heroic_sv_corruption = 48;
 }
 
 message InventoryAugment {
@@ -47,6 +66,32 @@ message InventoryAugment {
     int32 hp = 7;
     int32 mana = 8;
     int32 aug_type = 9;
+    int32 str = 10;
+    int32 sta = 11;
+    int32 agi = 12;
+    int32 dex = 13;
+    int32 wis = 14;
+    int32 intel = 15;
+    int32 cha = 16;
+    int32 heroic_str = 17;
+    int32 heroic_sta = 18;
+    int32 heroic_agi = 19;
+    int32 heroic_dex = 20;
+    int32 heroic_wis = 21;
+    int32 heroic_int = 22;
+    int32 heroic_cha = 23;
+    int32 sv_magic = 24;
+    int32 sv_fire = 25;
+    int32 sv_cold = 26;
+    int32 sv_disease = 27;
+    int32 sv_poison = 28;
+    int32 sv_corruption = 29;
+    int32 heroic_sv_magic = 30;
+    int32 heroic_sv_fire = 31;
+    int32 heroic_sv_cold = 32;
+    int32 heroic_sv_disease = 33;
+    int32 heroic_sv_poison = 34;
+    int32 heroic_sv_corruption = 35;
 }
 
 message InventoryAugmentSlot {

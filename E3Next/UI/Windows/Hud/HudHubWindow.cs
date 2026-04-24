@@ -56,6 +56,122 @@ namespace E3Core.UI.Windows.Hud
 			// 1. Calculate a blinking factor (0.0 to 1.0) using a sine wave
 			return (float)(Math.Sin(((float)(Core.StopWatch.ElapsedMilliseconds / 1000)) * blinkSpeed) + 1.0f) * 0.5f;
 		}
+		private static uint StableAnimId(string value)
+		{
+			unchecked
+			{
+				uint hash = 2166136261;
+				for (int i = 0; i < value.Length; i++)
+				{
+					hash ^= value[i];
+					hash *= 16777619;
+				}
+				return hash;
+			}
+		}
+		private static byte ClampByte(float value)
+		{
+			return (byte)Math.Max(0, Math.Min(255, (int)value));
+		}
+		private static int ParseHudValue(string value)
+		{
+			if (String.IsNullOrWhiteSpace(value) || value == "-") return 0;
+			if (Int32.TryParse(value.Replace("%", String.Empty), out var parsed)) return parsed;
+			return 0;
+		}
+		private static float GetGroupDangerTarget(TableRow_GroupInfo stats)
+		{
+			float aggroDanger = Math.Min(1f, Math.Max(
+				ParseHudValue(stats.AggroPct),
+				Math.Max(ParseHudValue(stats.XtargetAggroPct), ParseHudValue(stats.XtargetMinAggroPct))) / 100f);
+			float hpDanger = 1f - Math.Min(1f, Math.Max(0f, stats.HPPercent / 100f));
+			float manaDanger = 1f - Math.Min(1f, Math.Max(0f, ParseHudValue(stats.Mana) / 100f));
+			float distanceDanger = 0f;
+			if (Double.TryParse(stats.Distance, out var distanceValue))
+			{
+				distanceDanger = (float)Math.Min(1d, distanceValue / 450d);
+			}
+
+			return Math.Max(aggroDanger, Math.Max(hpDanger * 0.9f, Math.Max(manaDanger * 0.45f, distanceDanger * 0.35f)));
+		}
+		private static void DrawAnimatedHighlight(float x1, float y1, float x2, float y2, uint animId, float target,
+			float r, float g, float b, float maxAlpha, float duration = 0.18f, float rounding = 3f)
+		{
+			float mix = E3ImAnim.TweenFloat(animId, 1, target, duration, ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, -1f, 0f);
+			if (mix <= 0.01f) return;
+
+			float[] borderColor = E3ImAnim.TweenColor(animId, 2, r, g, b, Math.Min(1f, maxAlpha + 0.18f), duration,
+				ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, ImAnimColorSpace.Oklab, -1f, r, g, b, 0f);
+
+			uint fill = GetColor(ClampByte(r * 255f), ClampByte(g * 255f), ClampByte(b * 255f), ClampByte(mix * maxAlpha * 255f));
+			uint border = GetColor(
+				ClampByte((borderColor != null && borderColor.Length > 0 ? borderColor[0] : r) * 255f),
+				ClampByte((borderColor != null && borderColor.Length > 1 ? borderColor[1] : g) * 255f),
+				ClampByte((borderColor != null && borderColor.Length > 2 ? borderColor[2] : b) * 255f),
+				ClampByte((borderColor != null && borderColor.Length > 3 ? borderColor[3] : (maxAlpha + 0.18f)) * 255f * mix));
+
+			imgui_GetWindowDrawList_AddRectFilled(x1, y1, x2, y2, fill, rounding);
+			imgui_GetWindowDrawList_AddRect(x1, y1, x2, y2, border, rounding, thickness: 1.0f + (mix * 1.1f));
+		}
+		private static void DrawAnimatedBuffOverlay(string animKey, long timestampMs, int fadeTimeInMS, bool isDanger, float x, float y, float width, float height)
+		{
+			long elapsed = Core.StopWatch.ElapsedMilliseconds - timestampMs;
+			if (elapsed < 0 || elapsed > fadeTimeInMS) return;
+
+			float progress = (float)elapsed / Math.Max(1, fadeTimeInMS);
+			float target = Math.Max(0f, 1f - progress);
+			uint animId = StableAnimId(animKey);
+
+			if (isDanger)
+			{
+				DrawAnimatedHighlight(x, y, x + width, y + height, animId, target, 1.0f, 0.18f, 0.18f, 0.42f, duration: 0.12f, rounding: 0f);
+			}
+			else
+			{
+				DrawAnimatedHighlight(x, y, x + width, y + height, animId, target, 0.18f, 0.85f, 0.35f, 0.34f, duration: 0.16f, rounding: 0f);
+			}
+		}
+		private static void RenderAnimatedTargetHpBar(State_TargetInfoWindow state, float widthAvail)
+		{
+			float targetPct = Math.Max(0f, Math.Min(1f, (float)state.TargetHP / 100f));
+			uint animId = StableAnimId($"hud_target_hp_{state.TargetName}");
+			float animatedPct = E3ImAnim.TweenFloat(animId, 1, targetPct, 0.20f, ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, -1f, targetPct);
+			float lowHealthMix = E3ImAnim.TweenFloat(animId, 2, targetPct <= 0.25f ? 1f : 0f, 0.18f, ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, -1f, 0f);
+
+			float startR = 1.0f - (animatedPct * 0.60f);
+			float startG = 0.18f + (animatedPct * 0.68f);
+			float startB = 0.12f;
+			float endR = Math.Min(1f, startR + 0.16f);
+			float endG = Math.Min(1f, startG + 0.10f);
+			float endB = 0.18f + (animatedPct * 0.10f);
+
+			float[] gradientStart = E3ImAnim.TweenColor(animId, 3, startR, startG, startB, 0.94f, 0.22f,
+				ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, ImAnimColorSpace.Oklab, -1f, startR, startG, startB, 0.94f);
+			float[] gradientEnd = E3ImAnim.TweenColor(animId, 4, endR, endG, endB, 0.86f, 0.22f,
+				ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, ImAnimColorSpace.Oklab, -1f, endR, endG, endB, 0.86f);
+
+			uint colorStart = GetColor(
+				ClampByte(gradientStart[0] * 255f),
+				ClampByte(gradientStart[1] * 255f),
+				ClampByte(gradientStart[2] * 255f),
+				ClampByte((0.85f + (lowHealthMix * 0.10f)) * 255f));
+			uint colorEnd = GetColor(
+				ClampByte(gradientEnd[0] * 255f),
+				ClampByte(gradientEnd[1] * 255f),
+				ClampByte(gradientEnd[2] * 255f),
+				ClampByte((0.72f + (lowHealthMix * 0.15f)) * 255f));
+
+			E3ImGUI.ProgressBarGradient(animatedPct, widthAvail, state.SelectedFontSize, colorStart, colorEnd, showpercent: true);
+
+			if (lowHealthMix > 0.01f)
+			{
+				float minX = imgui_GetItemRectMinX();
+				float minY = imgui_GetItemRectMinY();
+				float maxX = imgui_GetItemRectMaxX();
+				float maxY = imgui_GetItemRectMaxY();
+				DrawAnimatedHighlight(minX, minY, maxX, maxY, animId + 11, lowHealthMix, 1.0f, 0.22f, 0.18f, 0.18f, duration: 0.14f, rounding: 0f);
+			}
+		}
 		//don't copy the structs, just get a reference pointer
 		private static void GetBlinkLerpColor(float[] bg_color, float[] blink_color, float blinkFactor, float[] result)
 		{
@@ -2416,9 +2532,8 @@ namespace E3Core.UI.Windows.Hud
 
 				using (var style = PushStyle.Aquire())
 				{
-					style.PushStyleColor((int)ImGuiCol.PlotHistogram, 0.8f, 0.15f, 0.15f, 0.9f);
 					style.PushStyleColor((int)ImGuiCol.FrameBg, 0.2f, 0.2f, 0.2f, 0.5f);
-					imgui_ProgressBar((float)state.TargetHP / 100f, state.SelectedFontSize, widthAvail, PercentString(state.TargetHP));
+					RenderAnimatedTargetHpBar(state, widthAvail);
 				}
 
 				// Draw con color border around name + HP bar (mode 2)
@@ -2693,6 +2808,7 @@ namespace E3Core.UI.Windows.Hud
 			{
 				using (MQ.GetDelayLock())
 				{
+					E3ImAnim.BeginFrame();
 					var state = _state.GetState<State_HubWindow>();
 					if (imgui_Begin_OpenFlagGet(state.WindowName))
 					{
@@ -3537,12 +3653,21 @@ namespace E3Core.UI.Windows.Hud
 								foreach (var stats in buffList)
 								{
 
-									imgui_TableNextRow();
-									imgui_TableSetColumnIndex(0);
+								imgui_TableNextRow();
+								imgui_TableSetColumnIndex(0);
 
-									int smallIconSize = selectedFontSize;
-									imgui_DrawSpellIconByIconIndex(stats.iconID, smallIconSize);
-									imgui_TableSetColumnIndex(1);
+								int smallIconSize = selectedFontSize;
+								imgui_DrawSpellIconByIconIndex(stats.iconID, smallIconSize);
+								float iconMinX = imgui_GetItemRectMinX();
+								float iconMinY = imgui_GetItemRectMinY();
+								float iconMaxX = imgui_GetItemRectMaxX();
+								float iconMaxY = imgui_GetItemRectMaxY();
+								if (newBuffsTimeStamps.TryGetValue(stats.SpellID, out var buffTimestamp))
+								{
+									DrawAnimatedBuffOverlay($"{tableName}_list_{stats.SpellID}", buffTimestamp, fadeTimeInMS, false, iconMinX, iconMinY, iconMaxX - iconMinX, iconMaxY - iconMinY);
+									if (Core.StopWatch.ElapsedMilliseconds - buffTimestamp > fadeTimeInMS) newBuffsTimeStamps.Remove(stats.SpellID);
+								}
+								imgui_TableSetColumnIndex(1);
 
 									// Yellow text for buffs expiring soon (< 5 minutes)
 									bool expiringSoon = stats.Duration > 0 && stats.Duration < 300000;
@@ -3554,17 +3679,17 @@ namespace E3Core.UI.Windows.Hud
 
 										using (var style = PushStyle.Aquire())
 										{
-											bool show_alternate = (int)(((float)Core.StopWatch.ElapsedMilliseconds / 1000f) * 1.0f) % 2 == 0;
-											if (stats.Duration < 30000 && stats.Duration > -1 && show_alternate && stats.BuffType != 1) //if not a song
-											{
-												style.PushStyleColor((int)ImGuiCol.FrameBg, state.RGBA_ListView_ProgressBarBlinkColor[0], state.RGBA_ListView_ProgressBarBlinkColor[0], state.RGBA_ListView_ProgressBarBlinkColor[0], windowAlpha);
-											}
-											else
-											{
-												style.PushStyleColor((int)ImGuiCol.FrameBg, state.BuffListView_ProgressBGColor[0], state.BuffListView_ProgressBGColor[1], state.BuffListView_ProgressBGColor[2], windowAlpha);
-
-
-											}
+											float criticalMix = E3ImAnim.TweenFloat(StableAnimId($"{tableName}_critical_{stats.SpellID}"), 1,
+												(stats.Duration < 30000 && stats.Duration > -1 && stats.BuffType != 1) ? 1f : 0f,
+												0.18f, ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, -1f, 0f);
+											float[] progressBg = E3ImAnim.TweenColor(StableAnimId($"{tableName}_critical_{stats.SpellID}"), 2,
+												criticalMix > 0.01f ? state.RGBA_ListView_ProgressBarBlinkColor[0] : state.BuffListView_ProgressBGColor[0],
+												criticalMix > 0.01f ? state.RGBA_ListView_ProgressBarBlinkColor[1] : state.BuffListView_ProgressBGColor[1],
+												criticalMix > 0.01f ? state.RGBA_ListView_ProgressBarBlinkColor[2] : state.BuffListView_ProgressBGColor[2],
+												windowAlpha,
+												0.18f, ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, ImAnimColorSpace.Oklab, -1f,
+												state.BuffListView_ProgressBGColor[0], state.BuffListView_ProgressBGColor[1], state.BuffListView_ProgressBGColor[2], windowAlpha);
+											style.PushStyleColor((int)ImGuiCol.FrameBg, progressBg[0], progressBg[1], progressBg[2], progressBg[3]);
 											//style.PushStyleColor((int)ImGuiCol.PlotHistogram, state.RGBA_ListView_ProgressBarColor[0], state.RGBA_ListView_ProgressBarColor[1], state.RGBA_ListView_ProgressBarColor[2], state.RGBA_ListView_ProgressBarColor[3]);
 
 
@@ -5191,6 +5316,27 @@ namespace E3Core.UI.Windows.Hud
 											break;
 									}
 
+								}
+								float rowMinX = imgui_GetItemRectMinX();
+								float rowMinY = imgui_GetItemRectMinY();
+								float rowMaxX = imgui_GetItemRectMaxX();
+								float rowMaxY = imgui_GetItemRectMaxY();
+								float rowDanger = GetGroupDangerTarget(stats);
+								if (rowDanger > 0.05f)
+								{
+									DrawAnimatedHighlight(
+										rowMinX,
+										rowMinY,
+										rowMaxX,
+										rowMaxY,
+										StableAnimId($"hud_group_row_{stats.Name}"),
+										rowDanger,
+										1.0f,
+										Math.Max(0.15f, 0.65f - (rowDanger * 0.30f)),
+										0.15f,
+										0.20f + (rowDanger * 0.18f),
+										duration: 0.22f,
+										rounding: 0f);
 								}
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{

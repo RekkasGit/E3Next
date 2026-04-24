@@ -153,9 +153,20 @@ namespace E3Core.Processors
                         LootDataFile.Sell.Remove(x.args[0]);
 						LootDataFile.Destroy.Remove(x.args[0]);
 						LootDataFile.Skip.Add(x.args[0]);
-                    }
+					}
                 } 
             });
+			EventProcessor.RegisterCommand("/E3LootRemove", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+					LootDataFile.Keep.Remove(x.args[0]);
+					LootDataFile.Sell.Remove(x.args[0]);
+					LootDataFile.Skip.Remove(x.args[0]);
+					LootDataFile.Destroy.Remove(x.args[0]);
+					LootDataFile.SaveData();
+				}
+			});
 
             EventProcessor.RegisterCommand("/e3loot-area", (x) =>
             {

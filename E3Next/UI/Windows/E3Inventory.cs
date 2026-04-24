@@ -1,6 +1,7 @@
 using E3Core.Data;
 using E3Core.Processors;
 using E3Core.Server;
+using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
@@ -32,6 +33,22 @@ namespace E3Core.UI.Windows
         private static bool _bankWindowOpen;
 
         private static int _selectedSlotId = -1;
+        private static string _assignmentOwnerFilter = "All Characters";
+        private static string _assignmentLocationFilter = "All";
+        private static string _assignmentDispositionFilter = "All";
+        private static string _assignmentEditorItemName = string.Empty;
+        private static int _assignmentEditorIcon;
+        private static string _restockItemName = "food";
+        private static int _restockQty = 20;
+        private const string ItemInspectorWindowName = "Item Inspector###inventory_item_inspector";
+        private static InventoryItem _itemInspectorItem;
+        private static string _itemInspectorOwner = string.Empty;
+        private static string _itemInspectorLocation = string.Empty;
+        private static float _itemInspectorAnchorMinX;
+        private static float _itemInspectorAnchorMinY;
+        private static float _itemInspectorAnchorMaxX;
+        private static float _itemInspectorAnchorMaxY;
+        private static int _itemInspectorNonce;
 
         private static bool _augmentsShowEmptySlots;
         private static bool _augmentsIncludeEquipped = true;
@@ -63,6 +80,9 @@ namespace E3Core.UI.Windows
         private static readonly List<InventoryItem> _localItems = new List<InventoryItem>();
         private static readonly List<BagInfo> _localBags = new List<BagInfo>();
         private static readonly List<PeerInventorySummary> _peerInventories = new List<PeerInventorySummary>();
+        private static readonly Dictionary<string, string> _itemSignaturesBySlot = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, long> _changedSlotExpiry = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, string> _assignmentRuleCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         private static readonly IMQ MQ = E3.MQ;
         private static readonly Logging _log = E3.Log;
@@ -72,6 +92,7 @@ namespace E3Core.UI.Windows
         // Visual layout constants
         private const float TileSize = 48f;
         private const float TileSpacing = 4f;
+        private const long ChangeHighlightDurationMs = 1800;
 
         private static readonly List<string> _invSlots = new List<string>()
         {
@@ -216,6 +237,7 @@ namespace E3Core.UI.Windows
                 }
 
                 RefreshPeerData();
+                ReconcileAnimatedSlots();
             }
             catch (ThreadAbortException)
             {
@@ -271,6 +293,7 @@ namespace E3Core.UI.Windows
             PushCurrentTheme();
             try
             {
+                E3ImAnim.BeginFrame();
                 imgui_SetNextWindowSizeWithCond(780f, 620f, (int)ImGuiCond.FirstUseEver);
 
                 using (var window = ImGUIWindow.Aquire())
@@ -285,6 +308,7 @@ namespace E3Core.UI.Windows
                     RenderSearchBar();
                     imgui_Separator();
                     RenderTabs();
+                    RenderItemInspectorWindow();
                 }
             }
             finally
@@ -323,6 +347,22 @@ namespace E3Core.UI.Windows
             foreach (var peer in _peerInventories)
                 totalItems += peer.Items.Count;
             imgui_Text($"Items: {totalItems} | Peers: {_peerInventories.Count}");
+
+            if (_lastDataUpdate > 0)
+            {
+                long ageMs = Math.Max(0, Core.StopWatch.ElapsedMilliseconds - _lastDataUpdate);
+                float refreshGlow = E3ImAnim.TweenFloat(StableAnimId("inventory_refresh_status"), 1,
+                    ageMs < 900 ? 1f : 0f, ageMs < 900 ? 0.12f : 0.55f,
+                    ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, -1f, 0f);
+
+                imgui_SameLine();
+                imgui_TextColored(
+                    0.55f - (refreshGlow * 0.15f),
+                    0.65f + (refreshGlow * 0.25f),
+                    0.55f - (refreshGlow * 0.10f),
+                    1f,
+                    $"Updated {Math.Max(0, ageMs / 1000)}s ago");
+            }
         }
 
         private static void RenderPeerSelector()
@@ -391,7 +431,7 @@ namespace E3Core.UI.Windows
                 if (!tabBar.BeginTabBar("##inventory_tabs"))
                     return;
 
-                var tabs = new[] { "Equipped", "Bags", "Bank", "All Characters", "Augments" };
+                var tabs = new[] { "Equipped", "Bags", "Bank", "Assignments", "All Characters", "Augments" };
                 foreach (var tab in tabs)
                 {
                     using (var tabItem = ImGUITabItem.Aquire())
@@ -409,6 +449,9 @@ namespace E3Core.UI.Windows
                                     break;
                                 case "Bank":
                                     RenderBankTab();
+                                    break;
+                                case "Assignments":
+                                    RenderAssignmentsTab();
                                     break;
                                 case "All Characters":
                                     RenderAllCharactersTab();
@@ -488,6 +531,7 @@ namespace E3Core.UI.Windows
                         string label = hasItem ? item.Name : $"Empty: {slotName}";
 
                         bool clicked = imgui_InventorySlotTile(tileId, label, icon, TileSize, TileSize, false);
+                        RenderInventoryTileOverlay(GetSelectedOwnerName(), hasItem ? item : null, "Equipped", slotId, 0, _selectedSlotId == slotId);
 
                         if (hasItem && imgui_IsItemHovered())
                         {
@@ -576,16 +620,30 @@ namespace E3Core.UI.Windows
                 foreach (var entry in entries)
                 {
                     imgui_TableNextRow();
+                    string inspectorLocation = GetItemInspectorLocation(entry.Item);
 
                     imgui_TableNextColumn();
                     if (entry.Item.Icon > 0)
+                    {
                         imgui_DrawItemIconByIconIndex(entry.Item.Icon, 20f);
+                        if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
+                        {
+                            OpenItemInspector(entry.Item, entry.Source, inspectorLocation,
+                                imgui_GetItemRectMinX(), imgui_GetItemRectMinY(), imgui_GetItemRectMaxX(), imgui_GetItemRectMaxY());
+                        }
+                    }
 
                     imgui_TableNextColumn();
                     imgui_Text(entry.Source);
 
                     imgui_TableNextColumn();
-                    RenderItemNameCell(entry.Item, clickable: true);
+                    RenderItemNameCell(entry.Item, clickable: true, ownerName: entry.Source,
+                        locationLabel: inspectorLocation);
+                    if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
+                    {
+                        OpenItemInspector(entry.Item, entry.Source, inspectorLocation,
+                            imgui_GetItemRectMinX(), imgui_GetItemRectMinY(), imgui_GetItemRectMaxX(), imgui_GetItemRectMaxY());
+                    }
 
                     imgui_TableNextColumn();
                     RenderStatCell(entry.Item.Ac, 1.0f, 0.84f, 0.0f);   // Gold
@@ -640,7 +698,7 @@ namespace E3Core.UI.Windows
                     imgui_TextColored(0.75f, 0.75f, 0.75f, 1f, "No bag items found.");
                     return;
                 }
-                RenderIconFlowGrid(items, "bag");
+                RenderIconFlowGrid(items, "bag", GetSelectedOwnerName());
                 return;
             }
 
@@ -685,7 +743,7 @@ namespace E3Core.UI.Windows
                     }
                 }
 
-                RenderIconFlowGrid(slots, $"bag{bag.SlotId}");
+                RenderIconFlowGrid(slots, $"bag{bag.SlotId}", GetSelectedOwnerName());
             }
         }
 
@@ -696,6 +754,10 @@ namespace E3Core.UI.Windows
         private static void RenderBankTab()
         {
             var inventory = GetSelectedInventory();
+            RenderBankOperationsPanel();
+
+            imgui_Separator();
+
             if (!_bankWindowOpen && inventory.Count(i => i.Location == "Bank") == 0)
             {
                 imgui_TextColored(0.75f, 0.75f, 0.75f, 1f, "Open the bank window to load bank data.");
@@ -715,7 +777,510 @@ namespace E3Core.UI.Windows
                 return;
             }
 
-            RenderIconFlowGrid(items, "bank");
+            RenderIconFlowGrid(items, "bank", GetSelectedOwnerName());
+        }
+
+        #endregion
+
+        #region Assignments Tab
+
+        private static void RenderAssignmentsTab()
+        {
+            RenderBankOperationsPanel();
+            imgui_Separator();
+
+            imgui_TextColored(0.82f, 0.88f, 0.98f, 1f, "Item assignments in E3Inventory are backed by the existing loot policy and inventory action flows.");
+            imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, "Use this to flag items as Keep, Sell, Skip, or Destroy, then run AutoSell or AutoBank using E3's current processors.");
+            imgui_Separator();
+
+            RenderAssignmentFilters();
+
+            var rows = BuildAssignmentRows();
+            if (rows.Count == 0)
+            {
+                imgui_TextColored(0.75f, 0.75f, 0.75f, 1f, "No matching items found for the current assignment filters.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_assignmentEditorItemName) ||
+                !rows.Any(x => string.Equals(x.ItemName, _assignmentEditorItemName, StringComparison.OrdinalIgnoreCase)))
+            {
+                _assignmentEditorItemName = rows[0].ItemName;
+                _assignmentEditorIcon = rows[0].DisplayItem?.Icon ?? 0;
+            }
+
+            var selectedRow = rows.FirstOrDefault(x => string.Equals(x.ItemName, _assignmentEditorItemName, StringComparison.OrdinalIgnoreCase)) ?? rows[0];
+            float availY = imgui_GetContentRegionAvailY();
+            float leftWidth = Math.Max(360f, imgui_GetContentRegionAvailX() * 0.58f);
+
+            imgui_Text($"Showing {rows.Count} items");
+            imgui_Separator();
+
+            using (var leftChild = ImGUIChild.Aquire())
+            {
+                if (leftChild.BeginChild("##assignments_list", leftWidth, availY, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX), 0))
+                {
+                    int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
+                                           ImGuiTableFlags.ImGuiTableFlags_BordersInner |
+                                           ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
+                                           ImGuiTableFlags.ImGuiTableFlags_Resizable |
+                                           ImGuiTableFlags.ImGuiTableFlags_ScrollY);
+
+                    using (var table = ImGUITable.Aquire())
+                    {
+                        if (!table.BeginTable("AssignmentRows", 8, tableFlags, 0f, 0f))
+                            return;
+
+                        imgui_TableSetupColumn("Icon", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 28f);
+                        imgui_TableSetupColumn("Item", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 210f);
+                        imgui_TableSetupColumn("Copies", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 55f);
+                        imgui_TableSetupColumn("Peers", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 55f);
+                        imgui_TableSetupColumn("Sources", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 100f);
+                        imgui_TableSetupColumn("Value", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 60f);
+                        imgui_TableSetupColumn("Rules", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 70f);
+                        imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 42f);
+                        imgui_TableHeadersRow();
+
+                        foreach (var row in rows)
+                        {
+                            bool isSelected = string.Equals(row.ItemName, selectedRow.ItemName, StringComparison.OrdinalIgnoreCase);
+                            imgui_TableNextRow();
+
+                            imgui_TableNextColumn();
+                            if (row.DisplayItem.Icon > 0)
+                                imgui_DrawItemIconByIconIndex(row.DisplayItem.Icon, 20f);
+
+                            imgui_TableNextColumn();
+                            if (isSelected)
+                                imgui_TextColored(0.42f, 0.78f, 1.0f, 1f, row.DisplayItem.Name);
+                            else
+                                RenderItemNameCell(row.DisplayItem, showNodrop: true, clickable: true,
+                                    ownerName: row.PeerRows.FirstOrDefault()?.Owner ?? GetSelectedOwnerName(),
+                                    locationLabel: GetItemInspectorLocation(row.DisplayItem));
+                            if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
+                            {
+                                _assignmentEditorItemName = row.ItemName;
+                                _assignmentEditorIcon = row.DisplayItem.Icon;
+                                selectedRow = row;
+                            }
+
+                            imgui_TableNextColumn();
+                            imgui_Text(row.TotalCopies.ToString());
+
+                            imgui_TableNextColumn();
+                            imgui_Text(row.UniqueOwners.ToString());
+
+                            imgui_TableNextColumn();
+                            imgui_Text(row.LocationSummary);
+
+                            imgui_TableNextColumn();
+                            if (row.MaxValue > 0)
+                                imgui_Text((row.MaxValue / 1000).ToString());
+                            else
+                                imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "--");
+
+                            imgui_TableNextColumn();
+                            RenderDispositionCell(row.RuleSummary);
+
+                            imgui_TableNextColumn();
+                            if (imgui_ButtonEx($"Pick##assign_{row.ItemKey}", 32f, 0f))
+                            {
+                                _assignmentEditorItemName = row.ItemName;
+                                _assignmentEditorIcon = row.DisplayItem.Icon;
+                                selectedRow = row;
+                            }
+                        }
+                    }
+                }
+            }
+
+            imgui_SameLine(0f, 10f);
+
+            using (var rightChild = ImGUIChild.Aquire())
+            {
+                if (rightChild.BeginChild("##assignments_editor", 0f, availY, (int)ImGuiChildFlags.Borders, 0))
+                {
+                    RenderAssignmentEditorPane(selectedRow);
+                }
+            }
+        }
+
+        private static void RenderAssignmentFilters()
+        {
+            imgui_Text("Owner:");
+            imgui_SameLine();
+            imgui_SetNextItemWidth(140f);
+            using (var combo = ImGUICombo.Aquire())
+            {
+                if (combo.BeginCombo("##assignment_owner", _assignmentOwnerFilter))
+                {
+                    foreach (var option in GetAssignmentOwnerOptions())
+                    {
+                        if (imgui_Selectable(option, string.Equals(_assignmentOwnerFilter, option, StringComparison.OrdinalIgnoreCase)))
+                            _assignmentOwnerFilter = option;
+                    }
+                }
+            }
+
+            imgui_SameLine();
+            imgui_Text("Location:");
+            imgui_SameLine();
+            imgui_SetNextItemWidth(100f);
+            using (var combo = ImGUICombo.Aquire())
+            {
+                if (combo.BeginCombo("##assignment_location", _assignmentLocationFilter))
+                {
+                    foreach (var option in new[] { "All", "Equipped", "Inventory", "Bank" })
+                    {
+                        if (imgui_Selectable(option, string.Equals(_assignmentLocationFilter, option, StringComparison.OrdinalIgnoreCase)))
+                            _assignmentLocationFilter = option;
+                    }
+                }
+            }
+
+            imgui_SameLine();
+            imgui_Text("Policy:");
+            imgui_SameLine();
+            imgui_SetNextItemWidth(100f);
+            using (var combo = ImGUICombo.Aquire())
+            {
+                if (combo.BeginCombo("##assignment_policy", _assignmentDispositionFilter))
+                {
+                    foreach (var option in new[] { "All", "Keep", "Sell", "Skip", "Destroy", "Unassigned" })
+                    {
+                        if (imgui_Selectable(option, string.Equals(_assignmentDispositionFilter, option, StringComparison.OrdinalIgnoreCase)))
+                            _assignmentDispositionFilter = option;
+                    }
+                }
+            }
+        }
+
+        private static List<string> GetAssignmentOwnerOptions()
+        {
+            var result = new List<string> { "All Characters", E3.CurrentName };
+            foreach (var peer in _peerInventories)
+            {
+                if (!string.IsNullOrWhiteSpace(peer.Name) && !result.Contains(peer.Name, StringComparer.OrdinalIgnoreCase))
+                    result.Add(peer.Name);
+            }
+            return result;
+        }
+
+        private static List<AssignmentRow> BuildAssignmentRows()
+        {
+            var grouped = new Dictionary<string, AssignmentRow>(StringComparer.OrdinalIgnoreCase);
+            string searchLower = _searchText?.ToLowerInvariant() ?? string.Empty;
+
+            foreach (var item in _localItems)
+            {
+                AddAssignmentRow(grouped, E3.CurrentName, item, searchLower);
+            }
+
+            foreach (var peer in _peerInventories)
+            {
+                foreach (var item in peer.Items)
+                {
+                    AddAssignmentRow(grouped, peer.Name, item, searchLower);
+                }
+            }
+
+            var rows = grouped.Values
+                .Where(MatchesAssignmentRowFilters)
+                .ToList();
+
+            rows.Sort((a, b) =>
+            {
+                int cmp = string.Compare(a.ItemName, b.ItemName, StringComparison.OrdinalIgnoreCase);
+                if (cmp != 0) return cmp;
+                return b.UniqueOwners.CompareTo(a.UniqueOwners);
+            });
+
+            return rows;
+        }
+
+        private static void AddAssignmentRow(Dictionary<string, AssignmentRow> grouped, string owner, InventoryItem item, string searchLower)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.Name))
+                return;
+
+            string source = item.Location == "Bag" ? "Inventory" : item.Location;
+            string disposition = GetLootDisposition(owner, item.Name);
+
+            if (!MatchesAssignmentOwner(owner))
+                return;
+            if (!string.IsNullOrWhiteSpace(searchLower) && !MatchesSearch(item, searchLower))
+                return;
+
+            string key = item.ItemId > 0 ? $"id:{item.ItemId}" : $"name:{item.Name}";
+            if (!grouped.TryGetValue(key, out var row))
+            {
+                row = new AssignmentRow
+                {
+                    ItemKey = key,
+                    ItemName = item.Name,
+                    DisplayItem = item
+                };
+                grouped[key] = row;
+            }
+
+            row.PeerRows.Add(new AssignmentPeerRow
+            {
+                Owner = owner,
+                Source = source,
+                Item = item,
+                Disposition = disposition
+            });
+
+            if (item.Value > row.MaxValue)
+                row.MaxValue = item.Value;
+            if (row.DisplayItem == null || item.Icon > row.DisplayItem.Icon)
+                row.DisplayItem = item;
+
+            RecomputeAssignmentSummary(row);
+        }
+
+        private static bool MatchesAssignmentOwner(string owner)
+        {
+            return string.Equals(_assignmentOwnerFilter, "All Characters", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(_assignmentOwnerFilter, owner, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool MatchesAssignmentDisposition(string disposition)
+        {
+            if (string.Equals(_assignmentDispositionFilter, "All", StringComparison.OrdinalIgnoreCase))
+                return true;
+            return string.Equals(_assignmentDispositionFilter, disposition, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool MatchesAssignmentRowFilters(AssignmentRow row)
+        {
+            if (_assignmentLocationFilter != "All" &&
+                !row.PeerRows.Any(x => string.Equals(x.Source, _assignmentLocationFilter, StringComparison.OrdinalIgnoreCase)))
+                return false;
+
+            if (!MatchesAssignmentDisposition(row.RuleSummary))
+            {
+                if (!string.Equals(_assignmentDispositionFilter, "Unassigned", StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(row.RuleSummary, "Mixed", StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string GetLootDisposition(string owner, string itemName)
+        {
+            if (string.Equals(owner, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (LootDataFile.Keep.Contains(itemName)) return "Keep";
+                if (LootDataFile.Sell.Contains(itemName)) return "Sell";
+                if (LootDataFile.Skip.Contains(itemName)) return "Skip";
+                if (LootDataFile.Destroy.Contains(itemName)) return "Destroy";
+                return "Unassigned";
+            }
+
+            if (_assignmentRuleCache.TryGetValue(BuildAssignmentRuleCacheKey(owner, itemName), out var disposition))
+                return disposition;
+
+            return "Unknown";
+        }
+
+        private static string BuildAssignmentRuleCacheKey(string owner, string itemName)
+        {
+            return $"{owner}|{itemName}";
+        }
+
+        private static void RecomputeAssignmentSummary(AssignmentRow row)
+        {
+            row.TotalCopies = row.PeerRows.Sum(x => Math.Max(1, x.Item.Quantity));
+            row.UniqueOwners = row.PeerRows.Select(x => x.Owner).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+            row.LocationSummary = string.Join(", ", row.PeerRows.Select(x => x.Source).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x));
+
+            var dispositions = row.PeerRows.Select(x => x.Disposition).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (dispositions.Count == 0)
+                row.RuleSummary = "Unassigned";
+            else if (dispositions.Count == 1)
+                row.RuleSummary = dispositions[0];
+            else
+                row.RuleSummary = "Mixed";
+        }
+
+        private static void RenderDispositionCell(string disposition)
+        {
+            switch (disposition)
+            {
+                case "Keep":
+                    imgui_TextColored(0.35f, 0.85f, 0.45f, 1f, disposition);
+                    break;
+                case "Sell":
+                    imgui_TextColored(0.95f, 0.78f, 0.25f, 1f, disposition);
+                    break;
+                case "Destroy":
+                    imgui_TextColored(0.95f, 0.35f, 0.35f, 1f, disposition);
+                    break;
+                case "Skip":
+                    imgui_TextColored(0.72f, 0.72f, 0.72f, 1f, disposition);
+                    break;
+                case "Mixed":
+                    imgui_TextColored(0.82f, 0.66f, 0.95f, 1f, disposition);
+                    break;
+                case "Unknown":
+                    imgui_TextColored(0.55f, 0.62f, 0.72f, 1f, disposition);
+                    break;
+                default:
+                    imgui_TextColored(0.55f, 0.62f, 0.72f, 1f, disposition);
+                    break;
+            }
+        }
+
+        private static void RenderAssignmentEditorPane(AssignmentRow row)
+        {
+            if (row == null)
+            {
+                imgui_TextColored(0.55f, 0.62f, 0.72f, 1f, "Select an item to edit peer rules.");
+                return;
+            }
+
+            uint animId = StableAnimId($"assignment_editor_{row.ItemKey}");
+            float panelMix = E3ImAnim.TweenFloat(animId, 1, 1f, 0.18f, ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, -1f, 0f);
+            float[] accent = E3ImAnim.TweenColor(animId, 2, 0.25f, 0.72f, 1.0f, 1f, 0.18f,
+                ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, ImAnimColorSpace.Oklab, -1f, 0.58f, 0.68f, 0.82f, 1f);
+
+            imgui_TextColored(accent[0], accent[1], accent[2], 1f, "Rule Editor");
+            imgui_SameLine();
+            imgui_TextColored(0.55f + (0.2f * panelMix), 0.6f + (0.18f * panelMix), 0.68f + (0.12f * panelMix), 1f,
+                $"{row.TotalCopies} copies across {row.UniqueOwners} peers");
+            imgui_Separator();
+
+            if (_assignmentEditorIcon > 0)
+            {
+                imgui_DrawItemIconByIconIndex(_assignmentEditorIcon, 28f);
+                imgui_SameLine();
+            }
+            imgui_TextColored(0.85f, 0.92f, 1.0f, 1f, row.ItemName);
+            imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, "Per-peer rule edits dispatch to that character. Remote values are cached from changes made here.");
+            imgui_Separator();
+
+            int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
+                                   ImGuiTableFlags.ImGuiTableFlags_BordersInner |
+                                   ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
+                                   ImGuiTableFlags.ImGuiTableFlags_Resizable |
+                                   ImGuiTableFlags.ImGuiTableFlags_ScrollY);
+
+            using (var table = ImGUITable.Aquire())
+            {
+                if (!table.BeginTable("AssignmentEditorRows", 7, tableFlags, 0f, 360f))
+                    return;
+
+                imgui_TableSetupColumn("Peer", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 95f);
+                imgui_TableSetupColumn("Source", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 80f);
+                imgui_TableSetupColumn("Qty", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
+                imgui_TableSetupColumn("Value", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 65f);
+                imgui_TableSetupColumn("Rule", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 85f);
+                imgui_TableSetupColumn("Item", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 110f);
+                imgui_TableSetupColumn("Rule Actions", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 265f);
+                imgui_TableHeadersRow();
+
+                foreach (var peerRow in row.PeerRows.OrderBy(x => x.Owner).ThenBy(x => x.Source))
+                {
+                    imgui_TableNextRow();
+
+                    imgui_TableNextColumn();
+                    var ownerColor = GetSourceColor(peerRow.Source);
+                    imgui_TextColored(ownerColor.R, ownerColor.G, ownerColor.B, 1f, peerRow.Owner);
+
+                    imgui_TableNextColumn();
+                    imgui_Text(peerRow.Source);
+
+                    imgui_TableNextColumn();
+                    imgui_Text(peerRow.Item.Quantity.ToString());
+
+                    imgui_TableNextColumn();
+                    if (peerRow.Item.Value > 0)
+                        imgui_Text((peerRow.Item.Value / 1000).ToString());
+                    else
+                        imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "--");
+
+                    imgui_TableNextColumn();
+                    RenderDispositionCell(peerRow.Disposition);
+
+                    imgui_TableNextColumn();
+                    if (string.Equals(peerRow.Source, "Bank", StringComparison.OrdinalIgnoreCase) && string.Equals(peerRow.Owner, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (imgui_ButtonEx($"Get##assign_editor_{peerRow.Owner}_{peerRow.Item.ItemId}", 40f, 0f))
+                            EventProcessor.ProcessMQCommand($"/e3getfrombank \"{SanitizeCommandArg(peerRow.Item.Name)}\"");
+                        imgui_SameLine();
+                    }
+                    else if (string.Equals(peerRow.Source, "Inventory", StringComparison.OrdinalIgnoreCase) && string.Equals(peerRow.Owner, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (imgui_ButtonEx($"Bank##assign_editor_{peerRow.Owner}_{peerRow.Item.ItemId}", 44f, 0f))
+                            EventProcessor.ProcessMQCommand("/e3autobank");
+                        imgui_SameLine();
+                    }
+                    if (imgui_ButtonEx($"Link##assign_editor_{peerRow.Owner}_{peerRow.Item.ItemId}", 40f, 0f) && !string.IsNullOrEmpty(peerRow.Item.ItemLink))
+                        Core.mq_ExecuteItemLink(peerRow.Item.ItemLink);
+
+                    imgui_TableNextColumn();
+                    if (imgui_ButtonEx($"Keep##assign_editor_{peerRow.Owner}_{peerRow.Item.ItemId}", 44f, 0f))
+                        ApplyLootDisposition(peerRow.Owner, peerRow.Item.Name, "KEEP");
+                    imgui_SameLine();
+                    if (imgui_ButtonEx($"Sell##assign_editor_{peerRow.Owner}_{peerRow.Item.ItemId}", 40f, 0f))
+                        ApplyLootDisposition(peerRow.Owner, peerRow.Item.Name, "SELL");
+                    imgui_SameLine();
+                    if (imgui_ButtonEx($"Skip##assign_editor_{peerRow.Owner}_{peerRow.Item.ItemId}", 40f, 0f))
+                        ApplyLootDisposition(peerRow.Owner, peerRow.Item.Name, "SKIP");
+                    imgui_SameLine();
+                    if (imgui_ButtonEx($"Destroy##assign_editor_{peerRow.Owner}_{peerRow.Item.ItemId}", 56f, 0f))
+                        ApplyLootDisposition(peerRow.Owner, peerRow.Item.Name, "DESTROY");
+                    imgui_SameLine();
+                    if (imgui_ButtonEx($"Clear##assign_editor_{peerRow.Owner}_{peerRow.Item.ItemId}", 42f, 0f))
+                        ClearLootDisposition(peerRow.Owner, peerRow.Item.Name);
+                }
+            }
+        }
+
+        private static void ApplyLootDisposition(string owner, string itemName, string disposition)
+        {
+            string sanitizedName = SanitizeCommandArg(itemName);
+            string command = $"/E3LootAdd \"{sanitizedName}\" {disposition}";
+
+            if (string.Equals(owner, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+            {
+                EventProcessor.ProcessMQCommand(command);
+                _assignmentRuleCache.Remove(BuildAssignmentRuleCacheKey(owner, itemName));
+            }
+            else
+            {
+                E3.Bots.BroadcastCommandToPerson(owner, command);
+                _assignmentRuleCache[BuildAssignmentRuleCacheKey(owner, itemName)] = NormalizeLootDisposition(disposition);
+            }
+        }
+
+        private static string NormalizeLootDisposition(string disposition)
+        {
+            switch (disposition?.ToUpperInvariant())
+            {
+                case "KEEP": return "Keep";
+                case "SELL": return "Sell";
+                case "SKIP": return "Skip";
+                case "DESTROY": return "Destroy";
+                default: return "Unassigned";
+            }
+        }
+
+        private static void ClearLootDisposition(string owner, string itemName)
+        {
+            string command = $"/E3LootRemove \"{SanitizeCommandArg(itemName)}\"";
+            if (string.Equals(owner, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+            {
+                EventProcessor.ProcessMQCommand(command);
+                _assignmentRuleCache.Remove(BuildAssignmentRuleCacheKey(owner, itemName));
+            }
+            else
+            {
+                E3.Bots.BroadcastCommandToPerson(owner, command);
+                _assignmentRuleCache[BuildAssignmentRuleCacheKey(owner, itemName)] = "Unassigned";
+            }
         }
 
         #endregion
@@ -731,18 +1296,18 @@ namespace E3Core.UI.Windows
             }
 
             // Build flat list with source labels normalized to EZInventory conventions
-            var allItems = new List<(string Character, string Source, InventoryItem Item)>();
+            var allItems = new List<(string Character, string Source, InventoryItem Item, string MatchedAugment)>();
             foreach (var item in _localItems)
             {
                 string source = item.Location == "Bag" ? "Inventory" : item.Location;
-                allItems.Add((E3.CurrentName, source, item));
+                allItems.Add((E3.CurrentName, source, item, null));
             }
             foreach (var peer in _peerInventories)
             {
                 foreach (var item in peer.Items)
                 {
                     string source = item.Location == "Bag" ? "Inventory" : item.Location;
-                    allItems.Add((peer.Name, source, item));
+                    allItems.Add((peer.Name, source, item, null));
                 }
             }
 
@@ -752,7 +1317,28 @@ namespace E3Core.UI.Windows
             // Apply search
             string searchLower = _searchText?.ToLowerInvariant() ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(searchLower))
-                allItems = allItems.Where(x => MatchesSearch(x.Item, searchLower)).ToList();
+            {
+                var filtered = new List<(string Character, string Source, InventoryItem Item, string MatchedAugment)>();
+                foreach (var x in allItems)
+                {
+                    if (x.Item.Name?.ToLowerInvariant().Contains(searchLower) == true)
+                    {
+                        filtered.Add((x.Character, x.Source, x.Item, null));
+                    }
+                    else
+                    {
+                        foreach (var aug in x.Item.Augs)
+                        {
+                            if (aug.Name?.ToLowerInvariant().Contains(searchLower) == true)
+                            {
+                                filtered.Add((x.Character, x.Source, x.Item, aug.Name));
+                                break;
+                            }
+                        }
+                    }
+                }
+                allItems = filtered;
+            }
 
             // Apply structured filters
             allItems = ApplyAllCharsFilters(allItems);
@@ -853,7 +1439,8 @@ namespace E3Core.UI.Windows
 
                     // Item
                     imgui_TableNextColumn();
-                    RenderItemNameCell(item, showNodrop: true, clickable: true);
+                    RenderItemNameCell(item, showNodrop: true, clickable: true, augmentSuffix: entry.MatchedAugment,
+                        ownerName: entry.Character, locationLabel: GetItemInspectorLocation(item));
 
                     // Type
                     imgui_TableNextColumn();
@@ -1109,9 +1696,9 @@ namespace E3Core.UI.Windows
             _acCurrentPage = 1;
         }
 
-        private static List<(string Character, string Source, InventoryItem Item)> ApplyAllCharsFilters(List<(string Character, string Source, InventoryItem Item)> items)
+        private static List<(string Character, string Source, InventoryItem Item, string MatchedAugment)> ApplyAllCharsFilters(List<(string Character, string Source, InventoryItem Item, string MatchedAugment)> items)
         {
-            var result = new List<(string Character, string Source, InventoryItem Item)>();
+            var result = new List<(string Character, string Source, InventoryItem Item, string MatchedAugment)>();
             foreach (var entry in items)
             {
                 var item = entry.Item;
@@ -1172,7 +1759,7 @@ namespace E3Core.UI.Windows
             return result;
         }
 
-        private static void ApplyAllCharsSort(List<(string Character, string Source, InventoryItem Item)> items)
+        private static void ApplyAllCharsSort(List<(string Character, string Source, InventoryItem Item, string MatchedAugment)> items)
         {
             if (_acSortColumn == "none" || items.Count == 0)
                 return;
@@ -1301,7 +1888,7 @@ namespace E3Core.UI.Windows
 
         #region Visual Flow Grid (Bags / Bank)
 
-        private static void RenderIconFlowGrid(List<InventoryItem> items, string idPrefix)
+        private static void RenderIconFlowGrid(List<InventoryItem> items, string idPrefix, string ownerName)
         {
             if (items.Count == 0) return;
 
@@ -1339,19 +1926,21 @@ namespace E3Core.UI.Windows
 
                 bool isEmptySlot = string.IsNullOrEmpty(item.Name) && item.Icon == 0;
                 bool clicked = imgui_InventorySlotTile(tileId, item.Name, item.Icon, TileSize, TileSize, searchMatch);
+                float minX = imgui_GetItemRectMinX();
+                float minY = imgui_GetItemRectMinY();
+                float maxX = imgui_GetItemRectMaxX();
+                float maxY = imgui_GetItemRectMaxY();
 
                 if (isEmptySlot)
                 {
                     // Overlay a darker EZInventory-style empty slot appearance
-                    float minX = imgui_GetItemRectMinX();
-                    float minY = imgui_GetItemRectMinY();
-                    float maxX = imgui_GetItemRectMaxX();
-                    float maxY = imgui_GetItemRectMaxY();
                     uint emptyBg = E3ImGUI.GetColor(28, 30, 34, 255);
                     uint emptyBorder = E3ImGUI.GetColor(48, 52, 60, 255);
                     imgui_GetWindowDrawList_AddRectFilled(minX, minY, maxX, maxY, emptyBg, 4f);
                     imgui_GetWindowDrawList_AddRect(minX, minY, maxX, maxY, emptyBorder, 4f, thickness: 1f);
                 }
+
+                RenderInventoryTileOverlay(ownerName, isEmptySlot ? null : item, item.Location, item.SlotId, item.SlotId2, false);
 
                 if (item.Quantity > 1)
                 {
@@ -1363,9 +1952,10 @@ namespace E3Core.UI.Windows
                     RenderItemTooltip(item, null);
                 }
 
-                if (clicked)
+                if (clicked && !isEmptySlot)
                 {
-                    // Future: click handling (inspect, move, etc.)
+                    OpenItemInspector(item, ownerName, GetItemInspectorLocation(item),
+                        minX, minY, maxX, maxY);
                 }
 
                 if (col + 1 < tilesPerRow && i + 1 < items.Count)
@@ -1395,6 +1985,164 @@ namespace E3Core.UI.Windows
             imgui_GetWindowDrawList_AddText(textX + 1, textY + 1, shadow, qtyText);
             // Text
             imgui_GetWindowDrawList_AddText(textX, textY, color, qtyText);
+        }
+
+        #endregion
+
+        #region Animation Helpers
+
+        private static string GetSelectedOwnerName()
+        {
+            if (!string.IsNullOrWhiteSpace(_selectedPeerName) && !string.Equals(_selectedPeerName, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+                return _selectedPeerName;
+
+            return E3.CurrentName;
+        }
+
+        private static void ReconcileAnimatedSlots()
+        {
+            long now = Core.StopWatch.ElapsedMilliseconds;
+            var latest = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            CaptureInventorySlotSignatures(latest, E3.CurrentName, _localItems);
+            foreach (var peer in _peerInventories)
+            {
+                CaptureInventorySlotSignatures(latest, peer.Name, peer.Items);
+            }
+
+            foreach (var kvp in latest)
+            {
+                if (!_itemSignaturesBySlot.TryGetValue(kvp.Key, out var previous) || !string.Equals(previous, kvp.Value, StringComparison.Ordinal))
+                {
+                    _changedSlotExpiry[kvp.Key] = now + ChangeHighlightDurationMs;
+                }
+            }
+
+            foreach (var previousKey in _itemSignaturesBySlot.Keys.ToList())
+            {
+                if (!latest.ContainsKey(previousKey))
+                {
+                    _changedSlotExpiry[previousKey] = now + ChangeHighlightDurationMs;
+                }
+            }
+
+            _itemSignaturesBySlot.Clear();
+            foreach (var kvp in latest)
+            {
+                _itemSignaturesBySlot[kvp.Key] = kvp.Value;
+            }
+
+            TrimExpiredAnimatedSlots(now);
+        }
+
+        private static void CaptureInventorySlotSignatures(Dictionary<string, string> target, string ownerName, IEnumerable<InventoryItem> items)
+        {
+            foreach (var item in items)
+            {
+                string slotKey = BuildInventorySlotKey(ownerName, item.Location, item.SlotId, item.SlotId2);
+                target[slotKey] = BuildInventoryItemSignature(item);
+            }
+        }
+
+        private static string BuildInventorySlotKey(string ownerName, string location, int slotId, int slotId2)
+        {
+            return $"{ownerName}|{location}|{slotId}|{slotId2}";
+        }
+
+        private static string BuildInventoryItemSignature(InventoryItem item)
+        {
+            return string.Join("|",
+                item.ItemId,
+                item.Icon,
+                item.Quantity,
+                item.Name ?? string.Empty,
+                item.ItemLink ?? string.Empty,
+                item.Ac,
+                item.Hp,
+                item.Mana,
+                item.Augs.Count);
+        }
+
+        private static void TrimExpiredAnimatedSlots(long now)
+        {
+            foreach (var key in _changedSlotExpiry.Where(x => x.Value <= now).Select(x => x.Key).ToList())
+            {
+                _changedSlotExpiry.Remove(key);
+            }
+        }
+
+        private static void RenderInventoryTileOverlay(string ownerName, InventoryItem item, string location, int slotId, int slotId2, bool isSelected)
+        {
+            string slotKey = BuildInventorySlotKey(ownerName, location, slotId, slotId2);
+            uint animId = StableAnimId(slotKey);
+
+            float minX = imgui_GetItemRectMinX();
+            float minY = imgui_GetItemRectMinY();
+            float maxX = imgui_GetItemRectMaxX();
+            float maxY = imgui_GetItemRectMaxY();
+            float rounding = 4f;
+
+            float selectedMix = E3ImAnim.TweenFloat(animId, 1, isSelected ? 1f : 0f, 0.18f,
+                ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, -1f, 0f);
+            bool hasRecentChange = _changedSlotExpiry.TryGetValue(slotKey, out var expiresAt) && expiresAt > Core.StopWatch.ElapsedMilliseconds;
+            float changedMix = E3ImAnim.TweenFloat(animId, 2, hasRecentChange ? 1f : 0f, hasRecentChange ? 0.12f : 0.7f,
+                ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, -1f, 0f);
+
+            if (changedMix > 0.01f)
+            {
+                byte baseAlpha = (byte)Math.Max(0, Math.Min(255, (int)(changedMix * 84f)));
+                byte borderAlpha = (byte)Math.Max(0, Math.Min(255, (int)(changedMix * 210f)));
+                uint fillTop = item == null
+                    ? E3ImGUI.GetColor(255, 160, 64, baseAlpha)
+                    : E3ImGUI.GetColor(64, 196, 255, baseAlpha);
+                uint fillBottom = item == null
+                    ? E3ImGUI.GetColor(255, 112, 32, (byte)Math.Max(0, baseAlpha - 12))
+                    : E3ImGUI.GetColor(32, 112, 255, (byte)Math.Max(0, baseAlpha - 12));
+                uint border = item == null
+                    ? E3ImGUI.GetColor(255, 180, 96, borderAlpha)
+                    : E3ImGUI.GetColor(120, 220, 255, borderAlpha);
+
+                imgui_GetWindowDrawList_AddRectFilledMultiColor(minX, minY, maxX, maxY, fillTop, fillTop, fillBottom, fillBottom);
+                imgui_GetWindowDrawList_AddRect(minX, minY, maxX, maxY, border, rounding, thickness: 1.4f + (changedMix * 0.8f));
+            }
+
+            if (selectedMix > 0.01f)
+            {
+                float[] selectionColor = E3ImAnim.TweenColor(animId, 3, 0.28f, 0.72f, 1f, 0.92f, 0.18f,
+                    ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, ImAnimColorSpace.Oklab, -1f, 0.28f, 0.72f, 1f, 0f);
+                uint selectedBorder = E3ImGUI.GetColor(
+                    ToByte(selectionColor, 0, 0.28f),
+                    ToByte(selectionColor, 1, 0.72f),
+                    ToByte(selectionColor, 2, 1f),
+                    ToByte(selectionColor, 3, 0f));
+                uint selectedFill = E3ImGUI.GetColor(48, 124, 210, (byte)Math.Max(0, Math.Min(255, (int)(selectedMix * 44f))));
+
+                imgui_GetWindowDrawList_AddRectFilled(minX, minY, maxX, maxY, selectedFill, rounding);
+                imgui_GetWindowDrawList_AddRect(minX - 1f, minY - 1f, maxX + 1f, maxY + 1f, selectedBorder, rounding, thickness: 1.5f + (selectedMix * 1.6f));
+            }
+        }
+
+        private static byte ToByte(float[] color, int index, float fallback)
+        {
+            float value = fallback;
+            if (color != null && color.Length > index)
+                value = color[index];
+
+            return (byte)Math.Max(0, Math.Min(255, (int)(value * 255f)));
+        }
+
+        private static uint StableAnimId(string value)
+        {
+            unchecked
+            {
+                uint hash = 2166136261;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    hash ^= value[i];
+                    hash *= 16777619;
+                }
+                return hash;
+            }
         }
 
         #endregion
@@ -1429,7 +2177,537 @@ namespace E3Core.UI.Windows
             }
         }
 
-        private static void RenderItemNameCell(InventoryItem item, bool showNodrop = false, bool clickable = false)
+        private static void OpenItemInspector(InventoryItem item, string ownerName, string locationLabel,
+            float minX, float minY, float maxX, float maxY)
+        {
+            if (item == null)
+                return;
+
+            imgui_Begin_OpenFlagSet(ItemInspectorWindowName, true);
+            _itemInspectorItem = item.Clone();
+            _itemInspectorOwner = ownerName ?? string.Empty;
+            _itemInspectorLocation = locationLabel ?? string.Empty;
+            _itemInspectorAnchorMinX = minX;
+            _itemInspectorAnchorMinY = minY;
+            _itemInspectorAnchorMaxX = maxX;
+            _itemInspectorAnchorMaxY = maxY;
+            _itemInspectorNonce++;
+        }
+
+        private static void CloseItemInspector()
+        {
+            imgui_Begin_OpenFlagSet(ItemInspectorWindowName, false);
+            _itemInspectorItem = null;
+            _itemInspectorOwner = string.Empty;
+            _itemInspectorLocation = string.Empty;
+        }
+
+        private static (float X, float Y) GetItemInspectorWindowPos(float width, float height)
+        {
+            float windowX = imgui_GetWindowPosX();
+            float windowY = imgui_GetWindowPosY();
+            float windowW = imgui_GetWindowSizeX();
+            float windowH = imgui_GetWindowSizeY();
+            float padding = 12f;
+
+            float rightX = _itemInspectorAnchorMaxX + 12f;
+            float leftX = _itemInspectorAnchorMinX - width - 12f;
+            float minX = windowX + padding;
+            float maxX = windowX + windowW - width - padding;
+            float minY = windowY + 36f;
+            float maxY = windowY + windowH - height - padding;
+
+            float x;
+            if (rightX <= maxX)
+                x = rightX;
+            else if (leftX >= minX)
+                x = leftX;
+            else
+                x = windowX + Math.Max(padding, (windowW - width) * 0.5f);
+
+            float y = _itemInspectorAnchorMinY - 8f;
+            if (maxY >= minY)
+                y = Math.Max(minY, Math.Min(maxY, y));
+            else
+                y = minY;
+
+            return (x, y);
+        }
+
+        private static string GetItemInspectorLocation(InventoryItem item)
+        {
+            switch (item?.Location)
+            {
+                case "Equipped":
+                    return string.IsNullOrWhiteSpace(item.SlotName) ? "Equipped" : $"Equipped: {item.SlotName}";
+                case "Bag":
+                    return item.SlotId2 > 0 ? $"Inventory: Pack {item.SlotId - 22} Slot {item.SlotId2}" : "Inventory";
+                case "Bank":
+                    return item.SlotId2 > 0 ? $"Bank: Slot {item.SlotId} / {item.SlotId2}" : $"Bank: Slot {item.SlotId}";
+                default:
+                    return item?.Location ?? string.Empty;
+            }
+        }
+
+        private static string DecodeMaskNames(int mask, params (int Value, string Label)[] options)
+        {
+            if (mask <= 0)
+                return "--";
+
+            var names = new List<string>();
+            foreach (var option in options)
+            {
+                if ((mask & option.Value) != 0)
+                    names.Add(option.Label);
+            }
+
+            return names.Count > 0 ? string.Join(", ", names) : "--";
+        }
+
+        private static string GetClassNames(int mask)
+        {
+            return DecodeMaskNames(mask,
+                (0x1, "WAR"), (0x2, "CLR"), (0x4, "PAL"), (0x8, "RNG"),
+                (0x10, "SHD"), (0x20, "DRU"), (0x40, "MNK"), (0x80, "BRD"),
+                (0x100, "ROG"), (0x200, "SHM"), (0x400, "NEC"), (0x800, "WIZ"),
+                (0x1000, "MAG"), (0x2000, "ENC"), (0x4000, "BST"), (0x8000, "BER"));
+        }
+
+        private static string GetRaceNames(int mask)
+        {
+            return DecodeMaskNames(mask,
+                (0x1, "HUM"), (0x2, "BAR"), (0x4, "ERU"), (0x8, "ELF"),
+                (0x10, "HIE"), (0x20, "DEF"), (0x40, "HEL"), (0x80, "DWF"),
+                (0x100, "TRL"), (0x200, "OGR"), (0x400, "HFL"), (0x800, "GNM"),
+                (0x1000, "IKS"), (0x2000, "VAH"), (0x4000, "FRG"), (0x8000, "DRK"));
+        }
+
+        private static string BuildItemInspectorFlags(InventoryItem item)
+        {
+            var flags = new List<string>();
+            if (item.NoDrop)
+                flags.Add("NO DROP");
+            if (item.Tradeskills)
+                flags.Add("TRADESKILL");
+            if (item.Tribute > 0)
+                flags.Add("TRIBUTE");
+
+            return flags.Count > 0 ? string.Join("  ", flags) : "Tradable";
+        }
+
+        private static void RenderItemInspectorPair(string label, string value, float labelWidth = 82f)
+        {
+            imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, label);
+            imgui_SameLine(labelWidth);
+            imgui_TextWrapped(string.IsNullOrWhiteSpace(value) ? "--" : value);
+        }
+
+        private static void RenderItemInspectorSummaryTable(InventoryItem item)
+        {
+            var rows = new List<(string Label, string Value)>
+            {
+                ("Owner", string.IsNullOrWhiteSpace(_itemInspectorOwner) ? GetSelectedOwnerName() : _itemInspectorOwner),
+                ("Location", _itemInspectorLocation),
+                ("Type", string.IsNullOrWhiteSpace(item.ItemType) ? "--" : item.ItemType),
+                ("Quantity", Math.Max(1, item.Quantity).ToString()),
+                ("Value", item.Value > 0 ? $"{item.Value / 1000:N0} pp" : "--"),
+                ("Classes", GetClassNames(item.Classes)),
+                ("Races", GetRaceNames(item.Races)),
+            };
+
+            using (var table = ImGUITable.Aquire())
+            {
+                if (!table.BeginTable("##item_inspector_summary", 4,
+                    (int)(ImGuiTableFlags.ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags.ImGuiTableFlags_NoSavedSettings), 0f, 0f))
+                {
+                    return;
+                }
+
+                imgui_TableSetupColumn("L1", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 60f);
+                imgui_TableSetupColumn("V1", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120f);
+                imgui_TableSetupColumn("L2", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 60f);
+                imgui_TableSetupColumn("V2", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0f);
+
+                for (int i = 0; i < rows.Count; i += 2)
+                {
+                    imgui_TableNextRow();
+
+                    imgui_TableNextColumn();
+                    imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, rows[i].Label);
+                    imgui_TableNextColumn();
+                    imgui_Text(string.IsNullOrWhiteSpace(rows[i].Value) ? "--" : rows[i].Value);
+
+                    if (i + 1 < rows.Count)
+                    {
+                        imgui_TableNextColumn();
+                        imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, rows[i + 1].Label);
+                        imgui_TableNextColumn();
+                        imgui_Text(string.IsNullOrWhiteSpace(rows[i + 1].Value) ? "--" : rows[i + 1].Value);
+                    }
+                }
+            }
+        }
+
+        private static string FormatInspectorStatValue(int baseValue, int augValue)
+        {
+            int total = baseValue + augValue;
+            if (total <= 0)
+                return null;
+
+            return total.ToString();
+        }
+
+        private static string FormatInspectorHeroicValue(int baseValue, int augValue)
+        {
+            int total = baseValue + augValue;
+            if (total <= 0)
+                return null;
+
+            if (augValue > 0)
+                return $"+{total} (+{augValue})";
+
+            return $"+{total}";
+        }
+
+        private static void RenderItemInspectorStatTable(InventoryItem item)
+        {
+            int augAc = item.Augs.Sum(x => x.Ac);
+            int augHp = item.Augs.Sum(x => x.Hp);
+            int augMana = item.Augs.Sum(x => x.Mana);
+            int augStr = item.Augs.Sum(x => x.Str);
+            int augSta = item.Augs.Sum(x => x.Sta);
+            int augAgi = item.Augs.Sum(x => x.Agi);
+            int augDex = item.Augs.Sum(x => x.Dex);
+            int augWis = item.Augs.Sum(x => x.Wis);
+            int augInt = item.Augs.Sum(x => x.Intel);
+            int augCha = item.Augs.Sum(x => x.Cha);
+            int augHeroicStr = item.Augs.Sum(x => x.HeroicStr);
+            int augHeroicSta = item.Augs.Sum(x => x.HeroicSta);
+            int augHeroicAgi = item.Augs.Sum(x => x.HeroicAgi);
+            int augHeroicDex = item.Augs.Sum(x => x.HeroicDex);
+            int augHeroicWis = item.Augs.Sum(x => x.HeroicWis);
+            int augHeroicInt = item.Augs.Sum(x => x.HeroicInt);
+            int augHeroicCha = item.Augs.Sum(x => x.HeroicCha);
+            int augSvMagic = item.Augs.Sum(x => x.SvMagic);
+            int augSvFire = item.Augs.Sum(x => x.SvFire);
+            int augSvCold = item.Augs.Sum(x => x.SvCold);
+            int augSvDisease = item.Augs.Sum(x => x.SvDisease);
+            int augSvPoison = item.Augs.Sum(x => x.SvPoison);
+            int augSvCorruption = item.Augs.Sum(x => x.SvCorruption);
+            int augHeroicSvMagic = item.Augs.Sum(x => x.HeroicSvMagic);
+            int augHeroicSvFire = item.Augs.Sum(x => x.HeroicSvFire);
+            int augHeroicSvCold = item.Augs.Sum(x => x.HeroicSvCold);
+            int augHeroicSvDisease = item.Augs.Sum(x => x.HeroicSvDisease);
+            int augHeroicSvPoison = item.Augs.Sum(x => x.HeroicSvPoison);
+            int augHeroicSvCorruption = item.Augs.Sum(x => x.HeroicSvCorruption);
+
+            var utilityStats = new List<(string Label, string Value)>
+            {
+                ("AC", FormatInspectorStatValue(item.Ac, augAc)),
+                ("HP", FormatInspectorStatValue(item.Hp, augHp)),
+                ("Mana", FormatInspectorStatValue(item.Mana, augMana)),
+                ("End", item.Endurance > 0 ? item.Endurance.ToString() : null),
+                ("Trib", item.Tribute > 0 ? item.Tribute.ToString() : null),
+            };
+
+            var leftStats = new List<(string Label, string Value, string Heroic)>
+            {
+                ("STR", FormatInspectorStatValue(item.Str, augStr), FormatInspectorHeroicValue(item.HeroicStr, augHeroicStr)),
+                ("STA", FormatInspectorStatValue(item.Sta, augSta), FormatInspectorHeroicValue(item.HeroicSta, augHeroicSta)),
+                ("AGI", FormatInspectorStatValue(item.Agi, augAgi), FormatInspectorHeroicValue(item.HeroicAgi, augHeroicAgi)),
+                ("DEX", FormatInspectorStatValue(item.Dex, augDex), FormatInspectorHeroicValue(item.HeroicDex, augHeroicDex)),
+                ("WIS", FormatInspectorStatValue(item.Wis, augWis), FormatInspectorHeroicValue(item.HeroicWis, augHeroicWis)),
+                ("INT", FormatInspectorStatValue(item.Intel, augInt), FormatInspectorHeroicValue(item.HeroicInt, augHeroicInt)),
+                ("CHA", FormatInspectorStatValue(item.Cha, augCha), FormatInspectorHeroicValue(item.HeroicCha, augHeroicCha)),
+            };
+
+            var rightStats = new List<(string Label, string Value, string Heroic)>
+            {
+                ("MR", FormatInspectorStatValue(item.SvMagic, augSvMagic), FormatInspectorHeroicValue(item.HeroicSvMagic, augHeroicSvMagic)),
+                ("FR", FormatInspectorStatValue(item.SvFire, augSvFire), FormatInspectorHeroicValue(item.HeroicSvFire, augHeroicSvFire)),
+                ("CR", FormatInspectorStatValue(item.SvCold, augSvCold), FormatInspectorHeroicValue(item.HeroicSvCold, augHeroicSvCold)),
+                ("DR", FormatInspectorStatValue(item.SvDisease, augSvDisease), FormatInspectorHeroicValue(item.HeroicSvDisease, augHeroicSvDisease)),
+                ("PR", FormatInspectorStatValue(item.SvPoison, augSvPoison), FormatInspectorHeroicValue(item.HeroicSvPoison, augHeroicSvPoison)),
+                ("Corr", FormatInspectorStatValue(item.SvCorruption, augSvCorruption), FormatInspectorHeroicValue(item.HeroicSvCorruption, augHeroicSvCorruption)),
+            };
+
+            var visibleUtility = utilityStats.Where(x => !string.IsNullOrWhiteSpace(x.Value)).ToList();
+            var visibleLeft = leftStats.Where(x => !string.IsNullOrWhiteSpace(x.Value) || !string.IsNullOrWhiteSpace(x.Heroic)).ToList();
+            var visibleRight = rightStats.Where(x => !string.IsNullOrWhiteSpace(x.Value) || !string.IsNullOrWhiteSpace(x.Heroic)).ToList();
+            int statRowCount = Math.Max(visibleLeft.Count, visibleRight.Count);
+            if (visibleUtility.Count == 0 && statRowCount == 0)
+                return;
+
+            imgui_TextColored(0.92f, 0.95f, 0.98f, 1f, "Stats");
+            imgui_Separator();
+
+            if (visibleUtility.Count > 0)
+            {
+                using (var utilityTable = ImGUITable.Aquire())
+                {
+                    if (utilityTable.BeginTable("##item_inspector_utility_stats", 4,
+                        (int)(ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_NoSavedSettings), 0f, 0f))
+                    {
+                        imgui_TableSetupColumn("UtilityStat1", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 38f);
+                        imgui_TableSetupColumn("UtilityValue1", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0f);
+                        imgui_TableSetupColumn("UtilityStat2", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 42f);
+                        imgui_TableSetupColumn("UtilityValue2", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0f);
+
+                        for (int i = 0; i < visibleUtility.Count; i += 2)
+                        {
+                            imgui_TableNextRow();
+
+                            imgui_TableNextColumn();
+                            imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, visibleUtility[i].Label);
+                            imgui_TableNextColumn();
+                            imgui_Text(visibleUtility[i].Value);
+
+                            if (i + 1 < visibleUtility.Count)
+                            {
+                                imgui_TableNextColumn();
+                                imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, visibleUtility[i + 1].Label);
+                                imgui_TableNextColumn();
+                                imgui_Text(visibleUtility[i + 1].Value);
+                            }
+                            else
+                            {
+                                imgui_TableNextColumn();
+                                imgui_Text("");
+                                imgui_TableNextColumn();
+                                imgui_Text("");
+                            }
+                        }
+                    }
+                }
+
+                if (statRowCount > 0)
+                    imgui_Spacing();
+            }
+
+            if (statRowCount == 0)
+                return;
+
+            using (var table = ImGUITable.Aquire())
+            {
+                if (!table.BeginTable("##item_inspector_stats", 7,
+                    (int)(ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_NoSavedSettings), 0f, 0f))
+                {
+                    return;
+                }
+
+                imgui_TableSetupColumn("Stat", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 30f);
+                imgui_TableSetupColumn("Value", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 42f);
+                imgui_TableSetupColumn("Heroic", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 46f);
+                imgui_TableSetupColumn("Gap", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 18f);
+                imgui_TableSetupColumn("Res", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 30f);
+                imgui_TableSetupColumn("ResValue", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 36f);
+                imgui_TableSetupColumn("ResHeroic", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 44f);
+
+                for (int i = 0; i < statRowCount; i++)
+                {
+                    imgui_TableNextRow();
+
+                    if (i < visibleLeft.Count)
+                    {
+                        imgui_TableNextColumn();
+                        imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, visibleLeft[i].Label);
+                        imgui_TableNextColumn();
+                        imgui_Text(visibleLeft[i].Value ?? "--");
+                        imgui_TableNextColumn();
+                        if (!string.IsNullOrWhiteSpace(visibleLeft[i].Heroic))
+                            imgui_TextColored(0.55f, 0.82f, 1f, 1f, visibleLeft[i].Heroic);
+                        else
+                            imgui_Text("");
+                    }
+                    else
+                    {
+                        imgui_TableNextColumn(); imgui_Text("");
+                        imgui_TableNextColumn(); imgui_Text("");
+                        imgui_TableNextColumn(); imgui_Text("");
+                    }
+
+                    imgui_TableNextColumn();
+                    imgui_Text("");
+
+                    if (i < visibleRight.Count)
+                    {
+                        imgui_TableNextColumn();
+                        imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, visibleRight[i].Label);
+                        imgui_TableNextColumn();
+                        imgui_Text(visibleRight[i].Value ?? "--");
+                        imgui_TableNextColumn();
+                        if (!string.IsNullOrWhiteSpace(visibleRight[i].Heroic))
+                            imgui_TextColored(0.55f, 0.82f, 1f, 1f, visibleRight[i].Heroic);
+                        else
+                            imgui_Text("");
+                    }
+                    else
+                    {
+                        imgui_TableNextColumn(); imgui_Text("");
+                        imgui_TableNextColumn(); imgui_Text("");
+                        imgui_TableNextColumn(); imgui_Text("");
+                    }
+                }
+            }
+        }
+
+        private static void RenderItemInspectorWindow()
+        {
+            if (_itemInspectorItem == null)
+                return;
+
+            if (!imgui_Begin_OpenFlagGet(ItemInspectorWindowName))
+            {
+                CloseItemInspector();
+                return;
+            }
+
+            uint animId = StableAnimId($"inventory_item_inspector_{_itemInspectorNonce}");
+            float alpha = E3ImAnim.TweenFloat(animId, 1, 1f, 0.18f,
+                ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, -1f, 0f);
+            float slide = E3ImAnim.TweenFloat(animId, 2, 0f, 0.2f,
+                ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, -1f, 18f);
+            var accent = E3ImAnim.TweenColor(animId, 3, 0.30f, 0.66f, 0.98f, 1f, 0.22f,
+                ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, ImAnimColorSpace.Oklab,
+                -1f, 0.22f, 0.42f, 0.62f, 1f);
+
+            float width = 430f;
+            float height = 500f;
+            var targetPos = GetItemInspectorWindowPos(width, height);
+
+            imgui_SetNextWindowSize(width, height);
+            imgui_SetNextWindowPos(targetPos.X + slide, targetPos.Y, (int)ImGuiCond.Always, 0f, 0f);
+            imgui_SetNextWindowFocus();
+            imgui_SetNextWindowBgAlpha(Math.Max(0.86f, alpha));
+
+            using (var stylevar = PushStyle.Aquire())
+            {
+                stylevar.PushStyleVarFloat((int)ImGuiStyleVar.Alpha, alpha);
+
+                using (var window = ImGUIWindow.Aquire())
+                {
+                    int flags = (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse |
+                                      ImGuiWindowFlags.ImGuiWindowFlags_NoSavedSettings |
+                                      ImGuiWindowFlags.ImGuiWindowFlags_NoFocusOnAppearing);
+
+                    if (!window.Begin(ItemInspectorWindowName, flags))
+                        return;
+
+                    if (!imgui_Begin_OpenFlagGet(ItemInspectorWindowName))
+                    {
+                        CloseItemInspector();
+                        return;
+                    }
+
+                    float headerMinX = imgui_GetCursorScreenPosX();
+                    float headerMinY = imgui_GetCursorScreenPosY();
+
+                    if (_itemInspectorItem.Icon > 0)
+                        imgui_DrawItemIconByIconIndex(_itemInspectorItem.Icon, 34f);
+
+                    if (_itemInspectorItem.Icon > 0)
+                        imgui_SameLine(0f, 10f);
+
+                    imgui_BeginGroup();
+                    imgui_TextColored(accent[0], accent[1], accent[2], 1f, _itemInspectorItem.Name);
+                    imgui_TextDisabled(BuildItemInspectorFlags(_itemInspectorItem));
+                    imgui_EndGroup();
+
+                    imgui_SetCursorPosY(Math.Max(0f, imgui_GetCursorPosY() - 6f));
+                    if (imgui_ButtonEx("Open EQ Link##item_inspector_link", 96f, 0f) && !string.IsNullOrEmpty(_itemInspectorItem.ItemLink))
+                        Core.mq_ExecuteItemLink(_itemInspectorItem.ItemLink);
+                    imgui_SameLine();
+                    if (imgui_ButtonEx("Close##item_inspector_close", 48f, 0f))
+                    {
+                        CloseItemInspector();
+                        return;
+                    }
+
+                    float headerMaxX = imgui_GetWindowPosX() + imgui_GetWindowSizeX() - 12f;
+                    float headerMaxY = imgui_GetCursorScreenPosY() + 4f;
+                    uint accentFill = E3ImGUI.GetColor((byte)(accent[0] * 255f), (byte)(accent[1] * 255f), (byte)(accent[2] * 255f), (byte)(48f * alpha));
+                    uint accentBorder = E3ImGUI.GetColor((byte)(accent[0] * 255f), (byte)(accent[1] * 255f), (byte)(accent[2] * 255f), (byte)(180f * alpha));
+                    imgui_GetWindowDrawList_AddRectFilled(headerMinX - 6f, headerMinY - 6f, headerMaxX, headerMaxY + 8f, accentFill, 6f);
+                    imgui_GetWindowDrawList_AddRect(headerMinX - 6f, headerMinY - 6f, headerMaxX, headerMaxY + 8f, accentBorder, 6f, thickness: 1f);
+
+                    imgui_Separator();
+
+                    using (var child = ImGUIChild.Aquire())
+                    {
+                        if (!child.BeginChild("##item_inspector_scroller", 0f, 0f, (int)ImGuiChildFlags.None, 0))
+                            return;
+
+                        RenderItemInspectorSummaryTable(_itemInspectorItem);
+
+                        RenderItemInspectorStatTable(_itemInspectorItem);
+
+                        if (_itemInspectorItem.AugSlots.Count > 0 || _itemInspectorItem.Augs.Count > 0)
+                        {
+                            imgui_SeparatorText("Augments");
+
+                            var augmentsBySlot = _itemInspectorItem.Augs
+                                .GroupBy(x => x.Slot)
+                                .ToDictionary(x => x.Key, x => x.First());
+
+                            foreach (var slot in _itemInspectorItem.AugSlots.OrderBy(x => x.Slot))
+                            {
+                                augmentsBySlot.TryGetValue(slot.Slot, out var aug);
+
+                                string prefix = $"Slot {slot.Slot}: Type {slot.Type}";
+                                if (!slot.Visible)
+                                    prefix += " (Hidden)";
+
+                                if (aug != null)
+                                {
+                                    if (aug.Icon > 0)
+                                        imgui_DrawItemIconByIconIndex(aug.Icon, 18f);
+                                    if (aug.Icon > 0)
+                                        imgui_SameLine(0f, 6f);
+
+                                    imgui_TextColored(AugmentColor.R, AugmentColor.G, AugmentColor.B, 1f,
+                                        $"{prefix}: {aug.Name}");
+
+                                    if (aug.Ac > 0 || aug.Hp > 0 || aug.Mana > 0)
+                                    {
+                                        imgui_SameLine(0f, 10f);
+                                        imgui_TextColored(0.62f, 0.68f, 0.76f, 1f,
+                                            $"AC {aug.Ac}  HP {aug.Hp}  Mana {aug.Mana}");
+                                    }
+                                }
+                                else
+                                {
+                                    imgui_TextColored(0.65f, 0.88f, 0.95f, 1f, $"{prefix}: Empty");
+                                }
+                            }
+
+                            foreach (var aug in _itemInspectorItem.Augs.OrderBy(x => x.Slot))
+                            {
+                                if (_itemInspectorItem.AugSlots.Any(x => x.Slot == aug.Slot))
+                                    continue;
+
+                                if (aug.Icon > 0)
+                                    imgui_DrawItemIconByIconIndex(aug.Icon, 18f);
+                                if (aug.Icon > 0)
+                                    imgui_SameLine(0f, 6f);
+
+                                imgui_TextColored(AugmentColor.R, AugmentColor.G, AugmentColor.B, 1f,
+                                    $"Slot {aug.Slot}: {aug.Name}");
+
+                                if (aug.Ac > 0 || aug.Hp > 0 || aug.Mana > 0)
+                                {
+                                    imgui_SameLine(0f, 10f);
+                                    imgui_TextColored(0.62f, 0.68f, 0.76f, 1f,
+                                        $"AC {aug.Ac}  HP {aug.Hp}  Mana {aug.Mana}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void RenderItemNameCell(InventoryItem item, bool showNodrop = false, bool clickable = false, string augmentSuffix = null,
+            string ownerName = null, string locationLabel = null)
         {
             if (clickable)
             {
@@ -1443,6 +2721,16 @@ namespace E3Core.UI.Windows
             // Capture hover/click on the NAME text before drawing [ND]
             bool nameHovered = imgui_IsItemHovered();
             bool nameClicked = clickable && nameHovered && imgui_IsMouseClicked(0);
+            float nameMinX = imgui_GetItemRectMinX();
+            float nameMinY = imgui_GetItemRectMinY();
+            float nameMaxX = imgui_GetItemRectMaxX();
+            float nameMaxY = imgui_GetItemRectMaxY();
+
+            if (!string.IsNullOrEmpty(augmentSuffix))
+            {
+                imgui_SameLine();
+                imgui_TextColored(1.0f, 0.85f, 0.15f, 1f, $" ({augmentSuffix})");
+            }
 
             if (showNodrop && item.NoDrop)
             {
@@ -1450,9 +2738,10 @@ namespace E3Core.UI.Windows
                 imgui_TextColored(0.95f, 0.35f, 0.35f, 1f, " [ND]");
             }
 
-            if (nameClicked && !string.IsNullOrEmpty(item.ItemLink))
+            if (nameClicked)
             {
-                Core.mq_ExecuteItemLink(item.ItemLink);
+                OpenItemInspector(item, ownerName ?? GetSelectedOwnerName(), locationLabel ?? GetItemInspectorLocation(item),
+                    nameMinX, nameMinY, nameMaxX, nameMaxY);
             }
 
             if (nameHovered)
@@ -1461,7 +2750,7 @@ namespace E3Core.UI.Windows
                 {
                     using (var tooltip = ImGUIToolTip.Aquire())
                     {
-                        imgui_Text("Click to view item details");
+                        imgui_Text("Click to inspect item");
                     }
                 }
                 else
@@ -1862,7 +3151,7 @@ namespace E3Core.UI.Windows
             {
                 using (var tooltip = ImGUIToolTip.Aquire())
                 {
-                    imgui_Text("Click to view item details");
+                    imgui_Text("Click to open the EQ item link");
                 }
             }
         }
@@ -1975,7 +3264,97 @@ namespace E3Core.UI.Windows
             }
         }
 
+        private static void RenderBankOperationsPanel()
+        {
+            string owner = GetSelectedOwnerName();
+            bool isLocalOwner = string.Equals(owner, E3.CurrentName, StringComparison.OrdinalIgnoreCase);
+
+            imgui_TextColored(0.9f, 0.85f, 0.55f, 1f, $"Operations for {owner}");
+            imgui_SameLine();
+            imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, isLocalOwner
+                ? "(local commands execute immediately)"
+                : "(remote commands assume the peer is already at a banker or merchant)");
+
+            if (imgui_Button("AutoBank"))
+                DispatchInventoryOperation(owner, "/e3autobank");
+            imgui_SameLine();
+            if (imgui_Button("AutoSell"))
+                DispatchInventoryOperation(owner, "/autosell");
+            imgui_SameLine();
+            if (imgui_Button("Sell+Destroy"))
+                DispatchInventoryOperation(owner, "/autosell destroy");
+
+            imgui_SameLine(0f, 14f);
+            imgui_Text("Restock:");
+            imgui_SameLine();
+            imgui_SetNextItemWidth(110f);
+            if (imgui_InputText("##restock_item", _restockItemName))
+                _restockItemName = imgui_InputText_Get("##restock_item");
+
+            imgui_SameLine();
+            imgui_SetNextItemWidth(60f);
+            if (imgui_InputInt("##restock_qty", _restockQty, 1, 10))
+                _restockQty = Math.Max(-1, imgui_InputInt_Get("##restock_qty"));
+
+            imgui_SameLine();
+            if (imgui_Button("Run Restock"))
+                RunRestockForOwner(owner, _restockItemName, _restockQty);
+        }
+
+        private static void DispatchInventoryOperation(string owner, string command)
+        {
+            if (string.IsNullOrWhiteSpace(owner) || string.IsNullOrWhiteSpace(command))
+                return;
+
+            if (string.Equals(owner, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
+            {
+                EventProcessor.ProcessMQCommand(command);
+            }
+            else
+            {
+                E3.Bots.BroadcastCommandToPerson(owner, command);
+            }
+        }
+
+        private static void RunRestockForOwner(string owner, string itemName, int quantity)
+        {
+            itemName = string.IsNullOrWhiteSpace(itemName) ? "food" : itemName.Trim();
+            int vendorId = MQ.Query<int>("${Target.ID}");
+
+            string command = quantity > 0
+                ? $"/e3restock me \"{SanitizeCommandArg(itemName)}\" {quantity} {vendorId}"
+                : $"/e3restock me \"{SanitizeCommandArg(itemName)}\" -1 {vendorId}";
+
+            DispatchInventoryOperation(owner, command);
+        }
+
+        private static string SanitizeCommandArg(string value)
+        {
+            return (value ?? string.Empty).Replace("\"", string.Empty);
+        }
+
         #endregion
+
+        private class AssignmentRow
+        {
+            public string ItemKey;
+            public string ItemName;
+            public InventoryItem DisplayItem;
+            public readonly List<AssignmentPeerRow> PeerRows = new List<AssignmentPeerRow>();
+            public int TotalCopies;
+            public int UniqueOwners;
+            public long MaxValue;
+            public string LocationSummary;
+            public string RuleSummary;
+        }
+
+        private class AssignmentPeerRow
+        {
+            public string Owner;
+            public string Source;
+            public InventoryItem Item;
+            public string Disposition;
+        }
 
         private class PeerInventorySummary
         {
