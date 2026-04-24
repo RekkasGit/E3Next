@@ -39,6 +39,9 @@
   <PropertyGroup>
     <ApplicationIcon>e3n_logo.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />

@@ -10,7 +10,9 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Windows.Services.Maps;
 using Windows.UI.Notifications;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace E3NextSysTray
 {
@@ -21,6 +23,7 @@ namespace E3NextSysTray
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
 		private Task _downloadTask = null;
+		private Task _processingTask = null;
 		ToolStripMenuItem openItem;
 		ToolStripMenuItem exitItem;
 		ToolStripMenuItem updateItem;
@@ -31,6 +34,7 @@ namespace E3NextSysTray
 		private string _downloadFullFileName = "full_e3n_mq_download.zip";
 		private string _currentExePath = Process.GetCurrentProcess().MainModule.FileName;
 		private string _currentDirectory = String.Empty;
+		private string _mqDebugLocation = @"D:\EQ\e3ntrayupdater";
 
 		public Icon BytesToIcon(byte[] bytes)
 		{
@@ -114,11 +118,12 @@ namespace E3NextSysTray
 		public TrayApplicationContext()
 		{
 			_mqLocation = Process.GetCurrentProcess().MainModule.FileName;
-
 			_mqLocation = Path.GetDirectoryName(_mqLocation).Replace(@"\mono\macros\e3", "").Replace(@"/mono/macros/e3", "");
+
+			
 			if (Debugger.IsAttached)
 			{
-				_mqLocation = @"D:\EQ\MQEmu\";
+				_mqLocation = _mqDebugLocation;
 			}
 			if (!System.Diagnostics.Debugger.IsAttached)
 			{
@@ -213,12 +218,13 @@ namespace E3NextSysTray
 
 		private void UpdateToastStatus(string status)
 		{
+			Console.WriteLine(status);
 			_syncContext.Post(_ =>
 			{
 				var data = new NotificationData();
 				data.Values["percentValue"] = "indeterminate";
 				data.Values["statusText"] = status;
-				trayIcon.Text = status;
+				trayIcon.Text = status.Substring(0, Math.Min(status.Length, 63)); //64 character limit
 				data.Values["percentString"] = " ";
 				ToastNotificationManagerCompat.CreateToastNotifier()
 					.Update(data, _toatsTag, _toatsGroupTag);
@@ -227,6 +233,7 @@ namespace E3NextSysTray
 
 		private void OnUpdate(object sender, EventArgs e)
 		{
+
 			updateItem.Enabled = false;
 			progressItem.Enabled = true;
 			string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
@@ -253,8 +260,86 @@ namespace E3NextSysTray
 				toast.Data.Values["percentString"] = " ";
 			});
 			// 2. Start the background work
-			_downloadTask= Task.Run(() => DownloadUpdate());
-		}			
+			_downloadTask= Task.Run(() =>
+			{
+
+				DownloadUpdate();
+				_syncContext.Post(_ =>
+				{
+					ProcessDownloadedFile();
+				}, null);
+			} 
+			
+			);
+		}	
+		private void ProcessDownloadedFile()
+		{
+			//file is downloaded, lets decompress it
+			DialogResult result = MessageBox.Show("Are you ready to apply changes?(this will stop EQ/MQ)",
+									 "E3N Updater Confirmation",
+									 MessageBoxButtons.YesNo);
+
+			if (result == DialogResult.Yes)
+			{
+				_processingTask = Task.Run(() =>
+				{
+					try
+					{
+						CloseAllEQAndMQ();
+						ReadDownloadedZipAndExtract(Path.Combine(_currentDirectory, _downloadFullFileName), _mqLocation);
+						_syncContext.Post(_ =>
+						{
+							var data = new NotificationData();
+							data.Values["percentValue"] = "indeterminate";
+							data.Values["statusText"] = $"Complete!!";
+							data.Values["percentString"] = " ";
+							ToastNotificationManagerCompat.CreateToastNotifier()
+								.Update(data, _toatsTag, "github-downloads");
+							System.Threading.Thread.Sleep(2000);
+							ToastNotificationManagerCompat.History.Remove(_toatsTag, _toatsGroupTag);
+							updateItem.Enabled = true;
+							trayIcon.Text = $"E3Next";
+							progressItem.Enabled = false;
+						}, null);
+						System.Threading.Thread.Sleep(2000);
+						//we should have been done with downloading and decompressing the software
+						DeleteSelfAndStartupNew();
+						return;
+					}
+					catch(Exception ex)
+					{
+						_syncContext.Post(_ =>
+						{
+							MessageBox.Show("Exception!: " + ex.Message + " stack:" + ex.StackTrace);
+							ToastNotificationManagerCompat.History.Remove(_toatsTag, _toatsGroupTag);
+							updateItem.Enabled = true;
+							trayIcon.Text = $"E3Next";
+							progressItem.Enabled = false;
+						}, null);
+					}
+					
+				}
+
+				);
+				
+			}
+			else
+			{
+				var data = new NotificationData();
+				data.Values["percentValue"] = "indeterminate";
+				data.Values["statusText"] = $"Complete!!";
+				data.Values["percentString"] = " ";
+				ToastNotificationManagerCompat.CreateToastNotifier()
+					.Update(data, _toatsTag, "github-downloads");
+				System.Threading.Thread.Sleep(2000);
+				ToastNotificationManagerCompat.History.Remove(_toatsTag, _toatsGroupTag);
+				updateItem.Enabled = true;
+				trayIcon.Text = $"E3Next";
+				progressItem.Enabled = false;
+			}
+
+			
+		}
 		private void DownloadUpdate()
 		{
 			try
@@ -286,7 +371,7 @@ namespace E3NextSysTray
 						long? totalBytes = response.Content.Headers.ContentLength;
 
 						using (var stream = response.Content.ReadAsStreamAsync().Result)
-						using (var fileStream = new FileStream("source_code.zip", System.IO.FileMode.Create, FileAccess.Write, FileShare.None))
+						using (var fileStream = new FileStream(_downloadFullFileName, System.IO.FileMode.Create, FileAccess.Write, FileShare.None))
 						{
 							//set a decent buffer, else there is just too much churn, 1mb is more than enough for fiber download
 							byte[] buffer = new byte[1024*1024];
@@ -322,115 +407,125 @@ namespace E3NextSysTray
 			
 				return;
 			}
-			_syncContext.Post(_ =>
-			{
-					var data = new NotificationData();
-					data.Values["percentValue"] = "indeterminate";
-					data.Values["statusText"] = $"Complete!!";
-					data.Values["percentString"] = " ";
-					ToastNotificationManagerCompat.CreateToastNotifier()
-						.Update(data, _toatsTag, "github-downloads");
-				System.Threading.Thread.Sleep(2000);
-				ToastNotificationManagerCompat.History.Remove(_toatsTag, _toatsGroupTag);
-				updateItem.Enabled = true;
-				trayIcon.Text = $"E3Next";
-				progressItem.Enabled = false;
-			}, null);
-
-			//file is downloaded, lets decompress it
 
 
-
-			CloseAllEQAndMQ();
-			ReadDownloadedZipAndExtract(Path.Combine(_currentDirectory,_downloadFullFileName), _mqLocation);
-			//we should have been done with downloading and decompressing the software
-			DeleteSelfAndStartupNew();
+			
 
 		}
 		private void CloseAllEQAndMQ()
 		{
-			UpdateToastStatus($"Killing all EQ/MQ programs in 5 seconds....");
-			System.Threading.Thread.Sleep(5000);
-			//lets get the current application
-			
-			var exePaths = Directory.GetFiles(_mqLocation, "*.exe", SearchOption.AllDirectories)
-								   .Select(f => f.ToLower())
+			try
+			{
+				string currentProcess = Process.GetCurrentProcess().MainModule.ModuleName.ToLower().Replace(".exe","");
+				var exePaths = Directory.GetFiles(_mqLocation, "*.exe", SearchOption.TopDirectoryOnly)
+								   .Select(f => Path.GetFileName(f).ToLower().Replace(".exe", ""))
 								   .ToHashSet();
 
-			//kill all proceesses that are in the mq directory, or are equal to eqgame.xe
-			foreach (var p in Process.GetProcesses())
+				//kill all proceesses that are in the mq directory, or are equal to eqgame.xe
+				foreach (var p in Process.GetProcesses())
+				{
+					string processNameLower = p.ProcessName.ToLower();
+					if (processNameLower != "eqgame" && !exePaths.Contains(processNameLower))
+					{
+						continue;
+					}
+					if(processNameLower == currentProcess) { continue; }
+					try
+					{
+						// Skip the current process to avoid self-termination
+						UpdateToastStatus($"Closing process: {p.ProcessName} (ID: {p.Id})");
+						p.Kill();
+					}
+					catch (Exception ex)
+					{
+						// Usually happens for system processes you don't have permission to touch
+						UpdateToastStatus($"Could not close {p.ProcessName}. Sleeping for 5 seconds. Error Message: {ex.Message}");
+						System.Threading.Thread.Sleep(5000);
+					}
+				}
+				UpdateToastStatus($"Killing all EQ/MQ. Waiting seconds 2 seconds for full close...");
+
+			}
+			catch(Exception ex)
 			{
-				if (p.ProcessName != "eqgame.exe" && !exePaths.Contains(p.ProcessName))
-				{
-					continue;
-				}
-				try
-				{
-					// Skip the current process to avoid self-termination
-					UpdateToastStatus($"Closing process: {p.ProcessName} (ID: {p.Id})");
-					p.Kill();
-				}
-				catch (Exception ex)
-				{
-					// Usually happens for system processes you don't have permission to touch
-					UpdateToastStatus($"Could not close {p.ProcessName}. Sleeping for 5 seconds. Error Message: {ex.Message}");
-					System.Threading.Thread.Sleep(5000);
-				}
+
+				UpdateToastStatus($"Error closing eq instances. message:{ex.Message} stack:{ex.StackTrace}");
 			}
 			
+			System.Threading.Thread.Sleep(2000);
 		}
 		private void ReadDownloadedZipAndExtract(string zipLocation, string zipDest)
 		{
-			using (ZipFile zip = ZipFile.Read(zipLocation))
-			{
-				var result = zip.Any(entry => entry.FileName.Contains("RekkasGit-E3NextAndMQNextBinary"));
-				if (!result)
-				{
-					UpdateToastStatus("$Error could not find Sub folder in zip file.");
-					return;
-				}
-				var selection = (from e in zip.Entries
-								 where (e.FileName).StartsWith("E3NextAndMQNextBinary-main/")
-
-								 select e);
-
-				UpdateToastStatus($"Extracting files....");
-				//we don't want the github generated name, so we will just strip it out
-
-				//selection count is updated each time we extract, so we  only increment when we are going to skip one
-				for (Int32 i = 0; i < selection.Count();)
-				{
-					var e = selection.ElementAt(i);
-					if (e.FileName == "E3NextAndMQNextBinary-main/")
-					{
-						i++;
-						continue;
-					}
-					e.FileName = e.FileName.Replace("E3NextAndMQNextBinary-main/", "");
-					UpdateToastStatus($"Extracting {e.FileName}");
-					if (e.FileName.IndexOf("config/", 0, StringComparison.OrdinalIgnoreCase) > -1)
-					{
-						e.Extract(zipDest, ExtractExistingFileAction.DoNotOverwrite);
-					}
-					else if (e.FileName.IndexOf("resources/", 0, StringComparison.OrdinalIgnoreCase) > -1)
-					{
-						e.Extract(zipDest, ExtractExistingFileAction.DoNotOverwrite);
-					}
-					else
-					{
-						e.Extract(zipDest, ExtractExistingFileAction.OverwriteSilently);
-					}
-				}
-			}
-
 			try
 			{
-				File.Delete(zipLocation);
+				using (ZipFile zip = ZipFile.Read(zipLocation))
+				{
+					var result = zip.Any(entry => entry.FileName.Contains("RekkasGit-E3NextAndMQNextBinary"));
+					if (!result)
+					{
+						UpdateToastStatus("$Error could not find Sub folder in zip file.");
+						return;
+					}
+
+					//get root path
+					string rootPath = zip.Entries.ElementAt(0).FileName;
+
+
+					UpdateToastStatus($"Extracting files....");
+					//we don't want the github generated name, so we will just strip it out
+
+					//selection count is updated each time we extract, so we  only increment when we are going to skip one
+					for (Int32 i = 0; i < zip.Entries.Count(); i++)
+					{
+						var e = zip.Entries.ElementAt(i);
+						if (e.FileName == rootPath)
+						{
+							continue;
+						}
+						e.FileName = e.FileName.Replace(rootPath, "");
+						Console.WriteLine("Extracing file to:"+e.FileName);
+
+						try
+						{
+							if (e.FileName.IndexOf("config/", 0, StringComparison.OrdinalIgnoreCase) > -1)
+							{
+								e.Extract(zipDest, ExtractExistingFileAction.DoNotOverwrite);
+							}
+							else if (e.FileName.IndexOf("resources/", 0, StringComparison.OrdinalIgnoreCase) > -1)
+							{
+								e.Extract(zipDest, ExtractExistingFileAction.DoNotOverwrite);
+							}
+							else
+							{
+								e.Extract(zipDest, ExtractExistingFileAction.OverwriteSilently);
+							}
+
+						}
+						catch (Exception ex)
+						{
+							Console.WriteLine($"Error Extract:{ex.Message} stack:{ex.StackTrace}");
+						}
+					}
+				}
+
+				try
+				{
+					UpdateToastStatus($"Cleaning up files files....");
+					File.Delete(zipLocation);
+				}
+				catch (Exception)
+				{
+
+				}
 			}
-			catch (Exception)
+			catch(Exception ex)
 			{
+				UpdateToastStatus($"Error Extract:{ex.Message} stack:{ex.StackTrace}");
+				System.Threading.Thread.Sleep(10000);
 
 			}
+
+
 		}
 		private  void DrawProgressBar(long totalReadBytes)
 		{

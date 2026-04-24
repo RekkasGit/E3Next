@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -12,6 +13,14 @@ namespace E3NextSysTray
 	internal static class Program
 	{
 		private static string appGuid = "Global\\e849926a-932e-4395-959a-e09210bc44bf";
+		// Import the necessary Windows API functions
+		[DllImport("kernel32.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		static extern bool AllocConsole();
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		static extern bool FreeConsole();
 
 		/// <summary>
 		/// The main entry point for the application.
@@ -31,6 +40,7 @@ namespace E3NextSysTray
 
 			using (Mutex mutex = new Mutex(false, appGuid))
 			{
+				AllocConsole();
 				// If another instance is already running, exit immediately
 				if (!mutex.WaitOne(TimeSpan.Zero, true))
 				{
