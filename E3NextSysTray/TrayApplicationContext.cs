@@ -243,6 +243,7 @@ namespace E3NextSysTray
 			.AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
 			.SetToastScenario(ToastScenario.Reminder)
 			.AddText("Downloading update...")
+			.AddAudio(null, silent: true)
 			.AddVisualChild(new AdaptiveProgressBar()
 			{
 				Title = "E3N Updater",
@@ -488,6 +489,10 @@ namespace E3NextSysTray
 						try
 						{
 							if (e.FileName.IndexOf("config/", 0, StringComparison.OrdinalIgnoreCase) > -1)
+							{
+								e.Extract(zipDest, ExtractExistingFileAction.DoNotOverwrite);
+							}
+							else if (e.FileName.IndexOf("lua/", 0, StringComparison.OrdinalIgnoreCase) > -1)
 							{
 								e.Extract(zipDest, ExtractExistingFileAction.DoNotOverwrite);
 							}
