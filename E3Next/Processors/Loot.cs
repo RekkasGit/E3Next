@@ -1,4 +1,5 @@
 ﻿using E3Core.Data;
+using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
 using E3Core.Utility;
@@ -611,7 +612,7 @@ namespace E3Core.Processors
                     if(!force)
                     {
 						if (!E3.CharacterSettings.Misc_AutoLootEnabled) return;
-						if (EventProcessor.CommandListQueue.Count > 0)
+						if (EventProcessor.CommandListQueue.Count > 0 || NetMQServer.SharedDataClient.CommandQueue.Count > 0)
 						{
 							E3.Bots.Broadcast("Exiting looting to process command.");
 							return;
@@ -675,11 +676,29 @@ namespace E3Core.Processors
         public static void DestroyCorpse(Spawn corpse)
         {
             e3util.ClearCursor();
-            MQ.Cmd("/loot");
+
+			if (!Casting.TrueTarget(corpse.ID))
+			{
+
+				MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
+				if (!_unlootableCorpses.Contains(corpse.ID))
+				{
+					_unlootableCorpses.Add(corpse.ID);
+				}
+				return;
+
+			}
+
+
+			MQ.Cmd("/loot");
             MQ.Delay(1000, "${Window[LootWnd].Open}");
             MQ.Delay(100);
             if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
             {
+
+                //lets try once more
+
+
                 MQ.Write($"\arERROR, Loot Window not opening, adding {corpse.CleanName}-{corpse.ID} to ignore corpse list.");
                 if (!_unlootableCorpses.Contains(corpse.ID))
                 {
@@ -927,8 +946,8 @@ namespace E3Core.Processors
        
             if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
             {
-               
-                MQ.Cmd("/loot");
+                Casting.TrueTarget(corspeID);
+				MQ.Cmd("/loot");
                 MQ.Delay(1500, "${Window[LootWnd].Open}");
                 MQ.Delay(100);
                 if (!MQ.Query<bool>("${Window[LootWnd].Open}"))
