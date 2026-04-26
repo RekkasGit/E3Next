@@ -424,7 +424,11 @@ namespace E3Core.Utility
 			Int64 endTime = Core.StopWatch.ElapsedMilliseconds + 10000;
 			while (true)
 			{
-
+				if (EventProcessor.CommandListQueue.Count > 0 ||  NetMQServer.SharedDataClient.CommandQueue.Count>0)
+				{
+					E3.Bots.Broadcast("Exiting nav to process command.");
+					return;
+				}
 				Double tmeX = MQ.Query<Double>("${Me.X}");
 				Double tmeY = MQ.Query<Double>("${Me.Y}");
 
@@ -2323,6 +2327,7 @@ namespace E3Core.Utility
 		}
 		/// <summary>
 		/// NavToSpawnID - use MQ2Nav to reach the specified spawn, right now just by ID, ideally by any valid nav command
+		/// THIS IS A BLOCKING CALL
 		/// </summary>
 		/// <param name="spawnID"></param>
 		public static void NavToSpawnID(int spawnID, Int32 stopDistance = -1)
@@ -2356,6 +2361,11 @@ namespace E3Core.Utility
 
 			while (navPathExists && MQ.Query<int>("${Navigation.Velocity}") > 0)
 			{
+				//someone has sent us a command, kick out so we can process it. 
+				if (NetMQServer.SharedDataClient.CommandQueue.Count > 0 || EventProcessor.CommandListQueue.Count>0)
+				{	
+					return;
+				}
 				Double meX = MQ.Query<Double>("${Me.X}");
 				Double meY = MQ.Query<Double>("${Me.Y}");
 
