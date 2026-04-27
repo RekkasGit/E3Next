@@ -20,6 +20,7 @@ namespace E3NextSysTray
 	{
 		private readonly SynchronizationContext _syncContext;
 
+		private string _versionNumber = "1.54";
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
 		private Task _downloadTask = null;
@@ -28,6 +29,7 @@ namespace E3NextSysTray
 		ToolStripMenuItem exitItem;
 		ToolStripMenuItem updateItem;
 		ToolStripMenuItem progressItem;
+		ToolStripMenuItem debugItem;
 		private string _toatsTag = "zip-download";
 		private string _toatsGroupTag = "e3n-updates";
 		private string _mqLocation = String.Empty;
@@ -121,10 +123,10 @@ namespace E3NextSysTray
 			_mqLocation = Path.GetDirectoryName(_mqLocation).Replace(@"\mono\macros\e3", "").Replace(@"/mono/macros/e3", "");
 
 			
-			if (Debugger.IsAttached)
-			{
-				_mqLocation = _mqDebugLocation;
-			}
+			//if (Debugger.IsAttached)
+			//{
+			//	_mqLocation = _mqDebugLocation;
+			//}
 			if (!System.Diagnostics.Debugger.IsAttached)
 			{
 
@@ -144,6 +146,7 @@ namespace E3NextSysTray
 			exitItem = new ToolStripMenuItem("Exit", null, OnExit);
 			updateItem = new ToolStripMenuItem("Update", null, OnUpdate);
 			progressItem = new ToolStripMenuItem("Show Progress", null, OnShowProgress);
+			debugItem = new ToolStripMenuItem("Show Debug", null, OnDebug);
 			progressItem.Enabled = false;
 			contextMenu.Items.Add(openItem);
 			contextMenu.Items.Add(new ToolStripSeparator());
@@ -152,6 +155,8 @@ namespace E3NextSysTray
 			contextMenu.Items.Add(updateItem);
 			contextMenu.Items.Add(new ToolStripSeparator());
 			contextMenu.Items.Add(progressItem);
+			contextMenu.Items.Add(new ToolStripSeparator());
+			contextMenu.Items.Add(debugItem);
 			// 2. Initialize the NotifyIcon
 			trayIcon = new NotifyIcon()
 			{
@@ -169,6 +174,19 @@ namespace E3NextSysTray
 			
 		}
 
+		private void OnDebug(object sender, EventArgs e)
+		{
+			if(!Program.IsConsoleConnected())
+			{
+				Program.AllocConsole();
+				debugItem.Text = "Hide Debug";
+			}
+			else
+			{
+				debugItem.Text = "Show Debug";
+				Program.FreeConsole();
+			}
+		}
 		private void OnOpen(object sender, EventArgs e)
 		{
 			//// Example: Show a standard form when requested
@@ -193,26 +211,53 @@ namespace E3NextSysTray
 			string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
 			Uri fileUri = new Uri("file:///" + tempPngPath.Replace("\\", "/"), UriKind.Absolute);
 
-			new ToastContentBuilder()
-			  .AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
-			.SetToastScenario(ToastScenario.Reminder)
-			.AddText("Downloading update...")
-			.AddVisualChild(new AdaptiveProgressBar()
+			if (File.Exists(tempPngPath))
 			{
-				Title = "E3N Updater",
-				Value = new BindableProgressBarValue("percentValue"),
-				Status = new BindableString("statusText")
-			})
-			 .AddButton(new ToastButton("Hide", "dismissed"))
-			.Show(toast =>
+				new ToastContentBuilder()
+				.AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
+				.SetToastScenario(ToastScenario.Reminder)
+				.AddText("Downloading update...")
+				.AddVisualChild(new AdaptiveProgressBar()
+				{
+					Title = "E3N Updater",
+					Value = new BindableProgressBarValue("percentValue"),
+					Status = new BindableString("statusText")
+				})
+				 .AddButton(new ToastButton("Hide", "dismissed"))
+				.Show(toast =>
+				{
+					toast.Tag = _toatsTag;
+					toast.Group = _toatsGroupTag;
+					toast.Data = new NotificationData();
+					toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
+					toast.Data.Values["statusText"] = "Connecting...";
+					toast.Data.Values["percentString"] = " ";
+				});
+			}
+			else
 			{
-				toast.Tag = _toatsTag;
-				toast.Group = _toatsGroupTag;
-				toast.Data = new NotificationData();
-				toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
-				toast.Data.Values["statusText"] = "Connecting...";
-				toast.Data.Values["percentString"] = " ";
-			});
+				new ToastContentBuilder()
+				.SetToastScenario(ToastScenario.Reminder)
+				.AddText("Downloading update...")
+				.AddVisualChild(new AdaptiveProgressBar()
+				{
+					Title = "E3N Updater",
+					Value = new BindableProgressBarValue("percentValue"),
+					Status = new BindableString("statusText")
+				})
+				 .AddButton(new ToastButton("Hide", "dismissed"))
+				.Show(toast =>
+				{
+					toast.Tag = _toatsTag;
+					toast.Group = _toatsGroupTag;
+					toast.Data = new NotificationData();
+					toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
+					toast.Data.Values["statusText"] = "Connecting...";
+					toast.Data.Values["percentString"] = " ";
+				});
+			}
+
+			
 
 		}
 
@@ -236,32 +281,57 @@ namespace E3NextSysTray
 
 			updateItem.Enabled = false;
 			progressItem.Enabled = true;
+		
 			string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
 			Uri fileUri = new Uri("file:///" + tempPngPath.Replace("\\", "/"), UriKind.Absolute);
 
-			new ToastContentBuilder()
-			.AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
-			.SetToastScenario(ToastScenario.Reminder)
-			.AddText("Downloading update...")
-			.AddAudio(null, silent: true)
-			.AddVisualChild(new AdaptiveProgressBar()
+			if (File.Exists(tempPngPath))
 			{
-				Title = "E3N Updater",
-				Value = new BindableProgressBarValue("percentValue"),
-				Status = new BindableString("statusText")
-			})
-			 .AddButton(new ToastButton("Hide", "dismissed"))
-			.Show(toast =>
+				new ToastContentBuilder()
+				.AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
+				.SetToastScenario(ToastScenario.Reminder)
+				.AddText("Downloading update...")
+				.AddVisualChild(new AdaptiveProgressBar()
+				{
+					Title = "E3N Updater",
+					Value = new BindableProgressBarValue("percentValue"),
+					Status = new BindableString("statusText")
+				})
+				 .AddButton(new ToastButton("Hide", "dismissed"))
+				.Show(toast =>
+				{
+					toast.Tag = _toatsTag;
+					toast.Group = _toatsGroupTag;
+					toast.Data = new NotificationData();
+					toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
+					toast.Data.Values["statusText"] = "Connecting...";
+					toast.Data.Values["percentString"] = " ";
+				});
+			}
+			else
 			{
-				toast.Tag = _toatsTag;
-				toast.Group = _toatsGroupTag;
-				toast.Data = new NotificationData();
-				toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
-				toast.Data.Values["statusText"] = "Connecting...";
-				toast.Data.Values["percentString"] = " ";
-			});
+				new ToastContentBuilder()
+				.SetToastScenario(ToastScenario.Reminder)
+				.AddText("Downloading update...")
+				.AddVisualChild(new AdaptiveProgressBar()
+				{
+					Title = "E3N Updater",
+					Value = new BindableProgressBarValue("percentValue"),
+					Status = new BindableString("statusText")
+				})
+				 .AddButton(new ToastButton("Hide", "dismissed"))
+				.Show(toast =>
+				{
+					toast.Tag = _toatsTag;
+					toast.Group = _toatsGroupTag;
+					toast.Data = new NotificationData();
+					toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
+					toast.Data.Values["statusText"] = "Connecting...";
+					toast.Data.Values["percentString"] = " ";
+				});
+			}
 			// 2. Start the background work
-			_downloadTask= Task.Run(() =>
+			_downloadTask = Task.Run(() =>
 			{
 
 				DownloadUpdate();
@@ -286,7 +356,7 @@ namespace E3NextSysTray
 				{
 					try
 					{
-						CloseAllEQAndMQ();
+						//CloseAllEQAndMQ();
 						ReadDownloadedZipAndExtract(Path.Combine(_currentDirectory, _downloadFullFileName), _mqLocation);
 						_syncContext.Post(_ =>
 						{
@@ -295,7 +365,7 @@ namespace E3NextSysTray
 							data.Values["statusText"] = $"Complete!!";
 							data.Values["percentString"] = " ";
 							ToastNotificationManagerCompat.CreateToastNotifier()
-								.Update(data, _toatsTag, "github-downloads");
+								.Update(data, _toatsTag, _toatsGroupTag);
 							System.Threading.Thread.Sleep(2000);
 							ToastNotificationManagerCompat.History.Remove(_toatsTag, _toatsGroupTag);
 							updateItem.Enabled = true;
@@ -331,7 +401,7 @@ namespace E3NextSysTray
 				data.Values["statusText"] = $"Complete!!";
 				data.Values["percentString"] = " ";
 				ToastNotificationManagerCompat.CreateToastNotifier()
-					.Update(data, _toatsTag, "github-downloads");
+					.Update(data, _toatsTag, _toatsGroupTag);
 				System.Threading.Thread.Sleep(2000);
 				ToastNotificationManagerCompat.History.Remove(_toatsTag, _toatsGroupTag);
 				updateItem.Enabled = true;
@@ -486,6 +556,12 @@ namespace E3NextSysTray
 						e.FileName = e.FileName.Replace(rootPath, "");
 						Console.WriteLine("Extracing file to:"+e.FileName);
 
+						//move the systray to the root of the mq folder
+						if (e.FileName.IndexOf("mono/macros/e3/E3NextSysTray.exe", 0, StringComparison.OrdinalIgnoreCase) > -1)
+						{
+							e.FileName = "E3NextSysTray.exe";
+						}
+
 						try
 						{
 							if (e.FileName.IndexOf("config/", 0, StringComparison.OrdinalIgnoreCase) > -1)
@@ -537,6 +613,20 @@ namespace E3NextSysTray
 				// If Content-Length is missing (common with dynamic zip streams), show accumulated megabytes
 				double mbRead = totalReadBytes / 1024.0 / 1024.0;
 				UpdateToastStatus($"Total Downloaded:{mbRead:F2} MB");
+		}
+		private string Get()
+		{
+			GitHubClient gitclient = new GitHubClient(new ProductHeaderValue("E3NextDownloader"));
+			var releases = gitclient.Repository.Release.GetAll("RekkasGit", "MQ2Mono");
+			releases.Wait();
+			var latest = releases.Result.Where(x => x.TagName == "re-live").First();
+
+			if (latest != null)
+			{
+				return latest.Name.Replace("MQ2Mono for ", "");
+			}
+
+			return string.Empty;
 		}
 
 

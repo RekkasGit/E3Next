@@ -6,6 +6,7 @@ using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
+using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -2039,10 +2040,16 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3varbool", (x) =>
 			{
 				//key/value
-				if (x.args.Count > 1)
+				if (x.args.Count > 0)
 				{
 					string key = x.args[0];
-					string value = x.args[1];
+					string value = String.Empty;
+					bool toggle = true;
+					if (x.args.Count>1)
+					{
+						toggle = false;
+						 value= x.args[1];
+					}
 
 					if (VarsetValues.Count > 0)
 					{
@@ -2050,21 +2057,40 @@ namespace E3Core.Processors
 						{
 							if (value.IndexOf($"({vkey})", 0, StringComparison.OrdinalIgnoreCase) > -1)
 							{
-
-								value = value.ReplaceInsensitive($"({vkey})", $"({VarsetValues[vkey]})");
+								if(value==String.Empty)
+								{
+									value = VarsetValues[vkey];
+								}
+								else
+								{
+									value = value.ReplaceInsensitive($"({vkey})", $"({VarsetValues[vkey]})");
+								}
+									
 							}
 						}
 					}
 					value = Ifs(value).ToString();
-
-
+					if (value == String.Empty)
+					{
+						value = "False";
+					}
 					if (!VarsetValues.ContainsKey(key))
 					{
+						
+
 						VarsetValues.Add(key, value);
 					}
 					else
 					{
-						VarsetValues[key] = value;
+						if(toggle)
+						{
+							VarsetValues[key] = (!Boolean.Parse(value)).ToString();
+						}
+						else
+						{
+							VarsetValues[key] = value;
+						}
+						
 					}
 				}
 			});

@@ -16,12 +16,19 @@ namespace E3NextSysTray
 		// Import the necessary Windows API functions
 		[DllImport("kernel32.dll", SetLastError = true)]
 		[return: MarshalAs(UnmanagedType.Bool)]
-		static extern bool AllocConsole();
+		public static extern bool AllocConsole();
 
 		[DllImport("kernel32.dll", SetLastError = true)]
 		[return: MarshalAs(UnmanagedType.Bool)]
-		static extern bool FreeConsole();
+		public static extern bool FreeConsole();
+		[DllImport("kernel32.dll")]
+		private static extern IntPtr GetConsoleWindow();
 
+		public static bool IsConsoleConnected()
+		{
+			// If it returns Zero, there is no console attached
+			return GetConsoleWindow() != IntPtr.Zero;
+		}
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>
@@ -40,7 +47,6 @@ namespace E3NextSysTray
 
 			using (Mutex mutex = new Mutex(false, appGuid))
 			{
-				AllocConsole();
 				// If another instance is already running, exit immediately
 				if (!mutex.WaitOne(TimeSpan.Zero, true))
 				{
