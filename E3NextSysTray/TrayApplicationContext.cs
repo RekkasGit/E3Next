@@ -185,6 +185,9 @@ namespace E3NextSysTray
 			if(!Program.IsConsoleConnected())
 			{
 				Program.AllocConsole();
+				var standardOutput = new StreamWriter(Console.OpenStandardOutput());
+				standardOutput.AutoFlush = true;
+				Console.SetOut(standardOutput);
 				debugItem.Text = "Hide Debug";
 			}
 			else
@@ -371,7 +374,7 @@ namespace E3NextSysTray
 				{
 					UpdateToastStatus($"Downloading E3Next and MQ update");
 					System.Threading.Thread.Sleep(2000);
-					DownloadUpdate("E3NextAndMQBinaryNoFramework", "full_e3n_mq_download.zip");
+					//DownloadUpdate("E3NextAndMQBinaryNoFramework", "full_e3n_mq_download.zip");
 					filesDownloaded.Add(("full_e3n_mq_download.zip",_mqLocation));
 					var sgenbits = Program.GetNativeMachineType("mono-2.0-sgen.dll");
 					if (sgenbits!=32 || !File.Exists(Path.Combine(_currentDirectory, @"resources\Mono\32bit\bin\")+"mono.exe"))
@@ -403,7 +406,7 @@ namespace E3NextSysTray
 				{
 					UpdateToastStatus($"Downloading MQ2Nav Meshes");
 					System.Threading.Thread.Sleep(2000);
-					DownloadUpdate("EmuNavMeshes", "emu_navmeshs.zip");
+					//DownloadUpdate("EmuNavMeshes", "emu_navmeshs.zip");
 					filesDownloaded.Add(("emu_navmeshs.zip", Path.Combine(_currentDirectory, @"resources\MQ2Nav\")));
 
 				}
@@ -562,6 +565,7 @@ namespace E3NextSysTray
 		}
 		private void CloseAllEQAndMQ()
 		{
+			return;
 			try
 			{
 				string currentProcess = Process.GetCurrentProcess().MainModule.ModuleName.ToLower().Replace(".exe","");
@@ -662,7 +666,7 @@ namespace E3NextSysTray
 				try
 				{
 					UpdateToastStatus($"Cleaning up files files....");
-					File.Delete(zipLocation);
+					//File.Delete(zipLocation);
 				}
 				catch (Exception)
 				{
