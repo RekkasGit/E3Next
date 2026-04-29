@@ -39,6 +39,15 @@
           "build/Costura.Fody.targets": {}
         }
       },
+      "CustomSelectFileDlg/1.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net48/CustomSelectFileDlg.dll": {}
+        },
+        "runtime": {
+          "lib/net48/CustomSelectFileDlg.dll": {}
+        }
+      },
       "DotNetZip.Original/2025.2.15": {
         "type": "package",
         "dependencies": {
@@ -520,6 +529,15 @@
           "build/Costura.Fody.targets": {}
         }
       },
+      "CustomSelectFileDlg/1.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net48/CustomSelectFileDlg.dll": {}
+        },
+        "runtime": {
+          "lib/net48/CustomSelectFileDlg.dll": {}
+        }
+      },
       "DotNetZip.Original/2025.2.15": {
         "type": "package",
         "dependencies": {
@@ -987,6 +1005,15 @@
         "build": {
           "build/Costura.Fody.props": {},
           "build/Costura.Fody.targets": {}
+        }
+      },
+      "CustomSelectFileDlg/1.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net48/CustomSelectFileDlg.dll": {}
+        },
+        "runtime": {
+          "lib/net48/CustomSelectFileDlg.dll": {}
         }
       },
       "DotNetZip.Original/2025.2.15": {
@@ -1458,6 +1485,15 @@
           "build/Costura.Fody.targets": {}
         }
       },
+      "CustomSelectFileDlg/1.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net48/CustomSelectFileDlg.dll": {}
+        },
+        "runtime": {
+          "lib/net48/CustomSelectFileDlg.dll": {}
+        }
+      },
       "DotNetZip.Original/2025.2.15": {
         "type": "package",
         "dependencies": {
@@ -1925,6 +1961,15 @@
         "build": {
           "build/Costura.Fody.props": {},
           "build/Costura.Fody.targets": {}
+        }
+      },
+      "CustomSelectFileDlg/1.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net48/CustomSelectFileDlg.dll": {}
+        },
+        "runtime": {
+          "lib/net48/CustomSelectFileDlg.dll": {}
         }
       },
       "DotNetZip.Original/2025.2.15": {
@@ -2396,6 +2441,24 @@
         "netclassicweaver/Costura.Fody.xcf",
         "netstandardweaver/Costura.Fody.dll",
         "netstandardweaver/Costura.Fody.xcf"
+      ]
+    },
+    "CustomSelectFileDlg/1.0.0": {
+      "sha512": "WVsWCppGkGJ47BAdNBhHJO1TLTcQWM1mC4F2hE+2u46RHfsJiynGEfPk0xCgMuSulEWAH0UtoBUIAik/gubS2A==",
+      "type": "package",
+      "path": "customselectfiledlg/1.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "README.md",
+        "customselectfiledlg.1.0.0.nupkg.sha512",
+        "customselectfiledlg.nuspec",
+        "lib/net48/CustomSelectFileDlg.dll",
+        "lib/net481/CustomSelectFileDlg.dll",
+        "lib/net6.0-windows7.0/CustomSelectFileDlg.dll",
+        "lib/net7.0-windows7.0/CustomSelectFileDlg.dll",
+        "lib/net8.0-windows7.0/CustomSelectFileDlg.dll"
       ]
     },
     "DotNetZip.Original/2025.2.15": {
@@ -3647,6 +3710,7 @@
   "projectFileDependencyGroups": {
     ".NETFramework,Version=v4.8": [
       "Costura.Fody >= 6.0.0",
+      "CustomSelectFileDlg >= 1.0.0",
       "DotNetZip.Original >= 2025.2.15",
       "Microsoft.Toolkit.Uwp.Notifications >= 7.1.3",
       "NetMQ >= 4.0.1.13",
@@ -3707,6 +3771,10 @@
             "suppressParent": "All",
             "target": "Package",
             "version": "[6.0.0, )"
+          },
+          "CustomSelectFileDlg": {
+            "target": "Package",
+            "version": "[1.0.0, )"
           },
           "DotNetZip.Original": {
             "target": "Package",

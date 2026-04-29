@@ -888,14 +888,15 @@ namespace E3Core.Processors
         {
            EventProcessor.RegisterCommand("/assistme", (x) =>
            {
+			   //don't process assist if paused.
+			   if (Basics.IsPaused)
+			   {
+				   E3.Bots.Broadcast("\arNot assisting! \agI am paused!");
+				   return;
+			   }
 
-               _spawns.RefreshList(full: true);
-               //don't process assist if paused.
-               if(Basics.IsPaused) {
-                   E3.Bots.Broadcast("\arNot assisting! \agI am paused!");
-                   return; 
-               }
-
+			   _spawns.RefreshList(full: true);
+              
                 //clear in case its not reset by other means
                 //or you want to attack in enrage
                 _assistIsEnraged = false;

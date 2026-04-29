@@ -37,7 +37,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>e3n_logo.ico</ApplicationIcon>
+    <ApplicationIcon>e3nv2.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -58,6 +58,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Forms\AskBitVersions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TrayApplicationContext.cs" />
@@ -90,6 +91,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="CustomSelectFileDlg">
+      <Version>1.0.0</Version>
+    </PackageReference>
     <PackageReference Include="DotNetZip.Original">
       <Version>2025.2.15</Version>
     </PackageReference>
@@ -104,6 +108,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="e3nv2.ico" />
     <Content Include="e3n_logo.ico" />
     <Content Include="FodyWeavers.xml" />
   </ItemGroup>
