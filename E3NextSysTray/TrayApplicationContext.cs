@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -43,15 +44,7 @@ namespace E3NextSysTray
 		private string _currentDirectory = String.Empty;
 		private string _mqDebugLocation = @"D:\EQ\e3ntrayupdater";
 
-		public Icon BytesToIcon(byte[] bytes)
-		{
-			// Pass the byte array directly into a memory stream
-			using (MemoryStream ms = new MemoryStream(bytes))
-			{
-				// Generate and return the Icon object
-				return new Icon(ms);
-			}
-		}
+		
 		public void DeleteSelfAndStartupNew()
 		{
 			string currentExePath = Process.GetCurrentProcess().MainModule.FileName;
@@ -127,11 +120,9 @@ namespace E3NextSysTray
 			_mqLocation = Path.GetDirectoryName(_mqLocation).Replace(@"\mono\macros\e3", "").Replace(@"/mono/macros/e3", "");
 			_currentDirectory = Path.GetDirectoryName(_currentExePath);
 
-
-			//if (Debugger.IsAttached)
-			//{
-			//	_mqLocation = _mqDebugLocation;
-			//}
+			//create the e3next.png if we need for the toast.
+			CreatePNGIfNeeded();
+			
 			if (!System.Diagnostics.Debugger.IsAttached)
 			{
 
@@ -167,7 +158,7 @@ namespace E3NextSysTray
 			trayIcon = new NotifyIcon()
 			{
 				// To use your own icon: new Icon("yourfile.ico")
-				Icon = BytesToIcon(Properties.Resources.e3n_logo),
+				Icon = Utils.BytesToIcon(Properties.Resources.e3n_logo),
 				ContextMenuStrip = contextMenu,
 				Text = "E3Next",
 				Visible = true
@@ -179,21 +170,34 @@ namespace E3NextSysTray
 			_syncContext = SynchronizationContext.Current ?? new SynchronizationContext();
 			CheckForUpdates();
 		}
+		private void CreatePNGIfNeeded()
+		{
+			string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
 
+			if (!File.Exists(tempPngPath))
+			{
+				File.WriteAllBytes(tempPngPath, Utils.BitmapToBytes(Properties.Resources.E3NextImage));
+			}
+		}
+		
 		private void OnDebug(object sender, EventArgs e)
 		{
 			if(!Program.IsConsoleConnected())
 			{
 				Program.AllocConsole();
+				//reattach the output to the newly created console in case it was created with a null.
 				var standardOutput = new StreamWriter(Console.OpenStandardOutput());
 				standardOutput.AutoFlush = true;
 				Console.SetOut(standardOutput);
+				Console.SetError(standardOutput);
 				debugItem.Text = "Hide Debug";
 			}
 			else
 			{
 				debugItem.Text = "Show Debug";
 				Program.FreeConsole();
+				Console.SetOut(TextWriter.Null);
+				Console.SetError(TextWriter.Null);
 			}
 		}
 		private void OnCheckForUpdate(object sender, EventArgs e)
@@ -214,55 +218,27 @@ namespace E3NextSysTray
 		{
 			string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
 			Uri fileUri = new Uri("file:///" + tempPngPath.Replace("\\", "/"), UriKind.Absolute);
-
-			if (File.Exists(tempPngPath))
+			new ToastContentBuilder()
+			.AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
+			.SetToastScenario(ToastScenario.Reminder)
+			.AddText("Downloading update...")
+			.AddVisualChild(new AdaptiveProgressBar()
 			{
-				new ToastContentBuilder()
-				.AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
-				.SetToastScenario(ToastScenario.Reminder)
-				.AddText("Downloading update...")
-				.AddVisualChild(new AdaptiveProgressBar()
-				{
-					Title = "E3N Updater",
-					Value = new BindableProgressBarValue("percentValue"),
-					Status = new BindableString("statusText")
-				})
-				 .AddButton(new ToastButton("Hide", "dismissed"))
-				.Show(toast =>
-				{
-					toast.Tag = _toatsTag;
-					toast.Group = _toatsGroupTag;
-					toast.Data = new NotificationData();
-					toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
-					toast.Data.Values["statusText"] = "Connecting...";
-					toast.Data.Values["percentString"] = " ";
-				});
-			}
-			else
+				Title = "E3N Updater",
+				Value = new BindableProgressBarValue("percentValue"),
+				Status = new BindableString("statusText")
+			})
+				.AddButton(new ToastButton("Hide", "dismissed"))
+			.Show(toast =>
 			{
-				new ToastContentBuilder()
-				.SetToastScenario(ToastScenario.Reminder)
-				.AddText("Downloading update...")
-				.AddVisualChild(new AdaptiveProgressBar()
-				{
-					Title = "E3N Updater",
-					Value = new BindableProgressBarValue("percentValue"),
-					Status = new BindableString("statusText")
-				})
-				 .AddButton(new ToastButton("Hide", "dismissed"))
-				.Show(toast =>
-				{
-					toast.Tag = _toatsTag;
-					toast.Group = _toatsGroupTag;
-					toast.Data = new NotificationData();
-					toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
-					toast.Data.Values["statusText"] = "Connecting...";
-					toast.Data.Values["percentString"] = " ";
-				});
-			}
-
-			
-
+				toast.Tag = _toatsTag;
+				toast.Group = _toatsGroupTag;
+				toast.Data = new NotificationData();
+				toast.Data.Values["percentValue"] = "indeterminate"; // Bouncing indeterminate bar
+				toast.Data.Values["statusText"] = "Connecting...";
+				toast.Data.Values["percentString"] = " ";
+			});
+		
 		}
 
 		private void UpdateToastStatus(string status)
@@ -286,7 +262,7 @@ namespace E3NextSysTray
 			updateItem.Enabled = false;
 			progressItem.Enabled = true;
 			//lets check to see if macroquest.exe exists and if its 32bit or 64bit.
-			var numberOfBits = Program.CheckBitness("MacroQuest.exe");
+			var numberOfBits = Program.GetCPPImageBits("MacroQuest.exe");
 
 			if(numberOfBits==-1)
 			{
@@ -376,7 +352,7 @@ namespace E3NextSysTray
 					System.Threading.Thread.Sleep(2000);
 					//DownloadUpdate("E3NextAndMQBinaryNoFramework", "full_e3n_mq_download.zip");
 					filesDownloaded.Add(("full_e3n_mq_download.zip",_mqLocation));
-					var sgenbits = Program.GetNativeMachineType("mono-2.0-sgen.dll");
+					var sgenbits = Program.GetPEImageBits("mono-2.0-sgen.dll");
 					if (sgenbits!=32 || !File.Exists(Path.Combine(_currentDirectory, @"resources\Mono\32bit\bin\")+"mono.exe"))
 					{
 						UpdateToastStatus($"Downloading Mono framework....");
@@ -391,7 +367,7 @@ namespace E3NextSysTray
 					//Insert 64bit MQ Here
 
 
-					var sgenbits = Program.GetNativeMachineType("mono-2.0-sgen.dll");
+					var sgenbits = Program.GetPEImageBits("mono-2.0-sgen.dll");
 					if (sgenbits != 64 || !File.Exists(Path.Combine(_currentDirectory, @"resources\Mono\64bit\bin\mono.exe")))
 					{
 						UpdateToastStatus($"Downloading Mono framework....");
@@ -565,7 +541,8 @@ namespace E3NextSysTray
 		}
 		private void CloseAllEQAndMQ()
 		{
-			return;
+			if (Debugger.IsAttached) return;
+			
 			try
 			{
 				string currentProcess = Process.GetCurrentProcess().MainModule.ModuleName.ToLower().Replace(".exe","");
@@ -666,7 +643,7 @@ namespace E3NextSysTray
 				try
 				{
 					UpdateToastStatus($"Cleaning up files files....");
-					//File.Delete(zipLocation);
+					if(!Debugger.IsAttached) File.Delete(zipLocation);
 				}
 				catch (Exception)
 				{

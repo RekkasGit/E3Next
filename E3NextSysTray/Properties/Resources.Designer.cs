@@ -69,5 +69,15 @@ namespace E3NextSysTray.Properties {
                 return ((byte[])(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap E3NextImage {
+            get {
+                object obj = ResourceManager.GetObject("E3NextImage", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
     }
 }

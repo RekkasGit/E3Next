@@ -19,8 +19,10 @@ namespace E3NextSysTray
 
 		public const uint SCS_32BIT_BINARY = 0;
 		public const uint SCS_64BIT_BINARY = 6;
+		public const uint CoffHeader32bit = 0x14c;
+		public const uint CoffHeader64bit = 0x8664;
 
-		public static int CheckBitness(string path)
+		public static int GetCPPImageBits(string path)
 		{
 			if (GetBinaryType(path, out uint type))
 			{
@@ -29,7 +31,7 @@ namespace E3NextSysTray
 			}
 			return -1;
 		}
-		public static int GetNativeMachineType(string fileName)
+		public static int GetPEImageBits(string fileName)
 		{
 			if(File.Exists(fileName))
 			{
@@ -47,8 +49,8 @@ namespace E3NextSysTray
 					fs.Seek(peHeaderOffset + 4, System.IO.SeekOrigin.Begin);
 					ushort machine = reader.ReadUInt16();
 
-					if (machine == 0x14c) return 32;
-					if (machine == 0x14c) return 64;
+					if (machine == CoffHeader32bit) return 32;
+					if (machine == CoffHeader64bit) return 64;
 					return -1;
 				}
 
