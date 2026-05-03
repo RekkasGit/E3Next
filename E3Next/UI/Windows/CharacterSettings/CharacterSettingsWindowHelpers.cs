@@ -2002,9 +2002,114 @@ namespace E3Core.UI.Windows.CharacterSettings
 				var nextKey = section.Keys.FirstOrDefault()?.KeyName ?? string.Empty;
 				mainWindowState.SelectedKey = nextKey ?? string.Empty;
 				return true;
-			}
-			catch { return false; }
 		}
+		catch { return false; }
+	}
+
+	#region GlobalIfs
+	public static string GetGlobalIfsFilePath()
+	{
+		return E3Core.Settings.BaseSettings.GetSettingsFilePath("GlobalIfs.ini");
+	}
+
+	public static IniData LoadGlobalIfsIniData()
+	{
+		string path = GetGlobalIfsFilePath();
+		if (!System.IO.File.Exists(path))
+		{
+			var newData = new IniData();
+			newData.Sections.AddSection("Ifs");
+			return newData;
+		}
+		var parser = e3util.CreateIniParser();
+		return parser.ReadFile(path);
+	}
+
+	public static void SaveGlobalIfsIniData(IniData data)
+	{
+		try
+		{
+			string path = GetGlobalIfsFilePath();
+			if (data == null) return;
+			if (!System.IO.Directory.Exists(Path.GetDirectoryName(path)))
+			{
+				System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path));
+			}
+			var parser = e3util.CreateIniParser();
+			parser.WriteFile(path, data);
+			var state = window._state.GetState<State_GlobalIfs>();
+			state.ConfigIsDirty = false;
+			_log.Write($"Saved GlobalIfs to {path}");
+		}
+		catch (Exception ex)
+		{
+			_log.Write($"Failed to save GlobalIfs: {ex.Message}", Logging.LogLevels.Error);
+		}
+	}
+
+	public static bool AddGlobalIf(string key, string value)
+	{
+		var state = window._state.GetState<State_GlobalIfs>();
+		try
+		{
+			var pd = state.CurrentINIData;
+			if (pd == null) return false;
+			var section = pd.Sections.GetSectionData("Ifs");
+			if (section == null)
+			{
+				pd.Sections.AddSection("Ifs");
+				section = pd.Sections.GetSectionData("Ifs");
+			}
+			if (section == null) return false;
+			string baseKey = key ?? string.Empty;
+			if (string.IsNullOrWhiteSpace(baseKey)) return false;
+			string unique = baseKey;
+			int idx = 1;
+			while (section.Keys.ContainsKey(unique)) { unique = baseKey + " (" + idx.ToString() + ")"; idx++; if (idx > 1000) break; }
+			if (!section.Keys.ContainsKey(unique))
+			{
+				section.Keys.AddKey(unique, value ?? string.Empty);
+				state.ConfigIsDirty = true;
+				state.SelectedKey = unique;
+				return true;
+			}
+			return false;
+		}
+		catch { return false; }
+	}
+
+	public static bool DeleteGlobalIf(string key)
+	{
+		var state = window._state.GetState<State_GlobalIfs>();
+		try
+		{
+			var pd = state.CurrentINIData;
+			if (pd == null) return false;
+			var section = pd.Sections.GetSectionData("Ifs");
+			if (section == null || section.Keys == null) return false;
+			if (!section.Keys.ContainsKey(key)) return false;
+			section.Keys.RemoveKey(key);
+			state.ConfigIsDirty = true;
+			state.SelectedKey = string.Empty;
+			return true;
+		}
+		catch { return false; }
+	}
+	#endregion
+
+	public static void LoadGlobalIfsIntoState()
+	{
+		var state = window._state.GetState<State_GlobalIfs>();
+		state.CurrentINIData = LoadGlobalIfsIniData();
+		state.CurrentFilePath = GetGlobalIfsFilePath();
+		state.ConfigIsDirty = false;
+		state.SelectedKey = string.Empty;
+		state.Buffer_NewKey = string.Empty;
+		state.Buffer_NewValue = string.Empty;
+		state.Buffer_EditValue = string.Empty;
+		state.SearchFilter = string.Empty;
+		state.PendingAddState = 0;
+	}
 
 	}
 }

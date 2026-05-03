@@ -10,7 +10,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 {
 	public enum AddType { Spells, AAs, Discs, Skills, Items }
 	public enum CatalogMode { Standard, BardSong }
-	public enum SettingsTab { Character, General, Advanced }
+	public enum SettingsTab { Character, General, Advanced, GlobalIfs }
 
 	public class E3Spell
 	{
@@ -157,10 +157,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 			GenericPickerList.Clear();
 			GenericPickerFieldName = String.Empty;
 			GenericPickerSingleSelection = false;
+			GenericPickerSeparators.Clear();
 			
 		}
 
 		public List<string> GenericPickerList = new List<string>();
+		public HashSet<string> GenericPickerSeparators = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 		public string GenericPickerFieldName = String.Empty;
 		public bool GenericPickerSingleSelection = false;
 		public bool ShowGenericPicker
@@ -190,6 +192,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			GenericPickerList.Clear();
 		    GenericPickerFieldName = String.Empty;
 		    GenericPickerSingleSelection = false;
+			GenericPickerSeparators.Clear();
 	}
 	}
 	public class State_CatalogGems
@@ -213,6 +216,20 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public long TimeoutAt = 0;
 	}
 
+	public class State_GlobalIfs
+	{
+		public IniData CurrentINIData;
+		public string CurrentFilePath = string.Empty;
+		public bool ConfigIsDirty = false;
+		public bool ShowWindow = false;
+		public string SelectedKey = string.Empty;
+		public string Buffer_NewKey = string.Empty;
+		public string Buffer_NewValue = string.Empty;
+		public string Buffer_EditValue = string.Empty;
+		public string SearchFilter = string.Empty;
+		public int PendingAddState = 0; // 0=hidden, 1=editing name, 2=editing value
+	}
+
 	public class CharacterSettingsState
 	{
 		private State_CatalogWindow _catalogWindowState = new State_CatalogWindow();
@@ -223,6 +240,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		private State_SpellEditor _spellEditorState = new State_SpellEditor();
 		private State_CatalogGems _catalogGemsState = new State_CatalogGems();
 		private State_FoodDrink _foodDrinkState = new State_FoodDrink();
+		private State_GlobalIfs _globalIfsState = new State_GlobalIfs();
 		public CharacterSettingsState()
 		{
 			//set all initial windows to not show
@@ -263,6 +281,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 			else if (type == typeof(State_SpellEditor))
 			{
 				return (T)(object)_spellEditorState;
+			}
+			else if (type == typeof(State_GlobalIfs))
+			{
+				return (T)(object)_globalIfsState;
 			}
 			return default(T);
 		}

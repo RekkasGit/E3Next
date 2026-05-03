@@ -143,6 +143,16 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					_intialWindowOpened = true;
 					imgui_Begin_OpenFlagSet(_windowName, true);
+					// Auto-select the logged-in character's INI on first open
+					try
+					{
+						string charIniPath = data.GetCurrentCharacterIniPath();
+						if (!string.IsNullOrEmpty(charIniPath) && System.IO.File.Exists(charIniPath))
+						{
+							data.ChangeSelectedCharacter(charIniPath);
+						}
+					}
+					catch { }
 				}
 				else
 				{
@@ -182,13 +192,21 @@ namespace E3Core.UI.Windows.CharacterSettings
 							using (MQ.GetDelayLock())
 							{
 								Render_MainWindow_Header();
-								imgui_Separator();
-								Render_MainWindow_CharIniSelector();
-								imgui_Separator();
-								Render_MainWindow_SearchBar();
-								var allPlayersState = _state.GetState<State_AllPlayers>();
-								if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
-								if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
+								var globalIfsState = _state.GetState<State_GlobalIfs>();
+								if (globalIfsState.ShowWindow)
+								{
+									Render_MainWindow_GlobalIfsView();
+								}
+								else
+								{
+									imgui_Separator();
+									Render_MainWindow_CharIniSelector();
+									imgui_Separator();
+									Render_MainWindow_SearchBar();
+									var allPlayersState = _state.GetState<State_AllPlayers>();
+									if (allPlayersState.ShowWindow) Render_MainWindow_AllPlayersView();
+									if (!allPlayersState.ShowWindow) Render_MainWindow_ConfigEditor();
+								}
 								if (_state.Show_ThemeSettings) Render_ThemeSettingsWindow();
 								if (_state.Show_Donate) RenderDonateModal();
 								Render_PopOut_SpellEditor_Window();
@@ -220,14 +238,15 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, _versionInfo);
 
 					//Right: buttons aligned to the right within the cell
-					imgui_TableNextColumn();
+			imgui_TableNextColumn();
 					float cellAvail = imgui_GetContentRegionAvailX();
 					float donateBtnW = 70f;
 					float iniFolderBtnW = 112f;
+					float globalIfsBtnW = 90f;
 					float themeBtnW = 64f;
 					float closeBtnW = 64f;
 					float spacing = 6f;
-					float totalW = donateBtnW + spacing + iniFolderBtnW + spacing + themeBtnW + spacing + closeBtnW;
+					float totalW = donateBtnW + spacing + iniFolderBtnW + spacing + globalIfsBtnW + spacing + themeBtnW + spacing + closeBtnW;
 					if (totalW < cellAvail)
 					{
 						imgui_SameLineEx(cellAvail - totalW, 0f);
@@ -241,6 +260,24 @@ namespace E3Core.UI.Windows.CharacterSettings
 					if (imgui_Button("Open Bot INIs"))
 					{
 						e3util.OpenFolder(BaseSettings.GetBotPath());
+					}
+					imgui_SameLine();
+					var globalIfsState = _state.GetState<State_GlobalIfs>();
+					string globalIfsBtnLabel = globalIfsState.ShowWindow ? "Global Ifs*" : "Global Ifs";
+					if (imgui_Button(globalIfsBtnLabel))
+					{
+						globalIfsState.ShowWindow = !globalIfsState.ShowWindow;
+						if (globalIfsState.ShowWindow)
+						{
+							data.LoadGlobalIfsIntoState();
+						}
+					}
+					if (imgui_IsItemHovered())
+					{
+						using (var tooltip = ImGUIToolTip.Aquire())
+						{
+							imgui_Text("Edit Global Ifs (shared across all characters)");
+						}
 					}
 					imgui_SameLine();
 					if (imgui_Button("Theme"))
@@ -2397,6 +2434,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 								int idx = 0;
 								foreach (var selection in spellEditorState.GenericPickerList)
 								{
+									if (spellEditorState.GenericPickerSeparators.Contains(selection))
+									{
+										imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, selection);
+										idx++;
+										continue;
+									}
 									string checkboxId = $"{selection}##GenericPickerCheckbox_{idx}";
 									bool selected = ListContainsValue(selectedEntries, selection);
 									if (imgui_Checkbox(checkboxId, selected))
@@ -2677,25 +2720,55 @@ namespace E3Core.UI.Windows.CharacterSettings
 					imgui_SameLine();
 					if (imgui_Button("Pick##IfsGenericPickerBtn"))
 					{
-						//specify what property name on the spells object to update
+						spellEditorState.ResetGenericPicker();
+						spellEditorState.GenericPickerFieldName = "IfsKeys";
+
+						// Get character-local Ifs keys
 						var pd = data.GetActiveCharacterIniData();
+						List<string> localKeys = new List<string>();
 						if (pd != null)
 						{
-							_log.Write("Active Character INI Data found");
-							var ifKeys = GetDistinctIfKeyNames(pd);
-							if (ifKeys.Count > 0)
+							localKeys = GetDistinctIfKeyNames(pd);
+						}
+
+						// Get Global Ifs keys
+						List<string> globalKeys = new List<string>();
+						try
+						{
+							var globalIfsData = data.LoadGlobalIfsIniData();
+							globalKeys = GetDistinctIfKeyNames(globalIfsData);
+						}
+						catch { }
+
+						if (localKeys.Count > 0)
+						{
+							spellEditorState.GenericPickerSeparators.Add("--- Character Ifs ---");
+							spellEditorState.GenericPickerList.Add("--- Character Ifs ---");
+							spellEditorState.GenericPickerList.AddRange(localKeys);
+						}
+
+						if (globalKeys.Count > 0)
+						{
+							// Only include globals not already present as local
+							var filteredGlobals = new List<string>();
+							foreach (var key in globalKeys)
 							{
-								_log.Write("Ifs Section found");
-
-								spellEditorState.ResetGenericPicker();
-								spellEditorState.GenericPickerFieldName = "IfsKeys";
-
-								spellEditorState.GenericPickerList.AddRange(ifKeys);
-								_log.Write($"Added values to collection{String.Join(",", spellEditorState.GenericPickerList)}");
-								_log.Write($"Setting show generic picker to true");
-
-								spellEditorState.ShowGenericPicker = true;
+								if (!localKeys.Contains(key, StringComparer.OrdinalIgnoreCase))
+								{
+									filteredGlobals.Add(key);
+								}
 							}
+							if (filteredGlobals.Count > 0)
+							{
+								spellEditorState.GenericPickerSeparators.Add("--- Global Ifs ---");
+								spellEditorState.GenericPickerList.Add("--- Global Ifs ---");
+								spellEditorState.GenericPickerList.AddRange(filteredGlobals);
+							}
+						}
+
+						if (spellEditorState.GenericPickerList.Count > 0)
+						{
+							spellEditorState.ShowGenericPicker = true;
 						}
 					}
 
@@ -3736,6 +3809,222 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				E3.CharacterSettings.UITheme_Rounding = GlobalRoundingValue;
 				E3.CharacterSettings.SaveData();
+			}
+		}
+
+		private static void Render_MainWindow_GlobalIfsView()
+		{
+			var state = _state.GetState<State_GlobalIfs>();
+
+			if (state.CurrentINIData == null)
+			{
+				data.LoadGlobalIfsIntoState();
+			}
+
+			imgui_TextColored(0.95f, 0.85f, 0.35f, 1.0f, "Global Ifs Editor");
+			imgui_SameLine();
+			imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, "(shared across all characters)");
+			if (state.ConfigIsDirty)
+			{
+				imgui_SameLine();
+				imgui_TextColored(1.0f, 0.6f, 0.3f, 1.0f, "  [UNSAVED]");
+			}
+			imgui_Separator();
+
+			// Toolbar
+			if (imgui_Button("Save Changes"))
+			{
+				data.SaveGlobalIfsIniData(state.CurrentINIData);
+			}
+			imgui_SameLine();
+			if (state.ConfigIsDirty && imgui_Button("Discard Changes"))
+			{
+				data.LoadGlobalIfsIntoState();
+			}
+			imgui_SameLine();
+			if (imgui_Button("Refresh from Disk"))
+			{
+				data.LoadGlobalIfsIntoState();
+			}
+			imgui_SameLine();
+			imgui_Text("File: ");
+			imgui_SameLine();
+			imgui_TextColored(0.7f, 0.9f, 0.7f, 1.0f, state.CurrentFilePath);
+
+			// Search filter
+			imgui_Separator();
+			imgui_Text("Filter:");
+			imgui_SameLine();
+			imgui_SetNextItemWidth(300f);
+			if (imgui_InputText("##globalIfs_filter", state.SearchFilter))
+			{
+				state.SearchFilter = imgui_InputText_Get("##globalIfs_filter") ?? string.Empty;
+			}
+			imgui_SameLine();
+			if (imgui_Button("Clear##globalIfs_clearFilter"))
+			{
+				state.SearchFilter = string.Empty;
+				imgui_InputText_Clear("##globalIfs_filter");
+			}
+			imgui_SameLine();
+			if (imgui_Button("Add New If"))
+			{
+				state.PendingAddState = 1;
+				state.Buffer_NewKey = string.Empty;
+				state.Buffer_NewValue = string.Empty;
+			}
+
+			imgui_Separator();
+
+			// Add new If form
+			if (state.PendingAddState > 0)
+			{
+				imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Add New Global If");
+				imgui_Text("Name:");
+				imgui_SameLine();
+				imgui_SetNextItemWidth(300f);
+				if (imgui_InputText("##globalIfs_newKey", state.Buffer_NewKey))
+				{
+					state.Buffer_NewKey = imgui_InputText_Get("##globalIfs_newKey") ?? string.Empty;
+				}
+				imgui_Text("Value (MQ2 condition):");
+				float valueHeight = Math.Max(100f, imgui_GetTextLineHeightWithSpacing() * 4f);
+				imgui_SetNextItemWidth(600f);
+				if (imgui_InputTextMultiline("##globalIfs_newValue", state.Buffer_NewValue, 600f, valueHeight))
+				{
+					state.Buffer_NewValue = imgui_InputText_Get("##globalIfs_newValue") ?? string.Empty;
+				}
+				if (imgui_Button("Add##globalIfs_add"))
+				{
+					string key = (state.Buffer_NewKey ?? string.Empty).Trim();
+					if (!string.IsNullOrWhiteSpace(key))
+					{
+						if (data.AddGlobalIf(key, state.Buffer_NewValue ?? string.Empty))
+						{
+							state.PendingAddState = 0;
+							state.Buffer_NewKey = string.Empty;
+							state.Buffer_NewValue = string.Empty;
+						}
+					}
+				}
+				imgui_SameLine();
+				if (imgui_Button("Cancel##globalIfs_cancelAdd"))
+				{
+					state.PendingAddState = 0;
+					state.Buffer_NewKey = string.Empty;
+					state.Buffer_NewValue = string.Empty;
+				}
+				imgui_Separator();
+			}
+
+			// Entries table
+			var pd = state.CurrentINIData;
+			if (pd == null || pd.Sections == null)
+			{
+				imgui_TextColored(1.0f, 0.8f, 0.8f, 1.0f, "No data loaded.");
+				return;
+			}
+
+			var section = pd.Sections.GetSectionData("Ifs");
+			if (section == null || section.Keys == null || section.Keys.Count() == 0)
+			{
+				imgui_TextColored(0.7f, 0.8f, 0.9f, 1.0f, "No Global Ifs defined. Use the 'Add New If' button above to create one.");
+				return;
+			}
+
+			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY | ImGuiTableFlags.ImGuiTableFlags_Borders);
+			using (var table = ImGUITable.Aquire())
+			{
+				if (table.BeginTable("GlobalIfsTable", 4, tableFlags, 0, 0))
+				{
+					imgui_TableSetupColumn("Name", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 280f);
+					imgui_TableSetupColumn("Value", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0f);
+					imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 60f);
+					imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 60f);
+					imgui_TableHeadersRow();
+
+					string filter = (state.SearchFilter ?? string.Empty).Trim();
+					foreach (var keyData in section.Keys)
+					{
+						string key = keyData.KeyName;
+						string val = keyData.Value;
+						if (!string.IsNullOrEmpty(filter) && key.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0 && val.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0)
+							continue;
+
+						imgui_TableNextRow();
+						imgui_TableNextColumn();
+
+						bool isSelected = string.Equals(state.SelectedKey, key, StringComparison.OrdinalIgnoreCase);
+						if (isSelected)
+						{
+							// Edit mode: show input fields
+							imgui_SetNextItemWidth(imgui_GetContentRegionAvailX());
+							if (imgui_InputText("##globalIfs_editKey", state.Buffer_EditValue))
+							{
+								state.Buffer_EditValue = imgui_InputText_Get("##globalIfs_editKey") ?? string.Empty;
+							}
+						}
+						else
+						{
+							if (imgui_Selectable(key, false))
+							{
+								state.SelectedKey = key;
+								state.Buffer_EditValue = val;
+							}
+						}
+
+						imgui_TableNextColumn();
+						if (isSelected)
+						{
+							float editValueHeight = Math.Max(60f, imgui_GetTextLineHeightWithSpacing() * 3f);
+							imgui_SetNextItemWidth(imgui_GetContentRegionAvailX());
+							if (imgui_InputTextMultiline("##globalIfs_editValue", state.Buffer_EditValue, imgui_GetContentRegionAvailX(), editValueHeight))
+							{
+								state.Buffer_EditValue = imgui_InputText_Get("##globalIfs_editValue") ?? string.Empty;
+							}
+
+							imgui_TableNextColumn();
+							if (imgui_Button("Save##globalIfs_save"))
+							{
+								// Update the key name and value
+								if (!string.Equals(key, state.Buffer_EditValue))
+								{
+									section.Keys.RemoveKey(key);
+									section.Keys.AddKey(key, state.Buffer_EditValue);
+									state.ConfigIsDirty = true;
+								}
+								else
+								{
+									keyData.Value = state.Buffer_EditValue;
+									state.ConfigIsDirty = true;
+								}
+								state.SelectedKey = string.Empty;
+								state.Buffer_EditValue = string.Empty;
+							}
+							imgui_TableNextColumn();
+							if (imgui_Button("Cancel##globalIfs_cancel"))
+							{
+								state.SelectedKey = string.Empty;
+								state.Buffer_EditValue = string.Empty;
+							}
+						}
+						else
+						{
+							imgui_Text(val);
+							imgui_TableNextColumn();
+							if (imgui_Button("Edit##globalIfs_edit_" + key))
+							{
+								state.SelectedKey = key;
+								state.Buffer_EditValue = val;
+							}
+							imgui_TableNextColumn();
+							if (imgui_Button("Del##globalIfs_del_" + key))
+							{
+								data.DeleteGlobalIf(key);
+							}
+						}
+					}
+				}
 			}
 		}
 

@@ -202,6 +202,7 @@
     <Compile Include="Settings\FeatureSettings\GlobalIfs.cs" />
     <Compile Include="Settings\FeatureSettings\InventoryDataFile.cs" />
     <Compile Include="Settings\FeatureSettings\LazarusSymbolDataFile.cs" />
+    <Compile Include="Settings\FeatureSettings\ItemOwnerAssignmentDataFile.cs" />
     <Compile Include="Settings\FeatureSettings\LootDataFile.cs" />
     <Compile Include="Settings\FeatureSettings\SavedGroupDataFile.cs" />
     <Compile Include="Settings\FeatureSettings\SpellAliasDataFile.cs" />
