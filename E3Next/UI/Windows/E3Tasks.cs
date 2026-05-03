@@ -458,7 +458,7 @@ namespace E3Core.UI.Windows
             }
         }
 
-        private static void RenderObjectivesTable(TaskSnapshot task)
+        private static void RenderObjectivesTable(TaskSnapshot task, IReadOnlyDictionary<int, List<(string name, string status)>> peerProgress = null)
         {
             if (task.Objectives.Count == 0)
             {
@@ -507,6 +507,18 @@ namespace E3Core.UI.Windows
                         ? (objective.IsComplete ? "Done" : "In Progress")
                         : objective.Status;
                     imgui_TextColored(color.R, color.G, color.B, 1f, statusText);
+
+                    // Hover tooltip showing each peer's progress for this objective
+                    if (peerProgress != null && peerProgress.TryGetValue(objective.Index, out var peerStatuses) && peerStatuses.Count > 0 && imgui_IsItemHovered())
+                    {
+                        using (var tooltip = ImGUIToolTip.Aquire())
+                        {
+                            foreach (var ps in peerStatuses)
+                            {
+                                imgui_Text($"{ps.name}: {ps.status}");
+                            }
+                        }
+                    }
 
                     imgui_TableNextColumn();
                     imgui_Text(string.IsNullOrWhiteSpace(objective.Zone) ? "Any" : objective.Zone);
@@ -1251,7 +1263,55 @@ namespace E3Core.UI.Windows
             if (taskToShow.Objectives.Count > 0)
             {
                 imgui_Separator();
-                RenderObjectivesTable(taskToShow);
+
+                // Build per-objective peer progress for hover tooltips
+                var peerProgress = new Dictionary<int, List<(string name, string status)>>();
+
+                // Helper to add a peer's objective status
+                void AddPeerObjectiveStatus(string peerName, IReadOnlyList<TaskObjectiveSnapshot> objectives)
+                {
+                    foreach (var obj in objectives)
+                    {
+                        if (!peerProgress.ContainsKey(obj.Index))
+                            peerProgress[obj.Index] = new List<(string, string)>();
+                        string status = string.IsNullOrWhiteSpace(obj.Status)
+                            ? (obj.IsComplete ? "Done" : "In Progress")
+                            : obj.Status;
+                        peerProgress[obj.Index].Add((peerName, status));
+                    }
+                }
+
+                void AddPeerWireObjectiveStatus(string peerName, IReadOnlyList<TaskWireObjective> objectives)
+                {
+                    foreach (var obj in objectives)
+                    {
+                        if (!peerProgress.ContainsKey(obj.Index))
+                            peerProgress[obj.Index] = new List<(string, string)>();
+                        string status = string.IsNullOrWhiteSpace(obj.Status)
+                            ? (obj.IsComplete ? "Done" : "In Progress")
+                            : obj.Status;
+                        peerProgress[obj.Index].Add((peerName, status));
+                    }
+                }
+
+                // Self
+                if (entry.LocalTask != null)
+                {
+                    AddPeerObjectiveStatus(E3.CurrentName, entry.LocalTask.Objectives);
+                }
+
+                // Peers
+                foreach (var peer in _peerTasks)
+                {
+                    var peerTask = peer.Tasks?.FirstOrDefault(t =>
+                        string.Equals(BuildTaskComparisonKey(t.Title ?? "", t.Type ?? ""), entry.Key, StringComparison.OrdinalIgnoreCase));
+                    if (peerTask != null && peerTask.Objectives.Count > 0)
+                    {
+                        AddPeerWireObjectiveStatus(peer.Name, peerTask.Objectives);
+                    }
+                }
+
+                RenderObjectivesTable(taskToShow, peerProgress);
             }
         }
 
