@@ -2848,6 +2848,8 @@ namespace MonoCore
 								spawn.X = s_x;
 								spawn.Y = s_y;
 								spawn.Z = s_z;
+								spawn.LastDistance3D = 0;
+								spawn.LastDistance = 0;
 								spawn.playerX = p_x;
 								spawn.playerY = p_y;
 								spawn.playerZ = p_z;
@@ -3068,6 +3070,8 @@ namespace MonoCore
 			X = s.X;
 			Y = s.Y;
 			Z = s.Z;
+			LastDistance3D = 0;
+			LastDistance = 0;
 			playerX = s.playerX;
 			playerY = s.playerY;
 			playerZ = s.playerZ;
@@ -3246,6 +3250,9 @@ namespace MonoCore
 			data = data.Slice(4);
 			DeityID = MemoryMarshal.Read<Int32>(data);
 			data = data.Slice(4);
+
+			LastDistance3D = 0;
+			LastDistance = 0;
 
 		}
 		public void Init(byte[] data, Int32 length)
@@ -3467,6 +3474,8 @@ namespace MonoCore
 			DeityID = BitConverter.ToInt32(data, cb);
 			cb += 4;
 
+			LastDistance3D = 0;
+			LastDistance = 0;
 
 		}
 		//used in recording data stuff, not really part of spawn
@@ -3621,19 +3630,30 @@ namespace MonoCore
 			return String.Empty;
 
 		}
+
+
+		public double LastDistance3D = 0;
 		private double GetDistance3D()
 		{
-			double dx = playerX - X;
-			double dy = playerY - Y;
-			double dz = playerZ - Z;
-
-			return Math.Sqrt(dx * dx + dy * dy + dz * dz);
+			if (LastDistance3D == 0)
+			{
+				double dx = playerX - X;
+				double dy = playerY - Y;
+				double dz = playerZ - Z;
+				LastDistance3D = Math.Sqrt(dx * dx + dy * dy + dz * dz);
+			}
+			return LastDistance3D;
 		}
+		public double LastDistance = 0;
 		private double GetDistance()
 		{
-			double dx = X - playerX;
-			double dy = Y - playerY;
-			return Math.Sqrt(dx * dx + dy * dy);
+			if (LastDistance == 0)
+			{
+				double dx = X - playerX;
+				double dy = Y - playerY;
+				LastDistance = Math.Sqrt(dx * dx + dy * dy);
+			}
+			return LastDistance;
 		}
 		private string ClassIDToShortName(Int32 classID)
 		{
@@ -3799,6 +3819,8 @@ namespace MonoCore
 			TableID = 0;
 			Recording_MovementOccured = false;
 			Recording_StepCount = 0;
+			LastDistance = 0;
+			LastDistance3D = 0;
 			StaticObjectPool.Push(this);
 		}
 	}

@@ -338,14 +338,14 @@ namespace E3Core.Processors
 						{
 							if (!s.Dead)
 							{
-								if (s.Distance < 200)
+								if (s.Distance3D < 200)
 								{
 									Int32 pctHealth = MQ.Query<Int32>($"${{Me.XTarget[{x}].PctHPs}}");
 									if (pctHealth <= currentLowestHealth)
 									{
 										currentLowestHealth = pctHealth;
 										lowestHealthTargetid = targetID;
-										lowestHealthTargetDistance = s.Distance;
+										lowestHealthTargetDistance = s.Distance3D;
 									}
 								}
 							}
@@ -716,7 +716,7 @@ namespace E3Core.Processors
 								continue;
 							}
 						}
-						double targetDistance = s.Distance;
+						double targetDistance = s.Distance3D;
 						string targetType = s.TypeDesc;
 
 						//first lets check the distance.
@@ -995,7 +995,7 @@ namespace E3Core.Processors
 								continue;
 							}
 						}
-						double targetDistance = s.Distance;
+						double targetDistance = s.Distance3D;
 						string targetType = s.TypeDesc;
 
 						//first lets check the distance.
@@ -1148,7 +1148,7 @@ namespace E3Core.Processors
 						//they are in zone and have an id
 						if (targetID > 0)
 						{
-							double targetDistance = s.Distance;
+							double targetDistance = s.Distance3D;
 							string targetType = s.TypeDesc;
 
 							//first lets check the distance.

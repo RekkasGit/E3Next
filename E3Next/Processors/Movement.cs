@@ -1001,13 +1001,39 @@ namespace E3Core.Processors
 
             EventProcessor.RegisterCommand("/mtm", (x) => {
 
-                if (x.args.Count==0)
+                bool stop = false;
+				if (x.args.Count>0 && x.args[0] == "stop")
+				{
+                    stop = true;
+                    x.args.Remove("stop");
+				}
+
+
+				if (x.args.Count==0)
                 {
-                    E3.Bots.BroadcastCommandToGroup($"/mtm {E3.CurrentName}", x);
-                }
+
+                    if(stop)
+                    {
+
+						E3.Bots.BroadcastCommandToGroup($"/mtm {E3.CurrentName} stop", x);
+
+					}
+					else
+                    {
+						E3.Bots.BroadcastCommandToGroup($"/mtm {E3.CurrentName}", x);
+
+					}
+				}
                 else
                 {
                     if (e3util.FilterMe(x)) return;
+
+                    if(x.args.Count>1 &&  x.args[1] =="stop")
+                    {
+                        MQ.Cmd("/nav stop");
+                        return;
+                    }
+
                     if (_spawns.TryByName(x.args[0], out var s))
                     {
                         Casting.TrueTarget(s.ID);

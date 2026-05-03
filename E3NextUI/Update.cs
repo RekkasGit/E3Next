@@ -9,7 +9,7 @@ namespace E3NextUI
     public partial class Update : Form
     {
         public GitHubClient client;
-        public int latestID;
+        public Int64 latestID;
         public Update()
         {
             InitializeComponent();
