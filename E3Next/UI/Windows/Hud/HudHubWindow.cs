@@ -3658,6 +3658,54 @@ namespace E3Core.UI.Windows.Hud
 
 								int smallIconSize = selectedFontSize;
 								imgui_DrawSpellIconByIconIndex(stats.iconID, smallIconSize);
+								// Left-click on icon: remove buff (matches text row behavior)
+								if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
+								{
+									string command = $"/removebuff {stats.Name}";
+									if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+									{
+										E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+									}
+									else
+									{
+										E3ImGUI.MQCommandQueue.Enqueue(command);
+									}
+								}
+								// Right-click context menu on icon (matches icon grid behavior)
+								using (var popup = ImGUIPopUpContext.Aquire())
+								{
+									if (popup.BeginPopupContextItem($"{tableName}_ListIconCtx_{stats.SpellID}", 1))
+									{
+										using (var style = PushStyle.Aquire())
+										{
+											style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+											imgui_Text(stats.Name);
+											imgui_Separator();
+											if (imgui_MenuItem("Drop buff"))
+											{
+												string command = $"/removebuff {stats.Name}";
+												if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+												{
+													E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
+												}
+												else
+												{
+													E3ImGUI.MQCommandQueue.Enqueue(command);
+												}
+											}
+											if (imgui_MenuItem("Drop buff from group"))
+											{
+												E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+												E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
+											}
+											if (imgui_MenuItem("Drop buff from everyone"))
+											{
+												E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
+												E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
+											}
+										}
+									}
+								}
 								float iconMinX = imgui_GetItemRectMinX();
 								float iconMinY = imgui_GetItemRectMinY();
 								float iconMaxX = imgui_GetItemRectMaxX();
