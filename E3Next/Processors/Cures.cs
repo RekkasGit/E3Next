@@ -154,9 +154,13 @@ namespace E3Core.Processors
 			if (CheckCounterCure(E3.CharacterSettings.DiseaseCounterCure, E3.CharacterSettings.DiseaseCounterIgnore, E3.Bots.BaseDiseasedCounters,"Disease")) return;
 			if (CheckCounterCure(E3.CharacterSettings.CorruptedCounterCure, E3.CharacterSettings.CorruptedCounterIgnore, E3.Bots.BaseCorruptedCounters,"Corrupt")) return;
 
+			if (CheckCounterCure(E3.CharacterSettings.CursePetCounterCure, E3.CharacterSettings.CursePetCounterIgnore, E3.Bots.BasePetCursedCounters, "Curse",true)) return;
+			if (CheckCounterCure(E3.CharacterSettings.PoisonPetCounterCure, E3.CharacterSettings.PoisonPetCounterIgnore, E3.Bots.BasePetPoisonedCounters, "Poison",true)) return;
+			if (CheckCounterCure(E3.CharacterSettings.DiseasePetCounterCure, E3.CharacterSettings.DiseasePetCounterIgnore, E3.Bots.BasePetDiseasedCounters, "Disease",true)) return;
+			if (CheckCounterCure(E3.CharacterSettings.CorruptedPetCounterCure, E3.CharacterSettings.CorruptedPetCounterIgnore, E3.Bots.BasePetCorruptedCounters, "Corrupt",true)) return;
 
 		}
-		private static bool CheckCounterCure(List<Spell> curesSpells, List<Spell> ignoreSpells, Func<string, int> counterFunc,string description="")
+		private static bool CheckCounterCure(List<Spell> curesSpells, List<Spell> ignoreSpells, Func<string, int> counterFunc,string description="", bool isPet = false)
 		{
 			//we do spells first as each spell might be group only or single target for out of group
 
@@ -180,7 +184,12 @@ namespace E3Core.Processors
 							//check and make sure they don't have one of the 'ignored debuffs'
 							//need to check on pet heals
 
-							List<Int32> badbuffs = E3.Bots.BuffList(s.CleanName);
+							List<Int32> badbuffs = null;
+
+							if (!isPet) E3.Bots.BuffList(s.CleanName);
+							else E3.Bots.PetBuffList(s.CleanName);
+
+
 							bool foundBadBuff = false;
 							foreach (var bb in ignoreSpells)
 							{
@@ -196,10 +205,14 @@ namespace E3Core.Processors
 								}
 							}
 							if (foundBadBuff) continue;
-							if (Casting.InRange(s.ID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
+
+							Int32 targetID = s.ID;
+							if (isPet) targetID = s.PetID;
+
+							if (Casting.InRange(targetID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 							{
 								E3.Bots.Broadcast($"\am{s.CleanName}\aw needs a cure! Casting \ag{spell.CastName}\aw because of \ar{description}\aw counters");
-								Casting.Cast(s.ID, spell);
+								Casting.Cast(targetID, spell);
 								return true;
 							}
 						}

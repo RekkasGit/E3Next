@@ -31,6 +31,31 @@ namespace E3NextConfigEditor.Client
 			return 0;
 		}
 
+		public int BasePetCorruptedCounters(string name)
+		{
+			return 0;
+		}
+
+		public int BasePetCursedCounters(string name)
+		{
+			return 0;
+		}
+
+		public int BasePetDebuffCounters(string name)
+		{
+			return 0;
+		}
+
+		public int BasePetDiseasedCounters(string name)
+		{
+			return 0;
+		}
+
+		public int BasePetPoisonedCounters(string name)
+		{
+			return 0;
+		}
+
 		public int BasePoisonedCounters(string name)
 		{
 			return 0;

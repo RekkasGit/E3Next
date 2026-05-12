@@ -45,6 +45,7 @@ namespace E3Core.Processors
 			{
 				return CastReturn.CAST_BLOCKINGWINDOWOPEN;
 			}
+			
 			//this isn't a nowcast but we have one ready to be processed, kick out
 			if (!isNowCast && !isEmergency && NowCast.IsNowCastInQueue())
 			{
@@ -409,14 +410,7 @@ namespace E3Core.Processors
 							}
 
 						}
-						_log.Write("Checking for Open corpse....");
-						if (MQ.Query<bool>("${Corpse.Open}"))
-						{
-							E3.ActionTaken = true;
-							E3.Bots.Broadcast($"skipping [{spell.CastName}] , I have a corpse open.");
-							MQ.Delay(200);
-							return CastReturn.CAST_CORPSEOPEN;
-						}
+						
 						_log.Write("Checking for LoS for non beneficial...");
 						if (!spell.SpellType.Contains("Beneficial"))
 						{
@@ -1823,7 +1817,12 @@ namespace E3Core.Processors
 
 		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false, bool skipGCDCheck=false)
 		{
-		
+
+			if (e3util.IsActionBlockingWindowOpen())
+			{
+				return false;
+			}
+
 			if (spell == null) return false;
 
 			if (spell.RecastDelay>0)

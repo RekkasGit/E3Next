@@ -556,6 +556,22 @@ namespace E3Core.Settings
 		[INI_Section("Cures", "DiseaseCountersIgnore")]
 		public List<Spell> DiseaseCounterIgnore = new List<Spell>();
 
+		[INI_Section("Cures", "CursePetCounters")]
+		public List<Spell> CursePetCounterCure = new List<Spell>();
+		[INI_Section("Cures", "CursePetCountersIgnore")]
+		public List<Spell> CursePetCounterIgnore = new List<Spell>();
+		[INI_Section("Cures", "CorruptedPetCounters")]
+		public List<Spell> CorruptedPetCounterCure = new List<Spell>();
+		[INI_Section("Cures", "CorruptedPetCountersIgnore")]
+		public List<Spell> CorruptedPetCounterIgnore = new List<Spell>();
+		[INI_Section("Cures", "PoisonPetCounters")]
+		public List<Spell> PoisonPetCounterCure = new List<Spell>();
+		[INI_Section("Cures", "PoisonPetCountersIgnore")]
+		public List<Spell> PoisonPetCounterIgnore = new List<Spell>();
+		[INI_Section("Cures", "DiseasePetCounters")]
+		public List<Spell> DiseasePetCounterCure = new List<Spell>();
+		[INI_Section("Cures", "DiseasePetCountersIgnore")]
+		public List<Spell> DiseasePetCounterIgnore = new List<Spell>();
 
 		//life support
 		[INI_Section("Life Support", "Life Support")]
@@ -1333,6 +1349,15 @@ namespace E3Core.Settings
 			LoadKeyData("Cures", "DiseaseCounters", ParsedData, DiseaseCounterCure);
 			LoadKeyData("Cures", "DiseaseCountersIgnore", ParsedData, DiseaseCounterIgnore);
 
+			LoadKeyData("Cures", "CursePetCounters", ParsedData, CursePetCounterCure);
+			LoadKeyData("Cures", "CursePetCountersIgnore", ParsedData, CursePetCounterIgnore);
+			LoadKeyData("Cures", "CorruptedPetCounters", ParsedData, CorruptedPetCounterCure);
+			LoadKeyData("Cures", "CorruptedPetCountersIgnore", ParsedData, CorruptedPetCounterIgnore);
+			LoadKeyData("Cures", "PoisonPetCounters", ParsedData, PoisonPetCounterCure);
+			LoadKeyData("Cures", "PoisonPetCountersIgnore", ParsedData, PoisonPetCounterIgnore);
+			LoadKeyData("Cures", "DiseasePetCounters", ParsedData, DiseasePetCounterCure);
+			LoadKeyData("Cures", "DiseasePetCountersIgnore", ParsedData, DiseasePetCounterIgnore);
+
 			LoadKeyData("Blocked Buffs", "BuffName", ParsedData, BlockedBuffs);
 
 			LoadKeyData("Heals", "Tank Heal", ParsedData, HealTanks);
@@ -1760,6 +1785,14 @@ namespace E3Core.Settings
 				section.Keys.AddKey("PoisonCountersIgnore", "");
 				section.Keys.AddKey("DiseaseCounters", "");
 				section.Keys.AddKey("DiseaseCountersIgnore", "");
+				section.Keys.AddKey("CursePetCounters", "");
+				section.Keys.AddKey("CursePetCountersIngore", "");
+				section.Keys.AddKey("CorruptedPetCounters", "");
+				section.Keys.AddKey("CorruptedPetCountersIngore", "");
+				section.Keys.AddKey("PoisonPetCounters", "");
+				section.Keys.AddKey("PoisonPetCountersIngore", "");
+				section.Keys.AddKey("DiseasePetCounters", "");
+				section.Keys.AddKey("DiseasePetCountersIngore", "");
 			}
 
 			if ((CharacterClass & Class.Charmer) == CharacterClass)

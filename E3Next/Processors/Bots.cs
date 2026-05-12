@@ -42,6 +42,11 @@ namespace E3Core.Processors
 		Int32 BaseCorruptedCounters(string name);
 		Int32 BasePoisonedCounters(string name);
         Int32 BaseCursedCounters(string name);
+		Int32 BasePetDebuffCounters(string name);
+		Int32 BasePetDiseasedCounters(string name);
+		Int32 BasePetCorruptedCounters(string name);
+		Int32 BasePetPoisonedCounters(string name);
+		Int32 BasePetCursedCounters(string name);
 		void GetMemoryUsage(string name, out double Csharpmemory, out double EQPageMemory);
         bool IsMyBot(string name);
         void Trade(string name);
@@ -545,7 +550,37 @@ namespace E3Core.Processors
 			return DebuffCounterFunction(name, "${Me.CountersCorrupted}", _debuffCorruptedCounterCollection);
 
 		}
+		Dictionary<string, SharedNumericDataInt32> _debuffPetCurseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePetCursedCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.Pet.CountersCurse}", _debuffPetCurseCounterCollection);
+		}
 
+		Dictionary<string, SharedNumericDataInt32> _debuffPetTotalCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePetDebuffCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.Pet.TotalCounters}", _debuffPetTotalCounterCollection);
+		}
+
+		Dictionary<string, SharedNumericDataInt32> _debuffPetDiseaseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePetDiseasedCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.Pet.CountersDisease}", _debuffPetDiseaseCounterCollection);
+
+		}
+
+		Dictionary<string, SharedNumericDataInt32> _debuffPetPoisonCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePetPoisonedCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.Pet.CountersPoison}", _debuffPetPoisonCounterCollection);
+
+		}
+		Dictionary<string, SharedNumericDataInt32> _debuffPetCorruptedCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePetCorruptedCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.Pet.CountersCorrupted}", _debuffPetCorruptedCounterCollection);
+
+		}
 		[ExposedData("Bots", "BotsConnected")]
 		private List<string> _botsConnectedCache = new List<string>();
 		Int64 _botsConnectredTimeStamp = 0;

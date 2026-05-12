@@ -2559,13 +2559,13 @@ namespace E3Core.Utility
 		}
 		public static bool IsActionBlockingWindowOpen()
 		{
-			var vendorOpen = MQ.Query<bool>("${Window[MerchantWnd]}");
-			var bankOpen = MQ.Query<bool>("${Window[BigBankWnd]}");
-			var guildBankOpen = MQ.Query<bool>("${Window[GuildBankWnd]}");
-			var tradeOpen = MQ.Query<bool>("${Window[TradeWnd]}");
-			var giveOpen = MQ.Query<bool>("${Window[GiveWnd]}");
-
-			return (vendorOpen || bankOpen || guildBankOpen || tradeOpen || giveOpen);
+			if(MQ.Query<bool>("${Corpse.Open}")) return true;
+			if(MQ.Query<bool>("${Window[MerchantWnd]}")) return true;
+			if(MQ.Query<bool>("${Window[BigBankWnd]}")) return true;
+			if(MQ.Query<bool>("${Window[GuildBankWnd]}")) return true;
+			if(MQ.Query<bool>("${Window[TradeWnd]}")) return true;
+			if(MQ.Query<bool>("${Window[GiveWnd]}")) return true;
+			return false;
 		}
 
 		public static void Exchange(string slotName, string itemName)

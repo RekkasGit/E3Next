@@ -361,7 +361,12 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.CountersDisease}", MQ.Query<string>("${Debuff.Diseased}"));
 			PubServer.AddTopicMessage("${Me.CountersCurse}", MQ.Query<string>("${Debuff.Cursed}"));
 			PubServer.AddTopicMessage("${Me.CountersCorrupted}", MQ.Query<string>("${Debuff.Corrupted}"));
-			
+			PubServer.AddTopicMessage("${Me.Pet.TotalCounters}", MQ.Query<string>("${Debuff[pet].Count}"));
+			PubServer.AddTopicMessage("${Me.Pet.CountersPoison}", MQ.Query<string>("${Debuff[pet].Poisoned}"));
+			PubServer.AddTopicMessage("${Me.Pet.CountersDisease}", MQ.Query<string>("${Debuff[pet].Diseased}"));
+			PubServer.AddTopicMessage("${Me.Pet.CountersCurse}", MQ.Query<string>("${Debuff[pet].Cursed}"));
+			PubServer.AddTopicMessage("${Me.Pet.CountersCorrupted}", MQ.Query<string>("${Debuff[pet].Corrupted}"));
+
 		}
 		public static void StateUpdates_Misc()
 		{

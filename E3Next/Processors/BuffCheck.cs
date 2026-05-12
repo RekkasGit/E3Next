@@ -576,7 +576,7 @@ namespace E3Core.Processors
 				{
 					if (Basics.AmIDead()) return;
 					if (e3util.IsManualControl() && !Basics.InCombat() && !MQ.Query<bool>("${Me.Standing}")) return;
-					if (E3.IsMoving && !Assist.IsAssisting) return;
+					
 				}
 
 				Int32 targetID = MQ.Query<Int32>("${Target.ID}");
@@ -761,6 +761,8 @@ namespace E3Core.Processors
 		{
 			foreach (var spell in buffs)
 			{
+				if (E3.IsMoving && !Assist.IsAssisting && spell.MyCastTime>500) continue;
+
 				//using (_log.Trace($"BuffBots-Spell-{spell.CastName}"))
 				{
 					if (E3.ActionTaken) return;
