@@ -353,6 +353,86 @@ namespace E3Core.Processors
 
 		}
 
+		static HashSet<Int32> _buffsThatMightBeCastOnMe = new HashSet<Int32>();
+
+		public static void StateUpdates_ConfiguredBuffsStacking()
+		{
+
+			_buffsThatMightBeCastOnMe.Clear();
+			//check each id from every single toon's buffs and see if they will stack with what you have. 
+
+			var botsConnected = E3.Bots.BotsConnected();
+		
+			foreach (var bot in botsConnected)
+			{
+				List<Int32> registeredBuffs = E3.Bots.BuffRegisteredList(bot);
+
+				foreach(var buff in registeredBuffs)
+				{
+					if(!_buffsThatMightBeCastOnMe.Contains(buff))
+					{
+						_buffsThatMightBeCastOnMe.Add(buff);
+					}
+				}
+			}
+
+			//okay now we should have all the buffs that 'might' be cast on me, lets check to see if it will stack.
+
+
+
+
+		}
+
+		static HashSet<Int32> _spellsToBuffWith = new HashSet<int>();
+		public static void StateUpdates_ConfiguredBuffs()
+		{
+			_spellsToBuffWith.Clear();
+			//we are going to publish out all the buffs we are configured to use, so that other toons will publish out if they stack.
+			//combat buffs
+			
+			foreach(var buff in E3.CharacterSettings.CombatBuffs)
+			{
+				if(!_spellsToBuffWith.Contains(buff.SpellID))
+				{
+					_spellsToBuffWith.Add(buff.SpellID);
+
+				}
+			}
+			foreach (var buff in E3.CharacterSettings.AssistBuffs)
+			{
+				if (!_spellsToBuffWith.Contains(buff.SpellID))
+				{
+					_spellsToBuffWith.Add(buff.SpellID);
+
+				}
+			}
+			foreach (var buff in E3.CharacterSettings.BotBuffs)
+			{
+				if (!_spellsToBuffWith.Contains(buff.SpellID))
+				{
+					_spellsToBuffWith.Add(buff.SpellID);
+
+				}
+			}
+			unsafe
+			{
+				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder();
+				try
+				{
+					foreach(Int32 spellid in _spellsToBuffWith)
+					{
+						buffInfoStringBuilder.Append(e3util.GetIntStr(spellid));
+						buffInfoStringBuilder.Append(":");
+					}
+					var payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out int length);
+					PubServer.AddTopicMessageFromPool("${Me.BuffsToApply}", payload, length);
+				}
+				finally
+				{
+					buffInfoStringBuilder.Dispose();
+				}
+			}
+		}
 		public static void StateUpdates_Counters()
 		{
 			
@@ -418,9 +498,9 @@ namespace E3Core.Processors
 			{
 				Int32 length = 0;
 				char[] payload = e3util.GetBuffDataForPubSubHighPerf(out length);
-				PubServer.AddTopicMessage("${Me.BuffInfo}", payload, length);
+				PubServer.AddTopicMessageFromPool("${Me.BuffInfo}", payload, length);
 				payload = e3util.GetPetBuffDataForPubSubHighPerf(out length);
-				PubServer.AddTopicMessage("${Me.PetBuffInfo}", payload,length);
+				PubServer.AddTopicMessageFromPool("${Me.PetBuffInfo}", payload,length);
 			}
 			else
 			{

@@ -762,6 +762,26 @@ namespace E3Core.Utility
 			}
 
 		}
+		public static void StringsToNumbers(ReadOnlySpan<char> s, char delim, List<Int32> list)
+		{
+			List<Int32> result = list;
+			int start = 0;
+			int end = 0;
+			foreach (char x in s)
+			{
+				if (x == delim || end == s.Length - 1)
+				{
+					if (end == s.Length - 1 && x != delim)
+						end++;
+					Int32 valueTOAdd = 0;
+					e3util.Int32TryParse(s.Slice(start, end - start), out valueTOAdd);
+					result.Add(valueTOAdd);
+					start = end + 1;
+				}
+				end++;
+			}
+
+		}
 		public static void StringsToNumbers(string s, char delim, List<Int64> list)
 		{
 			List<Int64> result = list;

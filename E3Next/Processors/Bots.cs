@@ -36,7 +36,9 @@ namespace E3Core.Processors
 		void BroadcastCommandToPerson(string person, string command, bool noparse = false);
         void Broadcast(string message, bool noparse = false);
         List<Int32> BuffList(string name);
-        List<Int32> PetBuffList(string name);
+		List<int> BuffRegisteredList(string name);
+
+		List<Int32> PetBuffList(string name);
         Int32 BaseDebuffCounters(string name);
         Int32 BaseDiseasedCounters(string name);
 		Int32 BaseCorruptedCounters(string name);
@@ -1016,7 +1018,37 @@ namespace E3Core.Processors
 
         }
 
-        public bool HasShortBuff(string name, int buffid)
+		List<int> _buffRegisteredListReturnValue = new List<int>();
+
+		public List<int> BuffRegisteredList(string name)
+		{
+			_buffRegisteredListReturnValue.Clear();
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				//couldn't register, no file avilable assume they are not online yet
+				return _buffRegisteredListReturnValue;
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string topicKey = "${Me.BuffsToApply}";
+			if (!userTopics.ContainsKey(topicKey))
+			{
+				//don't have the data yet kick out with empty list as we simply don't know.
+				return _buffRegisteredListReturnValue;
+			}
+			//we have the data, lets check for updates
+			//the double name is because the 2nd name could be the pet name! its called in PetBuffList
+			lock (userTopics[topicKey])
+			{
+				var entry = userTopics[topicKey];
+				e3util.StringsToNumbers(entry.Data, ':', _buffRegisteredListReturnValue);
+			}
+			//done with updates, now lets check the data.
+			return _buffRegisteredListReturnValue;
+		}
+
+		public bool HasShortBuff(string name, int buffid)
         {
             _buffListReturnValue.Clear();
             //register the user to get their buff data if its not already there

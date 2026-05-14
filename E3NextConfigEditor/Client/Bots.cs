@@ -110,6 +110,11 @@ namespace E3NextConfigEditor.Client
 			return new List<int>();
 		}
 
+		public List<int> BuffRegisteredList(string name)
+		{
+			return new List<int>();
+		}
+
 		public CharacterBuffs GetBuffInformation(string name)
 		{
 			throw new NotImplementedException();
