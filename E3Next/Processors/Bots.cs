@@ -37,6 +37,7 @@ namespace E3Core.Processors
         void Broadcast(string message, bool noparse = false);
         List<Int32> BuffList(string name);
 		List<int> BuffRegisteredList(string name);
+		Dictionary<int, Int64> BuffRegistgeredStackingResult(string name);
 
 		List<Int32> PetBuffList(string name);
         Int32 BaseDebuffCounters(string name);
@@ -1017,7 +1018,49 @@ namespace E3Core.Processors
             return _buffListReturnValue;
 
         }
+		Dictionary<string, SharedNumericDataDictionaryInt32Int64> _buffRegisteredListStackingResults= new Dictionary<string, SharedNumericDataDictionaryInt32Int64>();
 
+		//this is an int64 so we can reuse buff data functions, as these are really only 0 and 1 for false/true
+		public Dictionary<int,Int64> BuffRegistgeredStackingResult(string name)
+		{
+			if(!_buffRegisteredListStackingResults.ContainsKey(name))
+			{
+				_buffRegisteredListStackingResults.Add(name, new SharedNumericDataDictionaryInt32Int64());
+			}
+			var result = _buffRegisteredListStackingResults[name];
+			
+
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				//couldn't register, no file avilable assume they are not online yet
+				return result.Data;
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string topicKey = "${Me.BuffsToApply_StackingResult}";
+			if (!userTopics.ContainsKey(topicKey))
+			{
+				//don't have the data yet kick out with empty list as we simply don't know.
+				return result.Data;
+			}
+			//we have the data, lets check for updates
+			//the double name is because the 2nd name could be the pet name! its called in PetBuffList
+			lock (userTopics[topicKey])
+			{
+				var entry = userTopics[topicKey];
+
+
+				if(entry.LastUpdate> result.LastUpdate)
+				{
+					//update the data otherwise return old result
+					e3util.BuffInfoToDictonary(entry.GetData(), result.Data);
+					result.LastUpdate = entry.LastUpdate;
+				}
+			}
+			//done with updates, now lets check the data.
+			return result.Data;
+		}
 		List<int> _buffRegisteredListReturnValue = new List<int>();
 
 		public List<int> BuffRegisteredList(string name)
@@ -1042,7 +1085,7 @@ namespace E3Core.Processors
 			lock (userTopics[topicKey])
 			{
 				var entry = userTopics[topicKey];
-				e3util.StringsToNumbers(entry.Data, ':', _buffRegisteredListReturnValue);
+				e3util.StringsToNumbers(entry.GetData(), ':', _buffRegisteredListReturnValue);
 			}
 			//done with updates, now lets check the data.
 			return _buffRegisteredListReturnValue;
@@ -1363,7 +1406,11 @@ namespace E3Core.Processors
 			public Boolean Data { get; set; }
 			public Int64 LastUpdate { get; set; }
 		}
-
+		class SharedNumericDataDictionaryInt32Int64
+		{
+			public Dictionary<Int32,Int64> Data { get; set; } = new Dictionary<Int32,Int64>();
+			public Int64 LastUpdate { get; set; }
+		}
 	}
 	/*
 	public class Bots : IBots

@@ -115,6 +115,11 @@ namespace E3NextConfigEditor.Client
 			return new List<int>();
 		}
 
+		public Dictionary<int, long> BuffRegistgeredStackingResult(string name)
+		{
+			return new Dictionary<int, long>();
+		}
+
 		public CharacterBuffs GetBuffInformation(string name)
 		{
 			throw new NotImplementedException();

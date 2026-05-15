@@ -802,6 +802,12 @@ namespace E3Core.Utility
 		}
 
 		private static List<Int64> _buffInfoTempList = new List<Int64>();
+		/// <summary>
+		/// puts a list of value1,value1-a,value1-b:value2,value2-a,value2-b into a dictionary of int/int64
+		/// </summary>
+		/// <param name="s">input</param>
+		/// <param name="list">output</param>
+		/// <param name="delim">delmiter, between entries the delimiter is ','</param>
 		public static void BuffInfoToDictonary(ReadOnlySpan<char> s, Dictionary<Int32, Int64> list, char delim = ':')
 		{
 			list.Clear();
@@ -837,6 +843,7 @@ namespace E3Core.Utility
 				}
 			}
 		}
+
 		public static List<string> StringsToList(string s, char delim)
 		{
 			List<string> result = new List<string>();

@@ -3,6 +3,7 @@ using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
+using E3Core.UI.Windows.CharacterSettings;
 using E3Core.UI.Windows.Hud;
 using E3Core.Utility;
 using MonoCore;
@@ -13,9 +14,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceModel.Channels;
+using System.ServiceModel.Configuration;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -352,12 +355,11 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.Memory_EQStartTime}", $"{startTime.ToString()}");
 
 		}
-
-		static HashSet<Int32> _buffsThatMightBeCastOnMe = new HashSet<Int32>();
+		[ExposedData("Core", "BuffsThatMightBeCastOnMe")]
+		public static Dictionary<Int32,int> _buffsThatMightBeCastOnMe = new Dictionary<Int32, int>();
 
 		public static void StateUpdates_ConfiguredBuffsStacking()
 		{
-
 			_buffsThatMightBeCastOnMe.Clear();
 			//check each id from every single toon's buffs and see if they will stack with what you have. 
 
@@ -369,20 +371,45 @@ namespace E3Core.Processors
 
 				foreach(var buff in registeredBuffs)
 				{
-					if(!_buffsThatMightBeCastOnMe.Contains(buff))
+					if(!_buffsThatMightBeCastOnMe.ContainsKey(buff))
 					{
-						_buffsThatMightBeCastOnMe.Add(buff);
+						_buffsThatMightBeCastOnMe.Add(buff,0);
 					}
 				}
 			}
 
 			//okay now we should have all the buffs that 'might' be cast on me, lets check to see if it will stack.
+			foreach(var spellid in _buffsThatMightBeCastOnMe.Keys.ToList())
+			{
+				bool willStack = MQ.Query<bool>($"${{Spell[{spellid}].WillLand}}");
+				_buffsThatMightBeCastOnMe[spellid] = willStack?1:0;
+			}
+			//now lets publish them out!
+			unsafe
+			{
+				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder(200);
+				try
+				{
+					bool firstEntry = true;
 
-
-
-
+					foreach (var pair in _buffsThatMightBeCastOnMe)
+					{
+						if(!firstEntry) buffInfoStringBuilder.Append(":");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Key));
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Value));
+						firstEntry = false;
+					}
+					var payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out int length);
+					PubServer.AddTopicMessageFromPool("${Me.BuffsToApply_StackingResult}", payload, length);
+				}
+				finally
+				{
+					buffInfoStringBuilder.Dispose();
+				}
+			}
 		}
-
+		[ExposedData("Core", "ConfiguredBuffs")]
 		static HashSet<Int32> _spellsToBuffWith = new HashSet<int>();
 		public static void StateUpdates_ConfiguredBuffs()
 		{
@@ -416,7 +443,7 @@ namespace E3Core.Processors
 			}
 			unsafe
 			{
-				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder();
+				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder(200);
 				try
 				{
 					foreach(Int32 spellid in _spellsToBuffWith)
@@ -578,7 +605,9 @@ namespace E3Core.Processors
 							E3.Bots.Broadcast("GM Safe kicked in, turning it off");
 						}
 						StateUpdates_AAInformation();
-						
+						StateUpdates_ConfiguredBuffs();
+						StateUpdates_ConfiguredBuffsStacking();
+
 						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
 						{
 							unsafe
