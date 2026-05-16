@@ -37,7 +37,7 @@ namespace E3Core.Processors
         void Broadcast(string message, bool noparse = false);
         List<Int32> BuffList(string name);
 		List<int> BuffRegisteredList(string name);
-		Dictionary<int, Int64> BuffRegistgeredStackingResult(string name);
+		Dictionary<int, (Int32,Int32)> BuffRegistgeredStackingResult(string name);
 
 		List<Int32> PetBuffList(string name);
         Int32 BaseDebuffCounters(string name);
@@ -1021,7 +1021,7 @@ namespace E3Core.Processors
 		Dictionary<string, SharedNumericDataDictionaryInt32Int64> _buffRegisteredListStackingResults= new Dictionary<string, SharedNumericDataDictionaryInt32Int64>();
 
 		//this is an int64 so we can reuse buff data functions, as these are really only 0 and 1 for false/true
-		public Dictionary<int,Int64> BuffRegistgeredStackingResult(string name)
+		public Dictionary<int,(Int32,Int32)> BuffRegistgeredStackingResult(string name)
 		{
 			if(!_buffRegisteredListStackingResults.ContainsKey(name))
 			{
@@ -1049,12 +1049,10 @@ namespace E3Core.Processors
 			lock (userTopics[topicKey])
 			{
 				var entry = userTopics[topicKey];
-
-
 				if(entry.LastUpdate> result.LastUpdate)
 				{
 					//update the data otherwise return old result
-					e3util.BuffInfoToDictonary(entry.GetData(), result.Data);
+					e3util.BuffStackingToDictonary(entry.GetData(), result.Data);
 					result.LastUpdate = entry.LastUpdate;
 				}
 			}
@@ -1408,7 +1406,7 @@ namespace E3Core.Processors
 		}
 		class SharedNumericDataDictionaryInt32Int64
 		{
-			public Dictionary<Int32,Int64> Data { get; set; } = new Dictionary<Int32,Int64>();
+			public Dictionary<Int32,(Int32,Int32)> Data { get; set; } = new Dictionary<Int32, (Int32, Int32)>();
 			public Int64 LastUpdate { get; set; }
 		}
 	}

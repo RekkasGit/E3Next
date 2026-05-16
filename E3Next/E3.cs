@@ -355,9 +355,9 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.Memory_EQStartTime}", $"{startTime.ToString()}");
 
 		}
+		
 		[ExposedData("Core", "BuffsThatMightBeCastOnMe")]
-		public static Dictionary<Int32,int> _buffsThatMightBeCastOnMe = new Dictionary<Int32, int>();
-
+		public static Dictionary<Int32,(int,int)> _buffsThatMightBeCastOnMe = new Dictionary<Int32, (int, int)>();
 		public static void StateUpdates_ConfiguredBuffsStacking()
 		{
 			_buffsThatMightBeCastOnMe.Clear();
@@ -373,16 +373,42 @@ namespace E3Core.Processors
 				{
 					if(!_buffsThatMightBeCastOnMe.ContainsKey(buff))
 					{
-						_buffsThatMightBeCastOnMe.Add(buff,0);
+						_buffsThatMightBeCastOnMe.Add(buff,(0,0));
 					}
 				}
 			}
-
+			Int32 maxbuffsCount = MQ.Query<Int32>("${Me.MaxBuffSlots}");
+			Int32 currentBuffCount = MQ.Query<Int32>("${Me.BuffCount}");
 			//okay now we should have all the buffs that 'might' be cast on me, lets check to see if it will stack.
-			foreach(var spellid in _buffsThatMightBeCastOnMe.Keys.ToList())
+			foreach (var spellid in _buffsThatMightBeCastOnMe.Keys.ToList())
 			{
 				bool willStack = MQ.Query<bool>($"${{Spell[{spellid}].WillLand}}");
-				_buffsThatMightBeCastOnMe[spellid] = willStack?1:0;
+				Int32 buffID_ClashWith = 0;
+				if(!willStack)
+				{
+					if (currentBuffCount == maxbuffsCount)
+					{
+						buffID_ClashWith = -1;
+					}
+					else
+					{
+						for (Int32 i = 1; i <= (e3util.MaxBuffSlots); i++)
+						{
+							Int32 buffID = MQ.Query<Int32>($"${{Me.Buff[{i}].ID}}");
+							if (buffID > 0)
+							{
+
+								bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spellid}].StacksWith[{buffID}]}}");
+								if (!stacksWith)
+								{
+									buffID_ClashWith = buffID;
+									break;
+								}
+							}
+						}
+					}
+				}
+				_buffsThatMightBeCastOnMe[spellid] = willStack?(1,0):(0,buffID_ClashWith);
 			}
 			//now lets publish them out!
 			unsafe
@@ -395,9 +421,11 @@ namespace E3Core.Processors
 					foreach (var pair in _buffsThatMightBeCastOnMe)
 					{
 						if(!firstEntry) buffInfoStringBuilder.Append(":");
-						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Key));
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Key)); //spellid we are comparing
 						buffInfoStringBuilder.Append(",");
-						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Value));
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Value.Item1));//true/false for willstack
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Value.Item2));//spell id that it clashed against
 						firstEntry = false;
 					}
 					var payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out int length);
@@ -418,7 +446,7 @@ namespace E3Core.Processors
 			//combat buffs
 			
 			foreach(var buff in E3.CharacterSettings.CombatBuffs)
-			{
+			{	
 				if(!_spellsToBuffWith.Contains(buff.SpellID))
 				{
 					_spellsToBuffWith.Add(buff.SpellID);

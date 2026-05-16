@@ -115,9 +115,9 @@ namespace E3NextConfigEditor.Client
 			return new List<int>();
 		}
 
-		public Dictionary<int, long> BuffRegistgeredStackingResult(string name)
+		public Dictionary<int, (int,int)> BuffRegistgeredStackingResult(string name)
 		{
-			return new Dictionary<int, long>();
+			return new Dictionary<int, (int, int)>();
 		}
 
 		public CharacterBuffs GetBuffInformation(string name)

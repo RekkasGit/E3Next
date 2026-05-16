@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Xml.Linq;
 
 
@@ -1104,6 +1105,7 @@ namespace E3Core.Processors
 
 						if (!spell.IgnoreStackRules)
 						{
+							
 							if (spell.CastType == CastingType.AA)
 							{
 								willStack = MQ.Query<bool>($"${{Me.AltAbility[{spell.CastName}].Spell.WillLand}}");
@@ -1260,9 +1262,6 @@ namespace E3Core.Processors
 
 						if (isABot)
 						{
-
-							
-
 							bool shouldContinue = false;
 							if (spell.CheckForCollection.Count > 0)
 							{
@@ -1297,49 +1296,37 @@ namespace E3Core.Processors
 								return BuffBots_ReturnType.Continue;
 							}
 					
-							Casting.TrueTarget(s.ID);
-							MQ.Delay(2000, "${Target.BuffsPopulated}");
+							//Casting.TrueTarget(s.ID);
+							//MQ.Delay(2000, "${Target.BuffsPopulated}");
 							bool willStack = true;
+							Int32 buffStackClash = 0;
 							if (!spell.IgnoreStackRules)
 							{
-								willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
+								willStack = false;
+								if (E3.Bots.BuffRegistgeredStackingResult(target).ContainsKey(spell.SpellID))
+								{
+									willStack = E3.Bots.BuffRegistgeredStackingResult(target)[spell.SpellID].Item1 > 0 ? true : false;
+									if (!willStack) buffStackClash = E3.Bots.BuffRegistgeredStackingResult(target)[spell.SpellID].Item2;
+								}
 							}
-
 							if (!willStack)
 							{
 								UpdateBuffTimers(s.ID, spell, 15000, 15000, true);
 
 								//loop over the targets buffs and do stacks with checks. 
-
 								if(E3.CharacterSettings.Alerts_BuffStackMessages)
 								{
-									for (Int32 i = 1; i <= (e3util.MaxBuffSlots); i++)
+									MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay because of stacking \agTrying again in 15 seconds");
+									if (buffStackClash==-1)
 									{
-										Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");
-										if (buffID > 0)
-										{
-											string buffName = MQ.Query<String>($"${{Target.Buff[{i}]}}");
-											bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spell.SpellID}].StacksWith[{buffID}]}}");
-											if (!stacksWith)
-											{
-												Int32 maxbuffsCount = MQ.Query<Int32>("${Me.MaxBuffSlots}");
-												Int32 currentBuffCount = MQ.Query<Int32>("${Me.BuffCount}");
+										MQ.Write($"\ayStacking logic failed on buff \aw{spell.SpellName} \aybecause {s.CleanName} has max buff count. \agTrying again in 15 seconds");
 
-												if(currentBuffCount==maxbuffsCount)
-												{
-													MQ.Write($"\ayStacking logic failed on buff \aw{spell.SpellName} \aybecause I have max buff count. \aw{currentBuffCount}\ay out of \aw{maxbuffsCount}\ay. \agTrying again in 15 seconds");
-
-												}
-												else
-												{
-													MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay because of stacking issues with \aw{buffName}\ay. \agTrying again in 15 seconds");
-
-												}
-												break;
-											}
-										}
 									}
-
+									else
+									{
+										string buffName = MQ.Query<String>($"${{Spell[{buffStackClash}]}}");
+										MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay because of stacking issues with \aw{buffName}\ay. \agTrying again in 15 seconds");
+									}
 								}
 								return BuffBots_ReturnType.Continue;
 							}

@@ -800,7 +800,36 @@ namespace E3Core.Utility
 			}
 
 		}
-
+		private static List<Int32> _buffStackingTempList = new List<Int32>();
+		/// <summary>
+		/// puts a list of value1,value1-a,value1-b:value2,value2-a,value2-b into a dictionary of int/int64
+		/// </summary>
+		/// <param name="s">input</param>
+		/// <param name="list">output</param>
+		/// <param name="delim">delmiter, between entries the delimiter is ','</param>
+		public static void BuffStackingToDictonary(ReadOnlySpan<char> s, Dictionary<Int32, (Int32,Int32)> list, char delim = ':')
+		{
+			list.Clear();
+			Dictionary<Int32, (Int32,Int32)> result = list;
+			int start = 0;
+			int end = 0;
+			foreach (char x in s)
+			{
+				if (x == delim || end == s.Length - 1)
+				{
+					if (end == s.Length - 1 && x != delim)
+						end++;
+					//number,number
+					_buffStackingTempList.Clear();
+					ReadOnlySpan<char> tstring = s.Slice(start, end - start);
+					StringsToNumbers(tstring, ',', _buffStackingTempList);
+					result[(int)_buffStackingTempList[0]] = (_buffStackingTempList[1],_buffStackingTempList[2]);
+					start = end + 1;
+				}
+				end++;
+			}
+			
+		}
 		private static List<Int64> _buffInfoTempList = new List<Int64>();
 		/// <summary>
 		/// puts a list of value1,value1-a,value1-b:value2,value2-a,value2-b into a dictionary of int/int64
