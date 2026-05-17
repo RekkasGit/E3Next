@@ -28,16 +28,17 @@ namespace E3Core.UI.Windows
         private static long _lastDataUpdate;
 
         private static string _searchText = string.Empty;
+        private static string _previousSearchText = string.Empty;
         private static string _activeTab = "Equipped";
         private static string _selectedPeerName = string.Empty;
         private static bool _bankWindowOpen;
 
         private static int _selectedSlotId = -1;
-        private static string _assignmentOwnerFilter = "All Characters";
-        private static string _assignmentLocationFilter = "All";
-        private static string _assignmentDispositionFilter = "All";
-        private static string _assignmentEditorItemName = string.Empty;
-        private static int _assignmentEditorIcon;
+        private static string _assignmentSelectedItemName = string.Empty;
+        private static readonly Queue<(string Owner, string Command)> _executionQueue = new Queue<(string, string)>();
+        private static long _nextExecutionTime;
+        private static int _totalQueued;
+        private static int _executedCount;
         private static string _restockItemName = "food";
         private static int _restockQty = 20;
         private const string ItemInspectorWindowName = "Item Inspector###inventory_item_inspector";
@@ -173,11 +174,19 @@ namespace E3Core.UI.Windows
             }
         }
 
+        /// <summary>
+        /// Broadcasts a request for inventory data to all connected peers.
+        /// Called when the UI window is opened.
+        /// NOTE: This is called from UI thread - must not call MQ directly!
+        /// </summary>
         public static void RequestInventoryFromPeers()
         {
             try
             {
                 PubServer.AddTopicMessage(RequestTopicName, E3.CurrentName);
+
+                // Queue local capture AND publish to happen on game loop thread (Pulse)
+                // DO NOT call MQ methods here - it's on UI thread!
                 _captureNeeded = true;
                 _publishNeeded = true;
             }
@@ -187,11 +196,18 @@ namespace E3Core.UI.Windows
             }
         }
 
+        /// <summary>
+        /// Processes an inventory data request from another peer.
+        /// Captures current inventory data and publishes it.
+        /// NOTE: This is called from networking thread - must not call MQ directly!
+        /// </summary>
         public static void ProcessInventoryRequest(string requestingUser)
         {
-            _ = requestingUser;
+            _ = requestingUser; // callback signature requires parameter, intentionally unused
             try
             {
+                // Queue capture AND publish to happen on game loop thread (Pulse)
+                // DO NOT call MQ methods here - it's on wrong thread!
                 _captureNeeded = true;
                 _publishNeeded = true;
             }
@@ -351,6 +367,13 @@ namespace E3Core.UI.Windows
                 RequestInventoryFromPeers();
             }
 
+            // Auto-switch to All Characters tab when search text becomes non-empty
+            if (!string.IsNullOrWhiteSpace(_searchText) && _searchText != _previousSearchText)
+            {
+                _activeTab = "All Characters";
+            }
+            _previousSearchText = _searchText;
+
             imgui_SameLine();
             int totalItems = _localItems.Count;
             foreach (var peer in _peerInventories)
@@ -435,6 +458,12 @@ namespace E3Core.UI.Windows
 
         private static void RenderTabs()
         {
+            if (!string.IsNullOrWhiteSpace(_searchText))
+            {
+                RenderAllCharactersTab();
+                return;
+            }
+
             using (var tabBar = ImGUITabBar.Aquire())
             {
                 if (!tabBar.BeginTabBar("##inventory_tabs"))
@@ -795,315 +824,41 @@ namespace E3Core.UI.Windows
 
         private static void RenderAssignmentsTab()
         {
-            imgui_TextColored(0.82f, 0.88f, 0.98f, 1f, "Item assignments now nominate a dedicated owner for each item.");
-            imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, "When you execute an assignment, every connected peer with that item queues a /giveme to the selected owner.");
-            imgui_Separator();
+            var rows = BuildAssignedItems();
+            int count = rows.Count;
 
-            RenderAssignmentFilters();
-            var rows = BuildAssignmentRows();
-            if (rows.Count == 0)
-            {
-                imgui_TextColored(0.75f, 0.75f, 0.75f, 1f, "No matching items found for the current assignment filters.");
-                return;
-            }
-
-            if (imgui_ButtonEx("Execute All Assignments", 165f, 0f))
-            {
-                ExecuteAllAssignments(rows);
-            }
+            imgui_TextColored(0.82f, 0.88f, 0.98f, 1f, $"Item Assignments — {count} item(s)");
             imgui_SameLine();
-            imgui_TextColored(0.55f, 0.62f, 0.72f, 1f, "Runs every assigned item against its nominated owner.");
-            imgui_Separator();
-
-            if (string.IsNullOrWhiteSpace(_assignmentEditorItemName) ||
-                !rows.Any(x => string.Equals(x.ItemName, _assignmentEditorItemName, StringComparison.OrdinalIgnoreCase)))
+            if (_executionQueue.Count > 0)
             {
-                _assignmentEditorItemName = rows[0].ItemName;
-                _assignmentEditorIcon = rows[0].DisplayItem?.Icon ?? 0;
-            }
-
-            var selectedRow = rows.FirstOrDefault(x => string.Equals(x.ItemName, _assignmentEditorItemName, StringComparison.OrdinalIgnoreCase)) ?? rows[0];
-
-            imgui_Text($"Showing {rows.Count} tracked items");
-            imgui_Separator();
-
-            float availY = imgui_GetContentRegionAvailY();
-            float leftWidth = Math.Max(360f, imgui_GetContentRegionAvailX() * 0.58f);
-
-            using (var leftChild = ImGUIChild.Aquire())
-            {
-                if (leftChild.BeginChild("##assignments_list", leftWidth, availY, (int)(ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX), 0))
+                if (imgui_ButtonEx("Cancel", 60f, 0f))
                 {
-                    int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
-                                           ImGuiTableFlags.ImGuiTableFlags_BordersInner |
-                                           ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
-                                           ImGuiTableFlags.ImGuiTableFlags_Resizable |
-                                           ImGuiTableFlags.ImGuiTableFlags_ScrollY);
-
-                    using (var table = ImGUITable.Aquire())
-                    {
-                        if (!table.BeginTable("AssignmentRows", 5, tableFlags, 0f, 0f))
-                            return;
-
-                        imgui_TableSetupColumn("Icon", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 28f);
-                        imgui_TableSetupColumn("Item", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 210f);
-                        imgui_TableSetupColumn("Owner", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 140f);
-                        imgui_TableSetupColumn("Value", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 70f);
-                        imgui_TableSetupColumn("", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 42f);
-                        imgui_TableHeadersRow();
-
-                        foreach (var row in rows)
-                        {
-                            bool isSelected = string.Equals(row.ItemName, selectedRow.ItemName, StringComparison.OrdinalIgnoreCase);
-                            imgui_TableNextRow();
-
-                            imgui_TableNextColumn();
-                            if (row.DisplayItem.Icon > 0)
-                                imgui_DrawItemIconByIconIndex(row.DisplayItem.Icon, 20f);
-
-                            imgui_TableNextColumn();
-                            if (isSelected)
-                                imgui_TextColored(0.42f, 0.78f, 1.0f, 1f, row.DisplayItem.Name);
-                            else
-                                RenderItemNameCell(row.DisplayItem, showNodrop: true, clickable: true,
-                                    ownerName: string.IsNullOrWhiteSpace(row.AssignedOwner) ? GetSelectedOwnerName() : row.AssignedOwner,
-                                    locationLabel: GetItemInspectorLocation(row.DisplayItem));
-                            if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
-                            {
-                                _assignmentEditorItemName = row.ItemName;
-                                _assignmentEditorIcon = row.DisplayItem.Icon;
-                                selectedRow = row;
-                            }
-
-                            imgui_TableNextColumn();
-                            RenderOwnerCell(row.AssignedOwner);
-
-                            imgui_TableNextColumn();
-                            if (row.MaxValue > 0)
-                                imgui_Text((row.MaxValue / 1000).ToString());
-                            else
-                                imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "--");
-
-                            imgui_TableNextColumn();
-                            if (imgui_ButtonEx($"Pick##assign_{row.ItemKey}", 32f, 0f))
-                            {
-                                _assignmentEditorItemName = row.ItemName;
-                                _assignmentEditorIcon = row.DisplayItem.Icon;
-                                selectedRow = row;
-                            }
-                        }
-                    }
+                    _executionQueue.Clear();
                 }
             }
-
-            imgui_SameLine(0f, 10f);
-
-            using (var rightChild = ImGUIChild.Aquire())
-            {
-                if (rightChild.BeginChild("##assignments_editor", 0f, availY, (int)ImGuiChildFlags.Borders, 0))
-                {
-                    RenderAssignmentEditorPane(selectedRow);
-                }
-            }
-        }
-
-        private static void RenderAssignmentFilters()
-        {
-            imgui_Text("Item Owner:");
-            imgui_SameLine();
-            imgui_SetNextItemWidth(140f);
-            using (var combo = ImGUICombo.Aquire())
-            {
-                if (combo.BeginCombo("##assignment_owner", _assignmentOwnerFilter))
-                {
-                    foreach (var option in GetAssignmentOwnerOptions())
-                    {
-                        if (imgui_Selectable(option, string.Equals(_assignmentOwnerFilter, option, StringComparison.OrdinalIgnoreCase)))
-                            _assignmentOwnerFilter = option;
-                    }
-                }
-            }
-        }
-
-        private static List<string> GetAssignmentOwnerOptions()
-        {
-            var result = new List<string> { "All Characters", "Unassigned", E3.CurrentName };
-            foreach (var peer in _peerInventories)
-            {
-                if (!string.IsNullOrWhiteSpace(peer.Name) && !result.Contains(peer.Name, StringComparer.OrdinalIgnoreCase))
-                    result.Add(peer.Name);
-            }
-            foreach (var owner in ItemOwnerAssignmentDataFile.GetAllOwners().Values)
-            {
-                if (!string.IsNullOrWhiteSpace(owner) && !result.Contains(owner, StringComparer.OrdinalIgnoreCase))
-                    result.Add(owner);
-            }
-            return result
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-
-        private static List<AssignmentRow> BuildAssignmentRows()
-        {
-            var grouped = new Dictionary<string, AssignmentRow>(StringComparer.OrdinalIgnoreCase);
-            string searchLower = _searchText?.ToLowerInvariant() ?? string.Empty;
-            var allKnownOwners = ItemOwnerAssignmentDataFile.GetAllOwners();
-
-            void AddItemRow(string owner, InventoryItem item, string source)
-            {
-                if (item == null || string.IsNullOrWhiteSpace(item.Name))
-                    return;
-
-                if (!string.IsNullOrWhiteSpace(searchLower) &&
-                    item.Name.IndexOf(searchLower, StringComparison.OrdinalIgnoreCase) < 0 &&
-                    (owner == null || owner.IndexOf(searchLower, StringComparison.OrdinalIgnoreCase) < 0))
-                    return;
-
-                string key = item.ItemId > 0 ? $"id:{item.ItemId}" : $"name:{item.Name}";
-                if (!grouped.TryGetValue(key, out var row))
-                {
-                        row = new AssignmentRow
-                        {
-                            ItemKey = key,
-                            ItemName = item.Name,
-                            DisplayItem = item,
-                            AssignedOwner = allKnownOwners.TryGetValue(item.Name, out var savedOwner) ? savedOwner : string.Empty,
-                            Disposition = GetLootDisposition(item.Name),
-                        };
-                        grouped[key] = row;
-                    }
-
-                row.PeerRows.Add(new AssignmentPeerRow
-                {
-                    Owner = owner,
-                    Source = source,
-                    Item = item,
-                    Disposition = string.Empty
-                });
-
-                row.TotalCopies += Math.Max(1, item.Quantity);
-                if (item.Value > row.MaxValue)
-                    row.MaxValue = item.Value;
-                if (row.DisplayItem == null || item.Icon > row.DisplayItem.Icon)
-                    row.DisplayItem = item;
-            }
-
-            foreach (var item in _localItems)
-            {
-                AddItemRow(E3.CurrentName, item, "Local");
-            }
-
-            foreach (var peer in _peerInventories)
-            {
-                foreach (var item in peer.Items)
-                {
-                    AddItemRow(peer.Name, item, peer.Name);
-                }
-            }
-
-            foreach (var kvp in allKnownOwners)
-            {
-                if (!grouped.ContainsKey($"name:{kvp.Key}") && !grouped.Values.Any(x => string.Equals(x.ItemName, kvp.Key, StringComparison.OrdinalIgnoreCase)))
-                {
-                    grouped[$"name:{kvp.Key}"] = new AssignmentRow
-                    {
-                        ItemKey = $"name:{kvp.Key}",
-                        ItemName = kvp.Key,
-                        DisplayItem = new InventoryItem
-                        {
-                            Name = kvp.Key,
-                            ItemId = 0,
-                            Icon = 0,
-                            Quantity = 0
-                        },
-                        AssignedOwner = kvp.Value,
-                        Disposition = GetLootDisposition(kvp.Key),
-                    };
-                }
-            }
-
-            var rows = grouped.Values
-                .Where(MatchesAssignmentRowFilters)
-                .ToList();
-
-            rows.Sort((a, b) =>
-            {
-                int cmp = string.Compare(a.ItemName, b.ItemName, StringComparison.OrdinalIgnoreCase);
-                if (cmp != 0) return cmp;
-                return string.Compare(a.AssignedOwner, b.AssignedOwner, StringComparison.OrdinalIgnoreCase);
-            });
-
-            return rows;
-        }
-
-        private static bool MatchesAssignmentRowFilters(AssignmentRow row)
-        {
-            return string.Equals(_assignmentOwnerFilter, "All Characters", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(_assignmentOwnerFilter, row.AssignedOwner, StringComparison.OrdinalIgnoreCase)
-                || (string.Equals(_assignmentOwnerFilter, "Unassigned", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(row.AssignedOwner));
-        }
-
-        private static void RenderOwnerCell(string owner)
-        {
-            if (string.IsNullOrWhiteSpace(owner))
-            {
-                imgui_TextColored(0.55f, 0.62f, 0.72f, 1f, "Unassigned");
-                return;
-            }
-
-            bool connected = GetConnectedPeerNames().Any(x => string.Equals(x, owner, StringComparison.OrdinalIgnoreCase));
-            if (connected)
-                imgui_TextColored(0.3f, 0.8f, 1.0f, 1f, owner);
             else
-                imgui_TextColored(0.65f, 0.65f, 0.65f, 1f, owner + " (offline)");
-        }
-
-        private static void RenderAssignmentEditorPane(AssignmentRow row)
-        {
-            if (row == null)
             {
-                imgui_TextColored(0.55f, 0.62f, 0.72f, 1f, "Select an item to edit the owner assignment.");
+                if (imgui_ButtonEx("Execute All", 100f, 0f))
+                {
+                    ExecuteAllAssignments(rows);
+                }
+            }
+            if (_executionQueue.Count > 0)
+            {
+                imgui_SameLine();
+                imgui_TextColored(0.35f, 0.85f, 0.35f, 1f,
+                    $"Executing {_executedCount}/{_totalQueued}...");
+            }
+            imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, "Right-click any item in any tab to assign a character owner.");
+
+            ProcessExecutionQueue();
+            imgui_Separator();
+
+            if (count == 0)
+            {
+                imgui_TextColored(0.75f, 0.75f, 0.75f, 1f, "No items assigned yet. Right-click an item and choose Assign To Character.");
                 return;
             }
-
-            uint animId = StableAnimId($"assignment_editor_{row.ItemKey}");
-            float[] accent = E3ImAnim.TweenColor(animId, 2, 0.25f, 0.72f, 1.0f, 1f, 0.18f,
-                ImAnimEaseType.OutCubic, ImAnimPolicy.Crossfade, ImAnimColorSpace.Oklab, -1f, 0.58f, 0.68f, 0.82f, 1f);
-
-            imgui_TextColored(accent[0], accent[1], accent[2], 1f, "Item Owner");
-            imgui_Separator();
-
-            if (_assignmentEditorIcon > 0)
-            {
-                imgui_DrawItemIconByIconIndex(_assignmentEditorIcon, 28f);
-                imgui_SameLine();
-            }
-            imgui_TextColored(0.85f, 0.92f, 1.0f, 1f, row.ItemName);
-            imgui_Text("Owner:");
-            imgui_SameLine();
-            RenderOwnerCombo(row);
-            imgui_Text("Rule:");
-            imgui_SameLine();
-            RenderDispositionCombo(row);
-            imgui_NewLine();
-            if (imgui_ButtonEx($"Execute##assign_execute_{row.ItemKey}", 100f, 0f))
-            {
-                ExecuteAssignmentForRow(row);
-            }
-            imgui_SameLine();
-            if (imgui_ButtonEx($"Clear##assign_clear_{row.ItemKey}", 60f, 0f))
-            {
-                ItemOwnerAssignmentDataFile.ClearOwner(row.ItemName);
-                row.AssignedOwner = string.Empty;
-            }
-            imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, "Every connected peer with stock of this item will queue a /giveme to the selected owner.");
-            imgui_Separator();
-
-            imgui_TextColored(0.62f, 0.68f, 0.76f, 1f, "Peers with no stock are still shown for clarity.");
-            imgui_Spacing();
-
-            var peers = BuildAssignmentPeerTableRows(row);
 
             int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
                                    ImGuiTableFlags.ImGuiTableFlags_BordersInner |
@@ -1113,86 +868,172 @@ namespace E3Core.UI.Windows
 
             using (var table = ImGUITable.Aquire())
             {
-                if (!table.BeginTable($"AssignmentPeerTable_{row.ItemKey}", 3, tableFlags, 0f, 0f))
+                if (!table.BeginTable("AssignmentsTable", 5, tableFlags, 0f, 0f))
                     return;
 
-                imgui_TableSetupColumn("Peer", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120f);
-                imgui_TableSetupColumn("Value", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 62f);
-                imgui_TableSetupColumn("Status", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 180f);
+                imgui_TableSetupColumn("Icon", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 28f);
+                imgui_TableSetupColumn("Item", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 200f);
+                imgui_TableSetupColumn("Assigned To", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 120f);
+                imgui_TableSetupColumn("Locations", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 250f);
+                imgui_TableSetupColumn("Status", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 100f);
                 imgui_TableHeadersRow();
 
-                foreach (var peerRow in peers)
+                for (int i = 0; i < rows.Count; i++)
                 {
+                    var row = rows[i];
                     imgui_TableNextRow();
 
+                    // Icon
                     imgui_TableNextColumn();
-                    var ownerColor = peerRow.Item != null ? GetSourceColor(peerRow.Source) : (R: 0.55f, G: 0.62f, B: 0.72f);
-                    imgui_TextColored(ownerColor.R, ownerColor.G, ownerColor.B, 1f, peerRow.Owner);
+                    if (row.DisplayItem.Icon > 0)
+                        imgui_DrawItemIconByIconIndex(row.DisplayItem.Icon, 20f);
 
+                    // Item name
                     imgui_TableNextColumn();
-                    if (peerRow.Item != null && peerRow.Item.Value > 0)
-                        imgui_Text((peerRow.Item.Value / 1000).ToString());
-                    else
-                        imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "--");
+                    bool selected = string.Equals(row.ItemName, _assignmentSelectedItemName, StringComparison.OrdinalIgnoreCase);
+                    imgui_TextColored(selected ? 0.42f : 0.85f, selected ? 0.78f : 0.92f, selected ? 1.0f : 1.0f, 1f, row.ItemName);
+                    if (imgui_IsItemHovered() && imgui_IsMouseClicked(0))
+                    {
+                        _assignmentSelectedItemName = row.ItemName;
+                    }
 
+                    // Assigned To
                     imgui_TableNextColumn();
-                    if (peerRow.Item == null)
-                    {
-                        imgui_TextColored(0.55f, 0.62f, 0.72f, 1f, "Missing");
-                    }
-                    else if (string.Equals(peerRow.Owner, row.AssignedOwner, StringComparison.OrdinalIgnoreCase))
-                    {
-                        imgui_TextColored(0.35f, 0.85f, 0.45f, 1f, "Owner");
-                    }
+                    bool connected = GetConnectedPeerNames().Any(x => string.Equals(x, row.AssignedOwner, StringComparison.OrdinalIgnoreCase));
+                    if (connected)
+                        imgui_TextColored(0.3f, 0.8f, 1.0f, 1f, row.AssignedOwner);
                     else
-                    {
-                        imgui_TextColored(0.72f, 0.72f, 0.72f, 1f, $"Stock x{Math.Max(1, peerRow.TotalQuantity)}");
-                    }
+                        imgui_TextColored(0.65f, 0.65f, 0.65f, 1f, row.AssignedOwner + " (offline)");
+
+                    // Locations
+                    imgui_TableNextColumn();
+                    RenderAssignmentLocations(row);
+
+                    // Status + Remove
+                    imgui_TableNextColumn();
+                    RenderAssignmentStatusAndActions(row, i);
                 }
             }
         }
 
-        private static List<AssignmentPeerRow> BuildAssignmentPeerTableRows(AssignmentRow row)
+        private static void RenderAssignmentLocations(AssignmentRow row)
         {
-            var peers = new List<AssignmentPeerRow>();
-            var connectedNames = GetConnectedPeerNames();
-
-            foreach (var owner in connectedNames)
+            bool first = true;
+            foreach (var pr in row.PeerRows.OrderBy(x => x.Owner, StringComparer.OrdinalIgnoreCase))
             {
-                var matchingRows = row.PeerRows
-                    .Where(x => string.Equals(x.Owner, owner, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                if (!first) imgui_SameLine(0f, 4f);
+                first = false;
 
-                if (matchingRows.Count == 0)
-                {
-                    peers.Add(new AssignmentPeerRow
-                    {
-                        Owner = owner,
-                        Source = "Missing",
-                        Item = null,
-                        TotalQuantity = 0,
-                        Disposition = "Missing"
-                    });
-                    continue;
-                }
+                bool isOwner = string.Equals(pr.Owner, row.AssignedOwner, StringComparison.OrdinalIgnoreCase);
+                string location = pr.Item?.Location ?? "Missing";
+                int qty = Math.Max(1, pr.Item?.Quantity ?? 0);
+                string label = isOwner ? $"{pr.Owner}* ({location} x{qty})" : $"{pr.Owner} ({location} x{qty})";
 
-                var primaryRow = matchingRows
-                    .OrderByDescending(x => x.Item?.Value ?? 0)
-                    .ThenByDescending(x => x.Item?.Quantity ?? 0)
-                    .First();
-                int totalQuantity = matchingRows.Sum(x => Math.Max(1, x.Item?.Quantity ?? 0));
+                if (pr.Item == null)
+                    imgui_TextColored(0.55f, 0.62f, 0.72f, 1f, label);
+                else if (isOwner)
+                    imgui_TextColored(0.35f, 0.85f, 0.45f, 1f, label);
+                else
+                    imgui_TextColored(0.72f, 0.72f, 0.72f, 1f, label);
+            }
+        }
 
-                peers.Add(new AssignmentPeerRow
-                {
-                    Owner = owner,
-                    Source = primaryRow.Source,
-                    Item = primaryRow.Item,
-                    TotalQuantity = totalQuantity,
-                    Disposition = string.Equals(owner, row.AssignedOwner, StringComparison.OrdinalIgnoreCase) ? "Owner" : "Stock"
-                });
+        private static void RenderAssignmentStatusAndActions(AssignmentRow row, int index)
+        {
+            bool hasOnAssignee = row.PeerRows.Any(x =>
+                string.Equals(x.Owner, row.AssignedOwner, StringComparison.OrdinalIgnoreCase) && x.Item != null);
+            bool hasElsewhere = row.PeerRows.Any(x =>
+                !string.Equals(x.Owner, row.AssignedOwner, StringComparison.OrdinalIgnoreCase) && x.Item != null);
+
+            if (hasOnAssignee && !hasElsewhere)
+            {
+                imgui_TextColored(0.35f, 0.85f, 0.45f, 1f, "Complete");
+            }
+            else if (hasElsewhere)
+            {
+                imgui_TextColored(0.95f, 0.75f, 0.25f, 1f, "Needs Trade");
+            }
+            else
+            {
+                imgui_TextColored(0.85f, 0.35f, 0.35f, 1f, "Missing");
             }
 
-            return peers;
+            imgui_SameLine();
+            if (imgui_ButtonEx($"Remove##assign_rm_{index}", 50f, 0f))
+            {
+                ItemOwnerAssignmentDataFile.ClearOwner(row.ItemName);
+            }
+        }
+
+        private static List<AssignmentRow> BuildAssignedItems()
+        {
+            var allKnownOwners = ItemOwnerAssignmentDataFile.GetAllOwners();
+            var grouped = new Dictionary<string, AssignmentRow>(StringComparer.OrdinalIgnoreCase);
+
+            void AddItemRow(string owner, InventoryItem item)
+            {
+                if (item == null || string.IsNullOrWhiteSpace(item.Name)) return;
+                string ownerName = allKnownOwners.TryGetValue(item.Name, out var savedOwner) ? savedOwner : string.Empty;
+                if (string.IsNullOrWhiteSpace(ownerName)) return;
+
+                string key = item.ItemId > 0 ? $"id:{item.ItemId}" : $"name:{item.Name}";
+                if (!grouped.TryGetValue(key, out var row))
+                {
+                    row = new AssignmentRow
+                    {
+                        ItemKey = key,
+                        ItemName = item.Name,
+                        DisplayItem = item,
+                        AssignedOwner = ownerName,
+                    };
+                    grouped[key] = row;
+                }
+
+                if (!row.PeerRows.Any(x => string.Equals(x.Owner, owner, StringComparison.OrdinalIgnoreCase) &&
+                                           string.Equals(x.Source, item.Location ?? "", StringComparison.OrdinalIgnoreCase)))
+                {
+                    row.PeerRows.Add(new AssignmentPeerRow
+                    {
+                        Owner = owner,
+                        Source = item.Location ?? "",
+                        Item = item,
+                    });
+                }
+            }
+
+            foreach (var item in _localItems)
+                AddItemRow(E3.CurrentName, item);
+
+            foreach (var peer in _peerInventories)
+                foreach (var item in peer.Items)
+                    AddItemRow(peer.Name, item);
+
+            // Include items that have an owner set but no current inventory data
+            // (check by name across all keys to avoid dupes when key format differs)
+            foreach (var kvp in allKnownOwners)
+            {
+                if (!grouped.Values.Any(x => string.Equals(x.ItemName, kvp.Key, StringComparison.OrdinalIgnoreCase)))
+                {
+                    string key = $"name:{kvp.Key}";
+                    grouped[key] = new AssignmentRow
+                    {
+                        ItemKey = key,
+                        ItemName = kvp.Key,
+                        DisplayItem = new InventoryItem
+                        {
+                            Name = kvp.Key,
+                            ItemId = 0,
+                            Icon = 0,
+                            Quantity = 0
+                        },
+                        AssignedOwner = kvp.Value,
+                    };
+                }
+            }
+
+            return grouped.Values
+                .OrderBy(x => x.ItemName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         private static List<string> GetConnectedPeerNames()
@@ -1209,158 +1050,52 @@ namespace E3Core.UI.Windows
             return names;
         }
 
-        private static void ExecuteAssignmentForRow(AssignmentRow row)
-        {
-            if (row == null || string.IsNullOrWhiteSpace(row.ItemName) || string.IsNullOrWhiteSpace(row.AssignedOwner))
-                return;
-
-            var targets = row.PeerRows
-                .Where(x => x.Item != null &&
-                            !string.Equals(x.Owner, row.AssignedOwner, StringComparison.OrdinalIgnoreCase) &&
-                            Math.Max(1, x.Item.Quantity) > 0)
-                .OrderBy(x => x.Owner, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(x => x.Source, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            if (targets.Count == 0)
-                return;
-
-            foreach (var peerRow in targets)
-            {
-                int qty = Math.Max(1, peerRow.Item.Quantity);
-                string command = $"/giveme {peerRow.Owner} \"{row.ItemName}\" {qty} {row.AssignedOwner}";
-                if (string.Equals(peerRow.Owner, E3.CurrentName, StringComparison.OrdinalIgnoreCase))
-                {
-                    MQ.Cmd(command);
-                }
-                else
-                {
-                    E3.Bots.BroadcastCommandToPerson(peerRow.Owner, command);
-                }
-            }
-
-            MQ.Write($"Queued {targets.Count} source peer(s) to trade {row.ItemName} to {row.AssignedOwner}.");
-        }
-
         private static void ExecuteAllAssignments(List<AssignmentRow> rows)
         {
+            _executionQueue.Clear();
+            _executedCount = 0;
+            _totalQueued = 0;
+
             if (rows == null || rows.Count == 0)
                 return;
 
-            int executed = 0;
             foreach (var row in rows)
             {
                 if (row == null || string.IsNullOrWhiteSpace(row.AssignedOwner))
                     continue;
 
                 var targets = row.PeerRows
-                    .Any(x => x.Item != null &&
-                              !string.Equals(x.Owner, row.AssignedOwner, StringComparison.OrdinalIgnoreCase) &&
-                              Math.Max(1, x.Item.Quantity) > 0);
+                    .Where(x => x.Item != null &&
+                                !string.Equals(x.Owner, row.AssignedOwner, StringComparison.OrdinalIgnoreCase) &&
+                                Math.Max(1, x.Item.Quantity) > 0)
+                    .OrderBy(x => x.Owner, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(x => x.Source, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
 
-                if (!targets)
-                    continue;
-
-                ExecuteAssignmentForRow(row);
-                executed++;
-            }
-
-            if (executed > 0)
-                MQ.Write($"Queued {executed} assignment(s).");
-        }
-
-        private static void RenderOwnerCombo(AssignmentRow row)
-        {
-            using (var combo = ImGUICombo.Aquire())
-            {
-                string preview = string.IsNullOrWhiteSpace(row.AssignedOwner) ? "Unassigned" : row.AssignedOwner;
-                imgui_SetNextItemWidth(Math.Max(0f, imgui_GetContentRegionAvailX()));
-                if (combo.BeginCombo($"##assign_owner_{row.ItemKey}", preview))
+                foreach (var peerRow in targets)
                 {
-                    var options = GetConnectedPeerNames().ToList();
-                    if (!string.IsNullOrWhiteSpace(row.AssignedOwner) && !options.Contains(row.AssignedOwner, StringComparer.OrdinalIgnoreCase))
-                        options.Add(row.AssignedOwner);
-                    options.Add("Unassigned");
-
-                    foreach (var option in options.Distinct(StringComparer.OrdinalIgnoreCase))
-                    {
-                        bool selected = string.Equals(option, row.AssignedOwner, StringComparison.OrdinalIgnoreCase)
-                            || (string.Equals(option, "Unassigned", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(row.AssignedOwner));
-                        if (imgui_Selectable(option, selected))
-                        {
-                            if (string.Equals(option, "Unassigned", StringComparison.OrdinalIgnoreCase))
-                                ItemOwnerAssignmentDataFile.ClearOwner(row.ItemName);
-                            else
-                                ItemOwnerAssignmentDataFile.SetOwner(row.ItemName, option);
-
-                            row.AssignedOwner = string.Equals(option, "Unassigned", StringComparison.OrdinalIgnoreCase) ? string.Empty : option;
-                            _assignmentEditorItemName = row.ItemName;
-                        }
-                    }
+                    int qty = Math.Max(1, peerRow.Item.Quantity);
+                    string command = $"/giveme {peerRow.Owner} \"{row.ItemName}\" {qty} {row.AssignedOwner}";
+                    _executionQueue.Enqueue((peerRow.Owner, command));
                 }
             }
+
+            _totalQueued = _executionQueue.Count;
+            _nextExecutionTime = 0;
+
+            if (_totalQueued > 0)
+                MQ.Write($"Queued {_totalQueued} giveme command(s) for staggered execution.");
         }
 
-        private static void RenderDispositionCombo(AssignmentRow row)
+        private static void ProcessExecutionQueue()
         {
-            using (var combo = ImGUICombo.Aquire())
-            {
-                string preview = string.IsNullOrWhiteSpace(row.Disposition) ? "Unassigned" : row.Disposition;
-                imgui_SetNextItemWidth(Math.Max(0f, imgui_GetContentRegionAvailX()));
-                if (combo.BeginCombo($"##assign_rule_{row.ItemKey}", preview))
-                {
-                    var options = new[] { "Unassigned", "Keep", "Sell", "Skip", "Destroy" };
-                    foreach (var option in options)
-                    {
-                        bool selected = string.Equals(option, row.Disposition, StringComparison.OrdinalIgnoreCase)
-                            || (string.Equals(option, "Unassigned", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(row.Disposition));
-                        if (imgui_Selectable(option, selected))
-                        {
-                            SetLootDisposition(row.ItemName, option);
-                            row.Disposition = string.Equals(option, "Unassigned", StringComparison.OrdinalIgnoreCase) ? string.Empty : option;
-                            _assignmentEditorItemName = row.ItemName;
-                        }
-                    }
-                }
-            }
-        }
+            if (_executionQueue.Count == 0) return;
+            if (Core.StopWatch.ElapsedMilliseconds < _nextExecutionTime) return;
 
-        private static string GetLootDisposition(string itemName)
-        {
-            if (string.IsNullOrWhiteSpace(itemName))
-                return string.Empty;
-
-            if (LootDataFile.Keep.Contains(itemName))
-                return "Keep";
-            if (LootDataFile.Sell.Contains(itemName))
-                return "Sell";
-            if (LootDataFile.Skip.Contains(itemName))
-                return "Skip";
-            if (LootDataFile.Destroy.Contains(itemName))
-                return "Destroy";
-            return string.Empty;
-        }
-
-        private static void SetLootDisposition(string itemName, string disposition)
-        {
-            if (string.IsNullOrWhiteSpace(itemName))
-                return;
-
-            LootDataFile.Keep.Remove(itemName);
-            LootDataFile.Sell.Remove(itemName);
-            LootDataFile.Skip.Remove(itemName);
-            LootDataFile.Destroy.Remove(itemName);
-
-            if (string.Equals(disposition, "Keep", StringComparison.OrdinalIgnoreCase))
-                LootDataFile.Keep.Add(itemName);
-            else if (string.Equals(disposition, "Sell", StringComparison.OrdinalIgnoreCase))
-                LootDataFile.Sell.Add(itemName);
-            else if (string.Equals(disposition, "Skip", StringComparison.OrdinalIgnoreCase))
-                LootDataFile.Skip.Add(itemName);
-            else if (string.Equals(disposition, "Destroy", StringComparison.OrdinalIgnoreCase))
-                LootDataFile.Destroy.Add(itemName);
-
-            LootDataFile.SaveData();
+            var (owner, command) = _executionQueue.Dequeue();
+            E3.Bots.BroadcastCommandToPerson(owner, command);
+            _executedCount++;
+            _nextExecutionTime = Core.StopWatch.ElapsedMilliseconds + 2000;
         }
 
         #endregion
@@ -2824,6 +2559,40 @@ namespace E3Core.UI.Windows
                     nameMinX, nameMinY, nameMaxX, nameMaxY);
             }
 
+            // Right-click context menu for item assignment
+            string assignPopupId = $"##assign_ctx_{item.Name}_{ownerName}";
+            using (var popup = ImGUIPopUpContext.Aquire())
+            {
+                if (popup.BeginPopupContextItem(assignPopupId, 1))
+                {
+                    string currentOwner = ItemOwnerAssignmentDataFile.GetOwner(item.Name);
+                    if (!string.IsNullOrEmpty(currentOwner))
+                    {
+                        if (imgui_MenuItem($"Unassign from {currentOwner}"))
+                        {
+                            ItemOwnerAssignmentDataFile.ClearOwner(item.Name);
+                        }
+                        imgui_Separator();
+                    }
+
+                    imgui_Text("Assign To:");
+                    imgui_Separator();
+
+                    if (imgui_MenuItem($"{E3.CurrentName} (Current)"))
+                    {
+                        ItemOwnerAssignmentDataFile.SetOwner(item.Name, E3.CurrentName);
+                    }
+
+                    foreach (var peer in _peerInventories)
+                    {
+                        if (imgui_MenuItem(peer.Name))
+                        {
+                            ItemOwnerAssignmentDataFile.SetOwner(item.Name, peer.Name);
+                        }
+                    }
+                }
+            }
+
             if (nameHovered)
             {
                 if (clickable)
@@ -3238,31 +3007,31 @@ namespace E3Core.UI.Windows
 
         private class AugmentRow
         {
-            public string AugmentName;
-            public int AugmentIcon;
-            public string AugmentLink;
-            public string ParentItemName;
-            public string ParentItemLink;
-            public int ParentItemIcon;
-            public string Location;
-            public string Source;
-            public int Slot;
-            public int Ac;
-            public int Hp;
-            public int Mana;
-            public int AugType;
+            public string AugmentName { get; set; }
+            public int AugmentIcon { get; set; }
+            public string AugmentLink { get; set; }
+            public string ParentItemName { get; set; }
+            public string ParentItemLink { get; set; }
+            public int ParentItemIcon { get; set; }
+            public string Location { get; set; }
+            public string Source { get; set; }
+            public int Slot { get; set; }
+            public int Ac { get; set; }
+            public int Hp { get; set; }
+            public int Mana { get; set; }
+            public int AugType { get; set; }
         }
 
         private class EmptySlotRow
         {
-            public string ParentItemName;
-            public string ParentItemLink;
-            public int ParentItemIcon;
-            public string Location;
-            public string Source;
-            public int Slot;
-            public int SlotType;
-            public List<int> SlotTypeDecoded;
+            public string ParentItemName { get; set; }
+            public string ParentItemLink { get; set; }
+            public int ParentItemIcon { get; set; }
+            public string Location { get; set; }
+            public string Source { get; set; }
+            public int Slot { get; set; }
+            public int SlotType { get; set; }
+            public List<int> SlotTypeDecoded { get; set; }
         }
 
         private static void RenderGivePanel()
@@ -3417,26 +3186,18 @@ namespace E3Core.UI.Windows
 
         private class AssignmentRow
         {
-            public string ItemKey;
-            public string ItemName;
-            public InventoryItem DisplayItem;
-            public readonly List<AssignmentPeerRow> PeerRows = new List<AssignmentPeerRow>();
-            public string AssignedOwner;
-            public string Disposition;
-            public int TotalCopies;
-            public int UniqueOwners;
-            public long MaxValue;
-            public string LocationSummary;
-            public string RuleSummary;
+            public string ItemKey { get; set; }
+            public string ItemName { get; set; }
+            public InventoryItem DisplayItem { get; set; }
+            public List<AssignmentPeerRow> PeerRows { get; } = new List<AssignmentPeerRow>();
+            public string AssignedOwner { get; set; }
         }
 
         private class AssignmentPeerRow
         {
-            public string Owner;
-            public string Source;
-            public InventoryItem Item;
-            public int TotalQuantity;
-            public string Disposition;
+            public string Owner { get; set; }
+            public string Source { get; set; }
+            public InventoryItem Item { get; set; }
         }
 
         private class PeerInventorySummary
