@@ -394,7 +394,7 @@ namespace E3Core.Processors
 					{
 						for (Int32 i = 1; i <= (e3util.MaxBuffSlots); i++)
 						{
-							Int32 buffID = MQ.Query<Int32>($"${{Me.Buff[{i}].ID}}");
+							Int32 buffID = MQ.Query<Int32>($"${{Me.Buff[{i}].Spell.ID}}");
 							if (buffID > 0)
 							{
 

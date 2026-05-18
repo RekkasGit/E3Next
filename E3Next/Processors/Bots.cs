@@ -588,6 +588,7 @@ namespace E3Core.Processors
 		private List<string> _botsConnectedCache = new List<string>();
 		Int64 _botsConnectredTimeStamp = 0;
 		Int64 _botsConnectedTimeInterval = 2000;
+		Int64 _botsConnectedTimeout = 15000;
 		public List<string> BotsConnected(bool readOnly = false)
         {
 			if(!readOnly && e3util.ShouldCheck(ref _botsConnectredTimeStamp,_botsConnectedTimeInterval))
@@ -599,7 +600,7 @@ namespace E3Core.Processors
 					//this key should always be there and always be updated
 					if(pair.Value.TryGetValue("${Me.PctHPs}",out var data))
 					{
-						if(Core.StopWatch.ElapsedMilliseconds < (data.LastUpdate + 5000))
+						if(Core.StopWatch.ElapsedMilliseconds < (data.LastUpdate + _botsConnectedTimeout))
 						{
 							tempList.Add(pair.Key);
 						}
