@@ -143,7 +143,7 @@ namespace E3Core.Processors
                 {
                     spell.IsBuff = true;  
                 }
-                if (spell.SpellID > 0)
+                if (spell.SpellID > 0 || spell.CastType== CastingType.Ability)
                 {
                     //get a valid target for ifs check
                     if (targetid == 0)

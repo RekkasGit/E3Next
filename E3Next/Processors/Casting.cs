@@ -2401,6 +2401,11 @@ namespace E3Core.Processors
 								}
 
 							}
+							else if (field.GetValue(null) is string stringvalue)
+							{
+								
+								tIF = tIF.ReplaceInsensitive(pair.Key, stringvalue);
+							}
 							else if (field.GetValue(null) is IEnumerable enumerableSet)
 							{
 								List<string> result = new List<string>();
