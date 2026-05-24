@@ -578,7 +578,7 @@ namespace E3Core.UI.Windows
 
                         if (clicked)
                         {
-                            _selectedSlotId = slotId;
+                            _selectedSlotId = _selectedSlotId == slotId ? -1 : slotId;
                         }
                     }
                 }
@@ -589,7 +589,7 @@ namespace E3Core.UI.Windows
         {
             if (_selectedSlotId < 0)
             {
-                imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "Click a slot to compare across peers.");
+                RenderPeerStatSummary();
                 return;
             }
 
@@ -693,6 +693,102 @@ namespace E3Core.UI.Windows
                     RenderStatCell(entry.Item.Mana, 0.2f, 0.4f, 1.0f);   // Blue
                 }
             }
+        }
+
+        private static void RenderPeerStatSummary()
+        {
+            var peers = new List<(string Name, List<InventoryItem> Items)>();
+            peers.Add((E3.CurrentName, _localItems.Where(i => i.Location == "Equipped").ToList()));
+            foreach (var p in _peerInventories)
+            {
+                var eq = p.Items.Where(i => i.Location == "Equipped").ToList();
+                if (eq.Count > 0)
+                    peers.Add((p.Name, eq));
+            }
+
+            if (peers.Count == 0)
+            {
+                imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "No equipped data available.");
+                return;
+            }
+
+            imgui_TextColored(0.9f, 0.9f, 0.5f, 1f, "Stat Summary (Equipped)");
+            imgui_Separator();
+
+            int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg |
+                                   ImGuiTableFlags.ImGuiTableFlags_BordersInner |
+                                   ImGuiTableFlags.ImGuiTableFlags_BordersOuter |
+                                   ImGuiTableFlags.ImGuiTableFlags_Resizable |
+                                   ImGuiTableFlags.ImGuiTableFlags_ScrollY);
+
+            using (var table = ImGUITable.Aquire())
+            {
+                if (!table.BeginTable("StatSummary", 12, tableFlags, 0f, 0f))
+                    return;
+
+                imgui_TableSetupColumn("Character", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 90f);
+                imgui_TableSetupColumn("AC", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 50f);
+                imgui_TableSetupColumn("HP", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 50f);
+                imgui_TableSetupColumn("Mana", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 50f);
+                imgui_TableSetupColumn("End", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
+                imgui_TableSetupColumn("STR", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
+                imgui_TableSetupColumn("STA", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
+                imgui_TableSetupColumn("AGI", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
+                imgui_TableSetupColumn("DEX", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
+                imgui_TableSetupColumn("WIS", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
+                imgui_TableSetupColumn("INT", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
+                imgui_TableSetupColumn("CHA", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 45f);
+                imgui_TableHeadersRow();
+
+                var totals = new List<(string Name, int Ac, int Hp, int Mana, int End,
+                    int Str, int Sta, int Agi, int Dex, int Wis, int Intel, int Cha)>();
+
+                foreach (var (name, items) in peers)
+                {
+                    int ac = 0, hp = 0, mana = 0, end = 0;
+                    int str = 0, sta = 0, agi = 0, dex = 0, wis = 0, intel = 0, cha = 0;
+
+                    foreach (var item in items)
+                    {
+                        ac += item.Ac;
+                        hp += item.Hp;
+                        mana += item.Mana;
+                        end += item.Endurance;
+                        str += item.Str;
+                        sta += item.Sta;
+                        agi += item.Agi;
+                        dex += item.Dex;
+                        wis += item.Wis;
+                        intel += item.Intel;
+                        cha += item.Cha;
+                    }
+
+                    totals.Add((name, ac, hp, mana, end, str, sta, agi, dex, wis, intel, cha));
+                }
+
+                foreach (var t in totals)
+                {
+                    imgui_TableNextRow();
+
+                    imgui_TableNextColumn();
+                    imgui_Text(t.Name);
+
+                    imgui_TableNextColumn(); RenderStatCell(t.Ac, 1.0f, 0.84f, 0.0f);
+                    imgui_TableNextColumn(); RenderStatCell(t.Hp, 0.8f, 0.2f, 0.2f);
+                    imgui_TableNextColumn(); RenderStatCell(t.Mana, 0.2f, 0.4f, 1.0f);
+                    imgui_TableNextColumn(); RenderStatCell(t.End, 0.9f, 0.9f, 0.2f);
+                    imgui_TableNextColumn(); RenderStatCell(t.Str, 0.85f, 0.85f, 0.85f);
+                    imgui_TableNextColumn(); RenderStatCell(t.Sta, 0.85f, 0.85f, 0.85f);
+                    imgui_TableNextColumn(); RenderStatCell(t.Agi, 0.85f, 0.85f, 0.85f);
+                    imgui_TableNextColumn(); RenderStatCell(t.Dex, 0.85f, 0.85f, 0.85f);
+                    imgui_TableNextColumn(); RenderStatCell(t.Wis, 0.85f, 0.85f, 0.85f);
+                    imgui_TableNextColumn(); RenderStatCell(t.Intel, 0.85f, 0.85f, 0.85f);
+                    imgui_TableNextColumn(); RenderStatCell(t.Cha, 0.85f, 0.85f, 0.85f);
+                }
+            }
+
+            imgui_Separator();
+            imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "Click a slot above to compare items across peers.");
         }
 
         #endregion
@@ -900,10 +996,23 @@ namespace E3Core.UI.Windows
                     // Assigned To
                     imgui_TableNextColumn();
                     bool connected = GetConnectedPeerNames().Any(x => string.Equals(x, row.AssignedOwner, StringComparison.OrdinalIgnoreCase));
-                    if (connected)
-                        imgui_TextColored(0.3f, 0.8f, 1.0f, 1f, row.AssignedOwner);
+                    bool hasOnAssignee = row.PeerRows.Any(x =>
+                        string.Equals(x.Owner, row.AssignedOwner, StringComparison.OrdinalIgnoreCase) && x.Item != null);
+                    if (connected && hasOnAssignee)
+                    {
+                        imgui_TextColored(0.35f, 0.85f, 0.45f, 1f, "\u25CF " + row.AssignedOwner);
+                    }
+                    else if (connected)
+                    {
+                        imgui_TextColored(0.95f, 0.55f, 0.25f, 1f, "\u25CB " + row.AssignedOwner + " (!)");
+                        if (imgui_IsItemHovered())
+                            using (var tooltip = ImGUIToolTip.Aquire())
+                                imgui_Text("Assigned owner is online but does not have this item.");
+                    }
                     else
-                        imgui_TextColored(0.65f, 0.65f, 0.65f, 1f, row.AssignedOwner + " (offline)");
+                    {
+                        imgui_TextColored(0.55f, 0.55f, 0.55f, 1f, "\u25CB " + row.AssignedOwner + " (offline)");
+                    }
 
                     // Locations
                     imgui_TableNextColumn();
