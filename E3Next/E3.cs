@@ -358,9 +358,12 @@ namespace E3Core.Processors
 		
 		[ExposedData("Core", "BuffsThatMightBeCastOnMe")]
 		public static Dictionary<Int32,(int,int)> _buffsThatMightBeCastOnMe = new Dictionary<Int32, (int, int)>();
+		[ExposedData("Core", "BuffsThatMightBeCastOnMyPet")]
+		public static Dictionary<Int32, (int, int)> _buffsThatMightBeCastOnMyPet = new Dictionary<Int32, (int, int)>();
 		public static void StateUpdates_ConfiguredBuffsStacking()
 		{
 			_buffsThatMightBeCastOnMe.Clear();
+			_buffsThatMightBeCastOnMyPet.Clear();
 			//check each id from every single toon's buffs and see if they will stack with what you have. 
 
 			var botsConnected = E3.Bots.BotsConnected();
@@ -374,6 +377,16 @@ namespace E3Core.Processors
 					if(!_buffsThatMightBeCastOnMe.ContainsKey(buff))
 					{
 						_buffsThatMightBeCastOnMe.Add(buff,(0,0));
+					}
+				}
+
+				List<Int32> registeredPetBuffs = E3.Bots.BuffPetRegisteredList(bot);
+
+				foreach (var buff in registeredPetBuffs)
+				{
+					if (!_buffsThatMightBeCastOnMyPet.ContainsKey(buff))
+					{
+						_buffsThatMightBeCastOnMyPet.Add(buff, (0, 0));
 					}
 				}
 			}
@@ -410,6 +423,41 @@ namespace E3Core.Processors
 				}
 				_buffsThatMightBeCastOnMe[spellid] = willStack?(1,0):(0,buffID_ClashWith);
 			}
+
+			if (MQ.Query<bool>("${Me.Pet.ID}"))
+			{
+				foreach (var spellid in _buffsThatMightBeCastOnMyPet.Keys.ToList())
+				{
+					bool willStack = MQ.Query<bool>($"${{Spell[{spellid}].WillLandPet}}");
+					Int32 buffID_ClashWith = 0;
+					if (!willStack)
+					{
+						if (currentBuffCount == maxbuffsCount)
+						{
+							buffID_ClashWith = -1;
+						}
+						else
+						{
+							for (Int32 i = 1; i <= (e3util.MaxBuffSlots); i++)
+							{
+								Int32 buffID = MQ.Query<Int32>($"${{Me.Pet.Buff[{i}].Spell.ID}}");
+								if (buffID > 0)
+								{
+
+									bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spellid}].StacksWith[{buffID}]}}");
+									if (!stacksWith)
+									{
+										buffID_ClashWith = buffID;
+										break;
+									}
+								}
+							}
+						}
+					}
+					_buffsThatMightBeCastOnMyPet[spellid] = willStack ? (1, 0) : (0, buffID_ClashWith);
+				}
+			}
+			
 			//now lets publish them out!
 			unsafe
 			{
@@ -430,6 +478,21 @@ namespace E3Core.Processors
 					}
 					var payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out int length);
 					PubServer.AddTopicMessageFromPool("${Me.BuffsToApply_StackingResult}", payload, length);
+
+					firstEntry = true;
+					buffInfoStringBuilder.Reset();
+					foreach (var pair in _buffsThatMightBeCastOnMyPet)
+					{
+						if (!firstEntry) buffInfoStringBuilder.Append(":");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Key)); //spellid we are comparing
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Value.Item1));//true/false for willstack
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Value.Item2));//spell id that it clashed against
+						firstEntry = false;
+					}
+					payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out length);
+					PubServer.AddTopicMessageFromPool("${Me.Pet_BuffsToApply_StackingResult}", payload, length);
 				}
 				finally
 				{
@@ -439,6 +502,8 @@ namespace E3Core.Processors
 		}
 		[ExposedData("Core", "ConfiguredBuffs")]
 		static HashSet<Int32> _spellsToBuffWith = new HashSet<int>();
+		[ExposedData("Core", "ConfiguredPetBuffs")]
+		static HashSet<Int32> _spellsToBuffPetsWith = new HashSet<int>();
 		public static void StateUpdates_ConfiguredBuffs()
 		{
 			_spellsToBuffWith.Clear();
@@ -469,6 +534,15 @@ namespace E3Core.Processors
 
 				}
 			}
+
+			foreach (var buff in E3.CharacterSettings.PetBuffs)
+			{
+				if (!_spellsToBuffPetsWith.Contains(buff.SpellID))
+				{
+					_spellsToBuffPetsWith.Add(buff.SpellID);
+
+				}
+			}
 			unsafe
 			{
 				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder(200);
@@ -481,6 +555,15 @@ namespace E3Core.Processors
 					}
 					var payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out int length);
 					PubServer.AddTopicMessageFromPool("${Me.BuffsToApply}", payload, length);
+
+					buffInfoStringBuilder.Reset();
+					foreach (Int32 spellid in _spellsToBuffPetsWith)
+					{
+						buffInfoStringBuilder.Append(e3util.GetIntStr(spellid));
+						buffInfoStringBuilder.Append(":");
+					}
+					payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out length);
+					PubServer.AddTopicMessageFromPool("${Me.Pet.BuffsToApply}", payload, length);
 				}
 				finally
 				{

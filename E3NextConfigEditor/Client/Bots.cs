@@ -110,6 +110,16 @@ namespace E3NextConfigEditor.Client
 			return new List<int>();
 		}
 
+		public List<int> BuffPetRegisteredList(string name)
+		{
+			return new List<int>();
+		}
+
+		public Dictionary<int, (int, int)> BuffPetRegistgeredStackingResult(string name)
+		{
+			return new Dictionary<int, (int, int)>();
+		}
+
 		public List<int> BuffRegisteredList(string name)
 		{
 			return new List<int>();

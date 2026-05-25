@@ -1193,9 +1193,17 @@ namespace E3Core.Processors
 							return BuffBots_ReturnType.Continue;
 						}
 						bool willStack = true;
-						if(!spell.IgnoreStackRules)
+						Int32 buffStackClash = 0;
+						if (!spell.IgnoreStackRules)
 						{
-							willStack=MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
+							willStack = false;
+							
+							willStack =MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
+							if (E3.Bots.BuffPetRegistgeredStackingResult(target).ContainsKey(spell.SpellID))
+							{
+								willStack = E3.Bots.BuffPetRegistgeredStackingResult(target)[spell.SpellID].Item1 > 0 ? true : false;
+								if (!willStack) buffStackClash = E3.Bots.BuffRegistgeredStackingResult(target)[spell.SpellID].Item2;
+							}
 						}
 						
 					recastSpell:
@@ -1239,7 +1247,23 @@ namespace E3Core.Processors
 						else if (!willStack)
 						{
 							//won't stack don't check back for awhile
-							UpdateBuffTimers(s.ID, spell, 12 * 1000, -1, true);
+							UpdateBuffTimers(s.ID, spell, 15 * 1000, -1, true);
+							//loop over the targets buffs and do stacks with checks. 
+							if (E3.CharacterSettings.Alerts_BuffStackMessages)
+							{
+								if (buffStackClash == -1)
+								{
+									MQ.Write($"\ayStacking logic failed on buff (bot) \aw{spell.SpellName} \aybecause {s.CleanName} has max buff count. \agTrying again in 15 seconds");
+
+								}
+								else
+								{
+									string buffName = MQ.Query<String>($"${{Spell[{buffStackClash}]}}");
+									MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay (bot) because of stacking issues with \aw{buffName}\ay. \agTrying again in 15 seconds");
+								}
+							}
+
+
 						}
 						else
 						{
