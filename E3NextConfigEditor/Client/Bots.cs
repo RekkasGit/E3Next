@@ -115,7 +115,7 @@ namespace E3NextConfigEditor.Client
 			return new List<int>();
 		}
 
-		public Dictionary<int, (int, int)> BuffPetRegistgeredStackingResult(string name)
+		public Dictionary<int, (int, int)> PetBuffRegistgeredStackingResult(string name)
 		{
 			return new Dictionary<int, (int, int)>();
 		}

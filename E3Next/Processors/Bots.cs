@@ -39,7 +39,7 @@ namespace E3Core.Processors
 		List<int> BuffRegisteredList(string name);
 		Dictionary<int, (Int32,Int32)> BuffRegistgeredStackingResult(string name);
 		List<int> BuffPetRegisteredList(string name);
-		Dictionary<int, (Int32, Int32)> BuffPetRegistgeredStackingResult(string name);
+		Dictionary<int, (Int32, Int32)> PetBuffRegistgeredStackingResult(string name);
 		List<Int32> PetBuffList(string name);
         Int32 BaseDebuffCounters(string name);
         Int32 BaseDiseasedCounters(string name);
@@ -1061,16 +1061,16 @@ namespace E3Core.Processors
 			//done with updates, now lets check the data.
 			return result.Data;
 		}
-		Dictionary<string, SharedNumericDataDictionaryInt32Int64> _buffPetRegisteredListStackingResults = new Dictionary<string, SharedNumericDataDictionaryInt32Int64>();
+		Dictionary<string, SharedNumericDataDictionaryInt32Int64> _petBuffRegisteredListStackingResults = new Dictionary<string, SharedNumericDataDictionaryInt32Int64>();
 
 		//this is an int64 so we can reuse buff data functions, as these are really only 0 and 1 for false/true
-		public Dictionary<int, (Int32, Int32)> BuffPetRegistgeredStackingResult(string name)
+		public Dictionary<int, (Int32, Int32)> PetBuffRegistgeredStackingResult(string name)
 		{
-			if (!_buffPetRegisteredListStackingResults.ContainsKey(name))
+			if (!_petBuffRegisteredListStackingResults.ContainsKey(name))
 			{
-				_buffPetRegisteredListStackingResults.Add(name, new SharedNumericDataDictionaryInt32Int64());
+				_petBuffRegisteredListStackingResults.Add(name, new SharedNumericDataDictionaryInt32Int64());
 			}
-			var result = _buffPetRegisteredListStackingResults[name];
+			var result = _petBuffRegisteredListStackingResults[name];
 
 
 			//register the user to get their buff data if its not already there

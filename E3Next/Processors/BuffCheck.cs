@@ -1199,9 +1199,9 @@ namespace E3Core.Processors
 							willStack = false;
 							
 							willStack =MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
-							if (E3.Bots.BuffPetRegistgeredStackingResult(target).ContainsKey(spell.SpellID))
+							if (E3.Bots.PetBuffRegistgeredStackingResult(target).ContainsKey(spell.SpellID))
 							{
-								willStack = E3.Bots.BuffPetRegistgeredStackingResult(target)[spell.SpellID].Item1 > 0 ? true : false;
+								willStack = E3.Bots.PetBuffRegistgeredStackingResult(target)[spell.SpellID].Item1 > 0 ? true : false;
 								if (!willStack) buffStackClash = E3.Bots.BuffRegistgeredStackingResult(target)[spell.SpellID].Item2;
 							}
 						}
