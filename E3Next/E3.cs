@@ -440,17 +440,42 @@ namespace E3Core.Processors
 						}
 						else
 						{
-							for (Int32 i = 1; i <= (e3util.MaxBuffSlots); i++)
+							unsafe
 							{
-								Int32 buffID = MQ.Query<Int32>($"${{Me.Pet.Buff[{i}].ID}}");
-								if (buffID > 0)
-								{
+								int length;
+								byte* p = MQ.GetPetBuffDataPtr(out length);
 
-									bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spellid}].StacksWith[{buffID}]}}");
-									if (!stacksWith)
+								if(length>0)
+								{
+									ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+									int dataStartingLength = data.Length;
+									//reason we are using maxpetbuff slots that is generally 30, is because of WillLandPet is limited
+									//to the pet window anyway, so no need reading past that.
+									for (int i = 0; i < e3util.MaxPetBuffSlots; i++)
 									{
-										buffID_ClashWith = buffID;
-										break;
+										Int32 buffID = MemoryMarshal.Read<Int32>(data);
+										data = data.Slice(4);
+										Int32 duration = MemoryMarshal.Read<Int32>(data);
+										data = data.Slice(4);
+										Int32 spellType = MemoryMarshal.Read<Int32>(data);
+										data = data.Slice(4);
+
+										//MQ.Write($"ID:{ID} D:{duration}  st:{spellType}");
+										if (buffID > 0)
+										{
+											bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spellid}].StacksWith[{buffID}]}}");
+											if (!stacksWith)
+											{
+												buffID_ClashWith = buffID;
+												break;
+											}
+										}
+										if (dataStartingLength - data.Length >= length)
+										{
+											//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+											break;
+										}
+
 									}
 								}
 							}
@@ -634,7 +659,7 @@ namespace E3Core.Processors
 		}
 		public static void StateUpdates_BuffInformation()
 		{
-			if (Core._MQ2MonoVersion >= 0.411m && !Debugger.IsAttached)
+			if (Core._MQ2MonoVersion >= 0.411m)
 			{
 				Int32 length = 0;
 				char[] payload = e3util.GetBuffDataForPubSubHighPerf(out length);

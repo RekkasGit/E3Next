@@ -1248,15 +1248,13 @@ namespace E3Core.Utility
 				try
 				{
 					int length;
-					byte* p = Core.mq_GetBuffData(out length);
+					byte* p = MQ.GetMyBuffDataPtr(out length);
 					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
 					int dataStartingLength = data.Length;
 					for (int i = 0; i < e3util.MaxBuffSlots; i++)
 					{
 						Int32 spellID = MemoryMarshal.Read<Int32>(data);
-
-
 
 						data = data.Slice(4);
 						Int32 casterId = MemoryMarshal.Read<Int32>(data);
@@ -1379,12 +1377,7 @@ namespace E3Core.Utility
 		}
 		public static Dictionary<Int32, BuffInfoCacheEntry> _buffInfoCache = new Dictionary<Int32, BuffInfoCacheEntry>();
 		public static string GenerateBuffInfoForPubSub()
-		{
-			//if (Core._MQ2MonoVersion >= 0.411m && !Debugger.IsAttached)
-			//{
-			//	return GetBuffDataForPubSubHighPerf();
-			//}
-
+		{			
 			//using (_log.Trace())
 			{
 				//incase this changes at runtime
