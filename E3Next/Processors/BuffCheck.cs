@@ -1199,10 +1199,11 @@ namespace E3Core.Processors
 							willStack = false;
 							
 							willStack =MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
-							if (E3.Bots.PetBuffRegistgeredStackingResult(target).ContainsKey(spell.SpellID))
+							var petresults = E3.Bots.PetBuffRegistgeredStackingResult(target);
+							if (petresults.ContainsKey(spell.SpellID))
 							{
-								willStack = E3.Bots.PetBuffRegistgeredStackingResult(target)[spell.SpellID].Item1 > 0 ? true : false;
-								if (!willStack) buffStackClash = E3.Bots.BuffRegistgeredStackingResult(target)[spell.SpellID].Item2;
+								willStack = petresults[spell.SpellID].Item1 > 0 ? true : false;
+								if (!willStack) buffStackClash = petresults[spell.SpellID].Item2;
 							}
 						}
 						
@@ -1327,10 +1328,11 @@ namespace E3Core.Processors
 							if (!spell.IgnoreStackRules)
 							{
 								willStack = false;
-								if (E3.Bots.BuffRegistgeredStackingResult(target).ContainsKey(spell.SpellID))
+								var stackingresults = E3.Bots.BuffRegistgeredStackingResult(target);
+								if (stackingresults.ContainsKey(spell.SpellID))
 								{
-									willStack = E3.Bots.BuffRegistgeredStackingResult(target)[spell.SpellID].Item1 > 0 ? true : false;
-									if (!willStack) buffStackClash = E3.Bots.BuffRegistgeredStackingResult(target)[spell.SpellID].Item2;
+									willStack = stackingresults[spell.SpellID].Item1 > 0 ? true : false;
+									if (!willStack) buffStackClash = stackingresults[spell.SpellID].Item2;
 								}
 							}
 							if (!willStack && buffStackClash!=0)

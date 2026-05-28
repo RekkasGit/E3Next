@@ -3,6 +3,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -110,11 +111,53 @@ namespace E3Core.Processors
 						GuildListMembers.Add(line);
 					}
 				}
-				return true;
-			}
 
-        }
-        
+				StartSysTrayIfNeeded();
+			}
+			return true;
+
+		}
+
+		private static void StartSysTrayIfNeeded()
+		{
+			//try and startup the systray
+			string mqpath = MQ.Query<string>("${MacroQuest.Path}");
+			string systrayFullPath = mqpath + @"\E3NextSysTray.exe";
+			try
+			{
+				if (!SysTrayIsRunning() && System.IO.File.Exists(systrayFullPath))
+				{
+					MQ.Cmd($@"/exec {systrayFullPath} bg");
+				}
+			}
+			catch (Exception ex)
+			{
+				MQ.Write("Error starting systray. Message:" + ex.Message + " path:" + systrayFullPath);
+			}
+		}
+
+
+        public static bool SysTrayIsRunning()
+		{
+			foreach (var p in Process.GetProcesses())
+			{
+				try
+				{
+					string processNameLower = p.ProcessName.ToLower();
+					if (processNameLower == "e3nextsystray_working")
+					{
+						return true;
+					}
+				}
+				catch(Exception)
+				{
+
+				}
+				
+			}
+			return false;
+		}
+
 		public static void RegisterEvents()
 		{
 			EventProcessor.RegisterCommand("/e3version", (x) =>

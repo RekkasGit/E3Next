@@ -327,6 +327,8 @@ namespace E3Core.Processors
 		//needs to be fast to be able to show a new buff has landed
 		private static Int64 _nextBuffUpdateCheckTime = 0;
 		private static Int64 _nextSlowUpdateCheckTime = 0;
+		private static Int64 _nextStackingUpdateCheckTime = 0;
+		private static Int64 _nextStackingUpdateCheckRate = 3000;
 		private static Int64 _nextMiscUpdateCheckTime = 0;
 		private static Int64 _nextMemoryUpdateCheckTime = 0;
 		private static Int64 _nextMemoryUpdateCheckRate = 2000;
@@ -440,7 +442,7 @@ namespace E3Core.Processors
 						{
 							for (Int32 i = 1; i <= (e3util.MaxBuffSlots); i++)
 							{
-								Int32 buffID = MQ.Query<Int32>($"${{Me.Pet.Buff[{i}].Spell.ID}}");
+								Int32 buffID = MQ.Query<Int32>($"${{Me.Pet.Buff[{i}].ID}}");
 								if (buffID > 0)
 								{
 
@@ -706,7 +708,11 @@ namespace E3Core.Processors
 					{
 						StateUpdates_Memory();
 					}
-
+					if(e3util.ShouldCheck(ref _nextStackingUpdateCheckTime, _nextStackingUpdateCheckRate))
+					{
+						StateUpdates_ConfiguredBuffs();
+						StateUpdates_ConfiguredBuffsStacking();
+					}
 					//not horribly important stuff, can just be sent out whever, currently once per second
 					if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
 					{
@@ -716,9 +722,6 @@ namespace E3Core.Processors
 							E3.Bots.Broadcast("GM Safe kicked in, turning it off");
 						}
 						StateUpdates_AAInformation();
-						StateUpdates_ConfiguredBuffs();
-						StateUpdates_ConfiguredBuffsStacking();
-
 						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
 						{
 							unsafe

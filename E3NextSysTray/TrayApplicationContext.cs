@@ -93,7 +93,7 @@ namespace E3NextSysTray
 
 
 			int delayInSeconds = 3;
-			string targetApp = newExeName;
+			string targetApp = newExePath;
 
 			// Use 'waitfor' mapped to a dummy string instead of 'timeout'.
 			// This is safe to run in a non-interactive, hidden shell!
