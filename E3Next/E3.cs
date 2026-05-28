@@ -407,17 +407,91 @@ namespace E3Core.Processors
 					}
 					else
 					{
-						for (Int32 i = 1; i <= (e3util.MaxBuffSlots); i++)
+						unsafe
 						{
-							Int32 buffID = MQ.Query<Int32>($"${{Me.Buff[{i}].Spell.ID}}");
-							if (buffID > 0)
+							int length;
+							byte* p = MQ.GetMyBuffDataPtr(out length);
+							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+							//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+							int dataStartingLength = data.Length;
+							for (int i = 0; i < e3util.MaxBuffSlots; i++)
 							{
+								Int32 buffID = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 casterId = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 duration = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
 
-								bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spellid}].StacksWith[{buffID}]}}");
-								if (!stacksWith)
+								Int32 hitcount = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 spellType = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 counterType = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								bool IsSong = MemoryMarshal.Read<bool>(data);
+								data = data.Slice(1);
+
+								if (buffID > 0)
 								{
-									buffID_ClashWith = buffID;
+									bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spellid}].StacksWith[{buffID}]}}");
+									if (!stacksWith)
+									{
+										buffID_ClashWith = buffID;
+										break;
+									}
+								}
+
+
+
+								if (dataStartingLength - data.Length >= length)
+								{
+									//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
 									break;
+								}
+								//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
+							}
+							if(buffID_ClashWith==0)
+							{
+								for (int i = 0; i < e3util.MaxSongSlots; i++)
+								{
+									Int32 buffID = MemoryMarshal.Read<Int32>(data);
+
+									data = data.Slice(4);
+									Int32 casterId = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									Int32 duration = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									Int32 hitcount = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									Int32 spellType = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									Int32 counterType = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									bool IsSong = MemoryMarshal.Read<bool>(data);
+									data = data.Slice(1);
+									//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
+									if (buffID > 0)
+									{
+										bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spellid}].StacksWith[{buffID}]}}");
+										if (!stacksWith)
+										{
+											buffID_ClashWith = buffID;
+											break;
+										}
+									}
+
+									if (dataStartingLength - data.Length >= length)
+									{
+										//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+										break;
+									}
 								}
 							}
 						}
