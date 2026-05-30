@@ -2161,7 +2161,7 @@ namespace E3Core.Utility
 		{
 			MQ.Delay(0);
 		}
-		public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute)
+		public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute,string description="")
 		{
 			EventProcessor.RegisterCommand(command, (x) =>
 			{
@@ -2208,7 +2208,7 @@ namespace E3Core.Utility
 						MQ.Write($"\arNEED A TARGET TO {command}");
 					}
 				}
-			});
+			},description);
 
 		}
 

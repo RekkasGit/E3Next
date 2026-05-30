@@ -443,9 +443,6 @@ namespace E3Core.Processors
 										break;
 									}
 								}
-
-
-
 								if (dataStartingLength - data.Length >= length)
 								{
 									//	MQ.Write($"End of array at {dataStartingLength - data.Length}");

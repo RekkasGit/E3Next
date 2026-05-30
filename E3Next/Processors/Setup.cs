@@ -46,7 +46,7 @@ namespace E3Core.Processors
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
 		[ExposedData("Setup", "Version")]
-		public const string E3Version = "1.54";
+		public static string E3Version = "1.55.3";
 		[ExposedData("Setup", "BuildDate")]
 		public static string BuildDate = string.Empty;
         public static Boolean _debug = true;
@@ -67,7 +67,14 @@ namespace E3Core.Processors
 	
 		public static Boolean Init()
         {
-            using (_log.Trace())
+			System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+			System.Diagnostics.FileVersionInfo fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
+			string version = fvi.FileVersion;
+
+			E3Version = version;
+
+
+			using (_log.Trace())
             {
 				
 				RegisterEvents();

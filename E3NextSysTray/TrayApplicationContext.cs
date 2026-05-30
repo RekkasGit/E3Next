@@ -25,7 +25,7 @@ namespace E3NextSysTray
 	{
 		private readonly SynchronizationContext _syncContext;
 
-		private string _versionNumber = "v1.53-3.1.1.4";
+		private string _releaseID = "v1.55.4-3.1.4.7";
 		private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
@@ -44,7 +44,16 @@ namespace E3NextSysTray
 		private string _currentDirectory = String.Empty;
 		private string _mqDebugLocation = @"D:\EQ\e3ntrayupdater";
 
-		
+		public void StartupMacroQuest()
+		{
+			ProcessStartInfo startInfo = new ProcessStartInfo
+			{
+				FileName = Path.Combine(_currentDirectory,"MacroQuest.exe"),
+				Arguments = "",
+				CreateNoWindow = true,       // Keeps the command prompt window invisible
+				UseShellExecute = false      // Required to keep it hidden and independent
+			};
+		}
 		public void DeleteSelfAndStartupNew()
 		{
 			string currentExePath = Process.GetCurrentProcess().MainModule.FileName;
@@ -262,13 +271,15 @@ namespace E3NextSysTray
 			updateItem.Enabled = false;
 			progressItem.Enabled = true;
 			//lets check to see if macroquest.exe exists and if its 32bit or 64bit.
-			var numberOfBits = Program.GetCPPImageBits("MacroQuest.exe");
+			string pathToCheck = Path.Combine(_currentDirectory, "MacroQuest.exe");
+
+			var numberOfBits = Program.GetCPPImageBits(pathToCheck);
 
 			if(numberOfBits==-1)
 			{
 				string choice = AskBitVersions.Show(
 						"Action Required",
-						"Which version would you like?",
+						$"Which version would you like? (Couldn't find macroquest in [{pathToCheck}])",
 						"32bit (Rof2)",
 						"64bit (TOB+)"
 					);
@@ -350,24 +361,32 @@ namespace E3NextSysTray
 				{
 					UpdateToastStatus($"Downloading E3Next and MQ update");
 					System.Threading.Thread.Sleep(2000);
-					//DownloadUpdate("E3NextAndMQBinaryNoFramework", "full_e3n_mq_download.zip");
+					DownloadUpdate("E3NextAndMQBinaryNoFramework", "full_e3n_mq_download.zip");
 					filesDownloaded.Add(("full_e3n_mq_download.zip",_mqLocation));
-					var sgenbits = Program.GetPEImageBits("mono-2.0-sgen.dll");
-					if (sgenbits!=32 || !File.Exists(Path.Combine(_currentDirectory, @"resources\Mono\32bit\bin\")+"mono.exe"))
+
+					pathToCheck = Path.Combine(_currentDirectory, "mono-2.0-sgen.dll");
+					var sgenbits32 = Program.GetPEImageBits(pathToCheck);
+
+					if (sgenbits32 != 32 || !File.Exists(Path.Combine(_currentDirectory, @"resources\Mono\32bit\bin\mono.exe")))
 					{
 						UpdateToastStatus($"Downloading Mono framework....");
 						System.Threading.Thread.Sleep(2000);
 						DownloadUpdate("MQ2Mono-Framework32", "monoframework.zip");
-						filesDownloaded.Add(("monoframework.zip",Path.Combine(_currentDirectory,@"resources\Mono\32bit\")));
+						filesDownloaded.Add(("monoframework.zip", Path.Combine(_currentDirectory, @"resources\Mono\32bit\")));
+
 					}
+
 				}
 				else
 				{
 
 					//Insert 64bit MQ Here
 
+					pathToCheck = Path.Combine(_currentDirectory, "mono-2.0-sgen.dll");
+					var sgenbits = Program.GetPEImageBits(pathToCheck);
 
-					var sgenbits = Program.GetPEImageBits("mono-2.0-sgen.dll");
+
+
 					if (sgenbits != 64 || !File.Exists(Path.Combine(_currentDirectory, @"resources\Mono\64bit\bin\mono.exe")))
 					{
 						UpdateToastStatus($"Downloading Mono framework....");
@@ -382,7 +401,9 @@ namespace E3NextSysTray
 				{
 					UpdateToastStatus($"Downloading MQ2Nav Meshes");
 					System.Threading.Thread.Sleep(2000);
-					//DownloadUpdate("EmuNavMeshes", "emu_navmeshs.zip");
+
+
+					DownloadUpdate("EmuNavMeshes", "emu_navmeshs.zip");
 					filesDownloaded.Add(("emu_navmeshs.zip", Path.Combine(_currentDirectory, @"resources\MQ2Nav\")));
 
 				}
@@ -400,6 +421,14 @@ namespace E3NextSysTray
 					}
 					else
 					{
+
+						//clean up old files
+						foreach (var file in filesDownloaded)
+						{
+							File.Delete(Path.Combine(_currentDirectory, file.Item1));
+
+						}
+
 						var data = new NotificationData();
 						data.Values["percentValue"] = "indeterminate";
 						data.Values["statusText"] = $"Complete!!";
@@ -443,7 +472,9 @@ namespace E3NextSysTray
 					//we should have been done with downloading and decompressing the software
 					if (!Debugger.IsAttached)
 					{
+						StartupMacroQuest();
 						DeleteSelfAndStartupNew();
+						
 					}
 					
 
@@ -470,7 +501,9 @@ namespace E3NextSysTray
 		{
 			try
 			{
-		
+				//set the full path
+				downloadFileName = Path.Combine(_currentDirectory, downloadFileName);
+
 				//first lets get the e3nextandmqbinary without framework
 				GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
 				var latestRelease = client.Repository.Release.GetLatest("RekkasGit", repo).Result;
@@ -664,14 +697,14 @@ namespace E3NextSysTray
 				// If Content-Length is missing (common with dynamic zip streams), show accumulated megabytes
 				double mbRead = totalReadBytes / 1024.0 / 1024.0;
 				
-				UpdateToastStatus($"Total Downloaded:{mbRead:F2} MB");
+				UpdateToastStatus($"Total Downloaded: {mbRead:F2} MB");
 		}
 		private void CheckForUpdates()
 		{
 			GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
 			var latestRelease = client.Repository.Release.GetLatest("RekkasGit", "E3NextAndMQBinaryNoFramework").Result;
 
-			if (latestRelease.TagName != _versionNumber)
+			if (latestRelease.TagName != _releaseID || !File.Exists("MacroQuest.exe") ||  !File.Exists("mono-2.0-sgen.dll"))
 			{
 				string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
 				Uri fileUri = new Uri("file:///" + tempPngPath.Replace("\\", "/"), UriKind.Absolute);
