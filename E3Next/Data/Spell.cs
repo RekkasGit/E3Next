@@ -729,7 +729,7 @@ namespace E3Core.Data
                 {
 					//this is most likely an aug on an item and we are wearing it.
 					string itemNameAtLocation = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Name}}");
-					if (itemNameAtLocation != CastName)
+					if (!String.Equals(itemNameAtLocation,CastName,StringComparison.OrdinalIgnoreCase))
 					{
 						//this most likely is an Aug on the item
 						Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Augs}}");
@@ -739,7 +739,7 @@ namespace E3Core.Data
 							{
 								string augname = MQ.Query<string>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Name}}");
 
-								if (augname.IndexOf(CastName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+								if (String.Equals(augname, CastName, StringComparison.OrdinalIgnoreCase))
 								{
 									TargetType = MQ.Query<string>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.TargetType}}");
 									Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.Duration}}");
@@ -799,7 +799,7 @@ namespace E3Core.Data
                     //1 index vs 0 index
                     bagSlot += 1;
                     string itemNameAtLocation = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Name}}");
-                    if(itemNameAtLocation!=CastName)
+                    if(!String.Equals(itemNameAtLocation, CastName, StringComparison.OrdinalIgnoreCase))
                     {
 						//this most likely is an Aug on the item
 						Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Augs}}");
@@ -809,7 +809,7 @@ namespace E3Core.Data
 							{
 								string augname = MQ.Query<string>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Name}}");
 
-								if (augname.IndexOf(CastName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+								if (String.Equals(augname, CastName, StringComparison.OrdinalIgnoreCase))
 								{
 									TargetType = MQ.Query<string>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.TargetType}}");
 									Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.Duration}}");
