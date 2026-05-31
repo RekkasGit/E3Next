@@ -641,6 +641,14 @@ namespace E3Core.Processors
 
 				}
 			}
+			foreach (var buff in E3.CharacterSettings.PetOwnerBuffs)
+			{
+				if (!_spellsToBuffPetsWith.Contains(buff.SpellID))
+				{
+					_spellsToBuffPetsWith.Add(buff.SpellID);
+
+				}
+			}
 			unsafe
 			{
 				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder(200);

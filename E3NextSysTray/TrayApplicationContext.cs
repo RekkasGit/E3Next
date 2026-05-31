@@ -26,7 +26,7 @@ namespace E3NextSysTray
 	{
 		private readonly SynchronizationContext _syncContext;
 
-		private string _releaseID = "v1.55.8-3.1.4.7";
+		private string _releaseID = "v1.55.9-3.1.4.7";
 		private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
