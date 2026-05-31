@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows.Forms;
 using Windows.Services.Maps;
 using Windows.UI.Notifications;
@@ -25,7 +26,7 @@ namespace E3NextSysTray
 	{
 		private readonly SynchronizationContext _syncContext;
 
-		private string _releaseID = "v1.55.5-3.1.4.7";
+		private string _releaseID = "v1.55.7-3.1.4.7";
 		private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
@@ -43,7 +44,7 @@ namespace E3NextSysTray
 		private string _currentExePath = Process.GetCurrentProcess().MainModule.FileName;
 		private string _currentDirectory = String.Empty;
 		private string _mqDebugLocation = @"D:\EQ\e3ntrayupdater";
-
+		private System.Timers.Timer _checkUpdate;
 		public void StartupMacroQuest()
 		{
 			ProcessStartInfo startInfo = new ProcessStartInfo
@@ -129,6 +130,11 @@ namespace E3NextSysTray
 			_mqLocation = Process.GetCurrentProcess().MainModule.FileName;
 			_mqLocation = Path.GetDirectoryName(_mqLocation).Replace(@"\mono\macros\e3", "").Replace(@"/mono/macros/e3", "");
 			_currentDirectory = Path.GetDirectoryName(_currentExePath);
+			//2 hour checks for updates
+			_checkUpdate = new System.Timers.Timer(1000*60*120);
+			// Hook up the elapsed event
+			_checkUpdate.Elapsed += OnUpdateEvent;
+			_checkUpdate.Enabled = true;   // Start the timer
 
 			//create the e3next.png if we need for the toast.
 			CreatePNGIfNeeded();
@@ -180,6 +186,29 @@ namespace E3NextSysTray
 			_syncContext = SynchronizationContext.Current ?? new SynchronizationContext();
 			CheckForUpdates();
 		}
+
+		private void OnUpdateEvent(object sender, ElapsedEventArgs e)
+		{
+			try
+			{
+				GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
+				var latestRelease = client.Repository.Release.GetLatest("RekkasGit", "E3NextAndMQBinaryNoFramework").Result;
+
+				bool mQExists = File.Exists(Path.Combine(_currentDirectory, "MacroQuest.exe"));
+				bool monoExists = File.Exists(Path.Combine(_currentDirectory, "mono-2.0-sgen.dll"));
+				if (latestRelease.TagName != _releaseID || !mQExists || !monoExists)
+				{
+					CheckForUpdates();
+				}
+			}
+			finally
+			{
+				_checkUpdate.Enabled = true; // Repeat continuously
+			}
+			
+			
+		}
+
 		private void CreatePNGIfNeeded()
 		{
 			string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
@@ -221,6 +250,8 @@ namespace E3NextSysTray
 			trayIcon.Visible = false;
 			trayIcon.Dispose();
 			ToastNotificationManagerCompat.History.Remove(_toatsTag, _toatsGroupTag);
+			_checkUpdate.Enabled = false;
+			_checkUpdate.Dispose();
 			// Safely terminate the application message loop
 			System.Windows.Forms.Application.Exit();
 		}
