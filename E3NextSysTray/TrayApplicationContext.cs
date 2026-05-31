@@ -25,7 +25,7 @@ namespace E3NextSysTray
 	{
 		private readonly SynchronizationContext _syncContext;
 
-		private string _releaseID = "v1.55.4-3.1.4.7";
+		private string _releaseID = "v1.55.5-3.1.4.7";
 		private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
@@ -53,6 +53,7 @@ namespace E3NextSysTray
 				CreateNoWindow = true,       // Keeps the command prompt window invisible
 				UseShellExecute = false      // Required to keep it hidden and independent
 			};
+			Process.Start(startInfo);
 		}
 		public void DeleteSelfAndStartupNew()
 		{
@@ -704,16 +705,23 @@ namespace E3NextSysTray
 			GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
 			var latestRelease = client.Repository.Release.GetLatest("RekkasGit", "E3NextAndMQBinaryNoFramework").Result;
 
-			if (latestRelease.TagName != _releaseID || !File.Exists("MacroQuest.exe") ||  !File.Exists("mono-2.0-sgen.dll"))
+			bool mQExists = File.Exists(Path.Combine(_currentDirectory, "MacroQuest.exe"));
+			bool monoExists = File.Exists(Path.Combine(_currentDirectory, "mono-2.0-sgen.dll"));
+			if (latestRelease.TagName != _releaseID || !mQExists ||  !monoExists)
 			{
 				string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
 				Uri fileUri = new Uri("file:///" + tempPngPath.Replace("\\", "/"), UriKind.Absolute);
+
+				string messageToSay = $"New version available! {latestRelease.TagName} \r\nCurrent: {_releaseID}";
+
+				if (!mQExists) messageToSay = "No Macroquest found, need a full update";
+				else if (!monoExists) messageToSay = "No mono framwork found, need to do a full update.";
 
 				Console.WriteLine("New version!");
 				new ToastContentBuilder()
 				.AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
 				.SetToastScenario(ToastScenario.Default)
-				.AddText($"New version available! {latestRelease.TagName}")
+				.AddText(messageToSay)
 				.AddVisualChild(new AdaptiveProgressBar()
 				{
 					Title = "E3N Updater",
@@ -737,7 +745,7 @@ namespace E3NextSysTray
 				string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
 				Uri fileUri = new Uri("file:///" + tempPngPath.Replace("\\", "/"), UriKind.Absolute);
 
-				Console.WriteLine("Fully updated!");
+				Console.WriteLine($"Fully updated! {_releaseID}");
 				new ToastContentBuilder()
 				.AddAppLogoOverride(fileUri, ToastGenericAppLogoCrop.Circle)
 				.SetToastScenario(ToastScenario.Default)
