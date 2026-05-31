@@ -36,12 +36,21 @@ namespace E3Core.Processors
 		void BroadcastCommandToPerson(string person, string command, bool noparse = false);
         void Broadcast(string message, bool noparse = false);
         List<Int32> BuffList(string name);
-        List<Int32> PetBuffList(string name);
+		List<int> BuffRegisteredList(string name);
+		Dictionary<int, (Int32,Int32)> BuffRegistgeredStackingResult(string name);
+		List<int> BuffPetRegisteredList(string name);
+		Dictionary<int, (Int32, Int32)> PetBuffRegistgeredStackingResult(string name);
+		List<Int32> PetBuffList(string name);
         Int32 BaseDebuffCounters(string name);
         Int32 BaseDiseasedCounters(string name);
 		Int32 BaseCorruptedCounters(string name);
 		Int32 BasePoisonedCounters(string name);
         Int32 BaseCursedCounters(string name);
+		Int32 BasePetDebuffCounters(string name);
+		Int32 BasePetDiseasedCounters(string name);
+		Int32 BasePetCorruptedCounters(string name);
+		Int32 BasePetPoisonedCounters(string name);
+		Int32 BasePetCursedCounters(string name);
 		void GetMemoryUsage(string name, out double Csharpmemory, out double EQPageMemory);
         bool IsMyBot(string name);
         void Trade(string name);
@@ -545,11 +554,42 @@ namespace E3Core.Processors
 			return DebuffCounterFunction(name, "${Me.CountersCorrupted}", _debuffCorruptedCounterCollection);
 
 		}
+		Dictionary<string, SharedNumericDataInt32> _debuffPetCurseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePetCursedCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.Pet.CountersCurse}", _debuffPetCurseCounterCollection);
+		}
 
+		Dictionary<string, SharedNumericDataInt32> _debuffPetTotalCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePetDebuffCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.Pet.TotalCounters}", _debuffPetTotalCounterCollection);
+		}
+
+		Dictionary<string, SharedNumericDataInt32> _debuffPetDiseaseCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePetDiseasedCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.Pet.CountersDisease}", _debuffPetDiseaseCounterCollection);
+
+		}
+
+		Dictionary<string, SharedNumericDataInt32> _debuffPetPoisonCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePetPoisonedCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.Pet.CountersPoison}", _debuffPetPoisonCounterCollection);
+
+		}
+		Dictionary<string, SharedNumericDataInt32> _debuffPetCorruptedCounterCollection = new Dictionary<string, SharedNumericDataInt32>();
+		public int BasePetCorruptedCounters(string name)
+		{
+			return DebuffCounterFunction(name, "${Me.Pet.CountersCorrupted}", _debuffPetCorruptedCounterCollection);
+
+		}
 		[ExposedData("Bots", "BotsConnected")]
 		private List<string> _botsConnectedCache = new List<string>();
 		Int64 _botsConnectredTimeStamp = 0;
 		Int64 _botsConnectedTimeInterval = 2000;
+		Int64 _botsConnectedTimeout = 15000;
 		public List<string> BotsConnected(bool readOnly = false)
         {
 			if(!readOnly && e3util.ShouldCheck(ref _botsConnectredTimeStamp,_botsConnectedTimeInterval))
@@ -561,7 +601,7 @@ namespace E3Core.Processors
 					//this key should always be there and always be updated
 					if(pair.Value.TryGetValue("${Me.PctHPs}",out var data))
 					{
-						if(Core.StopWatch.ElapsedMilliseconds < (data.LastUpdate + 5000))
+						if(Core.StopWatch.ElapsedMilliseconds < (data.LastUpdate + _botsConnectedTimeout))
 						{
 							tempList.Add(pair.Key);
 						}
@@ -980,8 +1020,147 @@ namespace E3Core.Processors
             return _buffListReturnValue;
 
         }
+		Dictionary<string, SharedNumericDataDictionaryInt32Int64> _buffRegisteredListStackingResults= new Dictionary<string, SharedNumericDataDictionaryInt32Int64>();
 
-        public bool HasShortBuff(string name, int buffid)
+		//this is an int64 so we can reuse buff data functions, as these are really only 0 and 1 for false/true
+		public Dictionary<int,(Int32,Int32)> BuffRegistgeredStackingResult(string name)
+		{
+			if(!_buffRegisteredListStackingResults.ContainsKey(name))
+			{
+				_buffRegisteredListStackingResults.Add(name, new SharedNumericDataDictionaryInt32Int64());
+			}
+			var result = _buffRegisteredListStackingResults[name];
+			
+
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				//couldn't register, no file avilable assume they are not online yet
+				return result.Data;
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string topicKey = "${Me.BuffsToApply_StackingResult}";
+			if (!userTopics.ContainsKey(topicKey))
+			{
+				//don't have the data yet kick out with empty list as we simply don't know.
+				return result.Data;
+			}
+			//we have the data, lets check for updates
+			//the double name is because the 2nd name could be the pet name! its called in PetBuffList
+			lock (userTopics[topicKey])
+			{
+				var entry = userTopics[topicKey];
+				if(entry.LastUpdate> result.LastUpdate)
+				{
+					//update the data otherwise return old result
+					e3util.BuffStackingToDictonary(entry.GetData(), result.Data);
+					result.LastUpdate = entry.LastUpdate;
+				}
+			}
+			//done with updates, now lets check the data.
+			return result.Data;
+		}
+		Dictionary<string, SharedNumericDataDictionaryInt32Int64> _petBuffRegisteredListStackingResults = new Dictionary<string, SharedNumericDataDictionaryInt32Int64>();
+
+		//this is an int64 so we can reuse buff data functions, as these are really only 0 and 1 for false/true
+		public Dictionary<int, (Int32, Int32)> PetBuffRegistgeredStackingResult(string name)
+		{
+			if (!_petBuffRegisteredListStackingResults.ContainsKey(name))
+			{
+				_petBuffRegisteredListStackingResults.Add(name, new SharedNumericDataDictionaryInt32Int64());
+			}
+			var result = _petBuffRegisteredListStackingResults[name];
+
+
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				//couldn't register, no file avilable assume they are not online yet
+				return result.Data;
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string topicKey = "${Me.Pet_BuffsToApply_StackingResult}";
+			if (!userTopics.ContainsKey(topicKey))
+			{
+				//don't have the data yet kick out with empty list as we simply don't know.
+				return result.Data;
+			}
+			//we have the data, lets check for updates
+			//the double name is because the 2nd name could be the pet name! its called in PetBuffList
+			lock (userTopics[topicKey])
+			{
+				var entry = userTopics[topicKey];
+				if (entry.LastUpdate > result.LastUpdate)
+				{
+					//update the data otherwise return old result
+					e3util.BuffStackingToDictonary(entry.GetData(), result.Data);
+					result.LastUpdate = entry.LastUpdate;
+				}
+			}
+			//done with updates, now lets check the data.
+			return result.Data;
+		}
+		List<int> _buffRegisteredListReturnValue = new List<int>();
+
+		public List<int> BuffRegisteredList(string name)
+		{
+			_buffRegisteredListReturnValue.Clear();
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				//couldn't register, no file avilable assume they are not online yet
+				return _buffRegisteredListReturnValue;
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string topicKey = "${Me.BuffsToApply}";
+			if (!userTopics.ContainsKey(topicKey))
+			{
+				//don't have the data yet kick out with empty list as we simply don't know.
+				return _buffRegisteredListReturnValue;
+			}
+			//we have the data, lets check for updates
+			//the double name is because the 2nd name could be the pet name! its called in PetBuffList
+			lock (userTopics[topicKey])
+			{
+				var entry = userTopics[topicKey];
+				e3util.StringsToNumbers(entry.GetData(), ':', _buffRegisteredListReturnValue);
+			}
+			//done with updates, now lets check the data.
+			return _buffRegisteredListReturnValue;
+		}
+		List<int> _buffPetRegisteredListReturnValue = new List<int>();
+
+		public List<int> BuffPetRegisteredList(string name)
+		{
+			_buffPetRegisteredListReturnValue.Clear();
+			//register the user to get their buff data if its not already there
+			if (!NetMQServer.SharedDataClient.TopicUpdates.ContainsKey(name))
+			{
+				//couldn't register, no file avilable assume they are not online yet
+				return _buffPetRegisteredListReturnValue;
+			}
+			var userTopics = NetMQServer.SharedDataClient.TopicUpdates[name];
+			//check to see if it has been filled out yet.
+			string topicKey = "${Me.Pet.BuffsToApply}";
+			if (!userTopics.ContainsKey(topicKey))
+			{
+				//don't have the data yet kick out with empty list as we simply don't know.
+				return _buffPetRegisteredListReturnValue;
+			}
+			//we have the data, lets check for updates
+			//the double name is because the 2nd name could be the pet name! its called in PetBuffList
+			lock (userTopics[topicKey])
+			{
+				var entry = userTopics[topicKey];
+				e3util.StringsToNumbers(entry.GetData(), ':', _buffPetRegisteredListReturnValue);
+			}
+			//done with updates, now lets check the data.
+			return _buffPetRegisteredListReturnValue;
+		}
+		public bool HasShortBuff(string name, int buffid)
         {
             _buffListReturnValue.Clear();
             //register the user to get their buff data if its not already there
@@ -1296,7 +1475,11 @@ namespace E3Core.Processors
 			public Boolean Data { get; set; }
 			public Int64 LastUpdate { get; set; }
 		}
-
+		class SharedNumericDataDictionaryInt32Int64
+		{
+			public Dictionary<Int32,(Int32,Int32)> Data { get; set; } = new Dictionary<Int32, (Int32, Int32)>();
+			public Int64 LastUpdate { get; set; }
+		}
 	}
 	/*
 	public class Bots : IBots

@@ -34,19 +34,8 @@ namespace E3Core.Classes
 		{
 			EventProcessor.RegisterCommand("/e3rogue-autohide", (x) =>
 			{
-				if (x.args.Count > 0)
-				{
-					if (x.args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
-					{
-						E3.Bots.Broadcast("Turning off Rogue Auto Hide");
-						E3.CharacterSettings.Rogue_AutoHide = false;
-					}
-				}
-				else
-				{
-					E3.Bots.Broadcast("Turning on Rogue Auto Hide");
-					E3.CharacterSettings.Rogue_AutoHide = true;
-				}
+                e3util.ToggleBooleanSetting(ref E3.CharacterSettings.Rogue_AutoHide, "Auto hide",x.args);
+				
 			});
 		}
 

@@ -762,6 +762,26 @@ namespace E3Core.Utility
 			}
 
 		}
+		public static void StringsToNumbers(ReadOnlySpan<char> s, char delim, List<Int32> list)
+		{
+			List<Int32> result = list;
+			int start = 0;
+			int end = 0;
+			foreach (char x in s)
+			{
+				if (x == delim || end == s.Length - 1)
+				{
+					if (end == s.Length - 1 && x != delim)
+						end++;
+					Int32 valueTOAdd = 0;
+					e3util.Int32TryParse(s.Slice(start, end - start), out valueTOAdd);
+					result.Add(valueTOAdd);
+					start = end + 1;
+				}
+				end++;
+			}
+
+		}
 		public static void StringsToNumbers(string s, char delim, List<Int64> list)
 		{
 			List<Int64> result = list;
@@ -780,8 +800,43 @@ namespace E3Core.Utility
 			}
 
 		}
-
+		private static List<Int32> _buffStackingTempList = new List<Int32>();
+		/// <summary>
+		/// puts a list of value1,value1-a,value1-b:value2,value2-a,value2-b into a dictionary of int/int64
+		/// </summary>
+		/// <param name="s">input</param>
+		/// <param name="list">output</param>
+		/// <param name="delim">delmiter, between entries the delimiter is ','</param>
+		public static void BuffStackingToDictonary(ReadOnlySpan<char> s, Dictionary<Int32, (Int32,Int32)> list, char delim = ':')
+		{
+			list.Clear();
+			Dictionary<Int32, (Int32,Int32)> result = list;
+			int start = 0;
+			int end = 0;
+			foreach (char x in s)
+			{
+				if (x == delim || end == s.Length - 1)
+				{
+					if (end == s.Length - 1 && x != delim)
+						end++;
+					//number,number
+					_buffStackingTempList.Clear();
+					ReadOnlySpan<char> tstring = s.Slice(start, end - start);
+					StringsToNumbers(tstring, ',', _buffStackingTempList);
+					result[(int)_buffStackingTempList[0]] = (_buffStackingTempList[1],_buffStackingTempList[2]);
+					start = end + 1;
+				}
+				end++;
+			}
+			
+		}
 		private static List<Int64> _buffInfoTempList = new List<Int64>();
+		/// <summary>
+		/// puts a list of value1,value1-a,value1-b:value2,value2-a,value2-b into a dictionary of int/int64
+		/// </summary>
+		/// <param name="s">input</param>
+		/// <param name="list">output</param>
+		/// <param name="delim">delmiter, between entries the delimiter is ','</param>
 		public static void BuffInfoToDictonary(ReadOnlySpan<char> s, Dictionary<Int32, Int64> list, char delim = ':')
 		{
 			list.Clear();
@@ -817,6 +872,7 @@ namespace E3Core.Utility
 				}
 			}
 		}
+
 		public static List<string> StringsToList(string s, char delim)
 		{
 			List<string> result = new List<string>();
@@ -1192,15 +1248,13 @@ namespace E3Core.Utility
 				try
 				{
 					int length;
-					byte* p = Core.mq_GetBuffData(out length);
+					byte* p = MQ.GetMyBuffDataPtr(out length);
 					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
 					int dataStartingLength = data.Length;
 					for (int i = 0; i < e3util.MaxBuffSlots; i++)
 					{
 						Int32 spellID = MemoryMarshal.Read<Int32>(data);
-
-
 
 						data = data.Slice(4);
 						Int32 casterId = MemoryMarshal.Read<Int32>(data);
@@ -1323,12 +1377,7 @@ namespace E3Core.Utility
 		}
 		public static Dictionary<Int32, BuffInfoCacheEntry> _buffInfoCache = new Dictionary<Int32, BuffInfoCacheEntry>();
 		public static string GenerateBuffInfoForPubSub()
-		{
-			//if (Core._MQ2MonoVersion >= 0.411m && !Debugger.IsAttached)
-			//{
-			//	return GetBuffDataForPubSubHighPerf();
-			//}
-
+		{			
 			//using (_log.Trace())
 			{
 				//incase this changes at runtime
@@ -2112,7 +2161,7 @@ namespace E3Core.Utility
 		{
 			MQ.Delay(0);
 		}
-		public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute)
+		public static void RegisterCommandWithTarget(string command, Action<int> FunctionToExecute,string description="")
 		{
 			EventProcessor.RegisterCommand(command, (x) =>
 			{
@@ -2159,7 +2208,7 @@ namespace E3Core.Utility
 						MQ.Write($"\arNEED A TARGET TO {command}");
 					}
 				}
-			});
+			},description);
 
 		}
 
@@ -2559,13 +2608,13 @@ namespace E3Core.Utility
 		}
 		public static bool IsActionBlockingWindowOpen()
 		{
-			var vendorOpen = MQ.Query<bool>("${Window[MerchantWnd]}");
-			var bankOpen = MQ.Query<bool>("${Window[BigBankWnd]}");
-			var guildBankOpen = MQ.Query<bool>("${Window[GuildBankWnd]}");
-			var tradeOpen = MQ.Query<bool>("${Window[TradeWnd]}");
-			var giveOpen = MQ.Query<bool>("${Window[GiveWnd]}");
-
-			return (vendorOpen || bankOpen || guildBankOpen || tradeOpen || giveOpen);
+			if(MQ.Query<bool>("${Corpse.Open}")) return true;
+			if(MQ.Query<bool>("${Window[MerchantWnd]}")) return true;
+			if(MQ.Query<bool>("${Window[BigBankWnd]}")) return true;
+			if(MQ.Query<bool>("${Window[GuildBankWnd]}")) return true;
+			if(MQ.Query<bool>("${Window[TradeWnd]}")) return true;
+			if(MQ.Query<bool>("${Window[GiveWnd]}")) return true;
+			return false;
 		}
 
 		public static void Exchange(string slotName, string itemName)

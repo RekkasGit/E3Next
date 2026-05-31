@@ -3220,7 +3220,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 							//addeding to a spell object instead
 							if (!String.IsNullOrWhiteSpace(spellEditorState.GenericPickerFieldName) && mainWindowState.Currently_EditableSpell != null)
 							{
-								string spellNameToAdd = (catalogState.SelectedCategorySpell.CastName ?? string.Empty).Trim();
+								string spellNameToAdd = (catalogState.SelectedCategorySpell.CastName ?? string.Empty);
+
+								if (catalogState.CurrentAddType == AddType.Items)
+								{
+									spellNameToAdd += "/CastType|Item";
+								}
+
 								Type type = mainWindowState.Currently_EditableSpell.GetType();
 								FieldInfo fieldInfo = type.GetField(spellEditorState.GenericPickerFieldName, BindingFlags.Instance | BindingFlags.Public);
 								if (fieldInfo != null)
@@ -3242,7 +3248,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 								if (kd != null)
 								{
 									var vals = GetValues(kd);
-									string v = (catalogState.SelectedCategorySpell.CastName ?? string.Empty).Trim();
+									string v = (catalogState.SelectedCategorySpell.CastName ?? string.Empty);
 									if (catalogState.ReplaceMode && catalogState.ReplaceIndex >= 0 && catalogState.ReplaceIndex < vals.Count)
 									{
 										string currentValue = vals[catalogState.ReplaceIndex];
@@ -3255,6 +3261,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 											flags = currentValue.Substring(indexOfSlash + 1);
 											v = v + $"/{flags}";
 										}
+										
 
 										vals[catalogState.ReplaceIndex] = v;
 										mainWindowState.PendingValueSelection = catalogState.ReplaceIndex;
@@ -3267,6 +3274,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 									else
 									{
 										if (vals.Count == 1 && String.IsNullOrWhiteSpace(vals[0])) vals.Clear();
+										if (catalogState.CurrentAddType == AddType.Items)
+										{
+											v += "/CastType|Item";
+										}
 										vals.Add(v);
 										mainWindowState.PendingValueSelection = vals.Count - 1;
 										data.RefreshEditableSpellState(force: true);

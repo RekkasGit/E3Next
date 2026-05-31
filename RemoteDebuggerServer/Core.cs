@@ -55,7 +55,8 @@ namespace MonoCore
         GetXTargetData,
         GetTargetData,
         GetAAList,
-        GetDiscList
+        GetDiscList,
+		GetMyBuffData
 
 	}
 
@@ -76,7 +77,8 @@ namespace MonoCore
         GetXTargetData,
 		GetTargetData,
         GetAAList,
-        GetDiscList
+        GetDiscList,
+		GetMyBuffData,
 
 	}
 	public static class RemoteDebugServerConfig
@@ -329,6 +331,26 @@ namespace MonoCore
 									message.payloadLength = length;//32bit length at the 1st 4 bytes
                                 }
 								RouterServer._responseQueues[(int)ResponseQueueTypes.GetPetBuffData].Enqueue(message);
+								foundRequest = true;
+								foundRequestCount++;
+							}
+
+						}
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetMyBuffData];
+						while (q.Count > 0)
+						{
+							RouterMessage message;
+							if (q.TryDequeue(out message))
+							{
+								unsafe
+								{
+									int length = 0;
+									byte* p = MQ.GetMyBuffDataPtr(out length);
+									ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(p, length);
+									span.CopyTo(message.payload);
+									message.payloadLength = length;//32bit length at the 1st 4 bytes
+								}
+								RouterServer._responseQueues[(int)ResponseQueueTypes.GetMyBuffData].Enqueue(message);
 								foundRequest = true;
 								foundRequestCount++;
 							}
@@ -1245,7 +1267,9 @@ namespace MonoCore
 		string SpellDataGetLine(string query, Int32 line);
 		Int32 SpellDataGetLineCount(string query);
         unsafe byte* GetPetBuffDataPtr(out int length);
-        unsafe byte* GetSpawns3_DeltaPtr(out int length);
+		unsafe byte* GetMyBuffDataPtr(out int length);
+
+		unsafe byte* GetSpawns3_DeltaPtr(out int length);
         unsafe byte* GetXtargetDataPtr(out int length);
         unsafe byte* GetTargetBuffDataPtr(Int32 spawnid,out int length);
 		unsafe byte* GetAAIdsDataPtr(out int length);
@@ -1276,7 +1300,15 @@ namespace MonoCore
 			length = _petBuffDataPtrLength;
 			return _petBuffDataPtr;
 		}
+		private int _getMyBuffDataPtrLength = 0;
+		private unsafe byte* _getMyBuffDataPtr;
+		public unsafe byte* GetMyBuffDataPtr(out int length)
+		{
 
+			_getMyBuffDataPtr = Core.mq_GetBuffData(out _getMyBuffDataPtrLength);
+			length = _getMyBuffDataPtrLength;
+			return _getMyBuffDataPtr;
+		}
 		private int _getAAListDataPtrLength = 0;
 		private unsafe byte* _getAAListDataPtr;
 		public unsafe byte* GetAAIdsDataPtr(out int length)

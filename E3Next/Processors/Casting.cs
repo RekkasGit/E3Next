@@ -6,6 +6,7 @@ using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
+using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -44,6 +45,7 @@ namespace E3Core.Processors
 			{
 				return CastReturn.CAST_BLOCKINGWINDOWOPEN;
 			}
+			
 			//this isn't a nowcast but we have one ready to be processed, kick out
 			if (!isNowCast && !isEmergency && NowCast.IsNowCastInQueue())
 			{
@@ -408,14 +410,7 @@ namespace E3Core.Processors
 							}
 
 						}
-						_log.Write("Checking for Open corpse....");
-						if (MQ.Query<bool>("${Corpse.Open}"))
-						{
-							E3.ActionTaken = true;
-							E3.Bots.Broadcast($"skipping [{spell.CastName}] , I have a corpse open.");
-							MQ.Delay(200);
-							return CastReturn.CAST_CORPSEOPEN;
-						}
+						
 						_log.Write("Checking for LoS for non beneficial...");
 						if (!spell.SpellType.Contains("Beneficial"))
 						{
@@ -1822,7 +1817,12 @@ namespace E3Core.Processors
 
 		public static Boolean CheckReady(Data.Spell spell, bool skipCastCheck = false, bool skipGCDCheck=false)
 		{
-		
+
+			if (e3util.IsActionBlockingWindowOpen())
+			{
+				return false;
+			}
+
 			if (spell == null) return false;
 
 			if (spell.RecastDelay>0)
@@ -2039,10 +2039,16 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3varbool", (x) =>
 			{
 				//key/value
-				if (x.args.Count > 1)
+				if (x.args.Count > 0)
 				{
 					string key = x.args[0];
-					string value = x.args[1];
+					string value = String.Empty;
+					bool toggle = true;
+					if (x.args.Count>1)
+					{
+						toggle = false;
+						 value= x.args[1];
+					}
 
 					if (VarsetValues.Count > 0)
 					{
@@ -2050,21 +2056,40 @@ namespace E3Core.Processors
 						{
 							if (value.IndexOf($"({vkey})", 0, StringComparison.OrdinalIgnoreCase) > -1)
 							{
-
-								value = value.ReplaceInsensitive($"({vkey})", $"({VarsetValues[vkey]})");
+								if(value==String.Empty)
+								{
+									value = VarsetValues[vkey];
+								}
+								else
+								{
+									value = value.ReplaceInsensitive($"({vkey})", $"({VarsetValues[vkey]})");
+								}
+									
 							}
 						}
 					}
 					value = Ifs(value).ToString();
-
-
+					if (value == String.Empty)
+					{
+						value = "False";
+					}
 					if (!VarsetValues.ContainsKey(key))
 					{
+						
+
 						VarsetValues.Add(key, value);
 					}
 					else
 					{
-						VarsetValues[key] = value;
+						if(toggle)
+						{
+							VarsetValues[key] = (!Boolean.Parse(value)).ToString();
+						}
+						else
+						{
+							VarsetValues[key] = value;
+						}
+						
 					}
 				}
 			});
@@ -2375,6 +2400,11 @@ namespace E3Core.Processors
 									tIF = tIF.ReplaceInsensitive(pair.Key, tburn.Active.ToString());
 								}
 
+							}
+							else if (field.GetValue(null) is string stringvalue)
+							{
+								
+								tIF = tIF.ReplaceInsensitive(pair.Key, stringvalue);
 							}
 							else if (field.GetValue(null) is IEnumerable enumerableSet)
 							{

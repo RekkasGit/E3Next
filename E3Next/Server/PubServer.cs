@@ -137,8 +137,14 @@ namespace E3Core.Server
 				}
 			}
         }
-
-		public static void AddTopicMessage(string topic, char[] payload,Int32 length)
+	
+		/// <summary>
+		/// Note, creates a topicMessagePair and enqueues it. This object's dispose will put the Array back into the shared array pool.
+		/// </summary>
+		/// <param name="topic"></param>
+		/// <param name="payload">array backed by the shared array pool</param>
+		/// <param name="length"></param>
+		public static void AddTopicMessageFromPool(string topic, char[] payload,Int32 length)
 		{
 			topicMessagePair t = topicMessagePair.Aquire();
 			t.topic = topic;

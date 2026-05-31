@@ -3,6 +3,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -45,7 +46,7 @@ namespace E3Core.Processors
         static public Int32 _numInventorySlots = 10;
         static public Int32 _previousSpellGemThatWasCast = -1;
 		[ExposedData("Setup", "Version")]
-		public const string E3Version = "1.54";
+		public static string E3Version = "1.55.3";
 		[ExposedData("Setup", "BuildDate")]
 		public static string BuildDate = string.Empty;
         public static Boolean _debug = true;
@@ -66,7 +67,14 @@ namespace E3Core.Processors
 	
 		public static Boolean Init()
         {
-            using (_log.Trace())
+			System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+			System.Diagnostics.FileVersionInfo fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
+			string version = fvi.FileVersion;
+
+			E3Version = version;
+
+
+			using (_log.Trace())
             {
 				
 				RegisterEvents();
@@ -110,11 +118,53 @@ namespace E3Core.Processors
 						GuildListMembers.Add(line);
 					}
 				}
-				return true;
-			}
 
-        }
-        
+				StartSysTrayIfNeeded();
+			}
+			return true;
+
+		}
+
+		private static void StartSysTrayIfNeeded()
+		{
+			//try and startup the systray
+			string mqpath = MQ.Query<string>("${MacroQuest.Path}");
+			string systrayFullPath = mqpath + @"\E3NextSysTray.exe";
+			try
+			{
+				if (!SysTrayIsRunning() && System.IO.File.Exists(systrayFullPath))
+				{
+					MQ.Cmd($@"/exec {systrayFullPath} bg");
+				}
+			}
+			catch (Exception ex)
+			{
+				MQ.Write("Error starting systray. Message:" + ex.Message + " path:" + systrayFullPath);
+			}
+		}
+
+
+        public static bool SysTrayIsRunning()
+		{
+			foreach (var p in Process.GetProcesses())
+			{
+				try
+				{
+					string processNameLower = p.ProcessName.ToLower();
+					if (processNameLower == "e3nextsystray_working")
+					{
+						return true;
+					}
+				}
+				catch(Exception)
+				{
+
+				}
+				
+			}
+			return false;
+		}
+
 		public static void RegisterEvents()
 		{
 			EventProcessor.RegisterCommand("/e3version", (x) =>

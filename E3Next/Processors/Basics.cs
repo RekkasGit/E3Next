@@ -154,11 +154,30 @@ namespace E3Core.Processors
 
 			EventProcessor.RegisterCommand("/e3listcommands", (x) =>
 			{
-
+				string filter = String.Empty;
+				if(x.args.Count>0)
+				{
+					filter = x.args[0];
+				}
 				List<EventProcessor.CommandListItem> list = EventProcessor.CommandList.Values.OrderBy(c => c.classOwner).ThenBy(c => c.command).ToList();
 
 				foreach (var command in list)
 				{
+					if (filter != string.Empty)
+					{
+						bool foundMatch = false;
+						if (command.description.IndexOf(filter,StringComparison.OrdinalIgnoreCase)>-1)
+						{
+							foundMatch=true;
+						}
+
+						if (command.keyName.IndexOf(filter, StringComparison.OrdinalIgnoreCase) > -1)
+						{
+							foundMatch = true;
+						}
+						if (!foundMatch) continue;
+					}
+
 					if (string.IsNullOrWhiteSpace(command.description))
 					{
 						E3.Bots.Broadcast($"\atcommand:\ag{command.command} \atclass:\ag{command.classOwner}");

@@ -60,7 +60,7 @@ namespace E3Core.Processors
                 }
                 if (x.args.Count == 0)
                 {
-                    E3.Bots.BroadcastCommand($"/pbaeoff all");
+                    E3.Bots.BroadcastCommandToGroup($"/pbaeoff all");
                 }
             });
         }

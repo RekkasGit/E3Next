@@ -725,53 +725,191 @@ namespace E3Core.Data
 					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Spell.DurationWindow}}");
                     
 				}
-                else
+				else if(bagSlot == 0 && invSlot >=0 && invSlot<22)
                 {
-                    //1 index vs 0 index
-                    bagSlot += 1;
-                    TargetType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.TargetType}}");
-                    Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration}}");
-                    DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration.TotalSeconds}}");
-
-                    RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecastTime}}");
-                    RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
-                    MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].CastTime}}");
-					MyRange = MQ.Query<Double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.MyRange}}");
-					Description = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Description}}");
-					ResistType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ResistType}}");
-					ResistAdj = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ResistAdj}}");
-					SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
-
-					double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.AERange}}");
-					Subcategory = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Subcategory}}");
-					if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+					//this is most likely an aug on an item and we are wearing it.
+					string itemNameAtLocation = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Name}}");
+					if (itemNameAtLocation != CastName)
 					{
-
-						if (AERange > 0)
+						//this most likely is an Aug on the item
+						Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Augs}}");
+						if (augCount > 0)
 						{
-							if (MyRange == 0)
+							for (int a = 1; a <= 6; a++)
 							{
-								//set MyRange to AE range for spells that don't have a MyRange like PBAE nukes
-								MyRange = AERange;
+								string augname = MQ.Query<string>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Name}}");
+
+								if (augname.IndexOf(CastName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+								{
+									TargetType = MQ.Query<string>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.TargetType}}");
+									Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.Duration}}");
+									DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.Duration.TotalSeconds}}");
+
+									RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.RecastTime}}");
+									RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.RecoveryTime}}");
+									MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.CastTime}}");
+									MyRange = MQ.Query<Double>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.MyRange}}");
+									Description = MQ.Query<String>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.Description}}");
+									ResistType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.ResistType}}");
+									ResistAdj = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.ResistAdj}}");
+									SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.SpellType}}");
+
+									double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.AERange}}");
+									Subcategory = MQ.Query<String>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.Subcategory}}");
+									if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+									{
+
+										if (AERange > 0)
+										{
+											if (MyRange == 0)
+											{
+												//set MyRange to AE range for spells that don't have a MyRange like PBAE nukes
+												MyRange = AERange;
+											}
+										}
+
+									}
+									else
+									{
+										//if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
+										if (AERange > 0 && Subcategory != "Calm")
+										{
+											MyRange = AERange;
+										}
+
+									}
+
+									SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell}}");
+									SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.ID}}");
+									CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.ID}}");
+									SpellIcon = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.SpellIcon}}");
+									IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].AugSlot[{a}].Item.Spell.DurationWindow}}");
+									//this is the aug in question
+									break;
+								}
 							}
 						}
 
 					}
-					else
-					{
-						//if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
-						if (AERange > 0 && Subcategory != "Calm")
+
+
+				}
+				else
+                {
+                    //1 index vs 0 index
+                    bagSlot += 1;
+                    string itemNameAtLocation = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Name}}");
+                    if(itemNameAtLocation!=CastName)
+                    {
+						//this most likely is an Aug on the item
+						Int32 augCount = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Augs}}");
+						if (augCount > 0)
 						{
-							MyRange = AERange;
+							for (int a = 1; a <= 6; a++)
+							{
+								string augname = MQ.Query<string>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Name}}");
+
+								if (augname.IndexOf(CastName, 0, StringComparison.OrdinalIgnoreCase) > -1)
+								{
+									TargetType = MQ.Query<string>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.TargetType}}");
+									Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.Duration}}");
+									DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.Duration.TotalSeconds}}");
+
+									RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.RecastTime}}");
+									RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.RecoveryTime}}");
+									MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.CastTime}}");
+									MyRange = MQ.Query<Double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.MyRange}}");
+									Description = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.Description}}");
+									ResistType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.ResistType}}");
+									ResistAdj = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.ResistAdj}}");
+									SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.SpellType}}");
+
+									double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.AERange}}");
+									Subcategory = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.Subcategory}}");
+									if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+									{
+
+										if (AERange > 0)
+										{
+											if (MyRange == 0)
+											{
+												//set MyRange to AE range for spells that don't have a MyRange like PBAE nukes
+												MyRange = AERange;
+											}
+										}
+
+									}
+									else
+									{
+										//if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
+										if (AERange > 0 && Subcategory != "Calm")
+										{
+											MyRange = AERange;
+										}
+
+									}
+
+									SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell}}");
+									SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.ID}}");
+									CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.ID}}");
+									SpellIcon = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.SpellIcon}}");
+									IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].AugSlot[{a}].Item.Spell.DurationWindow}}");
+									//this is the aug in question
+									break;
+                                }
+							}
 						}
 
 					}
+                    else
+                    {
+						TargetType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.TargetType}}");
+						Duration = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration}}");
+						DurationTotalSeconds = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Duration.TotalSeconds}}");
 
-					SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell}}");
-                    SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ID}}");
-                    CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].ID}}");
-                    SpellIcon = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellIcon}}");
-					IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.DurationWindow}}");
+						RecastTime = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecastTime}}");
+						RecoveryTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.RecoveryTime}}");
+						MyCastTime = MQ.Query<Decimal>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].CastTime}}");
+						MyRange = MQ.Query<Double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.MyRange}}");
+						Description = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Description}}");
+						ResistType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ResistType}}");
+						ResistAdj = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ResistAdj}}");
+						SpellType = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellType}}");
+
+						double AERange = MQ.Query<double>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.AERange}}");
+						Subcategory = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.Subcategory}}");
+						if (SpellType.Equals("Detrimental", StringComparison.OrdinalIgnoreCase))
+						{
+
+							if (AERange > 0)
+							{
+								if (MyRange == 0)
+								{
+									//set MyRange to AE range for spells that don't have a MyRange like PBAE nukes
+									MyRange = AERange;
+								}
+							}
+
+						}
+						else
+						{
+							//if the buff/heal has an AERange value, set MyRange to AE Range because otherwise the spell won't land on the target
+							if (AERange > 0 && Subcategory != "Calm")
+							{
+								MyRange = AERange;
+							}
+
+						}
+
+						SpellName = MQ.Query<String>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell}}");
+						SpellID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.ID}}");
+						CastID = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].ID}}");
+						SpellIcon = MQ.Query<Int32>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.SpellIcon}}");
+						IsShortBuff = MQ.Query<bool>($"${{Me.Inventory[{invSlot}].Item[{bagSlot}].Spell.DurationWindow}}");
+
+					}
+
+					
 				}
 
             }

@@ -351,6 +351,9 @@ namespace MQServerClient
 		byte[] _getPetBuffDataArray = new byte[1024*86];
         GCHandle _getPetBuffDataArrayHandle;
 
+		byte[] _getMyBuffDataArray = new byte[1024 * 86];
+		GCHandle _getMyBuffDataArrayHandle;
+
 		byte[] _getSpawn3_DeltaArray = new byte[1024 * 1024];
 		GCHandle _getSpawn3_DeltaHandle;
 		byte[] _getXTargetDataArray = new byte[1024 * 86];
@@ -371,6 +374,7 @@ namespace MQServerClient
 			_getTargetDataHandle = GCHandle.Alloc(_getTargetDataArray, GCHandleType.Pinned);
 			_getAAListDataHandle = GCHandle.Alloc(_getAAListDataArray, GCHandleType.Pinned);
 			_getDiscListDataHandle = GCHandle.Alloc(_getDiscListDataArray, GCHandleType.Pinned);
+			_getMyBuffDataArrayHandle = GCHandle.Alloc(_getMyBuffDataArray, GCHandleType.Pinned);
 
 			_requestSocket = new DealerSocket();
             _requestSocket.Options.Identity = Guid.NewGuid().ToByteArray();
@@ -1052,7 +1056,65 @@ namespace MQServerClient
             return (byte*)ptr.ToPointer();
 
 		}
+		public unsafe byte* GetMyBuffDataPtr(out int length)
+		{
+			if (_requestMsg.IsInitialised)
+			{
+				_requestMsg.Close();
+			}
+			_requestMsg.InitEmpty();
+			//send empty frame
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
 
+			_payloadLength = 0;
+
+			_requestMsg.Close();
+
+			//include command+ length in payload
+			_requestMsg.InitPool(_payloadLength + 8);
+			unsafe
+			{
+				fixed (byte* src = _payload)
+				{
+
+					fixed (byte* dest = _requestMsg.Data)
+					{   //4 bytes = commandtype
+						//4 bytes = length
+						//N-bytes = payload
+						byte* tPtr = dest;
+                        *((Int32*)tPtr) = 16;//GetMyBuffDataPtr
+                        tPtr += 4;
+						*(Int32*)tPtr = _payloadLength; //init/modify
+						tPtr += 4;
+						Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+					}
+				}
+			}
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+
+			//recieve the empty frame
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			//data is back, lets parse out the data
+			//first get the length out of the first 4 bytes.
+			ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(_requestMsg.Data, 0, _requestMsg.Size);
+			length = _requestMsg.Size;
+			data.CopyTo(_getMyBuffDataArray);
+			_requestMsg.Close();
+			IntPtr ptr = _getMyBuffDataArrayHandle.AddrOfPinnedObject();
+			return (byte*)ptr.ToPointer();
+
+		}
 		public unsafe byte* GetSpawns3_DeltaPtr(out int length)
 		{
 			if (_requestMsg.IsInitialised)

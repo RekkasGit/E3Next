@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Xml.Linq;
 
 
@@ -576,7 +577,7 @@ namespace E3Core.Processors
 				{
 					if (Basics.AmIDead()) return;
 					if (e3util.IsManualControl() && !Basics.InCombat() && !MQ.Query<bool>("${Me.Standing}")) return;
-					if (E3.IsMoving && !Assist.IsAssisting) return;
+					
 				}
 
 				Int32 targetID = MQ.Query<Int32>("${Target.ID}");
@@ -761,6 +762,8 @@ namespace E3Core.Processors
 		{
 			foreach (var spell in buffs)
 			{
+				if (E3.IsMoving && !Assist.IsAssisting && spell.MyCastTime>500) continue;
+
 				//using (_log.Trace($"BuffBots-Spell-{spell.CastName}"))
 				{
 					if (E3.ActionTaken) return;
@@ -1102,6 +1105,7 @@ namespace E3Core.Processors
 
 						if (!spell.IgnoreStackRules)
 						{
+							
 							if (spell.CastType == CastingType.AA)
 							{
 								willStack = MQ.Query<bool>($"${{Me.AltAbility[{spell.CastName}].Spell.WillLand}}");
@@ -1189,9 +1193,18 @@ namespace E3Core.Processors
 							return BuffBots_ReturnType.Continue;
 						}
 						bool willStack = true;
-						if(!spell.IgnoreStackRules)
+						Int32 buffStackClash = 0;
+						if (!spell.IgnoreStackRules)
 						{
-							willStack=MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
+							willStack = false;
+							
+							//willStack =MQ.Query<bool>($"${{Spell[{spell.SpellName}].WillLandPet}}");
+							var petresults = E3.Bots.PetBuffRegistgeredStackingResult(target);
+							if (petresults.ContainsKey(spell.SpellID))
+							{
+								willStack = petresults[spell.SpellID].Item1 > 0 ? true : false;
+								if (!willStack) buffStackClash = petresults[spell.SpellID].Item2;
+							}
 						}
 						
 					recastSpell:
@@ -1235,7 +1248,23 @@ namespace E3Core.Processors
 						else if (!willStack)
 						{
 							//won't stack don't check back for awhile
-							UpdateBuffTimers(s.ID, spell, 12 * 1000, -1, true);
+							UpdateBuffTimers(s.ID, spell, 1 * 1000, -1, true);
+							//loop over the targets buffs and do stacks with checks. 
+							if (E3.CharacterSettings.Alerts_BuffStackMessages && buffStackClash!=0)
+							{
+								if (buffStackClash == -1)
+								{
+									MQ.Write($"\ayStacking logic failed on buff (bot) \aw{spell.SpellName} \aybecause {s.CleanName} has max buff count. \agTrying again in 15 seconds");
+
+								}
+								else
+								{
+									string buffName = MQ.Query<String>($"${{Spell[{buffStackClash}]}}");
+									MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay (bot) because of stacking issues with \aw{buffName}\ay [{buffStackClash}]. \agTrying again in 15 seconds");
+								}
+							}
+
+
 						}
 						else
 						{
@@ -1258,9 +1287,6 @@ namespace E3Core.Processors
 
 						if (isABot)
 						{
-
-							
-
 							bool shouldContinue = false;
 							if (spell.CheckForCollection.Count > 0)
 							{
@@ -1295,49 +1321,37 @@ namespace E3Core.Processors
 								return BuffBots_ReturnType.Continue;
 							}
 					
-							Casting.TrueTarget(s.ID);
-							MQ.Delay(2000, "${Target.BuffsPopulated}");
+							//Casting.TrueTarget(s.ID);
+							//MQ.Delay(2000, "${Target.BuffsPopulated}");
 							bool willStack = true;
+							Int32 buffStackClash = 0;
 							if (!spell.IgnoreStackRules)
 							{
-								willStack = MQ.Query<bool>($"${{Spell[{spell.SpellName}].StacksTarget}}");
+								willStack = false;
+								var stackingresults = E3.Bots.BuffRegistgeredStackingResult(target);
+								if (stackingresults.ContainsKey(spell.SpellID))
+								{
+									willStack = stackingresults[spell.SpellID].Item1 > 0 ? true : false;
+									if (!willStack) buffStackClash = stackingresults[spell.SpellID].Item2;
+								}
 							}
-
-							if (!willStack)
+							if (!willStack && buffStackClash!=0)
 							{
 								UpdateBuffTimers(s.ID, spell, 15000, 15000, true);
 
 								//loop over the targets buffs and do stacks with checks. 
-
 								if(E3.CharacterSettings.Alerts_BuffStackMessages)
 								{
-									for (Int32 i = 1; i <= (e3util.MaxBuffSlots); i++)
+									if (buffStackClash==-1)
 									{
-										Int32 buffID = MQ.Query<Int32>($"${{Target.Buff[{i}].ID}}");
-										if (buffID > 0)
-										{
-											string buffName = MQ.Query<String>($"${{Target.Buff[{i}]}}");
-											bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spell.SpellID}].StacksWith[{buffID}]}}");
-											if (!stacksWith)
-											{
-												Int32 maxbuffsCount = MQ.Query<Int32>("${Me.MaxBuffSlots}");
-												Int32 currentBuffCount = MQ.Query<Int32>("${Me.BuffCount}");
+										MQ.Write($"\ayStacking logic failed on buff (bot) \aw{spell.SpellName} \aybecause {s.CleanName} has max buff count. \agTrying again in 15 seconds");
 
-												if(currentBuffCount==maxbuffsCount)
-												{
-													MQ.Write($"\ayStacking logic failed on buff \aw{spell.SpellName} \aybecause I have max buff count. \aw{currentBuffCount}\ay out of \aw{maxbuffsCount}\ay. \agTrying again in 15 seconds");
-
-												}
-												else
-												{
-													MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay because of stacking issues with \aw{buffName}\ay. \agTrying again in 15 seconds");
-
-												}
-												break;
-											}
-										}
 									}
-
+									else
+									{
+										string buffName = MQ.Query<String>($"${{Spell[{buffStackClash}]}}");
+										MQ.Write($"\ayCan't cast spell \aw{spell.SpellName}\ay on \aw{s.CleanName}\ay (bot) because of stacking issues with \aw{buffName}\ay. \agTrying again in 15 seconds");
+									}
 								}
 								return BuffBots_ReturnType.Continue;
 							}
@@ -1660,15 +1674,21 @@ namespace E3Core.Processors
 				Int64 timeLeft = _characterBuffs[keyNameToUse].BuffDurations[spell.SpellID];
 				if (timeLeft <= (spell.MinDurationBeforeRecast))
 				{
+					if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} CheckBotData time left is up, returning flase", Logging.LogLevels.Error);
+
 					return false;
 				}
 				else
 				{
+					if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} CheckBotData time is good, updating with time left and returning", Logging.LogLevels.Error);
+
 					UpdateBuffTimers(s.ID, spell, timeLeft, timeLeft);
 					return true;
 				}
 			}
 			//doesn't have the buff, or its expired
+			if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} CheckBotData doesn't have buff or its expired returning false", Logging.LogLevels.Error);
+
 			return false;
 		}
 		public static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets)
@@ -1685,17 +1705,24 @@ namespace E3Core.Processors
 						//our timer says the buff is still good, but lets make sure in case of dispel.
 						if (Core.StopWatch.ElapsedMilliseconds < timestamp)
 						{
+							if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} timer good , checking for dispel", Logging.LogLevels.Error);
 							//is this timestamp locked?
 							if (st.Lockedtimestamps.TryGetValue(spell.SpellID, out var lockedtimestamp))
 							{
+								if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} Has locked timestamp checking values TS:{lockedtimestamp} Current:{Core.StopWatch.ElapsedMilliseconds}", Logging.LogLevels.Error);
+
 								if (lockedtimestamp < Core.StopWatch.ElapsedMilliseconds)
 								{
 									//means this lock is no longer valuid
+									if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} removing locked timestamp", Logging.LogLevels.Error);
+
 									st.Lockedtimestamps.Remove(spell.SpellID);
 								}
 								else
 								{
 									//we have a locked time stamp, say its still good
+									if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} have locked timestamp of {lockedtimestamp} returning true", Logging.LogLevels.Error);
+
 									return true;
 								}
 							}
@@ -1715,6 +1742,8 @@ namespace E3Core.Processors
 								bool isABot = E3.Bots.BotsConnected().Contains(spell.CastTarget, StringComparer.OrdinalIgnoreCase);
 								if (isABot)
 								{
+									if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} checking bot data for if timer is good", Logging.LogLevels.Error);
+
 									//register the user to get their buff data if its not already there
 									return BuffTimerIsGood_CheckBotData(spell, s, usePets);
 								}
@@ -2080,6 +2109,10 @@ namespace E3Core.Processors
 						if (!s.Lockedtimestamps.ContainsKey(spell.SpellID))
 						{
 							s.Lockedtimestamps.Add(spell.SpellID, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
+						}
+						else
+						{
+							s.Lockedtimestamps[spell.SpellID] = Core.StopWatch.ElapsedMilliseconds + timeLeftInMS;
 						}
 					}
 					else

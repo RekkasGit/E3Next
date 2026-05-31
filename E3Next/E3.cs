@@ -3,6 +3,7 @@ using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
+using E3Core.UI.Windows.CharacterSettings;
 using E3Core.UI.Windows.Hud;
 using E3Core.Utility;
 using MonoCore;
@@ -13,9 +14,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceModel.Channels;
+using System.ServiceModel.Configuration;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -324,6 +327,8 @@ namespace E3Core.Processors
 		//needs to be fast to be able to show a new buff has landed
 		private static Int64 _nextBuffUpdateCheckTime = 0;
 		private static Int64 _nextSlowUpdateCheckTime = 0;
+		private static Int64 _nextStackingUpdateCheckTime = 0;
+		private static Int64 _nextStackingUpdateCheckRate = 3000;
 		private static Int64 _nextMiscUpdateCheckTime = 0;
 		private static Int64 _nextMemoryUpdateCheckTime = 0;
 		private static Int64 _nextMemoryUpdateCheckRate = 2000;
@@ -352,7 +357,318 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.Memory_EQStartTime}", $"{startTime.ToString()}");
 
 		}
+		
+		[ExposedData("Core", "BuffsThatMightBeCastOnMe")]
+		public static Dictionary<Int32,(int,int)> _buffsThatMightBeCastOnMe = new Dictionary<Int32, (int, int)>();
+		[ExposedData("Core", "BuffsThatMightBeCastOnMyPet")]
+		public static Dictionary<Int32, (int, int)> _buffsThatMightBeCastOnMyPet = new Dictionary<Int32, (int, int)>();
+		public static void StateUpdates_ConfiguredBuffsStacking()
+		{
+			_buffsThatMightBeCastOnMe.Clear();
+			_buffsThatMightBeCastOnMyPet.Clear();
+			//check each id from every single toon's buffs and see if they will stack with what you have. 
 
+			var botsConnected = E3.Bots.BotsConnected();
+		
+			foreach (var bot in botsConnected)
+			{
+				List<Int32> registeredBuffs = E3.Bots.BuffRegisteredList(bot);
+
+				foreach(var buff in registeredBuffs)
+				{
+					if(!_buffsThatMightBeCastOnMe.ContainsKey(buff))
+					{
+						_buffsThatMightBeCastOnMe.Add(buff,(0,0));
+					}
+				}
+
+				List<Int32> registeredPetBuffs = E3.Bots.BuffPetRegisteredList(bot);
+
+				foreach (var buff in registeredPetBuffs)
+				{
+					if (!_buffsThatMightBeCastOnMyPet.ContainsKey(buff))
+					{
+						_buffsThatMightBeCastOnMyPet.Add(buff, (0, 0));
+					}
+				}
+			}
+			Int32 maxbuffsCount = MQ.Query<Int32>("${Me.MaxBuffSlots}");
+			Int32 currentBuffCount = MQ.Query<Int32>("${Me.BuffCount}");
+			//okay now we should have all the buffs that 'might' be cast on me, lets check to see if it will stack.
+			foreach (var spellid in _buffsThatMightBeCastOnMe.Keys.ToList())
+			{
+				bool willStack = MQ.Query<bool>($"${{Spell[{spellid}].WillLand}}");
+				Int32 buffID_ClashWith = 0;
+				if(!willStack)
+				{
+					if (currentBuffCount == maxbuffsCount)
+					{
+						buffID_ClashWith = -1;
+					}
+					else
+					{
+						unsafe
+						{
+							int length;
+							byte* p = MQ.GetMyBuffDataPtr(out length);
+							ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+							//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+							int dataStartingLength = data.Length;
+							for (int i = 0; i < e3util.MaxBuffSlots; i++)
+							{
+								Int32 buffID = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 casterId = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 duration = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+
+								Int32 hitcount = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 spellType = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 counterType = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
+								data = data.Slice(4);
+								bool IsSong = MemoryMarshal.Read<bool>(data);
+								data = data.Slice(1);
+
+								if (buffID > 0)
+								{
+									bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spellid}].StacksWith[{buffID}]}}");
+									if (!stacksWith)
+									{
+										buffID_ClashWith = buffID;
+										break;
+									}
+								}
+								if (dataStartingLength - data.Length >= length)
+								{
+									//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+									break;
+								}
+								//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
+							}
+							if(buffID_ClashWith==0)
+							{
+								for (int i = 0; i < e3util.MaxSongSlots; i++)
+								{
+									Int32 buffID = MemoryMarshal.Read<Int32>(data);
+
+									data = data.Slice(4);
+									Int32 casterId = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									Int32 duration = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									Int32 hitcount = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									Int32 spellType = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									Int32 counterType = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
+									data = data.Slice(4);
+									bool IsSong = MemoryMarshal.Read<bool>(data);
+									data = data.Slice(1);
+									//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
+									if (buffID > 0)
+									{
+										bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spellid}].StacksWith[{buffID}]}}");
+										if (!stacksWith)
+										{
+											buffID_ClashWith = buffID;
+											break;
+										}
+									}
+
+									if (dataStartingLength - data.Length >= length)
+									{
+										//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+				_buffsThatMightBeCastOnMe[spellid] = willStack?(1,0):(0,buffID_ClashWith);
+			}
+
+			if (MQ.Query<bool>("${Me.Pet.ID}"))
+			{
+				foreach (var spellid in _buffsThatMightBeCastOnMyPet.Keys.ToList())
+				{
+					bool willStack = MQ.Query<bool>($"${{Spell[{spellid}].WillLandPet}}");
+					Int32 buffID_ClashWith = 0;
+					if (!willStack)
+					{
+						if (currentBuffCount == maxbuffsCount)
+						{
+							buffID_ClashWith = -1;
+						}
+						else
+						{
+							unsafe
+							{
+								int length;
+								byte* p = MQ.GetPetBuffDataPtr(out length);
+
+								if(length>0)
+								{
+									ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+									int dataStartingLength = data.Length;
+									//reason we are using maxpetbuff slots that is generally 30, is because of WillLandPet is limited
+									//to the pet window anyway, so no need reading past that.
+									for (int i = 0; i < e3util.MaxPetBuffSlots; i++)
+									{
+										Int32 buffID = MemoryMarshal.Read<Int32>(data);
+										data = data.Slice(4);
+										Int32 duration = MemoryMarshal.Read<Int32>(data);
+										data = data.Slice(4);
+										Int32 spellType = MemoryMarshal.Read<Int32>(data);
+										data = data.Slice(4);
+
+										//MQ.Write($"ID:{ID} D:{duration}  st:{spellType}");
+										if (buffID > 0)
+										{
+											bool stacksWith = MQ.Query<Boolean>($"${{Spell[{spellid}].StacksWith[{buffID}]}}");
+											if (!stacksWith)
+											{
+												buffID_ClashWith = buffID;
+												break;
+											}
+										}
+										if (dataStartingLength - data.Length >= length)
+										{
+											//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+											break;
+										}
+
+									}
+								}
+							}
+						}
+					}
+					_buffsThatMightBeCastOnMyPet[spellid] = willStack ? (1, 0) : (0, buffID_ClashWith);
+				}
+			}
+			
+			//now lets publish them out!
+			unsafe
+			{
+				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder(200);
+				try
+				{
+					bool firstEntry = true;
+
+					foreach (var pair in _buffsThatMightBeCastOnMe)
+					{
+						if(!firstEntry) buffInfoStringBuilder.Append(":");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Key)); //spellid we are comparing
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Value.Item1));//true/false for willstack
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Value.Item2));//spell id that it clashed against
+						firstEntry = false;
+					}
+					var payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out int length);
+					PubServer.AddTopicMessageFromPool("${Me.BuffsToApply_StackingResult}", payload, length);
+
+					firstEntry = true;
+					buffInfoStringBuilder.Reset();
+					foreach (var pair in _buffsThatMightBeCastOnMyPet)
+					{
+						if (!firstEntry) buffInfoStringBuilder.Append(":");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Key)); //spellid we are comparing
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Value.Item1));//true/false for willstack
+						buffInfoStringBuilder.Append(",");
+						buffInfoStringBuilder.Append(e3util.GetIntStr(pair.Value.Item2));//spell id that it clashed against
+						firstEntry = false;
+					}
+					payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out length);
+					PubServer.AddTopicMessageFromPool("${Me.Pet_BuffsToApply_StackingResult}", payload, length);
+				}
+				finally
+				{
+					buffInfoStringBuilder.Dispose();
+				}
+			}
+		}
+		[ExposedData("Core", "ConfiguredBuffs")]
+		static HashSet<Int32> _spellsToBuffWith = new HashSet<int>();
+		[ExposedData("Core", "ConfiguredPetBuffs")]
+		static HashSet<Int32> _spellsToBuffPetsWith = new HashSet<int>();
+		public static void StateUpdates_ConfiguredBuffs()
+		{
+			_spellsToBuffWith.Clear();
+			//we are going to publish out all the buffs we are configured to use, so that other toons will publish out if they stack.
+			//combat buffs
+			
+			foreach(var buff in E3.CharacterSettings.CombatBuffs)
+			{	
+				if(!_spellsToBuffWith.Contains(buff.SpellID))
+				{
+					_spellsToBuffWith.Add(buff.SpellID);
+
+				}
+			}
+			foreach (var buff in E3.CharacterSettings.AssistBuffs)
+			{
+				if (!_spellsToBuffWith.Contains(buff.SpellID))
+				{
+					_spellsToBuffWith.Add(buff.SpellID);
+
+				}
+			}
+			foreach (var buff in E3.CharacterSettings.BotBuffs)
+			{
+				if (!_spellsToBuffWith.Contains(buff.SpellID))
+				{
+					_spellsToBuffWith.Add(buff.SpellID);
+
+				}
+			}
+
+			foreach (var buff in E3.CharacterSettings.PetBuffs)
+			{
+				if (!_spellsToBuffPetsWith.Contains(buff.SpellID))
+				{
+					_spellsToBuffPetsWith.Add(buff.SpellID);
+
+				}
+			}
+			unsafe
+			{
+				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder(200);
+				try
+				{
+					foreach(Int32 spellid in _spellsToBuffWith)
+					{
+						buffInfoStringBuilder.Append(e3util.GetIntStr(spellid));
+						buffInfoStringBuilder.Append(":");
+					}
+					var payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out int length);
+					PubServer.AddTopicMessageFromPool("${Me.BuffsToApply}", payload, length);
+
+					buffInfoStringBuilder.Reset();
+					foreach (Int32 spellid in _spellsToBuffPetsWith)
+					{
+						buffInfoStringBuilder.Append(e3util.GetIntStr(spellid));
+						buffInfoStringBuilder.Append(":");
+					}
+					payload = buffInfoStringBuilder.ReturnCopyBufferFromPool(out length);
+					PubServer.AddTopicMessageFromPool("${Me.Pet.BuffsToApply}", payload, length);
+				}
+				finally
+				{
+					buffInfoStringBuilder.Dispose();
+				}
+			}
+		}
 		public static void StateUpdates_Counters()
 		{
 			
@@ -361,7 +677,12 @@ namespace E3Core.Processors
 			PubServer.AddTopicMessage("${Me.CountersDisease}", MQ.Query<string>("${Debuff.Diseased}"));
 			PubServer.AddTopicMessage("${Me.CountersCurse}", MQ.Query<string>("${Debuff.Cursed}"));
 			PubServer.AddTopicMessage("${Me.CountersCorrupted}", MQ.Query<string>("${Debuff.Corrupted}"));
-			
+			PubServer.AddTopicMessage("${Me.Pet.TotalCounters}", MQ.Query<string>("${Debuff[pet].Count}"));
+			PubServer.AddTopicMessage("${Me.Pet.CountersPoison}", MQ.Query<string>("${Debuff[pet].Poisoned}"));
+			PubServer.AddTopicMessage("${Me.Pet.CountersDisease}", MQ.Query<string>("${Debuff[pet].Diseased}"));
+			PubServer.AddTopicMessage("${Me.Pet.CountersCurse}", MQ.Query<string>("${Debuff[pet].Cursed}"));
+			PubServer.AddTopicMessage("${Me.Pet.CountersCorrupted}", MQ.Query<string>("${Debuff[pet].Corrupted}"));
+
 		}
 		public static void StateUpdates_Misc()
 		{
@@ -409,13 +730,13 @@ namespace E3Core.Processors
 		}
 		public static void StateUpdates_BuffInformation()
 		{
-			if (Core._MQ2MonoVersion >= 0.411m && !Debugger.IsAttached)
+			if (Core._MQ2MonoVersion >= 0.411m)
 			{
 				Int32 length = 0;
 				char[] payload = e3util.GetBuffDataForPubSubHighPerf(out length);
-				PubServer.AddTopicMessage("${Me.BuffInfo}", payload, length);
+				PubServer.AddTopicMessageFromPool("${Me.BuffInfo}", payload, length);
 				payload = e3util.GetPetBuffDataForPubSubHighPerf(out length);
-				PubServer.AddTopicMessage("${Me.PetBuffInfo}", payload,length);
+				PubServer.AddTopicMessageFromPool("${Me.PetBuffInfo}", payload,length);
 			}
 			else
 			{
@@ -483,7 +804,11 @@ namespace E3Core.Processors
 					{
 						StateUpdates_Memory();
 					}
-
+					if(e3util.ShouldCheck(ref _nextStackingUpdateCheckTime, _nextStackingUpdateCheckRate))
+					{
+						StateUpdates_ConfiguredBuffs();
+						StateUpdates_ConfiguredBuffsStacking();
+					}
 					//not horribly important stuff, can just be sent out whever, currently once per second
 					if (e3util.ShouldCheck(ref _nextSlowUpdateCheckTime, E3.CharacterSettings.CPU_PublishSlowDataInMS))
 					{
@@ -493,7 +818,6 @@ namespace E3Core.Processors
 							E3.Bots.Broadcast("GM Safe kicked in, turning it off");
 						}
 						StateUpdates_AAInformation();
-						
 						if (Core._MQ2MonoVersion >= 0.412m || Debugger.IsAttached)
 						{
 							unsafe

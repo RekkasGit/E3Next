@@ -1683,6 +1683,7 @@ namespace MonoCore
 		string GetHoverWindowName();
 		unsafe byte* GetAAIdsDataPtr(out int length);
 		unsafe byte* GetPetBuffDataPtr(out int length);
+		unsafe byte* GetMyBuffDataPtr(out int length);
 		unsafe byte* GetXtargetDataPtr(out int length);
 		unsafe byte* GetSpawns3_DeltaPtr(out int length);
 		unsafe byte* GetTargetBuffDataPtr(Int32 spawnId, out int length);
@@ -1783,6 +1784,16 @@ namespace MonoCore
 			_getTargetBuffDataPtr = Core.mq_GetTargetBuffData(spawnId, out _getTargetBuffDataPtrLength);
 			length = _getTargetBuffDataPtrLength;
 			return _getTargetBuffDataPtr;
+		}
+
+		private int _getMyBuffDataPtrLength = 0;
+		private unsafe byte* _getMyBuffDataPtr;
+		public unsafe byte* GetMyBuffDataPtr(out int length)
+		{
+
+			_getMyBuffDataPtr = Core.mq_GetBuffData(out _getMyBuffDataPtrLength);
+			length = _getMyBuffDataPtrLength;
+			return _getMyBuffDataPtr;
 		}
 		public Int32 SpellDataGetLineCount(string query)
 		{

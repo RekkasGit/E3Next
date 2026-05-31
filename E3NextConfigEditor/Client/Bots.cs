@@ -31,6 +31,31 @@ namespace E3NextConfigEditor.Client
 			return 0;
 		}
 
+		public int BasePetCorruptedCounters(string name)
+		{
+			return 0;
+		}
+
+		public int BasePetCursedCounters(string name)
+		{
+			return 0;
+		}
+
+		public int BasePetDebuffCounters(string name)
+		{
+			return 0;
+		}
+
+		public int BasePetDiseasedCounters(string name)
+		{
+			return 0;
+		}
+
+		public int BasePetPoisonedCounters(string name)
+		{
+			return 0;
+		}
+
 		public int BasePoisonedCounters(string name)
 		{
 			return 0;
@@ -83,6 +108,26 @@ namespace E3NextConfigEditor.Client
 		public List<int> BuffList(string name)
 		{
 			return new List<int>();
+		}
+
+		public List<int> BuffPetRegisteredList(string name)
+		{
+			return new List<int>();
+		}
+
+		public Dictionary<int, (int, int)> PetBuffRegistgeredStackingResult(string name)
+		{
+			return new Dictionary<int, (int, int)>();
+		}
+
+		public List<int> BuffRegisteredList(string name)
+		{
+			return new List<int>();
+		}
+
+		public Dictionary<int, (int,int)> BuffRegistgeredStackingResult(string name)
+		{
+			return new Dictionary<int, (int, int)>();
 		}
 
 		public CharacterBuffs GetBuffInformation(string name)
