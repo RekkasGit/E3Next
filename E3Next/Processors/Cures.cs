@@ -39,7 +39,7 @@ namespace E3Core.Processors
 				{
 					Boolean.TryParse(x.args[0], out _shouldCastCure);
 				}
-			});
+			}, "Toggle radiant cure casting on/off");
 		}
 
 		/// <summary>

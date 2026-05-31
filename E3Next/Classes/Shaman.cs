@@ -41,7 +41,7 @@ namespace E3Core.Classes
 				//swap them
 				e3util.ToggleBooleanSetting(ref E3.CharacterSettings.AutoCanni, "Auto Canni", x.args);
 	
-			});
+			}, "Toggle Shaman autocannibalize on/off/toggle");
 
 		}
         [ClassInvoke(Data.Class.Shaman)]

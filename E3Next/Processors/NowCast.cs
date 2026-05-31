@@ -111,7 +111,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
-            });
+            }, "Immediately cast a spell, interrupting current cast if needed");
 
         }
 

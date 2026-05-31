@@ -156,7 +156,7 @@ namespace E3Core.Classes
                         }
                     }
                 }
-            });
+            }, "Play or stop a named Bard melody sequence");
 			EventProcessor.RegisterCommand("/e3bard-automez", (x) =>
             {
                 if (x.args.Count > 0)
@@ -211,7 +211,7 @@ namespace E3Core.Classes
 
 					}
 				}
-			});
+			}, "Toggle Bard automatic mez on/off/toggle");
 		}
 
         /// <summary>

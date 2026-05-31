@@ -187,7 +187,7 @@ namespace E3Core.Settings.FeatureSettings
                 MQ.Cmd("/nav spawn klorg | distance=10");
                 MQ.Delay(30000, "${Spawn[klorg].Distance3D} <= 15");
                 AutoSymbols("klorg");
-            });
+            }, "Perform a PoP symbol turn-in (Lazarus server)");
 
             // Taelosian Symbol turn In
             EventProcessor.RegisterCommand("/e3godturnin", (x) =>
@@ -205,13 +205,13 @@ namespace E3Core.Settings.FeatureSettings
                 MQ.Cmd("/nav spawn zenma | distance=10");
                 MQ.Delay(30000, "${Spawn[zenma].Distance3D} <= 15");
                 AutoSymbols("zenma");
-            });
+            }, "Perform a GoD symbol turn-in (Lazarus server)");
 
 			EventProcessor.RegisterCommand("/e3lazsymbolfileupdate", (x) =>
 			{
 				PopulateDefaultData();
 				SaveData();
-			});
+			}, "Regenerate and save Lazarus symbol data");
 		}
 
         public static void LoadData()

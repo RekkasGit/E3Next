@@ -85,7 +85,7 @@ namespace E3Core.Processors
 			//});
 
 
-            EventProcessor.RegisterCommand("/E3LootStackAdd", (x) =>
+			EventProcessor.RegisterCommand("/E3LootStackAdd", (x) =>
             {
                 if(x.args.Count>0)
                 {
@@ -119,7 +119,7 @@ namespace E3Core.Processors
 			
 					e3util.ClearCursor();
 				}
-			});
+			}, "Add a stackable item to the loot list");
 			EventProcessor.RegisterCommand("/E3LootAdd", (x) =>
             {
                 if (x.args.Count > 1)
@@ -156,7 +156,7 @@ namespace E3Core.Processors
 						LootDataFile.Skip.Add(x.args[0]);
 					}
                 } 
-            });
+            }, "Add an item to the Keep/Sell/Destroy loot list");
 			EventProcessor.RegisterCommand("/E3LootRemove", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -167,7 +167,7 @@ namespace E3Core.Processors
 					LootDataFile.Destroy.Remove(x.args[0]);
 					LootDataFile.SaveData();
 				}
-			});
+			}, "Remove an item from all loot lists");
 
             EventProcessor.RegisterCommand("/e3loot-area", (x) =>
             {
@@ -180,7 +180,7 @@ namespace E3Core.Processors
 					E3.Bots.Broadcast("\agLooting current area.");
 					LootArea(force:true);
 				}
-			});
+			}, "Initiate area loot on nearby corpses");
 
 		   EventProcessor.RegisterCommand("/looton", (x) =>
             {
@@ -208,7 +208,7 @@ namespace E3Core.Processors
                     
                     E3.Bots.Broadcast("\agTurning on Loot.");
                 }
-            });
+            }, "Enable auto-loot");
 			EventProcessor.RegisterCommand("/e3lootall", (x) =>
 			{
 
@@ -257,7 +257,7 @@ namespace E3Core.Processors
 					}
 				
 				}
-			});
+			}, "Loot all nearby corpses");
 			EventProcessor.RegisterCommand("/lootoff", (x) =>
             {
                 if (x.args.Count > 0 && !x.args[0].Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase))
@@ -270,7 +270,7 @@ namespace E3Core.Processors
                     E3.CharacterSettings.Misc_AutoLootEnabled = false;
                     E3.Bots.Broadcast("\agTurning Off Loot.");
                 }
-            });
+            }, "Disable auto-loot");
 
             EventProcessor.RegisterCommand("/lootkeep", (x) =>
             {
@@ -302,7 +302,7 @@ namespace E3Core.Processors
                 LootDataFile.SaveData();
 
                 e3util.ClearCursor();
-            });
+            }, "Add cursor item to the keep list");
 
 			EventProcessor.RegisterCommand("/lootdestroy", (x) =>
 			{
@@ -326,7 +326,7 @@ namespace E3Core.Processors
 				LootDataFile.SaveData();
 
 				e3util.CursorTryDestroyItem(cursorItem);
-			});
+			}, "Add cursor item to the destroy list");
 
 			EventProcessor.RegisterCommand("/lootskip", (x) =>
             {
@@ -359,7 +359,7 @@ namespace E3Core.Processors
                 MQ.Write($"\arSetting {cursorItem} to SKIP");
                 E3.Bots.BroadcastCommand($"/E3LootAdd \"{cursorItem}\" SKIP");
                 LootDataFile.SaveData();
-            });
+            }, "Add cursor item to the skip list");
 
             EventProcessor.RegisterCommand("/lootsell", (x) =>
             {
@@ -390,7 +390,7 @@ namespace E3Core.Processors
                 LootDataFile.SaveData();
 
                 e3util.ClearCursor();
-            });
+            }, "Add cursor item to the sell list");
         }
 
         public static void Process()

@@ -695,7 +695,7 @@ namespace E3Core.Processors
 				bool processedLine = Casting.Ifs(argumentLine);
 				MQ.Cmd($"/echo {processedLine}");
 				//MQ.Cmd($"/varset E3N_var {processedLine}");
-			});
+			}, "Evaluate an E3 boolean expression and echo the result");
 			EventProcessor.RegisterCommand("/dropinvis", (x) =>
 			{
 				E3.Bots.BroadcastCommandToGroup("/makemevisible", x);
@@ -857,7 +857,7 @@ namespace E3Core.Processors
 					Logging.TraceLogLevel = Logging.LogLevels.None;
 					E3.CharacterSettings.CPU_ProcessLoopDelay = Debug_PreviousCPUDelay;
 				}
-			});
+			}, "Set E3N log level: trace/debug/info/warn/error/none");
 
 			EventProcessor.RegisterCommand("/pizza", (x) =>
 			{
@@ -869,7 +869,7 @@ namespace E3Core.Processors
 				{
 					System.Diagnostics.Process.Start("https://www.dominos.com/en/restaurants?type=Delivery");
 				}
-			});
+			}, "Opens a pizza ordering website (easter egg)");
 
 			EventProcessor.RegisterCommand("/e3yes", (x) =>
 			{
@@ -878,7 +878,7 @@ namespace E3Core.Processors
 					E3.Bots.BroadcastCommandToGroup("/e3yes all", x);
 				}
 				e3util.ClickYesNo(true);
-			});
+			}, "Click Yes on group/raid confirmation dialog, broadcast to group");
 			EventProcessor.RegisterCommand("/e3no", (x) =>
 			{
 				if (x.args.Count == 0)
@@ -886,7 +886,7 @@ namespace E3Core.Processors
 					E3.Bots.BroadcastCommandToGroup("/e3no all", x);
 				}
 				e3util.ClickYesNo(false);
-			});
+			}, "Click No on group/raid confirmation dialog, broadcast to group");
 			EventProcessor.RegisterCommand("/yes", (x) =>
 			{
 				if (x.args.Count == 0)
@@ -894,7 +894,7 @@ namespace E3Core.Processors
 					E3.Bots.BroadcastCommandToGroup("/yes all", x);
 				}
 				e3util.ClickYesNo(true);
-			});
+			}, "Click Yes on confirmation dialog, broadcast to group");
 			EventProcessor.RegisterCommand("/no", (x) =>
 			{
 				if (x.args.Count == 0)
@@ -902,7 +902,7 @@ namespace E3Core.Processors
 					E3.Bots.BroadcastCommandToGroup("/no all", x);
 				}
 				e3util.ClickYesNo(false);
-			});
+			}, "Click No on confirmation dialog, broadcast to group");
 
 
 			EventProcessor.RegisterCommand("/reportaa", (x) =>
@@ -918,7 +918,7 @@ namespace E3Core.Processors
 				MQ.Cmd($"{channel} AA Spent-Available: ${{Me.AAPointsSpent}}-${{Me.AAPoints}}");
 				E3.Bots.BroadcastCommand($"{channel} AA Spent-Available: ${{Me.AAPointsSpent}}-${{Me.AAPoints}}", true);
 
-			});
+			}, "Report AA abilities to chat channel");
 
 			EventProcessor.RegisterCommand("/bark", (x) =>
 			{
@@ -972,7 +972,7 @@ namespace E3Core.Processors
 						}
 					}
 				}
-			});
+			}, "Send a /say message to a targeted NPC using navigation");
 
 			EventProcessor.RegisterCommand("/bark-send", (x) =>
 			{
@@ -1035,7 +1035,7 @@ namespace E3Core.Processors
 						}
 					}
 				}
-			});
+			}, "Send a bark message to a specific NPC by spawn ID");
 			EventProcessor.RegisterCommand("/e3bark", (x) =>
 			{
 				//rebuild the bark message, and do a /say
@@ -1081,7 +1081,7 @@ namespace E3Core.Processors
 					}
 
 				}
-			});
+			}, "Bark a message to a targeted NPC, broadcast to group");
 			EventProcessor.RegisterCommand("/e3bark-send", (x) =>
 			{
 				if (x.args.Count > 1)
@@ -1136,7 +1136,7 @@ namespace E3Core.Processors
 						}
 					}
 				}
-			});
+			}, "Bark message to a specific NPC ID, broadcast to group");
 			EventProcessor.RegisterCommand("/evac", (x) =>
 			{
 				if (E3.CurrentClass == Class.Druid || E3.CurrentClass == Class.Wizard)
@@ -1200,7 +1200,7 @@ namespace E3Core.Processors
 				{   //let someone else try it out
 					E3.Bots.BroadcastCommandToGroup("/evac me");
 				}
-			});
+			}, "Cast evacuate spell, broadcast to group");
 
 			EventProcessor.RegisterCommand("/e3p", (x) =>
 			{
@@ -1230,7 +1230,7 @@ namespace E3Core.Processors
 
 				}
 
-			});
+			}, "Toggle E3N processing pause on/off/toggle");
 
 			EventProcessor.RegisterCommand("/savegroup", (x) =>
 			{
@@ -1241,7 +1241,7 @@ namespace E3Core.Processors
 				MQ.Write($"\agCreating new saved group by the name of {args[0]}");
 				SavedGroupData.SaveData(args[0]);
 				MQ.Write($"\agSuccessfully created {args[0]}");
-			});
+			}, "Save current group composition with a given name");
 
 			EventProcessor.RegisterCommand("/e3manastone", (x) =>
 			{
@@ -1256,7 +1256,7 @@ namespace E3Core.Processors
 
 				MQ.Write($"\ag ManaStone Enabled: {manastoneon}");
 
-			});
+			}, "Configure mana stoning min HP and mana thresholds");
 
 			EventProcessor.RegisterCommand("/group", (x) =>
 			{
@@ -1299,7 +1299,7 @@ namespace E3Core.Processors
 				{
 					MQ.Cmd($"/invite {member}");
 				}
-			});
+			}, "Save or load a named group configuration");
 
 			EventProcessor.RegisterCommand("/listgroups", (x) =>
 			{
@@ -1321,7 +1321,7 @@ namespace E3Core.Processors
 						MQ.Write($"\ag{member}");
 					}
 				}
-			});
+			}, "List all saved group configurations");
 
 			EventProcessor.RegisterCommand("/wiki", x =>
 			{
@@ -1337,7 +1337,7 @@ namespace E3Core.Processors
 				{
 					Process.Start(new ProcessStartInfo { FileName = "https://retributioneq.com/", UseShellExecute = true });
 				}
-			});
+			}, "Open the E3Next wiki in a browser");
 		}
 
 		/// <summary>

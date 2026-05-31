@@ -535,7 +535,7 @@ namespace E3Core.Processors
                 double currentY = MQ.Query<double>("${Me.Y}");
              
                 E3.Bots.BroadcastCommandToGroup($"/e3movetorandomloc \"{currentX}\" \"{currentY}\" \"{Distance}\"",x,true);
-            });
+            }, "Scatter bots to random positions within a distance");
             EventProcessor.RegisterCommand("/e3movetorandomloc", (x) => {
                 double currentX = 0;
                 double currentY = 0;
@@ -560,7 +560,7 @@ namespace E3Core.Processors
 				double currentZ = MQ.Query<double>("${Me.Z}");
                 e3util.TryMoveToLoc(currentX+E3.Random.Next(-1*distance,distance), currentY + E3.Random.Next(-1 * distance, distance), currentZ);
 
-            });
+            }, "Move to a random location within a distance");
             EventProcessor.RegisterCommand("/e3movetoloc", (x) => {
 
 
@@ -579,7 +579,7 @@ namespace E3Core.Processors
                 double currentZ = MQ.Query<double>("${Me.Z}");
                 e3util.TryMoveToLoc(currentX, currentY, currentZ);
         
-            });
+            }, "Move to specific X/Y/Z coordinates");
 
             EventProcessor.RegisterCommand("/clickit", (x) =>
             {
@@ -675,7 +675,7 @@ namespace E3Core.Processors
 					MQ.Cmd("/squelch /click left door");
 
 				}
-			});
+			}, "Click the nearest door or object in the zone");
 
             EventProcessor.RegisterCommand("/anchoron", (x) =>
             {
@@ -743,7 +743,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
-            });
+            }, "Set an anchor point that character will return to");
             EventProcessor.RegisterCommand("/chaseme", (x) =>
             {
                 //chaseme <toon name>
@@ -784,7 +784,7 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommandToGroup($"/chaseme {E3.CurrentName}", x);
                     Following = false;
                 }
-            });
+            }, "Make bots chase a specific toon");
             EventProcessor.RegisterCommand("/anchoroff", (x) =>
             {
                
@@ -802,7 +802,7 @@ namespace E3Core.Processors
 
                 }
 
-            });
+            }, "Disable anchor, allow free movement");
             EventProcessor.RegisterCommand("/e3follow", (x) =>
             {
 				string user = string.Empty;
@@ -878,7 +878,7 @@ namespace E3Core.Processors
 
 				}
 
-			});
+			}, "Start following a target with distance and nav options");
 			EventProcessor.RegisterCommand("/e3followoff", (x) =>
 			{
 				if (!x.args.Contains("me", StringComparer.OrdinalIgnoreCase))
@@ -939,7 +939,7 @@ namespace E3Core.Processors
 					}
 
 				}
-			});
+			}, "Stop following");
 
 			EventProcessor.RegisterCommand("/followme", (x) =>
             {
@@ -997,7 +997,7 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommandToGroup("/followme " + E3.CurrentName + $" {_followMeDistance}", x);
 
                 }
-            });
+            }, "Make bots follow the commanding player");
 
             EventProcessor.RegisterCommand("/mtm", (x) => {
 
@@ -1040,8 +1040,7 @@ namespace E3Core.Processors
                         e3util.TryMoveToTarget();
                     }
                 }
-            }
-            );
+            }, "Move-to-me: bring a targeted spawn to your location");
             EventProcessor.RegisterCommand("/followoff", (x) =>
             {
                 if (!x.args.Contains("me",StringComparer.OrdinalIgnoreCase))
@@ -1102,7 +1101,7 @@ namespace E3Core.Processors
                     }
                    
                 }
-            });
+            }, "Stop all follow (legacy alias)");
             EventProcessor.RegisterCommand("/rtz", (x) =>
             {
                 if (x.args.Count > 0)
@@ -1154,7 +1153,7 @@ namespace E3Core.Processors
 					}
                     MQ.Cmd("/nomodkey /keypress forward hold");
                 }
-            });
+            }, "Return to zone: run to the zone line");
             EventProcessor.RegisterCommand("/coth", (x) =>
             {
                 string cothTarget = string.Empty;
@@ -1181,7 +1180,7 @@ namespace E3Core.Processors
                         PlayerSummon(s.CleanName);
                     }
                 }
-            });
+            }, "Cast Call of the Hero on a target");
         }
 
         public static void PlayerSummon(string cothTarget)

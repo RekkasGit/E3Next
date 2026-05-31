@@ -32,7 +32,7 @@ namespace E3Core.Settings.FeatureSettings
                 var useTribute = string.Equals(x.args[0], "On", StringComparison.OrdinalIgnoreCase);
                 SaveData(Zoning.CurrentZone.ShortName, useTribute);
                 ToggleTribute();
-            });
+            }, "Toggle tribute on/off");
 
 			EventProcessor.RegisterCommand("/e3tribute-list", x =>
 			{

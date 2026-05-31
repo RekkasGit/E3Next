@@ -24,7 +24,7 @@ namespace E3Core.Processors
 		public static void Init_Dispel()
 		{
 
-			e3util.RegisterCommandWithTarget("/e3dispel", DispelOn);
+			e3util.RegisterCommandWithTarget("/e3dispel", DispelOn, "Turn on dispelling for a targeted mob");
 			EventProcessor.RegisterCommand("/e3dispeloff", (x) =>
 			{
 				_mobsToDispel.Clear();
@@ -34,7 +34,7 @@ namespace E3Core.Processors
 					E3.Bots.BroadcastCommandToGroup($"/e3dispeloff all", x);
 				}
 
-			});
+			}, "Stop dispelling, clear mob dispel list");
 		}
 
 

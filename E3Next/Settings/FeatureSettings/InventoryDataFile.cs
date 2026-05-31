@@ -30,7 +30,7 @@ namespace E3Core.Settings.FeatureSettings
 			EventProcessor.RegisterCommand("/e3inventoryfile_sync", x =>
 			{
 				SaveData();
-			});
+			}, "Save inventory data file to disk");
 		}
 
 

@@ -93,41 +93,41 @@ namespace E3Core.Settings.FeatureSettings
 					if (d.DiseaseImmune) sb.Append($"\ayDRI ");
 					if (d.CorruptResistant) sb.Append($"\ayCUR ");
 					if (d.CorruptImmune) sb.Append($"\ayCURI ");
-					MQ.Write(sb.ToString());
-				}
+				MQ.Write(sb.ToString());
+			}
 
 
-			});
+			}, "List all zone resist data");
 			EventProcessor.RegisterCommand("/e3resist-fire", x =>
 			{
 				ExecuteResistCommand(x, "Fire");
-			});
+			}, "Set zone resist data for Fire");
 			EventProcessor.RegisterCommand("/e3resist-cold", x =>
 			{
 				ExecuteResistCommand(x, "Cold");
-			});
+			}, "Set zone resist data for Cold");
 			EventProcessor.RegisterCommand("/e3resist-magic", x =>
 			{
 				ExecuteResistCommand(x, "Magic");
-			});
+			}, "Set zone resist data for Magic");
 			EventProcessor.RegisterCommand("/e3resist-poison", x =>
 			{
 				ExecuteResistCommand(x, "Poison");
-			});
+			}, "Set zone resist data for Poison");
 			EventProcessor.RegisterCommand("/e3resist-disease", x =>
 			{
 				ExecuteResistCommand(x, "Disease");
-			});
+			}, "Set zone resist data for Disease");
 			EventProcessor.RegisterCommand("/e3resist-corrupt", x =>
 			{
 				ExecuteResistCommand(x, "Corrupt");
-			});
+			}, "Set zone resist data for Corruption");
 
 			EventProcessor.RegisterCommand("/e3resist-reload", x =>
 			{
 				E3.Bots.Broadcast($"Reloading resist data for zone:{Current_ZoneID}");
 				LoadData(Current_ZoneID);
-			});
+			}, "Reload resist data for current zone");
 		}
 
 		private void ExecuteResistCommand(EventProcessor.CommandMatch x, string resistName)

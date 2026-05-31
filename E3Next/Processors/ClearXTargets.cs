@@ -120,7 +120,7 @@ namespace E3Core.Processors
 
 				}
 
-			});
+			}, "Initiate clear-xtargets routine (face and stick to targets)");
 		}
 		public static void Reset()
 		{

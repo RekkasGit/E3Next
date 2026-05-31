@@ -43,31 +43,31 @@ namespace E3Core.Processors
             EventProcessor.RegisterCommand("/armor", (x) =>
             {
                 VetAA("Armor of Experience", "/armor", x);
-            });
+            }, "Use Armor of Experience veteran AA");
             EventProcessor.RegisterCommand("/intensity", (x) =>
             {
                 VetAA("Intensity of the Resolute", "/intensity", x);
-            });
+            }, "Use Intensity of the Resolute veteran AA");
             EventProcessor.RegisterCommand("/infusion", (x) =>
             {
                 VetAA("Infusion of the Faithful", "/infusion", x);
-            });
+            }, "Use Infusion of the Faithful veteran AA");
             EventProcessor.RegisterCommand("/staunch", (x) =>
             {
                 VetAA("Staunch Recovery", "/staunch", x);
-            });
+            }, "Use Staunch Recovery veteran AA");
             EventProcessor.RegisterCommand("/servant", (x) =>
             {
                 VetAA("Steadfast Servant", "/servant", x);
-            });
+            }, "Use Steadfast Servant veteran AA");
             EventProcessor.RegisterCommand("/expedient", (x) =>
             {
                 VetAA("Expedient Recovery", "/expedient", x);
-            });
+            }, "Use Expedient Recovery veteran AA");
             EventProcessor.RegisterCommand("/lesson", (x) =>
             {
                 VetAA("Lesson of the Devoted", "/lesson", x);
-            });
+            }, "Use Lesson of the Devoted veteran AA");
             EventProcessor.RegisterCommand("/throne", (x) =>
             {
                 if (x.args.Count == 0)
@@ -89,8 +89,8 @@ namespace E3Core.Processors
                     MQ.Delay(20000, Casting.IsNotCasting);
 					PubServer.AddTopicMessage("${Me.Casting}", String.Empty);
 				}
-            });
-			EventProcessor.RegisterCommand("/origin", (x) =>
+            }, "Use Throne of Heroes veteran AA");
+		EventProcessor.RegisterCommand("/origin", (x) =>
 			{
 				if (x.args.Count == 0)
 				{
@@ -111,11 +111,11 @@ namespace E3Core.Processors
 					MQ.Delay(20000, Casting.IsNotCasting);
 					PubServer.AddTopicMessage("${Me.Casting}", String.Empty);
 				}
-			});
-			EventProcessor.RegisterCommand("/jester", (x) =>
+			}, "Use Origin veteran AA (port to home city)");
+            EventProcessor.RegisterCommand("/jester", (x) =>
             {
                 VetAA("Chaotic Jester", "/jester", x);
-            });
+            }, "Use Chaotic Jester veteran AA");
         }
 
         private static void VetAA(string vetAASpell, string command,EventProcessor.CommandMatch x)

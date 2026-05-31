@@ -206,7 +206,7 @@ namespace E3Core.Processors
                     }
                     E3.Bots.BroadcastCommandToPerson(user, $"/giveme {user} \"{something}\" {qty} {E3.CurrentName}");
                 }
-            });
+            }, "Request an item from a targeted player via trade");
 
             EventProcessor.RegisterCommand("/E3DestroyNoRent", (x) =>
             {
@@ -222,7 +222,7 @@ namespace E3Core.Processors
                     e3util.DeleteNoRentItem(x.args[0]);
                 }
 
-            });
+            }, "Destroy all no-rent (temporary) items");
 			EventProcessor.RegisterCommand("/E3DestroyItem", (x) =>
 			{
 				//giveme Alara "Something" qty Rekken
@@ -238,7 +238,7 @@ namespace E3Core.Processors
 					e3util.DeleteItem(x.args[0]);
 				}
 
-			});
+			}, "Destroy a specified item from inventory");
 		}
         [ClassInvoke(Class.All)]
         public static void CheckSupply()

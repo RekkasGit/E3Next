@@ -1059,7 +1059,7 @@ namespace E3Core.Processors
                        }
                    }
                }
-           });
+           }, "Initiate assist on your current target");
 
             
             EventProcessor.RegisterCommand("/assisttype", (x) =>
@@ -1087,7 +1087,7 @@ namespace E3Core.Processors
 
                 }
 
-            });
+            }, "Set assist type: melee/ranged/magic for a toon or group");
             EventProcessor.RegisterCommand("/backoff", (x) =>
             {
                 if (!e3util.FilterMe(x))
@@ -1110,7 +1110,7 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommandToGroup($"/backoff all", x);
                 }
 
-            });
+            }, "Stop assist, interrupt casting, and clear assist target for group");
             EventProcessor.RegisterCommand("/backoffme", (x) =>
             {
                     if (E3.CurrentClass != Class.Bard)
@@ -1123,7 +1123,7 @@ namespace E3Core.Processors
 				    Dispel.Reset();
 				    Movement.AcquireFollow();
 
-            });
+            }, "Stop assist for this character only");
 
 			EventProcessor.RegisterCommand("/e3assistdistance", (x) =>
             {
@@ -1162,9 +1162,9 @@ namespace E3Core.Processors
             {
 				//swap them
 				e3util.ToggleBooleanSetting(ref E3.CharacterSettings.Assist_SmartTaunt, "SmartTaunt", x.args);
-            });
+            }, "Toggle smart taunt on/off/toggle");
 
-            e3util.RegisterCommandWithTarget("/e3offassistignore", (x) => { _offAssistIgnore.Add(x); });
+            e3util.RegisterCommandWithTarget("/e3offassistignore", (x) => { _offAssistIgnore.Add(x); }, "Add a mob to the off-assist ignore list by target");
             EventProcessor.RegisterEvent("EnrageOn", "(.+) has become ENRAGED.", (x) =>
             {
                 if (x.match.Groups.Count > 1)

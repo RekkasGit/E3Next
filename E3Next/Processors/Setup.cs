@@ -145,7 +145,7 @@ namespace E3Core.Processors
 				E3.Bots.Broadcast("${IsNotSafeZone}", true);
 				E3.Bots.Broadcast("${PBAEON}", true);
 
-			});
+			}, "List all E3 exposed TLO data variables");
 			EventProcessor.RegisterCommand("/e3broadcastwrites", (x) =>
 			{
 

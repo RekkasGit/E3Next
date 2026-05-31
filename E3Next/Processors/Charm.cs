@@ -67,9 +67,9 @@ namespace E3Core.Processors
 				E3.Bots.Broadcast($"\agSetting ${{Spawn[{_charmTargetId}].CleanName}} as charm target");
 
 				CharmProcess();
-			});
+			}, "Enable auto-charm on a targeted mob");
 
-			EventProcessor.RegisterCommand("/charmoff", x => _charmTargetId = 0);
+			EventProcessor.RegisterCommand("/charmoff", x => _charmTargetId = 0, "Disable auto-charm");
 
 			EventProcessor.RegisterEvent("ZonedCharm", @"You have entered (.+)\.", (x) =>
 			{

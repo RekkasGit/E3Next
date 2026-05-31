@@ -95,7 +95,7 @@ namespace E3Core.Processors
 				GlobalAllEnabled = !GlobalAllEnabled;
 				Broadcast($"\agSetting Global Broadcast to {GlobalAllEnabled}");
 
-			});
+			}, "Toggle global broadcast mode on/off");
 			EventProcessor.RegisterCommand("/e3bc", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -112,7 +112,7 @@ namespace E3Core.Processors
 
 					}
 				}
-			});
+			}, "Broadcast a command to all connected bots");
 			EventProcessor.RegisterCommand("/e3bca", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -129,7 +129,7 @@ namespace E3Core.Processors
 
 					}
 				}
-			});
+			}, "Broadcast a command to all connected bots (all filter)");
 			EventProcessor.RegisterCommand("/e3bcz", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -146,7 +146,7 @@ namespace E3Core.Processors
 
 					}
 				}
-			});
+			}, "Broadcast a command to all bots in the same zone");
 			EventProcessor.RegisterCommand("/e3bcg", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -156,7 +156,7 @@ namespace E3Core.Processors
 
 				}
 				
-			});
+			}, "Broadcast a command to group members only");
 
 
 			EventProcessor.RegisterCommand("/e3botreport", (x) =>
@@ -184,7 +184,7 @@ namespace E3Core.Processors
 				{
 					BroadcastCommand("/e3botreport me",false,x);
 				}
-			});
+			}, "Request HP/mana/endurance report from all connected bots");
 
 			EventProcessor.RegisterCommand("/e3bcgz", (x) =>
 			{
@@ -195,7 +195,7 @@ namespace E3Core.Processors
 
 				}
 
-			});
+			}, "Broadcast a command to group members in the same zone");
 			EventProcessor.RegisterCommand("/e3bcchannel", (x) =>
 			{
 				if (x.args.Count > 1)
@@ -210,7 +210,7 @@ namespace E3Core.Processors
 
 					BroadcastCommandToChannel(channel, command, true);
 				}
-			});
+			}, "Broadcast a message to a specific EQ chat channel");
 			EventProcessor.RegisterCommand("/e3bct", (x) =>
 			{
 				if (x.args.Count > 1)
@@ -225,7 +225,7 @@ namespace E3Core.Processors
 
 					BroadcastCommandToPerson(person, command,true);
 				}
-			});
+			}, "Broadcast a command to a specific named toon");
 			EventProcessor.RegisterCommand("/e3bcga", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -234,7 +234,7 @@ namespace E3Core.Processors
 					BroadcastCommandToGroupAll(command,x,true);
 		            
                 }
-			});
+			}, "Broadcast a command to group members in all zones");
 			EventProcessor.RegisterCommand("/e3bcgza", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -243,7 +243,7 @@ namespace E3Core.Processors
 					BroadcastCommandToGroupAllZone(command, x, true);
 
 				}
-			});
+			}, "Broadcast a command to group members in all zones (all filter)");
 			EventProcessor.RegisterCommand("/e3bcaa", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -252,7 +252,7 @@ namespace E3Core.Processors
 			        BroadcastCommandAll(command,true,x);
 
 				}
-			});
+			}, "Broadcast a command to all bots in all zones");
 			EventProcessor.RegisterCommand("/e3bcza", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -261,7 +261,7 @@ namespace E3Core.Processors
 					BroadcastCommandAllZone(command, true,x);
 
 				}
-			});
+			}, "Broadcast a command to all bots in the same zone (all filter)");
 			EventProcessor.RegisterCommand("/e3bcr", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -270,7 +270,7 @@ namespace E3Core.Processors
 					BroadcastCommandRaidNotMe(command, true, x);
 
 				}
-			});
+			}, "Broadcast a command to raid members (not self)");
 			EventProcessor.RegisterCommand("/e3bcrz", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -279,7 +279,7 @@ namespace E3Core.Processors
 					BroadcastCommandToRaidNotMeZone(command, x,true);
 
 				}
-			});
+			}, "Broadcast a command to raid members in the same zone (not self)");
 			EventProcessor.RegisterCommand("/e3bcra", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -288,7 +288,7 @@ namespace E3Core.Processors
 					BroadcastCommandRaid(command, true,x);
 
 				}
-			});
+			}, "Broadcast a command to all raid members");
 			EventProcessor.RegisterCommand("/e3bcraz", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -297,7 +297,7 @@ namespace E3Core.Processors
 					BroadcastCommandRaidZone(command, x,true);
 
 				}
-			});
+			}, "Broadcast a command to all raid members in the same zone");
 
 		}
 		public CharacterBuffs GetBuffInformation(string name)
@@ -1654,7 +1654,7 @@ namespace E3Core.Processors
             {
                 Broadcast("\agRe-Registering all observers");
                 ReRegisterObservations();
-            });
+            }, "Re-register all MQ observers (debug fix)");
 
         }
         public List<string> BotsConnected()

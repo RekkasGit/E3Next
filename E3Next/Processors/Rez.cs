@@ -705,7 +705,7 @@ namespace E3Core.Processors
 			{
 				e3util.ToggleBooleanSetting(ref _pauseRez, "Auto Rez Accept", x.args);
 
-			});
+			}, "Toggle pause on auto-rez accept");
 			EventProcessor.RegisterCommand("/aerez", (x) =>
 			{
 				if (x.args.Count == 0)
@@ -728,7 +728,7 @@ namespace E3Core.Processors
 					}
 
 				}
-			});
+			}, "Cast AE rez on all nearby corpses");
 			EventProcessor.RegisterCommand("/grez", (x) =>
 			{
 				if (x.args.Count == 0)
@@ -752,7 +752,7 @@ namespace E3Core.Processors
 					}
 
 				}
-			});
+			}, "Group rez: cast rez on group members' corpses");
 
 			EventProcessor.RegisterCommand("/rrez", (x) =>
 			{
@@ -777,7 +777,7 @@ namespace E3Core.Processors
 					}
 
 				}
-			});
+			}, "Group-or-raid rez");
 
 			//rezit <toon> ${target.ID}
 			EventProcessor.RegisterCommand("/rezit", (x) =>
@@ -821,7 +821,7 @@ namespace E3Core.Processors
 					}
 
 				}
-			});
+			}, "Rez a specific player by name");
 
 			EventProcessor.RegisterCommand("/wipe", x =>
 			{
@@ -833,7 +833,7 @@ namespace E3Core.Processors
 				if (!E3.CharacterSettings.Rez_AutoRez) return;
 				_skipAutoRez = true;
 				E3.Bots.Broadcast("\agTemporarily turning autorez off. It will be turned back on next time I zone.");
-			});
+			}, "Trigger a wipe recovery sequence");
 
 			EventProcessor.RegisterCommand("/autorezon", x =>
 			{
@@ -844,7 +844,7 @@ namespace E3Core.Processors
 
 				if (!E3.CharacterSettings.Rez_AutoRez) return;
 				TurnOffAutoRezSkip();
-			});
+			}, "Enable auto-rez accept");
 
 			var deathMessages = new List<string>
 			{
@@ -897,16 +897,16 @@ namespace E3Core.Processors
 					}
 				}
 
-			});
+			}, "Set up wait-for-rez behavior for a specific toon");
 			EventProcessor.RegisterCommand("/TellRez", (x) =>
 			{
 				if (x.args.Count > 0)
 				{
 					E3.Bots.BroadcastCommandToGroup($"/WaitRez {x.args[0]}");
 				}
-			});
-			EventProcessor.RegisterCommand("/lootcorpses", x => LootAllCorpses());
-			EventProcessor.RegisterCommand("/gathercorpses", x => GatherCorpses());
+			}, "Tell the group to wait for rez");
+			EventProcessor.RegisterCommand("/lootcorpses", x => LootAllCorpses(), "Auto-loot all nearby corpses");
+			EventProcessor.RegisterCommand("/gathercorpses", x => GatherCorpses(), "Gather corpses to a central location");
 			var consentEvents = new List<string> { "(.+) tells you, '(?i)Consent'", @"(.+) tells the raid,\s+'(?i)Consent'", "<(.+)> (?i)Consent" };
 			EventProcessor.RegisterEvent("consent", consentEvents, x =>
 			{

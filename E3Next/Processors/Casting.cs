@@ -2007,7 +2007,7 @@ namespace E3Core.Processors
 			{
 				Casting.ResetResistCounters();
 				E3.Bots.Broadcast("Resetting resist counters...");
-			});
+			}, "Reset resist counters");
 			EventProcessor.RegisterCommand("/e3varset", (x) =>
 			{
 				//key/value
@@ -2035,7 +2035,7 @@ namespace E3Core.Processors
 						VarsetValues[key] = value;
 					}
 				}
-			});
+			}, "Set a key/value variable");
 			EventProcessor.RegisterCommand("/e3varbool", (x) =>
 			{
 				//key/value
@@ -2067,7 +2067,7 @@ namespace E3Core.Processors
 						VarsetValues[key] = value;
 					}
 				}
-			});
+			}, "Set a boolean variable for conditional casting");
 			EventProcessor.RegisterCommand("/e3varcalc", (x) =>
 			{
 				//key/value
@@ -2098,7 +2098,7 @@ namespace E3Core.Processors
 						VarsetValues[key] = value;
 					}
 				}
-			});
+			}, "Set a variable from a math expression");
 			EventProcessor.RegisterCommand("/e3varclear", (x) =>
 			{
 				//key
@@ -2114,7 +2114,7 @@ namespace E3Core.Processors
 						VarsetValues.Remove(key);
 					}
 				}
-			});
+			}, "Clear a named variable");
 			EventProcessor.RegisterCommand("/e3varlist", (x) =>
 			{
 				if (VarsetValues.Count == 0)
@@ -2125,7 +2125,7 @@ namespace E3Core.Processors
 				{
 					E3.Bots.Broadcast($"{pair.Key} = {pair.Value}");
 				}
-			});
+			}, "List all currently set variables");
 			EventProcessor.RegisterCommand("/e3varvalue", (x) =>
 			{
 
@@ -2140,7 +2140,7 @@ namespace E3Core.Processors
 
 				E3.MQ.Cmd("/varset E3N_var NULL");
 
-			});
+			}, "Echo the value of a named variable");
 		}
 		public static bool Ifs(Data.Spell spell)
 		{

@@ -37,7 +37,7 @@ namespace E3Core.Processors
                 }
                 AutoSell(destroyOnSell);
                 
-            });
+            }, "Open merchant and auto-sell items on the sell list");
 			EventProcessor.RegisterCommand("/e3sell", (x) =>
 			{
 				
@@ -67,11 +67,11 @@ namespace E3Core.Processors
 				SellItem(itemToSell, printonly);
 
 
-			});
+			}, "Sell a specific item by name");
 			EventProcessor.RegisterCommand("/syncinv", (x) =>
             {
                 SyncInventory();
-            });
+            }, "Synchronize inventory data file");
             EventProcessor.RegisterCommand("/e3autobank", (x) =>
             {
                 AutoBank();

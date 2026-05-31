@@ -1390,16 +1390,16 @@ namespace E3Core.UI.Windows
                     // Tribute
                     imgui_TableNextColumn();
                     if (item.Tribute > 0)
-                        imgui_TextColored(0.8f, 0.4f, 0.8f, 1f, item.Tribute.ToString());
+                        imgui_TextColored(0.8f, 0.4f, 0.8f, 1f, item.Tribute.ToString("N0"));
                     else
                         imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "--");
 
                     // Qty
                     imgui_TableNextColumn();
                     if (item.Quantity > 1)
-                        imgui_TextColored(0.4f, 0.8f, 1.0f, 1f, item.Quantity.ToString());
+                        imgui_TextColored(0.4f, 0.8f, 1.0f, 1f, item.Quantity.ToString("N0"));
                     else
-                        imgui_Text(item.Quantity.ToString());
+                        imgui_Text(item.Quantity.ToString("N0"));
 
                     // Location
                     imgui_TableNextColumn();
@@ -1893,7 +1893,7 @@ namespace E3Core.UI.Windows
         {
             if (quantity <= 1) return;
 
-            string qtyText = quantity.ToString();
+            string qtyText = quantity.ToString("N0");
             uint color = E3ImGUI.GetColor(255, 255, 255, 255);
             uint shadow = E3ImGUI.GetColor(0, 0, 0, 200);
 
@@ -2233,7 +2233,7 @@ namespace E3Core.UI.Windows
                 ("Owner", string.IsNullOrWhiteSpace(_itemInspectorOwner) ? GetSelectedOwnerName() : _itemInspectorOwner),
                 ("Location", _itemInspectorLocation),
                 ("Type", string.IsNullOrWhiteSpace(item.ItemType) ? "--" : item.ItemType),
-                ("Quantity", Math.Max(1, item.Quantity).ToString()),
+                ("Quantity", Math.Max(1, item.Quantity).ToString("N0")),
                 ("Value", item.Value > 0 ? $"{item.Value / 1000:N0} pp" : "--"),
                 ("Classes", GetClassNames(item.Classes)),
                 ("Races", GetRaceNames(item.Races)),
@@ -2278,7 +2278,7 @@ namespace E3Core.UI.Windows
             if (total <= 0)
                 return null;
 
-            return total.ToString();
+            return total.ToString("N0");
         }
 
         private static string FormatInspectorHeroicValue(int baseValue, int augValue)
@@ -2330,8 +2330,8 @@ namespace E3Core.UI.Windows
                 ("AC", FormatInspectorStatValue(item.Ac, augAc)),
                 ("HP", FormatInspectorStatValue(item.Hp, augHp)),
                 ("Mana", FormatInspectorStatValue(item.Mana, augMana)),
-                ("End", item.Endurance > 0 ? item.Endurance.ToString() : null),
-                ("Trib", item.Tribute > 0 ? item.Tribute.ToString() : null),
+                ("End", item.Endurance > 0 ? item.Endurance.ToString("N0") : null),
+                ("Trib", item.Tribute > 0 ? item.Tribute.ToString("N0") : null),
             };
 
             var leftStats = new List<(string Label, string Value, string Heroic)>
@@ -2733,7 +2733,7 @@ namespace E3Core.UI.Windows
         private static void RenderStatCell(int value, float r, float g, float b)
         {
             if (value > 0)
-                imgui_TextColored(r, g, b, 1f, value.ToString());
+                imgui_TextColored(r, g, b, 1f, value.ToString("N0"));
             else
                 imgui_TextColored(0.5f, 0.5f, 0.5f, 1f, "--");
         }

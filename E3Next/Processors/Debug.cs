@@ -60,7 +60,7 @@ namespace E3Core.Processors
 				}
 
 
-			}, "toggle memory stats window");
+			}, "Force a garbage collection cycle");
 			EventProcessor.RegisterCommand("/e3debug_memory_counts", (x) =>
 			{
 
@@ -92,7 +92,7 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/e3debug-config", (x) =>
 			{
 				NetMQServer.PrintCharConfigLaunch();
-			});
+			}, "Print character config launch data");
 			EventProcessor.RegisterCommand("/e3debug_disablewrites", (x) =>
 			{
 
@@ -104,12 +104,12 @@ namespace E3Core.Processors
 			{
 				e3util.PrintTimerStatus(BuffCheck._buffTimers, "Buff timers");
 
-			});
+			}, "Print all buff timer statuses");
 			EventProcessor.RegisterCommand("/e3debug_debuffTimers", (x) =>
 			{
 				e3util.PrintTimerStatus(DebuffDot._debuffdotTimers, "Debuff timers");
 
-			});
+			}, "Print all debuff timer statuses");
 			EventProcessor.RegisterCommand("/e3debug_check_spawndelta", x =>
 			{
 
@@ -172,7 +172,7 @@ namespace E3Core.Processors
 						}
 					}
 				}
-			});
+			}, "Speed test for spawn delta processing");
 			EventProcessor.RegisterCommand("/e3debug_check_xtargets", x =>
 			{
 
@@ -200,11 +200,11 @@ namespace E3Core.Processors
 							Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
 							data = data.Slice(4);
 
-							MQ.Write($"ID:{id} tt:{targetTypes.ToString()} apct:{aggroPct} hp:{pctHPs}");
-						}
+					MQ.Write($"ID:{id} tt:{targetTypes.ToString()} apct:{aggroPct} hp:{pctHPs}");
+					}
 					}
 				}
-			});
+			}, "Speed test for xtarget processing");
 			EventProcessor.RegisterCommand("/e3debug_check_petbuffs", x =>
 			{
 
@@ -236,7 +236,7 @@ namespace E3Core.Processors
 						}
 					}
 				}
-			});
+			}, "Speed test for pet buff checking");
 			EventProcessor.RegisterCommand("/e3debug_list_aa", x =>
 			{
 
@@ -267,7 +267,7 @@ namespace E3Core.Processors
 						}
 					}
 				}
-			});
+			}, "Speed test for listing AAs");
 			EventProcessor.RegisterCommand("/e3debug_list_disc", x =>
 			{
 
@@ -297,7 +297,7 @@ namespace E3Core.Processors
 						}
 					}
 				}
-			});
+			}, "Speed test for listing disciplines");
 			EventProcessor.RegisterCommand("/e3debug_check_targetbuffs", x =>
 			{
 
@@ -361,7 +361,7 @@ namespace E3Core.Processors
 						}
 					}
 				}
-			});
+			}, "Speed test for target buff checking");
 
 			EventProcessor.RegisterCommand("/e3debug_check_buffs", x =>
 			{
@@ -470,7 +470,7 @@ namespace E3Core.Processors
 					//	}
 					//}
 				}
-			});
+			}, "Speed test for buff checking logic");
 
 			
 			EventProcessor.RegisterCommand("/e3debug_refresh_spawns", x =>
@@ -478,14 +478,14 @@ namespace E3Core.Processors
 				E3.Bots.Broadcast("Refreshing spawn list");
 				E3.Spawns.RefreshList(full: true);
 
-			});
+			}, "Force-refresh the spawn list");
 
 			EventProcessor.RegisterCommand("/e3debug_spawns_refresh", x =>
 			{
 
 				_spawns.RefreshList(full: true);
 
-			});
+			}, "Refresh the internal spawn list");
 			EventProcessor.RegisterCommand("/e3debug_spawns_list", x =>
 			{
 
@@ -497,7 +497,7 @@ namespace E3Core.Processors
 					}
 				}
 
-			});
+			}, "List all spawns with details");
 			EventProcessor.RegisterCommand("/e3debug_spawns_list_names", x =>
 			{
 				foreach (var pair in Spawns._spawnsByName)
@@ -505,7 +505,7 @@ namespace E3Core.Processors
 					var spawn = pair.Value;
 					MQ.Write($"Key: {pair.Key} ID:{spawn.ID} TD:{spawn.TypeDesc} Dead:{spawn.Dead} X:{spawn.X} Y:{spawn.Y} Z:{spawn.Z} N:{spawn.Name} CN: {spawn.CleanName}");
 				}
-			});
+			}, "List all spawns by name lookup");
 		}
 
 	}

@@ -59,7 +59,7 @@ namespace E3Core.Processors
 						ProcessBurnRequest(x, tburn);
 					}
 				}
-			});
+			}, "Fire a named burn collection from character settings");
 
           
             EventProcessor.RegisterCommand("/epicburns", (x) =>
@@ -68,7 +68,7 @@ namespace E3Core.Processors
 				{
 					ProcessBurnRequest(x, burnToUse);
 				}
-            });
+            }, "Fire the Epic burn collection");
             EventProcessor.RegisterCommand("/quickburns", (x) =>
             {
 				if (E3.CharacterSettings.BurnCollection.TryGetValue("Quick Burn", out var burnToUse))
@@ -76,7 +76,7 @@ namespace E3Core.Processors
 					ProcessBurnRequest(x, burnToUse);
 				}
 
-			});
+			}, "Fire the Quick Burn collection");
             EventProcessor.RegisterCommand("/fullburns", (x) =>
             {
 				if (E3.CharacterSettings.BurnCollection.TryGetValue("Full Burn", out var burnToUse))
@@ -84,21 +84,21 @@ namespace E3Core.Processors
 					ProcessBurnRequest(x, burnToUse);
 				}
 
-			});
+			}, "Fire the Full Burn collection");
             EventProcessor.RegisterCommand("/longburns", (x) =>
             {
 				if (E3.CharacterSettings.BurnCollection.TryGetValue("Long Burn", out var burnToUse))
 				{
 					ProcessBurnRequest(x, burnToUse);
 				}
-			});
+			}, "Fire the Long Burn collection");
 			EventProcessor.RegisterCommand("/swarmpets", (x) =>
 			{
 				if (E3.CharacterSettings.BurnCollection.TryGetValue("Swarm", out var burnToUse))
 				{
 					ProcessBurnRequest(x, burnToUse);
 				}
-			});
+			}, "Fire the Swarm burn collection");
 
 		}
 		private static void ProcessBurnRequest(EventProcessor.CommandMatch x, Burn burn)

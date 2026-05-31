@@ -227,7 +227,7 @@ namespace E3Core.Processors
                     
                     E3.Bots.BroadcastCommand($"/buffme {E3.CurrentName} MinDuration|{buffrecastDelay}");
                 }
-            });
+            }, "Request buffs on self with optional min-duration filter");
 			EventProcessor.RegisterCommand("/buffpet", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -260,7 +260,7 @@ namespace E3Core.Processors
 
 					E3.Bots.BroadcastCommand($"/buffpet {E3.CurrentName}");
 				}
-			});
+			}, "Request buffs on your pet or a named player's pet");
 
 			EventProcessor.RegisterCommand("/buffit", (x) =>
             {
@@ -288,7 +288,7 @@ namespace E3Core.Processors
 
                     }
                 }
-            });
+            }, "Request buffs on a specified spawn by ID or name");
 
             var buffBegs = new List<string> { "(.+) tells you, '(.+)'", "(.+) tells the group, '(.+)'" };
             EventProcessor.RegisterEvent("BuffBeg", buffBegs, (x) =>
@@ -462,7 +462,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
-            });
+            }, "Queue a specific spell to cast on a person or target");
         }
         public static void QueueCast(string spell, Int32 targetid,string user)
         {

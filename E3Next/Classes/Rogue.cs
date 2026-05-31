@@ -47,7 +47,7 @@ namespace E3Core.Classes
 					E3.Bots.Broadcast("Turning on Rogue Auto Hide");
 					E3.CharacterSettings.Rogue_AutoHide = true;
 				}
-			});
+			}, "Toggle Rogue auto-hide on/off/toggle");
 		}
 
 		/// <summary>

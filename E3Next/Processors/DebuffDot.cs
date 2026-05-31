@@ -287,16 +287,16 @@ namespace E3Core.Processors
 				}
 				_debuffdotTimers.Clear();
 
-			});
+			}, "Clear all debuff and DoT recast timers");
 			EventProcessor.RegisterCommand("/e3print-debuffdottimers", (x) =>
 			{
 				e3util.PrintTimerStatus(_debuffdotTimers, "Debuff/Dot Timers");
 
-			});
+			}, "Print all debuff and DoT timer statuses");
 			
 
-			e3util.RegisterCommandWithTarget("/dotson", DotsOn);
-            e3util.RegisterCommandWithTarget("/dot", DotsOn);
+			e3util.RegisterCommandWithTarget("/dotson", DotsOn, "Turn on DoTs for a targeted mob");
+            e3util.RegisterCommandWithTarget("/dot", DotsOn, "Turn on DoTs for a targeted mob");
             EventProcessor.RegisterCommand("/debuffsoff", (x) =>
             {
                 _mobsToDebuff.Clear();
@@ -307,7 +307,7 @@ namespace E3Core.Processors
                    
                 }
 
-            });
+            }, "Stop debuffing, clear mob debuff list, broadcast to group");
             EventProcessor.RegisterCommand("/dotsoff", (x) =>
             {
                 _mobsToDot.Clear();
@@ -317,9 +317,9 @@ namespace E3Core.Processors
                     E3.Bots.BroadcastCommandToGroup($"/dotsoff all",x);
                 }
 
-            });
-            e3util.RegisterCommandWithTarget("/debuffson", DebuffsOn);
-            e3util.RegisterCommandWithTarget("/debuff", DebuffsOn);
+            }, "Stop dotting, clear mob DoT list, broadcast to group");
+            e3util.RegisterCommandWithTarget("/debuffson", DebuffsOn, "Turn on debuffs for a targeted mob");
+            e3util.RegisterCommandWithTarget("/debuff", DebuffsOn, "Turn on debuffs for a targeted mob");
 
             EventProcessor.RegisterCommand("/e3offassiston", (x) =>
             {
@@ -333,7 +333,7 @@ namespace E3Core.Processors
                     _shouldOffAssist = true;
                     E3.Bots.Broadcast("\a#336699Turning on OffAssist.");
                 }
-            });
+            }, "Enable off-assist debuffing and DoTing");
             EventProcessor.RegisterCommand("/e3offassistoff", (x) =>
             {
                 if (x.args.Count == 0)
@@ -346,7 +346,7 @@ namespace E3Core.Processors
                       _shouldOffAssist = false;
                     E3.Bots.Broadcast("\a-gTurning Off OffAssist.");
                 }
-            });
+            }, "Disable off-assist debuffing and DoTing");
 
             EventProcessor.RegisterCommand("/e3offassistignore", (x) =>
             {
@@ -393,7 +393,7 @@ namespace E3Core.Processors
                         }
                     }
                 }
-            });
+            }, "Add or remove a mob from the off-assist ignore list");
 
         }
         public static void DebuffsOn(Int32 mobid)

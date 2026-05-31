@@ -58,27 +58,27 @@ namespace E3Core.Server
 			EventProcessor.RegisterCommand("/ui", (x) =>
 			{
                 MQ.Write("/ui has been depreciated, please use /e3ui");
-			});
+			}, "Deprecated: use /e3ui instead");
 			
 
 			EventProcessor.RegisterCommand("/e3config-old", (x) =>
 			{
 				LaunchCharConfig();
-			});
+			}, "Launch the old character config UI");
 			EventProcessor.RegisterCommand("/e3ui", (x) =>
             {
                 ToggleUI();
-            });
+            }, "Toggle the E3Next UI");
 			EventProcessor.RegisterCommand("/e3discord", (x) =>
             {
                 ToggleDiscordBot();
-            });
+            }, "Toggle Discord bot integration");
 			EventProcessor.RegisterCommand("/e3ui-debug", (x) =>
             {
                 Int32 processID = System.Diagnostics.Process.GetCurrentProcess().Id;
                 var path = $"{Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "")}E3NextUI.exe";
                 MQ.Write($"{path} {PubPort} {RouterPort} {PubClientPort} {processID}");
-            });
+            }, "Output UI executable path and ports");
             EventProcessor.RegisterCommand("/e3ui-kill", (x) =>
             {
                if(UIProcess!=null)
@@ -86,7 +86,7 @@ namespace E3Core.Server
                     UIProcess.Kill();
                   
                 }
-            });
+            }, "Kill the UI process");
         }
 		public static void KillAllProcesses()
 		{

@@ -452,7 +452,7 @@ namespace E3Core.Processors
                    
                 }
 
-            });
+            }, "Find and report duplicate items in inventory");
             EventProcessor.RegisterCommand("/fic", (x) =>
             {
                 //check to make sure there is something to look for
@@ -469,7 +469,7 @@ namespace E3Core.Processors
                     FindItemCompact(itemName);
                 }
 
-            });
+            }, "Report how many of a specific item you have");
             EventProcessor.RegisterCommand("/finditem", (x) =>
             {
                 //check to make sure there is something to look for
@@ -486,10 +486,10 @@ namespace E3Core.Processors
                     FindItemCompact(itemName);
                 }
 
-            });
-            EventProcessor.RegisterCommand("/e3getfrombank", (x) => GetFrom("Bank", x.args));
-            EventProcessor.RegisterCommand("/e3getfrominv", (x) => GetFrom("Inventory", x.args));
-            EventProcessor.RegisterCommand("/upgrade", (x) => Upgrade(x.args));
+            }, "Report whether you have an item and its slot location");
+            EventProcessor.RegisterCommand("/e3getfrombank", (x) => GetFrom("Bank", x.args), "Retrieve items from bank by name");
+            EventProcessor.RegisterCommand("/e3getfrominv", (x) => GetFrom("Inventory", x.args), "Retrieve items from inventory by name");
+            EventProcessor.RegisterCommand("/upgrade", (x) => Upgrade(x.args), "Upgrade items via combine or trade");
             //restock generic reusable items from vendors
             
         }

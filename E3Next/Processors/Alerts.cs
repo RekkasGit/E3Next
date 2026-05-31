@@ -386,10 +386,10 @@ namespace E3Core.Processors
 				EventProcessor.RegisterCommand("/e3autojointasks", (x) =>
 				{
 					
-					e3util.ToggleBooleanSetting(ref E3.CharacterSettings.Misc_AutoJoinTasks, "Auto Join Tasks", x.args);
-					
+				e3util.ToggleBooleanSetting(ref E3.CharacterSettings.Misc_AutoJoinTasks, "Auto Join Tasks", x.args);
+				
 
-				});
+				}, "Toggle auto-join tasks on/off");
 				
 
 			}

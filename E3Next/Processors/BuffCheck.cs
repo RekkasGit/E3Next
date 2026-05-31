@@ -106,7 +106,7 @@ namespace E3Core.Processors
 					DropBuff(buffToDrop);
 					E3.Bots.BroadcastCommandToGroup($"/removebuff {buffToDrop}");
 				}
-			});
+			}, "Remove a specific buff by name from your character");
 			EventProcessor.RegisterCommand("/e3buffs-clear", (x) =>
 			{
 				DropAllBuffs();
@@ -114,7 +114,7 @@ namespace E3Core.Processors
 				{
 					E3.Bots.BroadcastCommandToGroup($"/e3buffs-clear me");
 				}
-			});
+			}, "Drop all buffs from your character, broadcast to group");
 			EventProcessor.RegisterCommand("/dropbuffid", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -127,13 +127,13 @@ namespace E3Core.Processors
 
 					}
 				}
-			});
+			}, "Remove a specific buff by spell ID from your character");
 			EventProcessor.RegisterCommand("/e3clearbufftimers", (x) =>
 			{
 				E3.Bots.Broadcast("Clearing buff timers");
 				ClearBuffTimers();
 
-			});
+			}, "Clear all buff recast timers");
 			
 
 			EventProcessor.RegisterCommand("/blockbuff", (x) =>
@@ -169,7 +169,7 @@ namespace E3Core.Processors
 						}
 					}
 				}
-			});
+			}, "Add a buff name to the blocked buffs list");
 		}
 		public static void BlockBuffRemove(string spellName)
 		{

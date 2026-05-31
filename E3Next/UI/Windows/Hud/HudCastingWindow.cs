@@ -50,7 +50,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 
 				ToggleWindow();
-			}, "toggle memory stats window");
+			}, "Toggle the casting HUD overlay window");
 		}
 		public static void ToggleWindow()
 		{

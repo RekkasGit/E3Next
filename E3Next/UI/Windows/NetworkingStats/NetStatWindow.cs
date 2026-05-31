@@ -33,7 +33,7 @@ namespace E3Core.UI.Windows.NetworkingStats
 			EventProcessor.RegisterCommand("/e3debug_netstats", (x) =>
 			{
 				NetStatWindow.ToggleWindow();
-			}, "toggle memory stats window");
+			}, "Toggle the network stats debug window");
 
 		}
 		public static void ToggleWindow()

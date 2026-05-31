@@ -109,7 +109,7 @@ namespace E3Core.Processors
 					
 					}
 				}
-			});
+			}, "Execute a named command collection from character settings");
 
 
 

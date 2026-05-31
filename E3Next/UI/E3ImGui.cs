@@ -2582,6 +2582,76 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetStyleVarFloat(int which);
 
+		// TextFilter
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_TextFilter_Create(string id, string defaultFilter);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_TextFilter_Draw(string id, string label, float width);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_TextFilter_PassFilter(string id, string text);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_TextFilter_Clear(string id);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_TextFilter_IsActive(string id);
+
+		// ListClipper
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_ListClipper_Begin(string id, int itemsCount, float itemsHeight);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_ListClipper_Step(string id);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_ListClipper_End(string id);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int imgui_ListClipper_GetDisplayStart(string id);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int imgui_ListClipper_GetDisplayEnd(string id);
+
+		// Table sorting
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_TableGetSortSpecs_HasSpecs();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int imgui_TableGetSortSpecs_GetColumnIndex(int specIndex);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int imgui_TableGetSortSpecs_GetSortDirection(int specIndex);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int imgui_TableGetSortSpecs_GetSpecsCount();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_TableGetSortSpecs_SetDirty(bool dirty);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_TableSetupScrollFreeze(int cols, int rows);
+
+		// Additional utility functions
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetTooltip(string text);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_BeginDisabled(bool disabled);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_EndDisabled();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetNextItemOpen(bool isOpen, int cond);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetScrollHereY(float centerYRatio);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetScrollY();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_GetScrollMaxY();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetScrollY(float scrollY);
+
+		// Existing but previously undeclared
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_SmallButton(string name);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_SliderInt(string id, ref int value, int min, int max);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_SliderDouble(string id, ref double value, double min, double max, string fmt);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_IsWindowHovered();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static float imgui_Style_GetFontSizeBase();
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_PushMaterialIconsFont();
+
 		#endregion
 
 		private static void PushCommonRounding()
@@ -3496,6 +3566,55 @@ namespace MonoCore
 			#endregion
 		}
 		private static Dictionary<Int32, String> _percentToString = new Dictionary<int, string>();
+
+		public class ImGUIListClipper : IDisposable
+		{
+			private string _id;
+			private bool _active;
+
+			public static ImGUIListClipper Aquire(string id, int itemCount, float itemHeight = -1f)
+			{
+				ImGUIListClipper obj;
+				if (!StaticObjectPool.TryPop<ImGUIListClipper>(out obj))
+				{
+					obj = new ImGUIListClipper();
+				}
+				obj._id = id;
+				obj._active = true;
+				imgui_ListClipper_Begin(id, itemCount, itemHeight);
+				return obj;
+			}
+
+			public bool Step()
+			{
+				if (!_active) return false;
+				bool result = imgui_ListClipper_Step(_id);
+				if (!result)
+				{
+					_active = false;
+				}
+				return result;
+			}
+
+			public int DisplayStart => imgui_ListClipper_GetDisplayStart(_id);
+			public int DisplayEnd => imgui_ListClipper_GetDisplayEnd(_id);
+
+			private ImGUIListClipper() { }
+
+			public void Dispose()
+			{
+				if (_active)
+				{
+					imgui_ListClipper_End(_id);
+					_active = false;
+				}
+				_id = null;
+				StaticObjectPool.Push(this);
+			}
+			~ImGUIListClipper()
+			{
+			}
+		}
 
 		public static string PercentString(Int32 value)
 		{

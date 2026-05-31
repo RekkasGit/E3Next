@@ -72,7 +72,7 @@ namespace E3Core.Processors
 				Int32 perfectDream = Inventory.FindItemCompact("Perfect Dream Essenc");
 				E3.Bots.Broadcast($"Total Pristine Dream Essence Count: {perfectDream}");
 
-			});
+			}, "Count Lazarus server no-value collectible items");
 
 
 
@@ -116,7 +116,7 @@ namespace E3Core.Processors
 						E3.Bots.BroadcastCommandToPerson(target, "/e3gate me");
 					}
 				}
-			});
+			}, "Gate the group (cast gate spell)");
 			#endregion
 
 			EventProcessor.RegisterCommand("/temple", (x) =>
@@ -151,7 +151,7 @@ namespace E3Core.Processors
 						E3.Bots.BroadcastCommandToPerson(target, "/temple me");
 					}
 				}
-			});
+			}, "Port group to temple");
 			#endregion
 			EventProcessor.RegisterEvent("EQ_Might_Groupme", "(.+) tells you, 'groupme'", (x) =>
 			{
@@ -652,7 +652,7 @@ namespace E3Core.Processors
 
 					}
 				}
-			});
+			}, "Equip items on self (pet gear handler)");
 		}
 	}
 }

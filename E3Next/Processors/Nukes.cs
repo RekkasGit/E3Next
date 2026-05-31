@@ -48,7 +48,7 @@ namespace E3Core.Processors
                    E3.Bots.BroadcastCommandToGroup($"/pbaeon all",x);
                 }
 
-            });
+            }, "Enable PBAE (point-blank AE) nuking");
 
             EventProcessor.RegisterCommand("/pbaeoff", (x) =>
             {
@@ -62,7 +62,7 @@ namespace E3Core.Processors
                 {
                     E3.Bots.BroadcastCommand($"/pbaeoff all");
                 }
-            });
+            }, "Disable PBAE nuking");
         }
 
 
