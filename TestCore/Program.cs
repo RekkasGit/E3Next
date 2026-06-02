@@ -295,6 +295,11 @@ namespace TestCore
 			{
 				throw new NotImplementedException();
 			}
+
+			public unsafe byte* GetMyBuffDataPtr(out int length)
+			{
+				throw new NotImplementedException();
+			}
 		}
 
     }
