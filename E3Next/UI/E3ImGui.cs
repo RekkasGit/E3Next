@@ -2637,6 +2637,8 @@ namespace MonoCore
 		public extern static float imgui_GetScrollMaxY();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_SetScrollY(float scrollY);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static void imgui_SetWindowCollapsed(string name, bool collapsed, int cond);
 
 		// Existing but previously undeclared
 		[MethodImpl(MethodImplOptions.InternalCall)]

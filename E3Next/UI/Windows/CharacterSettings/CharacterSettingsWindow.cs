@@ -187,7 +187,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				{
 					using (var window = ImGUIWindow.Aquire())
 					{
-						if (window.Begin(_windowName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
+						if (window.Begin(_windowName, (int)(ImGuiWindowFlags.ImGuiWindowFlags_NoDocking)))
 						{
 							using (MQ.GetDelayLock())
 							{
@@ -230,8 +230,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				if (table.BeginTable("E3HeaderBar", 2, (int)ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp, imgui_GetContentRegionAvailX(), 0))
 				{
-					imgui_TableSetupColumn("Left", 0, 0.70f);
-					imgui_TableSetupColumn("Right", 0, 0.30f);
+				imgui_TableSetupColumn("Left", 0, 0.70f);
+				imgui_TableSetupColumn("Right", 0, 0.30f);
 					imgui_TableNextRow();
 					//Left: version / build text
 					imgui_TableNextColumn();
@@ -239,14 +239,14 @@ namespace E3Core.UI.Windows.CharacterSettings
 
 					//Right: buttons aligned to the right within the cell
 			imgui_TableNextColumn();
-					float cellAvail = imgui_GetContentRegionAvailX();
-					float donateBtnW = 70f;
-					float iniFolderBtnW = 112f;
-					float globalIfsBtnW = 90f;
-					float themeBtnW = 64f;
-					float closeBtnW = 64f;
-					float spacing = 6f;
-					float totalW = donateBtnW + spacing + iniFolderBtnW + spacing + globalIfsBtnW + spacing + themeBtnW + spacing + closeBtnW;
+				float cellAvail = imgui_GetContentRegionAvailX();
+				float donateBtnW = 70f;
+				float iniFolderBtnW = 112f;
+				float globalIfsBtnW = 90f;
+			float themeBtnW = 64f;
+			float closeBtnW = 64f;
+			float spacing = 6f;
+			float totalW = donateBtnW + spacing + iniFolderBtnW + spacing + globalIfsBtnW + spacing + themeBtnW + spacing + closeBtnW;
 					if (totalW < cellAvail)
 					{
 						imgui_SameLineEx(cellAvail - totalW, 0f);
@@ -279,13 +279,13 @@ namespace E3Core.UI.Windows.CharacterSettings
 							imgui_Text("Edit Global Ifs (shared across all characters)");
 						}
 					}
-					imgui_SameLine();
-					if (imgui_Button("Theme"))
-					{
-						_state.Show_ThemeSettings = !_state.Show_ThemeSettings;
-					}
-					imgui_SameLine();
-					if (imgui_Button("Close"))
+			imgui_SameLine();
+			if (imgui_Button("Theme"))
+			{
+				_state.Show_ThemeSettings = !_state.Show_ThemeSettings;
+			}
+			imgui_SameLine();
+			if (imgui_Button("Close"))
 					{
 						imgui_Begin_OpenFlagSet(_windowName, false);
 					}
