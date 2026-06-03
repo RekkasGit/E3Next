@@ -25,7 +25,7 @@ namespace E3NextSysTray
 
 		private Toast _primaryToast;
 
-		private string _releaseID = "v1.55.10-3.1.4.7";
+		private string _releaseID = "v1.55.12-3.1.4.7";
 		private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
@@ -405,6 +405,7 @@ namespace E3NextSysTray
 					filesDownloaded.Add(("emu_navmeshs.zip", Path.Combine(_currentDirectory, @"resources\MQ2Nav\")));
 
 				}
+				UpdateToastStatus($"Downloads complete!! Look for confirmation box.");
 				_syncContext.Post(_ =>
 				{
 					DialogResult result = MessageBox.Show("Are you ready to apply changes?(this will stop EQ/MQ)",
@@ -775,7 +776,8 @@ namespace E3NextSysTray
 
 				Console.WriteLine($"Fully updated! {_releaseID}");
 
-
+				_primaryToast.FrmToast.TimerDisabled = false;
+				_primaryToast.Duration = 10;
 				_primaryToast.FrmToast.Caption = "E3N Updater";
 				_primaryToast.FrmToast.Description = $"Fully updated!! {latestRelease.TagName}";
 				if (!_primaryToast.FrmToast.Visible)
