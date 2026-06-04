@@ -244,11 +244,19 @@ namespace E3Core.Settings.FeatureSettings
 						{
 							if (isImmune)
 							{
-								E3.Bots.Broadcast($"\aySetting Immune \ag{mobName} \ag with resist type \ay{resistName} ");
-								fieldImmune.SetValue(Resist, true);
+								if (!(bool)fieldImmune.GetValue(Resist))
+								{
+									E3.Bots.Broadcast($"\aySetting Immune \ag{mobName} \ag with resist type \ay{resistName} ");
+									fieldImmune.SetValue(Resist, true);
+								}
+
 							}
-							E3.Bots.Broadcast($"\aySetting Resist \ag{mobName} \ag with resist type \ay{resistName} ");
-							fieldResist.SetValue(Resist, true);
+							if (!(bool)fieldResist.GetValue(Resist))
+							{
+								E3.Bots.Broadcast($"\aySetting Resist \ag{mobName} \ag with resist type \ay{resistName} ");
+								fieldResist.SetValue(Resist, true);
+							}
+							
 						}
 					}
 
@@ -316,6 +324,7 @@ namespace E3Core.Settings.FeatureSettings
 				{
 					if(!columnNames.Contains(newColumn))
 					{
+
 						try
 						{
 							_sqlite.Execute($"ALTER TABLE resist_data ADD COLUMN {newColumn} INTEGER NOT NULL DEFAULT 0");
