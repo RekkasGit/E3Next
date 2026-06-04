@@ -17,7 +17,7 @@ namespace E3Core.Settings.FeatureSettings
 	{
 		public SQLiteConnection _sqlite;
 		public Int32 Current_ZoneID = 0;
-	
+		private static ISpawns _spawns = E3.Spawns;
 		public class ResistData
 		{
 			public string NPCName = String.Empty;
@@ -33,7 +33,16 @@ namespace E3Core.Settings.FeatureSettings
 			public bool PoisonImmune = false;
 			public bool CorruptResistant = false;
 			public bool CorruptImmune = false;
-
+			public bool SnareImmune = false;
+			public bool SnareResistant = false;
+			public bool SlowResistant = false;
+			public bool SlowImmune = false;
+			public bool MezResistant = false;
+			public bool MezImmune = false;
+			public bool CharmResistant = false;
+			public bool CharmImmune = false;
+			public bool PacifyResistant = false;
+			public bool PacifyImmune = false;
 		}
 		public Dictionary<string, ResistData> ZoneData = new Dictionary<string, ResistData>();
 		string fileName;
@@ -60,6 +69,11 @@ namespace E3Core.Settings.FeatureSettings
 				else if (spell.ResistType == "Poison" && resistInfo.PoisonImmune) return true;
 				else if (spell.ResistType == "Disease" && resistInfo.DiseaseImmune) return true;
 				else if (spell.ResistType == "Corruption" && resistInfo.CorruptImmune) return true;
+				else if (spell.Subcategory == "Snare" && resistInfo.SnareImmune) return true;
+				else if (spell.Subcategory == "Calm" && resistInfo.PacifyImmune) return true;
+				else if (spell.Subcategory == "Enthrall" && resistInfo.MezImmune) return true;
+				else if (spell.Subcategory == "Charm" && resistInfo.CharmImmune) return true;
+
 
 				if (spell.ResistType == "Magic" && resistInfo.MagicResistant && !spell.IgnoreResistanceCheck) return true;
 				else if (spell.ResistType == "Fire" && resistInfo.FireResistant && !spell.IgnoreResistanceCheck) return true;
@@ -93,6 +107,10 @@ namespace E3Core.Settings.FeatureSettings
 					if (d.DiseaseImmune) sb.Append($"\ayDRI ");
 					if (d.CorruptResistant) sb.Append($"\ayCUR ");
 					if (d.CorruptImmune) sb.Append($"\ayCURI ");
+					if (d.SnareImmune) sb.Append($"\aySnareI ");
+					if (d.CharmImmune) sb.Append($"\ayCharmI ");
+					if (d.PacifyImmune) sb.Append($"\ayPacifyI ");
+					if (d.MezImmune) sb.Append($"\ayMezI ");
 					MQ.Write(sb.ToString());
 				}
 
@@ -177,6 +195,7 @@ namespace E3Core.Settings.FeatureSettings
 
 				if (clear)
 				{
+					E3.Bots.Broadcast($"\ayClearing \ag{mobName} \ag with resist type \ay{resistName} ");
 					fieldResist.SetValue(Resist, false);
 					fieldImmune.SetValue(Resist, false);
 				}
@@ -184,14 +203,57 @@ namespace E3Core.Settings.FeatureSettings
 				{
 					if (isImmune)
 					{
+						E3.Bots.Broadcast($"\aySetting Immune \ag{mobName} \ag with resist type \ay{resistName} ");
 						fieldImmune.SetValue(Resist, true);
 					}
+					E3.Bots.Broadcast($"\aySetting Resist \ag{mobName} \ag with resist type \ay{resistName} ");
 					fieldResist.SetValue(Resist, true);
 				}
 			}
 			else
 			{
 				//mob name is invalid
+				//add all mobs to the list? :D
+
+				using(var mqLock = MQ.GetDelayLock())
+				{
+					foreach (var s in _spawns.Get())
+					{
+
+						if (s.TypeDesc != "NPC") continue;
+						if (s.Dead) continue;
+						if (!s.Targetable) continue;
+						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
+						if (s.CleanName.EndsWith("s pet")) continue;
+
+						mobName= s.CleanName; ;
+						
+						if (!ZoneData.TryGetValue(mobName, out var Resist))
+						{
+							Resist = new ResistData() { NPCName = mobName };
+							ZoneData.Add(mobName, Resist);
+
+						}
+						if (clear)
+						{
+							E3.Bots.Broadcast($"\ayClearing \ag{mobName} \ag with resist type \ay{resistName} ");
+							fieldResist.SetValue(Resist, false);
+							fieldImmune.SetValue(Resist, false);
+						}
+						else
+						{
+							if (isImmune)
+							{
+								E3.Bots.Broadcast($"\aySetting Immune \ag{mobName} \ag with resist type \ay{resistName} ");
+								fieldImmune.SetValue(Resist, true);
+							}
+							E3.Bots.Broadcast($"\aySetting Resist \ag{mobName} \ag with resist type \ay{resistName} ");
+							fieldResist.SetValue(Resist, true);
+						}
+					}
+
+				}
+
 			}
 			//okay, now save the data
 			SaveData();
@@ -217,6 +279,16 @@ namespace E3Core.Settings.FeatureSettings
 												PRI INTEGER NOT NULL,
 												CUR INTEGER NOT NULL,
 												CURI INTEGER NOT NULL,
+												SLOWR INTEGER NOT NULL,
+												SLOWI INTEGER NOT NULL,
+												SNARER INTEGER NOT NULL,
+												SNAREI INTEGER NOT NULL,
+												MEZR INTEGER NOT NULL,
+												MEZI INTEGER NOT NULL,
+												CHARMR INTEGER NOT NULL,
+												CHARMI INTEGER NOT NULL,
+												PACITYR INTEGER NOT NULL,
+												PACITYI INTEGER NOT NULL,
 												PRIMARY KEY (zoneid,name)
 											);";
 			command.CommandText = sql_Create_Resists;
@@ -236,6 +308,26 @@ namespace E3Core.Settings.FeatureSettings
 			{
 				_sqlite = new SQLiteConnection($"Data Source={fileName};Mode=ReadOnly;New=False;");
 				_sqlite.Open();
+
+				HashSet<string> columnNames = _sqlite.Query<string>("select name from pragma_table_info('resist_data')").ToList().ToHashSet<string>(StringComparer.OrdinalIgnoreCase);
+				List<string> newColumnNames = new List<string>() { "SLOWR", "SLOWI", "SNARER", "SNAREI", "MEZR", "MEZI", "CHARMR", "CHARMI", "PACIFYR", "PACIFYI" };
+				
+				foreach(var newColumn in newColumnNames)
+				{
+					if(!columnNames.Contains(newColumn))
+					{
+						try
+						{
+							_sqlite.Execute($"ALTER TABLE resist_data ADD COLUMN {newColumn} INTEGER NOT NULL DEFAULT 0");
+						}
+						catch (Exception)
+						{
+
+						}
+					}
+				}
+
+				//possible need to update the table with new columns
 			}
 			else
 			{
@@ -248,8 +340,9 @@ namespace E3Core.Settings.FeatureSettings
 			}
 			using (_sqlite)
 			{
+
 				string sql = $@"select Name as NPCName,MR as MagicResistant, MRI as MagicImmune ,FR as FireResistant, FRI as FireImmune,CR as ColdResistant, CRI as ColdImmune,DR as DiseaseResistant, DRI as DiseaseImmune
-						  ,PR as PoisonResistant, PRI as PoisonImmune,CUR as CorruptResistant, CURI as CorruptImmune
+						  ,PR as PoisonResistant, PRI as PoisonImmune,CUR as CorruptResistant, CURI as CorruptImmune, slowr as SlowResistant, slowi as SlowImmune, snarer as SnareResistant, snarei as SnareImmune, mezr as MezResistant, mezi as MezImmune, charmr as CharmResistant, charmi as CharmImmune, pacifyr as PacifyResistant, pacifyi as PacifyImmune
 						  from resist_data where zoneid = {zoneID};";
 
 				var results = _sqlite.Query<ResistData>(sql);
@@ -285,14 +378,18 @@ namespace E3Core.Settings.FeatureSettings
 						{
 							using (var transaction = _sqlite.BeginTransaction())
 							{
+
 								string clearzone_sql = $@"delete from resist_data where zoneid = {Current_ZoneID}";
 								_sqlite.Execute(clearzone_sql);
+								
+
+
 								foreach (var pair in ZoneData)
 								{
 									var z = pair.Value;
 									
-									command.CommandText = $"insert into resist_data (zoneid,name,mr,mri,fr,fri,cr,cri,pr,pri,dr,dri,cur,curi) " +
-														  $"values({Current_ZoneID},$name,$mr,$mri,$fr,$fri,$cr,$cri,$dr,$dri,$pr,$pri,$cur,$curi);";
+									command.CommandText = $"insert into resist_data (zoneid,name,mr,mri,fr,fri,cr,cri,pr,pri,dr,dri,cur,curi,slowr, slowi, snarer, snarei, mezr, mezi, charmr, charmi, pacifyr, pacifyi) " +
+														  $"values({Current_ZoneID},$name,$mr,$mri,$fr,$fri,$cr,$cri,$dr,$dri,$pr,$pri,$cur,$curi,$slowr, $slowi, $snarer, $snarei, $mezr, $mezi, $charmr, $charmi, $pacifyr, $pacifyi);";
 									command.Parameters.Clear();
 									command.Parameters.AddWithValue("name", z.NPCName);
 									command.Parameters.AddWithValue("mr", z.MagicResistant);
@@ -307,6 +404,17 @@ namespace E3Core.Settings.FeatureSettings
 									command.Parameters.AddWithValue("pri", z.PoisonImmune);
 									command.Parameters.AddWithValue("cur", z.CorruptResistant);
 									command.Parameters.AddWithValue("curi", z.CorruptImmune);
+									command.Parameters.AddWithValue("slowr", z.SlowResistant);
+									command.Parameters.AddWithValue("slowi", z.SlowImmune);
+									command.Parameters.AddWithValue("snarer", z.SnareResistant);
+									command.Parameters.AddWithValue("snarei", z.SnareImmune);
+									command.Parameters.AddWithValue("mezr", z.MezResistant);
+									command.Parameters.AddWithValue("mezi", z.MezImmune);
+									command.Parameters.AddWithValue("charmr", z.CharmResistant);
+									command.Parameters.AddWithValue("charmi", z.CharmImmune);
+									command.Parameters.AddWithValue("pacifyr", z.PacifyResistant);
+									command.Parameters.AddWithValue("pacifyi", z.PacifyImmune);
+
 									command.ExecuteNonQuery();
 								}
 

@@ -37,7 +37,7 @@
         },
         "warningProperties": {
           "noWarn": [
-            "NU1902"
+            "NU1901"
           ]
         },
         "restoreAuditProperties": {

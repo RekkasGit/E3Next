@@ -9,6 +9,7 @@ using System.Enums;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +25,6 @@ namespace E3NextSysTray
 		private readonly SynchronizationContext _syncContext;
 
 		private Toast _primaryToast;
-
 		private string _releaseID = "v1.55.12-3.1.4.7";
 		private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
@@ -232,6 +232,20 @@ namespace E3NextSysTray
 				File.WriteAllBytes(tempPngPath, Utils.BitmapToBytes(Properties.Resources.E3NextImage));
 			}
 		}
+		//Needed to remove the close "X" from the console debug
+		[DllImport("user32.dll")]
+		private static extern int DeleteMenu(IntPtr hMenu, int nPosition, int wFlags);
+
+		[DllImport("user32.dll")]
+		private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
+
+		[DllImport("kernel32.dll", ExactSpelling = true)]
+		private static extern IntPtr GetConsoleWindow();
+
+		// Constants for menu manipulation
+		private const int MF_BYCOMMAND = 0x00000000;
+		private const int SC_CLOSE = 0xF060;
+		//end remove X code
 
 		private void OnDebug(object sender, EventArgs e)
 		{
@@ -244,6 +258,20 @@ namespace E3NextSysTray
 				Console.SetOut(standardOutput);
 				Console.SetError(standardOutput);
 				debugItem.Text = "Hide Debug";
+				IntPtr hwnd = GetConsoleWindow();
+
+				if (hwnd != IntPtr.Zero)
+				{
+					// 3. Get the system menu for that window
+					IntPtr hMenu = GetSystemMenu(hwnd, false);
+
+					if (hMenu != IntPtr.Zero)
+					{
+						// 4. Remove the 'Close' menu item, which disables the 'X' button
+						DeleteMenu(hMenu, SC_CLOSE, MF_BYCOMMAND);
+					}
+				}
+
 			}
 			else
 			{

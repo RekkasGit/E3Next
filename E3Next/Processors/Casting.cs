@@ -19,6 +19,7 @@ using System.ServiceModel.Dispatcher;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static E3Core.Settings.FeatureSettings.ResistDataFile;
 
 namespace E3Core.Processors
 {
@@ -932,8 +933,35 @@ namespace E3Core.Processors
 							resist.SpellCounters[spell.SpellID]++;
 
 						}
-						else if (returnValue == CastReturn.CAST_IMMUNE)
+						else if (returnValue == CastReturn.CAST_IMMUNE || returnValue== CastReturn.CAST_NOMEZ ||  returnValue == CastReturn.CAST_NOCHARM)
 						{
+
+							var ZoneData = E3.ResistSettings.ZoneData;
+							if (!ZoneData.TryGetValue(s.CleanName, out var Resist))
+							{
+								Resist = new ResistData() { NPCName = s.CleanName };
+								ZoneData.Add(s.CleanName, Resist);
+
+							}
+							if(spell.Subcategory=="Charm" && returnValue== CastReturn.CAST_NOCHARM)
+							{
+								Resist.CharmImmune = true;
+							}
+							else if (spell.Subcategory == "Enthrall" && returnValue == CastReturn.CAST_NOMEZ)
+							{
+								Resist.MezImmune = true;
+							}
+							else if(spell.Subcategory=="Snare" && returnValue == CastReturn.CAST_IMMUNE)
+							{
+								Resist.SnareImmune = true;
+							}
+							else if (spell.Subcategory == "Calm" && returnValue == CastReturn.CAST_IMMUNE)
+							{
+								Resist.PacifyImmune = true;
+							}
+							E3.ResistSettings.SaveData();
+
+							//if target is immune, 
 							if (!ResistCounters.ContainsKey(targetID))
 							{
 								ResistCounter tresist = ResistCounter.Aquire();
@@ -945,6 +973,7 @@ namespace E3Core.Processors
 								resist.SpellCounters.Add(spell.SpellID, 0);
 							}
 							resist.SpellCounters[spell.SpellID] = 99;
+
 						}
 						//MQ.Write($"{spell.CastName} Result:{returnValue.ToString()}");
 
@@ -2885,6 +2914,8 @@ namespace E3Core.Processors
 			CheckForResistByName("CAST_RESIST", endtime);
 			CheckForResistByName("CAST_FIZZLE", endtime);
 			CheckForResistByName("CAST_IMMUNE", endtime);
+			CheckForResistByName("CAST_NOMEZ", endtime);
+			CheckForResistByName("CAST_NOCHARM", endtime);
 			CheckForResistByName("CAST_INTERRUPTED", endtime);
 		}
 		public static CastReturn CheckForReist(Data.Spell spell, bool isNowCast)
@@ -2916,6 +2947,9 @@ namespace E3Core.Processors
 				if (CheckForResistByName("CAST_RESIST", endtime)) return CastReturn.CAST_RESIST;
 				if (CheckForResistByName("CAST_FIZZLE", endtime)) return CastReturn.CAST_FIZZLE;
 				if (CheckForResistByName("CAST_IMMUNE", endtime)) return CastReturn.CAST_IMMUNE;
+				if (CheckForResistByName("CAST_NOMEZ", endtime)) return CastReturn.CAST_NOMEZ;
+				if (CheckForResistByName("CAST_NOCHARM", endtime)) return CastReturn.CAST_NOCHARM;
+
 				//if (CheckForResistByName("CAST_COLLAPSE", endtime)) return CastReturn.CAST_COLLAPSE;
 				//if (CheckForResistByName("CAST_CANNOTSEE", endtime)) return CastReturn.CAST_NOTARGET;
 				//if (CheckForResistByName("CAST_COMPONENTS", endtime)) return CastReturn.CAST_COMPONENTS;
@@ -3247,7 +3281,17 @@ namespace E3Core.Processors
 			EventProcessor.RegisterEvent("CAST_IMMUNE", r, (x) =>
 			{
 			});
+			r = new List<string>();
+			r.Add(@"Your target cannot be mesmerized");
+			EventProcessor.RegisterEvent("CAST_NOMEZ", r, (x) =>
+			{
+			});
 
+			r = new List<string>();
+			r.Add(@"This NPC cannot be charmed");
+			EventProcessor.RegisterEvent("CAST_NOCHARM", r, (x) =>
+			{
+			});
 
 			r = new List<string>();
 			r.Add(@"Your .+ is interrupted\.");
@@ -3378,7 +3422,9 @@ namespace E3Core.Processors
 		CAST_INTERRUPTFORHEAL,
 		CAST_CORPSEOPEN,
 		CAST_INVALID,
-		CAST_IFFAILURE
+		CAST_IFFAILURE,
+		CAST_NOMEZ,
+		CAST_NOCHARM
 	}
 
 }
