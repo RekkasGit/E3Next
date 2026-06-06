@@ -1786,13 +1786,13 @@ namespace E3Core.Settings
 				section.Keys.AddKey("DiseaseCounters", "");
 				section.Keys.AddKey("DiseaseCountersIgnore", "");
 				section.Keys.AddKey("CursePetCounters", "");
-				section.Keys.AddKey("CursePetCountersIngore", "");
+				section.Keys.AddKey("CursePetCountersIgnore", "");
 				section.Keys.AddKey("CorruptedPetCounters", "");
-				section.Keys.AddKey("CorruptedPetCountersIngore", "");
+				section.Keys.AddKey("CorruptedPetCountersIgnore", "");
 				section.Keys.AddKey("PoisonPetCounters", "");
-				section.Keys.AddKey("PoisonPetCountersIngore", "");
+				section.Keys.AddKey("PoisonPetCountersIgnore", "");
 				section.Keys.AddKey("DiseasePetCounters", "");
-				section.Keys.AddKey("DiseasePetCountersIngore", "");
+				section.Keys.AddKey("DiseasePetCountersIgnore", "");
 			}
 
 			if ((CharacterClass & Class.Charmer) == CharacterClass)
