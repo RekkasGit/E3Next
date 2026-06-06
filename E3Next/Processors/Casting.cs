@@ -936,30 +936,7 @@ namespace E3Core.Processors
 						else if (returnValue == CastReturn.CAST_IMMUNE || returnValue== CastReturn.CAST_NOMEZ ||  returnValue == CastReturn.CAST_NOCHARM)
 						{
 
-							var ZoneData = E3.ResistSettings.ZoneData;
-							if (!ZoneData.TryGetValue(s.CleanName, out var Resist))
-							{
-								Resist = new ResistData() { NPCName = s.CleanName };
-								ZoneData.Add(s.CleanName, Resist);
-
-							}
-							if(spell.Subcategory=="Charm" && returnValue== CastReturn.CAST_NOCHARM)
-							{
-								Resist.CharmImmune = true;
-							}
-							else if (spell.Subcategory == "Enthrall" && returnValue == CastReturn.CAST_NOMEZ)
-							{
-								Resist.MezImmune = true;
-							}
-							else if(spell.Subcategory=="Snare" && returnValue == CastReturn.CAST_IMMUNE)
-							{
-								Resist.SnareImmune = true;
-							}
-							else if (spell.Subcategory == "Calm" && returnValue == CastReturn.CAST_IMMUNE)
-							{
-								Resist.PacifyImmune = true;
-							}
-							E3.ResistSettings.SaveData();
+							AutoSaveImmunties(spell, returnValue,s);
 
 							//if target is immune, 
 							if (!ResistCounters.ContainsKey(targetID))
@@ -1026,6 +1003,46 @@ namespace E3Core.Processors
 					Logging.MinLogLevelTolog = _previousLogLevel;
 
 				}
+			}
+		}
+		private static void AutoSaveImmunties(Spell spell, CastReturn returnValue, Spawn s)
+		{
+			if (spell.Subcategory == "Slow" || spell.Subcategory == "Charm" || spell.Subcategory == "Enthrall" || spell.Subcategory == "Snare" || spell.Subcategory == "Calm")
+			{
+				bool immuneTypeNeedsSaving = false;
+				var ZoneData = E3.ResistSettings.ZoneData;
+				if (!ZoneData.TryGetValue(s.CleanName, out var Resist))
+				{
+					Resist = new ResistData() { NPCName = s.CleanName };
+					ZoneData.Add(s.CleanName, Resist);
+				}
+
+				if (spell.Subcategory == "Slow" && returnValue == CastReturn.CAST_IMMUNE)
+				{
+					Resist.SlowImmune = true;
+					immuneTypeNeedsSaving = true;
+				}
+				else if (spell.Subcategory == "Charm" && returnValue == CastReturn.CAST_NOCHARM)
+				{
+					Resist.CharmImmune = true;
+					immuneTypeNeedsSaving = true;
+				}
+				else if (spell.Subcategory == "Enthrall" && returnValue == CastReturn.CAST_NOMEZ)
+				{
+					Resist.MezImmune = true;
+					immuneTypeNeedsSaving = true;
+				}
+				else if (spell.Subcategory == "Snare" && returnValue == CastReturn.CAST_IMMUNE)
+				{
+					Resist.SnareImmune = true;
+					immuneTypeNeedsSaving = true;
+				}
+				else if (spell.Subcategory == "Calm" && returnValue == CastReturn.CAST_IMMUNE)
+				{
+					Resist.PacifyImmune = true;
+					immuneTypeNeedsSaving = true;
+				}
+				if (immuneTypeNeedsSaving) E3.ResistSettings.SaveData();
 			}
 		}
 		public static void CastSpell(Spell spell)

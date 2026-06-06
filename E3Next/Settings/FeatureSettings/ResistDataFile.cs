@@ -140,7 +140,26 @@ namespace E3Core.Settings.FeatureSettings
 			{
 				ExecuteResistCommand(x, "Corrupt");
 			});
-
+			EventProcessor.RegisterCommand("/e3resist-slow", x =>
+			{
+				ExecuteResistCommand(x, "Slow");
+			});
+			EventProcessor.RegisterCommand("/e3resist-calm", x =>
+			{
+				ExecuteResistCommand(x, "Pacify");
+			});
+			EventProcessor.RegisterCommand("/e3resist-charm", x =>
+			{
+				ExecuteResistCommand(x, "Charm");
+			});
+			EventProcessor.RegisterCommand("/e3resist-mez", x =>
+			{
+				ExecuteResistCommand(x, "Mez");
+			});
+			EventProcessor.RegisterCommand("/e3resist-snare", x =>
+			{
+				ExecuteResistCommand(x, "Snare");
+			});
 			EventProcessor.RegisterCommand("/e3resist-reload", x =>
 			{
 				E3.Bots.Broadcast($"Reloading resist data for zone:{Current_ZoneID}");
