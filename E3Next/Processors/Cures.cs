@@ -164,6 +164,8 @@ namespace E3Core.Processors
 		{
 			//we do spells first as each spell might be group only or single target for out of group
 
+			if(curesSpells.Count == 0) return false;	
+
 			//check each member of the group for counters
 			foreach (var target in E3.Bots.BotsConnected())
 			{
@@ -186,8 +188,8 @@ namespace E3Core.Processors
 
 							List<Int32> badbuffs = null;
 
-							if (!isPet) E3.Bots.BuffList(s.CleanName);
-							else E3.Bots.PetBuffList(s.CleanName);
+							if (!isPet) { E3.Bots.BuffList(s.CleanName); }
+							else { E3.Bots.PetBuffList(s.CleanName); }
 
 
 							bool foundBadBuff = false;
