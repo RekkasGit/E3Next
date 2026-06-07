@@ -188,8 +188,14 @@ namespace E3Core.Processors
 
 							List<Int32> badbuffs = null;
 
-							if (!isPet) { E3.Bots.BuffList(s.CleanName); }
-							else { E3.Bots.PetBuffList(s.CleanName); }
+							if (!isPet) 
+							{
+								badbuffs= E3.Bots.BuffList(s.CleanName); 
+							}
+							else 
+							{
+								badbuffs= E3.Bots.PetBuffList(s.CleanName); 
+							}
 
 
 							bool foundBadBuff = false;
