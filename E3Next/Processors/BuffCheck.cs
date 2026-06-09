@@ -1364,6 +1364,15 @@ namespace E3Core.Processors
 								return BuffBots_ReturnType.Continue;
 							}
 						recastSpell:
+
+							if (willStack && spell.CastType == CastingType.Spell)
+							{
+								while (Casting.InGlobalCooldown())
+								{
+									MQ.Delay(50);
+								}
+							}
+
 							if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 							{
 
