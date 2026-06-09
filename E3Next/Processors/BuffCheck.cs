@@ -1028,10 +1028,19 @@ namespace E3Core.Processors
 
 					if(!(spell.CastType == CastingType.Spell && !Casting.SpellMemorized(spell)))
 					{
+						if (spell.CastType == CastingType.Spell)
+						{
+							while (Casting.InGlobalCooldown())
+							{
+								MQ.Delay(50);
+							}
+						}
 						if (!(Casting.CheckMana(spell) && Casting.CheckReady(spell)))
 						{
-							//spell not ready 
-							UpdateBuffTimers(s.ID, spell, 15000, 15000, true, true);
+							//spell not ready, are we in GCD?
+
+
+							UpdateBuffTimers(s.ID, spell, 1000, 1000, true, true);
 							return BuffBots_ReturnType.Continue;
 						}
 					}
@@ -1040,8 +1049,7 @@ namespace E3Core.Processors
 					{
 						if (!Casting.Ifs(spell))
 						{
-							//ifs failed do a 30 sec`retry
-
+						
 							UpdateBuffTimers(s.ID, spell, 1500, -1, true);
 							return BuffBots_ReturnType.Continue;
 						}
