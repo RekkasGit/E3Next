@@ -176,28 +176,29 @@ namespace E3Core.Processors
         {
 
             Int32 targetId = MQ.Query<Int32>("${Target.ID}");
-			if (Assist.AssistTargetID > 0 && targetId != Assist.AssistTargetID && e3util.IsManualControl())
-			{
-				return;
-			}
-			if (Assist.AssistTargetID > 0)
-            {
-                CastLongTermSpell(Assist.AssistTargetID, E3.CharacterSettings.Debuffs_OnAssist, _debuffdotTimers);
-                if (E3.ActionTaken) return;
-            }
-
-			if (!E3.CurrentInCombat)
-			{
-				if (!e3util.ShouldCheck(ref _nextDebuffCheck, _nextDebuffCheckInterval)) return;
-
-			}
-		
-            using (_log.Trace())
+			
+            //using (_log.Trace())
             {
                 //e3util.PrintTimerStatus(_debuffTimers, ref _nextDebuffCheck, "Debuffs");
                 try
                 {
-                    foreach (var mobid in _mobsToDebuff.ToList())
+					if (Assist.AssistTargetID > 0 && targetId != Assist.AssistTargetID && e3util.IsManualControl())
+					{
+						return;
+					}
+					if (Assist.AssistTargetID > 0)
+					{
+						CastLongTermSpell(Assist.AssistTargetID, E3.CharacterSettings.Debuffs_OnAssist, _debuffdotTimers);
+						if (E3.ActionTaken) return;
+					}
+
+					if (!E3.CurrentInCombat)
+					{
+						if (!e3util.ShouldCheck(ref _nextDebuffCheck, _nextDebuffCheckInterval)) return;
+
+					}
+
+					foreach (var mobid in _mobsToDebuff.ToList())
                     {
 
                         CastLongTermSpell(mobid, E3.CharacterSettings.Debuffs_Command, _debuffdotTimers);
@@ -221,34 +222,37 @@ namespace E3Core.Processors
         {
             Int32 targetId = MQ.Query<Int32>("${Target.ID}");
 
-			//person in manual control and they are not on the assist target, chill.
-			if (Assist.AssistTargetID > 0 && targetId != Assist.AssistTargetID && e3util.IsManualControl())
-			{
-				return;
-			}
-
-			if (Assist.AssistTargetID > 0)
-            {
-                //person in manual control and they are not on the assist target, chill.
-               
-                //if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
-                //{
-                //    return;
-                //}
-                CastLongTermSpell(Assist.AssistTargetID, E3.CharacterSettings.Dots_Assist, _debuffdotTimers);
-                if (E3.ActionTaken) return;
-            }
-			if (!E3.CurrentInCombat)
-			{
-				if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
-			}
+			
 			// e3util.PrintTimerStatus(_dotTimers, ref _nextDoTCheck, "Damage over Time");
 		
 			//using (_log.Trace())
 			{
                 try
                 {
-                    foreach (var mobid in _mobsToDot.ToList())
+
+					//person in manual control and they are not on the assist target, chill.
+					if (Assist.AssistTargetID > 0 && targetId != Assist.AssistTargetID && e3util.IsManualControl())
+					{
+						return;
+					}
+
+					if (Assist.AssistTargetID > 0)
+					{
+						//person in manual control and they are not on the assist target, chill.
+
+						//if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
+						//{
+						//    return;
+						//}
+						CastLongTermSpell(Assist.AssistTargetID, E3.CharacterSettings.Dots_Assist, _debuffdotTimers);
+						if (E3.ActionTaken) return;
+					}
+					if (!E3.CurrentInCombat)
+					{
+						if (!e3util.ShouldCheck(ref _nextDoTCheck, _nextDoTCheckInterval)) return;
+					}
+
+					foreach (var mobid in _mobsToDot.ToList())
                     {
                         CastLongTermSpell(mobid, E3.CharacterSettings.Dots_OnCommand, _debuffdotTimers);
                         if (E3.ActionTaken) return;
@@ -405,8 +409,13 @@ namespace E3Core.Processors
         }
         public static void CastLongTermSpell(Int32 mobid, List<Data.Spell> spells, Dictionary<Int32, SpellTimer> timers)
         {
-             
-            foreach (var spell in spells)
+			if (MQ.Query<bool>($"${{Bool[${{Spawn[id {mobid}].Type.Equal[Corpse]}}]}}"))
+			{
+				_deadMobs.Add(mobid);
+				return;
+				//its dead jim, leave it be
+			}
+			foreach (var spell in spells)
             {
                 if(_spawns.TryByID(mobid,out var spawn) && E3.ResistSettings!=null)
                 {
@@ -459,13 +468,7 @@ namespace E3Core.Processors
                         _deadMobs.Add(mobid);
                         return;
                     }
-                    if (MQ.Query<bool>($"${{Bool[${{Spawn[id {mobid}].Type.Equal[Corpse]}}]}}"))
-                    {
-                        _deadMobs.Add(mobid);
-                        return;
-                        //its dead jim, leave it be
-
-                    }
+                    
                     MQ.Delay(2000, "${Target.BuffsPopulated}");
                     //check if the if condition works
                     //if it has a target tlo, process, other wise it was tested above.
