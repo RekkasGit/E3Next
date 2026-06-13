@@ -45,14 +45,10 @@ namespace E3NextSysTray
 		private static string _githubUserName = "RekkasGit";
 		private AppSettings _appSettings;
 
-
-		private string _toatsTag = "zip-download";
-		private string _toatsGroupTag = "e3n-updates";
 		private string _mqLocation = String.Empty;
 		private string _downloadFullFileName = "full_e3n_mq_download.zip";
 		private string _currentExePath = Process.GetCurrentProcess().MainModule.FileName;
 		public static string _currentDirectory = String.Empty;
-		private string _mqDebugLocation = @"D:\EQ\e3ntrayupdater";
 		private System.Timers.Timer _checkUpdate;
 		public void StartupMacroQuest()
 		{
@@ -445,8 +441,8 @@ namespace E3NextSysTray
 				
 					UpdateToastStatus($"Downloading E3Next and MQ update");
 					System.Threading.Thread.Sleep(2000);
-					DownloadUpdate(_repoName, "full_e3n_mq_download.zip");
-					filesDownloaded.Add(("full_e3n_mq_download.zip", _mqLocation));
+					DownloadUpdate(_repoName, _downloadFullFileName);
+					filesDownloaded.Add((_downloadFullFileName, _mqLocation));
 
 					pathToCheck = Path.Combine(_currentDirectory, "mono-2.0-sgen.dll");
 					var sgenbits32 = Program.GetPEImageBits(pathToCheck);
