@@ -100,6 +100,7 @@ namespace E3Core.Processors
                 {
                     MQ.Cmd("/nomodkey /keypress duck");
                     E3.Bots.Broadcast("/ar Ducking to avoid arrow.");
+					MQ.Delay(3000); //to possibly avoid an assist call that would break the ducking
                 }
             });
             pattern = "An arrow narrowly misses you\\.";

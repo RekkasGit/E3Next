@@ -1,8 +1,10 @@
 ﻿using E3NextSysTray.Forms;
+using E3NextSysTray.Settings;
 using Ionic.Zip;
 using Octokit;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
 using System.Enums;
@@ -25,7 +27,7 @@ namespace E3NextSysTray
 		private readonly SynchronizationContext _syncContext;
 
 		private Toast _primaryToast;
-		private string _releaseID = "v1.55.14-3.1.4.7";
+		private string _releaseID = "v1.55.15-3.1.4.9";
 		private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
@@ -36,12 +38,20 @@ namespace E3NextSysTray
 		ToolStripMenuItem updateItem;
 		ToolStripMenuItem progressItem;
 		ToolStripMenuItem debugItem;
+		ToolStripMenuItem channelItem;
+		ToolStripMenuItem channelItem_prod;
+		ToolStripMenuItem channelItem_dev;
+		private static string _repoName = "E3NextAndMQBinaryNoFramework";
+		private static string _githubUserName = "RekkasGit";
+		private AppSettings _appSettings;
+
+
 		private string _toatsTag = "zip-download";
 		private string _toatsGroupTag = "e3n-updates";
 		private string _mqLocation = String.Empty;
 		private string _downloadFullFileName = "full_e3n_mq_download.zip";
 		private string _currentExePath = Process.GetCurrentProcess().MainModule.FileName;
-		private string _currentDirectory = String.Empty;
+		public static string _currentDirectory = String.Empty;
 		private string _mqDebugLocation = @"D:\EQ\e3ntrayupdater";
 		private System.Timers.Timer _checkUpdate;
 		public void StartupMacroQuest()
@@ -145,6 +155,13 @@ namespace E3NextSysTray
 			_mqLocation = Process.GetCurrentProcess().MainModule.FileName;
 			_mqLocation = Path.GetDirectoryName(_mqLocation).Replace(@"\mono\macros\e3", "").Replace(@"/mono/macros/e3", "");
 			_currentDirectory = Path.GetDirectoryName(_currentExePath);
+
+
+			//now that current directory is made, we can access the settings stuff
+
+			_appSettings = SettingsService.Load();
+
+
 			//2 hour checks for updates
 			_checkUpdate = new System.Timers.Timer(1000 * 60 * 120);
 			// Hook up the elapsed event
@@ -175,15 +192,36 @@ namespace E3NextSysTray
 			progressItem = new ToolStripMenuItem("Show Progress", null, OnShowProgress);
 			debugItem = new ToolStripMenuItem("Show Debug", null, OnDebug);
 			progressItem.Enabled = false;
+
+			channelItem = new ToolStripMenuItem("Channel");
+			channelItem_prod = new ToolStripMenuItem("Production");
+		
+
+			channelItem_prod.Checked = !_appSettings.UseDevChannel;
+			channelItem_prod.Click += ChannelSubMenu_Click;
+			channelItem_dev = new ToolStripMenuItem("Development");
+			channelItem_dev.Checked = _appSettings.UseDevChannel;
+			channelItem_dev.Click += ChannelSubMenu_Click;
+
+
+			channelItem.DropDownItems.Add(channelItem_prod);
+			channelItem.DropDownItems.Add(channelItem_dev);
+
+
 			contextMenu.Items.Add(checkForUpdateItem);
 			contextMenu.Items.Add(new ToolStripSeparator());
 			contextMenu.Items.Add(exitItem);
 			contextMenu.Items.Add(new ToolStripSeparator());
 			contextMenu.Items.Add(updateItem);
 			contextMenu.Items.Add(new ToolStripSeparator());
+			contextMenu.Items.Add(channelItem);
+			contextMenu.Items.Add(new ToolStripSeparator());
 			contextMenu.Items.Add(progressItem);
 			contextMenu.Items.Add(new ToolStripSeparator());
 			contextMenu.Items.Add(debugItem);
+
+
+
 			// 2. Initialize the NotifyIcon
 			trayIcon = new NotifyIcon()
 			{
@@ -200,14 +238,35 @@ namespace E3NextSysTray
 			_syncContext = SynchronizationContext.Current ?? new SynchronizationContext();
 			CheckForUpdates();
 		}
+		private void ChannelSubMenu_Click(object sender, EventArgs e)
+		{
+			// Ensure the sender is a ToolStripMenuItem
+			if (sender is ToolStripMenuItem clickedItem)
+			{
+				// Get the parent of the clicked item
+				ToolStripMenuItem parentMenu = clickedItem.OwnerItem as ToolStripMenuItem;
 
+				if (parentMenu != null)
+				{
+					// Uncheck all items in this specific submenu group
+					foreach (ToolStripMenuItem item in parentMenu.DropDownItems.OfType<ToolStripMenuItem>())
+					{
+						item.Checked = false;
+					}
+
+					// Check the clicked item
+					clickedItem.Checked = true;
+					if (clickedItem.Text == "Development") { _appSettings.UseDevChannel = true;}
+					else { _appSettings.UseDevChannel = false; }
+					SettingsService.Save(_appSettings);
+				}
+			}
+		}
 		private void OnUpdateEvent(object sender, ElapsedEventArgs e)
 		{
 			try
 			{
-				GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
-				var latestRelease = client.Repository.Release.GetLatest("RekkasGit", "E3NextAndMQBinaryNoFramework").Result;
-
+				var latestRelease =  GetLatestRelease();
 				bool mQExists = File.Exists(Path.Combine(_currentDirectory, "MacroQuest.exe"));
 				bool monoExists = File.Exists(Path.Combine(_currentDirectory, "mono-2.0-sgen.dll"));
 				if (latestRelease.TagName != _releaseID || !mQExists || !monoExists)
@@ -386,7 +445,7 @@ namespace E3NextSysTray
 				
 					UpdateToastStatus($"Downloading E3Next and MQ update");
 					System.Threading.Thread.Sleep(2000);
-					DownloadUpdate("E3NextAndMQBinaryNoFramework", "full_e3n_mq_download.zip");
+					DownloadUpdate(_repoName, "full_e3n_mq_download.zip");
 					filesDownloaded.Add(("full_e3n_mq_download.zip", _mqLocation));
 
 					pathToCheck = Path.Combine(_currentDirectory, "mono-2.0-sgen.dll");
@@ -562,8 +621,7 @@ namespace E3NextSysTray
 				downloadFileName = Path.Combine(_currentDirectory, downloadFileName);
 
 				//first lets get the e3nextandmqbinary without framework
-				GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
-				var latestRelease = client.Repository.Release.GetLatest("RekkasGit", repo).Result;
+				var latestRelease = GetLatestRelease();
 
 				var stopwatch = new Stopwatch();
 
@@ -767,10 +825,36 @@ namespace E3NextSysTray
 
 			UpdateToastStatus($"Total Downloaded: {mbRead:F2} MB");
 		}
-		private void CheckForUpdates()
+
+		private Release GetLatestRelease()
 		{
 			GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
-			var latestRelease = client.Repository.Release.GetLatest("RekkasGit", "E3NextAndMQBinaryNoFramework").Result;
+
+			Release latestRelease;
+
+			if (channelItem_prod.Checked)
+			{
+				latestRelease = client.Repository.Release.GetLatest(_githubUserName, _repoName).Result;
+			}
+			else
+			{
+				var allReleases = client.Repository.Release.GetAll(_githubUserName, _repoName).Result;
+				var latestPrerelease = allReleases.FirstOrDefault(r => r.Prerelease);
+				latestRelease = latestPrerelease;
+				if(latestRelease==null)
+				{
+					latestRelease = client.Repository.Release.GetLatest(_githubUserName, _repoName).Result;
+				}
+
+			}
+			return latestRelease;
+		}
+
+		private void CheckForUpdates()
+		{
+
+			Release latestRelease = GetLatestRelease();
+			string channelInUse = _appSettings.UseDevChannel ? "Development" : "Production";
 
 			bool mQExists = File.Exists(Path.Combine(_currentDirectory, "MacroQuest.exe"));
 			bool monoExists = File.Exists(Path.Combine(_currentDirectory, "mono-2.0-sgen.dll"));
@@ -779,12 +863,12 @@ namespace E3NextSysTray
 				string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
 				Uri fileUri = new Uri("file:///" + tempPngPath.Replace("\\", "/"), UriKind.Absolute);
 
-				string messageToSay = $"New version available! {latestRelease.TagName} \r\nCurrent: {_releaseID}";
+				string messageToSay = $"Different version available! {latestRelease.TagName} \r\nCurrent: {_releaseID}\r\nChannel [{channelInUse}]";
 
 				if (!mQExists) messageToSay = "No Macroquest found, need a full update";
 				else if (!monoExists) messageToSay = "No mono framwork found, need to do a full update.";
 
-				Console.WriteLine("New version!");
+				Console.WriteLine("Different version!");
 
 				_primaryToast.FrmToast.Caption = "E3N Updater";
 				_primaryToast.FrmToast.Description = messageToSay;
@@ -804,10 +888,11 @@ namespace E3NextSysTray
 
 				Console.WriteLine($"Fully updated! {_releaseID}");
 
+			
 				_primaryToast.FrmToast.TimerDisabled = false;
 				_primaryToast.Duration = 10;
 				_primaryToast.FrmToast.Caption = "E3N Updater";
-				_primaryToast.FrmToast.Description = $"Fully updated!! {latestRelease.TagName}";
+				_primaryToast.FrmToast.Description = $"Fully updated!! {latestRelease.TagName} \r\nChannel [{channelInUse}]";
 				if (!_primaryToast.FrmToast.Visible)
 				{
 					_primaryToast.FrmToast.Show();
