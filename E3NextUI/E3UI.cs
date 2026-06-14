@@ -30,7 +30,7 @@ namespace E3NextUI
 		public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
 		[DllImportAttribute("user32.dll")]
 		public static extern bool ReleaseCapture();
-		public static string Version = "v1.55.16";
+		//public static string Version = "v1.55.18";
         public static System.Diagnostics.Stopwatch _stopWatch = new System.Diagnostics.Stopwatch();
         public static volatile bool ShouldProcess = true;
 
@@ -128,7 +128,7 @@ namespace E3NextUI
                     {
                         PlayerName = _tloClient.RequestData("${Me.CleanName}");
                         ServerName = _tloClient.RequestData("${MacroQuest.Server}");
-                        this.Text = $"E3UI ({PlayerName})({ServerName})({Version})";
+                        this.Text = $"E3UI ({PlayerName})({ServerName})";
                         labelPlayerName.Text = PlayerName;
                         configFolder = _tloClient.RequestData("${MacroQuest.Path[config]}");
                     }
@@ -1055,51 +1055,53 @@ namespace E3NextUI
 
 		private void checkUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            System.Windows.Forms.MessageBox.Show("Please use the Systray update.");
+            return;
 
-            string exePath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace(@"\E3NextUI.exe", "");
+			//string exePath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace(@"\E3NextUI.exe", "");
 
-            exePath = exePath.Substring(0, exePath.LastIndexOf(@"\")+1);
+   //         exePath = exePath.Substring(0, exePath.LastIndexOf(@"\")+1);
 
 
 
-            GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
-            var releases = client.Repository.Release.GetAll("RekkasGit", "E3Next");
-            releases.Wait();
-            var latest = releases.Result[0];
+   //         GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
+   //         var releases = client.Repository.Release.GetAll("RekkasGit", "E3Next");
+   //         releases.Wait();
+   //         var latest = releases.Result[0];
 
-            if(latest.TagName!=Version)
-            {
-                var mb = new MessageBox();
-                mb.StartPosition = FormStartPosition.CenterParent;
-                mb.Text = "Upgrade E3";
-                mb.lblMessage.Text = "Do you wish to upgrade to: " + latest.TagName + "?";
+   //         if(latest.TagName!=Version)
+   //         {
+   //             var mb = new MessageBox();
+   //             mb.StartPosition = FormStartPosition.CenterParent;
+   //             mb.Text = "Upgrade E3";
+   //             mb.lblMessage.Text = "Do you wish to upgrade to: " + latest.TagName + "?";
                 
-                if (mb.ShowDialog() == DialogResult.OK)
-                {
-                    //do something
+   //             if (mb.ShowDialog() == DialogResult.OK)
+   //             {
+   //                 //do something
 
-                    var edit = new Update();
-                    edit.StartPosition = FormStartPosition.CenterParent;
-                    edit.textBoxInstallPath.Text = exePath;
-                    edit.client = client;
-                    edit.latestID = latest.Id;
-                    edit.ShowDialog();
+   //                 var edit = new Update();
+   //                 edit.StartPosition = FormStartPosition.CenterParent;
+   //                 edit.textBoxInstallPath.Text = exePath;
+   //                 edit.client = client;
+   //                 edit.latestID = latest.Id;
+   //                 edit.ShowDialog();
 
-                }
+   //             }
                
-            }
-            else
-            {
-                var mb = new MessageBox();
-                mb.StartPosition = FormStartPosition.CenterParent;
-                mb.Text = "Upgrade E3";
-                mb.lblMessage.Text = "You are on the latest version: " + Version;
-                mb.buttonOkayOnly.Visible = true;
-                mb.buttonOK.Visible = false;
-                mb.buttonCancel.Visible = false;
-                mb.ShowDialog();
-                return;
-            }
+   //         }
+   //         else
+   //         {
+   //             var mb = new MessageBox();
+   //             mb.StartPosition = FormStartPosition.CenterParent;
+   //             mb.Text = "Upgrade E3";
+   //             mb.lblMessage.Text = "You are on the latest version: " + Version;
+   //             mb.buttonOkayOnly.Visible = true;
+   //             mb.buttonOK.Visible = false;
+   //             mb.buttonCancel.Visible = false;
+   //             mb.ShowDialog();
+   //             return;
+   //         }
         }
 
         private void hideToolStripMenuItem_Click(object sender, EventArgs e)

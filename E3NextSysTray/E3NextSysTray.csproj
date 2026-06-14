@@ -68,6 +68,7 @@
     <Compile Include="Settings\SettingsService.cs" />
     <Compile Include="TrayApplicationContext.cs" />
     <Compile Include="Utils.cs" />
+    <Compile Include="Util\NotepadHelper.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

@@ -1,5 +1,6 @@
 ﻿using E3NextSysTray.Forms;
 using E3NextSysTray.Settings;
+using E3NextSysTray.Util;
 using Ionic.Zip;
 using Octokit;
 using System;
@@ -27,7 +28,7 @@ namespace E3NextSysTray
 		private readonly SynchronizationContext _syncContext;
 
 		private Toast _primaryToast;
-		private string _releaseID = "v1.55.16-3.1.4.9";
+		private string _releaseID = "v1.55.18-3.1.4.9";
 		private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
@@ -41,6 +42,7 @@ namespace E3NextSysTray
 		ToolStripMenuItem channelItem;
 		ToolStripMenuItem channelItem_prod;
 		ToolStripMenuItem channelItem_dev;
+		ToolStripMenuItem channelReleaseNotes;
 		private static string _repoName = "E3NextAndMQBinaryNoFramework";
 		private static string _githubUserName = "RekkasGit";
 		private AppSettings _appSettings;
@@ -202,6 +204,8 @@ namespace E3NextSysTray
 
 			channelItem.DropDownItems.Add(channelItem_prod);
 			channelItem.DropDownItems.Add(channelItem_dev);
+			channelReleaseNotes = new ToolStripMenuItem("View Release Notes");
+			channelReleaseNotes.MouseDown += ChannelReleaseNotesSubMenu_Click;
 
 
 			contextMenu.Items.Add(checkForUpdateItem);
@@ -212,11 +216,13 @@ namespace E3NextSysTray
 			contextMenu.Items.Add(new ToolStripSeparator());
 			contextMenu.Items.Add(channelItem);
 			contextMenu.Items.Add(new ToolStripSeparator());
+			contextMenu.Items.Add(channelReleaseNotes);
+			contextMenu.Items.Add(new ToolStripSeparator());
 			contextMenu.Items.Add(progressItem);
 			contextMenu.Items.Add(new ToolStripSeparator());
 			contextMenu.Items.Add(debugItem);
 
-
+			
 
 			// 2. Initialize the NotifyIcon
 			trayIcon = new NotifyIcon()
@@ -233,6 +239,21 @@ namespace E3NextSysTray
 			// 2. CRITICAL: Capture the UI thread's synchronization boundary
 			_syncContext = SynchronizationContext.Current ?? new SynchronizationContext();
 			CheckForUpdates();
+		}
+		private void ChannelReleaseNotesSubMenu_Click(object sender, EventArgs e)
+		{
+
+
+			var latestRelease = GetLatestRelease();
+
+			if (latestRelease != null)
+			{
+				NotepadHelper.ShowMessage(latestRelease.Body, $"Release notes for {latestRelease.TagName}");
+
+			}
+
+
+
 		}
 		private void ChannelSubMenu_Click(object sender, EventArgs e)
 		{
@@ -263,6 +284,7 @@ namespace E3NextSysTray
 			try
 			{
 				var latestRelease =  GetLatestRelease();
+				if (latestRelease == null) return;
 				bool mQExists = File.Exists(Path.Combine(_currentDirectory, "MacroQuest.exe"));
 				bool monoExists = File.Exists(Path.Combine(_currentDirectory, "mono-2.0-sgen.dll"));
 				if (latestRelease.TagName != _releaseID || !mQExists || !monoExists)
@@ -618,7 +640,7 @@ namespace E3NextSysTray
 
 				//first lets get the e3nextandmqbinary without framework
 				var latestRelease = GetLatestRelease();
-
+				if (latestRelease == null) return;
 				var stopwatch = new Stopwatch();
 
 				stopwatch.Start();
@@ -824,25 +846,34 @@ namespace E3NextSysTray
 
 		private Release GetLatestRelease()
 		{
-			GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
-
-			Release latestRelease;
-
-			if (channelItem_prod.Checked)
+			Release latestRelease = null;
+			try
 			{
-				latestRelease = client.Repository.Release.GetLatest(_githubUserName, _repoName).Result;
-			}
-			else
-			{
-				var allReleases = client.Repository.Release.GetAll(_githubUserName, _repoName).Result;
-				var latestPrerelease = allReleases.FirstOrDefault(r => r.Prerelease);
-				latestRelease = latestPrerelease;
-				if(latestRelease==null)
+				GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
+
+				if (channelItem_prod.Checked)
 				{
 					latestRelease = client.Repository.Release.GetLatest(_githubUserName, _repoName).Result;
 				}
+				else
+				{
+					var allReleases = client.Repository.Release.GetAll(_githubUserName, _repoName).Result;
+					var latestPrerelease = allReleases.FirstOrDefault(r => r.Prerelease);
+					latestRelease = latestPrerelease;
+					if (latestRelease == null)
+					{
+						latestRelease = client.Repository.Release.GetLatest(_githubUserName, _repoName).Result;
+					}
 
+				}
 			}
+			catch(Exception ex)
+			{
+				MessageBox.Show(ex.Message);
+			}
+			
+
+			
 			return latestRelease;
 		}
 
@@ -850,6 +881,9 @@ namespace E3NextSysTray
 		{
 
 			Release latestRelease = GetLatestRelease();
+
+			if (latestRelease == null) return;
+
 			string channelInUse = _appSettings.UseDevChannel ? "Development" : "Production";
 
 			bool mQExists = File.Exists(Path.Combine(_currentDirectory, "MacroQuest.exe"));
