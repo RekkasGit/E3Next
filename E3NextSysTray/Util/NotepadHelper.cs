@@ -22,7 +22,15 @@ namespace E3NextSysTray.Util
 
 		public static void ShowMessage(string message = null, string title = null)
 		{
-			var startInfo = new ProcessStartInfo("notepad.exe");
+			string oldNotepadPath = @"C:\Windows\SysWOW64\notepad.exe";
+
+			// Fallback to System32 if running on a 32-bit native OS environment
+			if (!System.IO.File.Exists(oldNotepadPath))
+			{
+				oldNotepadPath = @"C:\Windows\System32\notepad.exe";
+			}
+
+			var startInfo = new ProcessStartInfo(oldNotepadPath);
 			startInfo.UseShellExecute = false;
 			Process notepad = Process.Start(startInfo);
 			if (notepad != null)

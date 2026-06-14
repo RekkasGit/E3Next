@@ -28,7 +28,7 @@ namespace E3NextSysTray
 		private readonly SynchronizationContext _syncContext;
 
 		private Toast _primaryToast;
-		private string _releaseID = "v1.55.19-3.1.4.9";
+		private string _releaseID = "v1.55.21-3.1.4.9";
 		private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
@@ -242,18 +242,18 @@ namespace E3NextSysTray
 		}
 		private void ChannelReleaseNotesSubMenu_Click(object sender, EventArgs e)
 		{
-
-
 			var latestRelease = GetLatestRelease();
 
 			if (latestRelease != null)
 			{
-				NotepadHelper.ShowMessage(latestRelease.Body, $"Release notes for {latestRelease.TagName}");
-
+				PatchNotes notes = new PatchNotes();
+				notes.MinimizeBox = false;
+				notes.MaximizeBox = false;
+				notes.StartPosition = FormStartPosition.CenterScreen;
+				notes.Text = $"Release notes for {latestRelease.TagName}";
+				notes.richTextNotes.Text = latestRelease.Body;
+				notes.ShowDialog();
 			}
-
-
-
 		}
 		private void ChannelSubMenu_Click(object sender, EventArgs e)
 		{
