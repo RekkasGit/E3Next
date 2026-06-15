@@ -162,7 +162,7 @@ namespace E3Core.Settings.FeatureSettings
 			});
 			EventProcessor.RegisterCommand("/e3resist-reload", x =>
 			{
-				E3.Bots.Broadcast($"Reloading resist data for zone:{Current_ZoneID}");
+				MQ.Write($"Reloading resist data for zone:{Current_ZoneID}");
 				LoadData(Current_ZoneID);
 			});
 		}
