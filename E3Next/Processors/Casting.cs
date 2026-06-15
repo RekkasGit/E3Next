@@ -1017,27 +1017,27 @@ namespace E3Core.Processors
 					ZoneData.Add(s.CleanName, Resist);
 				}
 
-				if (spell.Subcategory == "Slow" && returnValue == CastReturn.CAST_IMMUNE)
+				if (spell.Subcategory == "Slow" && returnValue == CastReturn.CAST_IMMUNE && !Resist.SlowImmune)
 				{
 					Resist.SlowImmune = true;
 					immuneTypeNeedsSaving = true;
 				}
-				else if (spell.Subcategory == "Charm" && returnValue == CastReturn.CAST_NOCHARM)
+				else if (spell.Subcategory == "Charm" && returnValue == CastReturn.CAST_NOCHARM && !Resist.CharmImmune)
 				{
 					Resist.CharmImmune = true;
 					immuneTypeNeedsSaving = true;
 				}
-				else if (spell.Subcategory == "Enthrall" && returnValue == CastReturn.CAST_NOMEZ)
+				else if (spell.Subcategory == "Enthrall" && returnValue == CastReturn.CAST_NOMEZ && !Resist.MezImmune)
 				{
 					Resist.MezImmune = true;
 					immuneTypeNeedsSaving = true;
 				}
-				else if (spell.Subcategory == "Snare" && returnValue == CastReturn.CAST_IMMUNE)
+				else if (spell.Subcategory == "Snare" && returnValue == CastReturn.CAST_IMMUNE && !Resist.SnareImmune)
 				{
 					Resist.SnareImmune = true;
 					immuneTypeNeedsSaving = true;
 				}
-				else if (spell.Subcategory == "Calm" && returnValue == CastReturn.CAST_IMMUNE)
+				else if (spell.Subcategory == "Calm" && returnValue == CastReturn.CAST_IMMUNE && !Resist.PacifyImmune)
 				{
 					Resist.PacifyImmune = true;
 					immuneTypeNeedsSaving = true;
