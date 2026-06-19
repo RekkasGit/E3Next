@@ -440,6 +440,7 @@ namespace E3Core.Classes
             }
 		
 			if (_songs.Count == 1 && MQ.Query<bool>("${Me.Casting}")) return;
+		
 
 			if (E3.CharacterSettings.Misc_DelayAfterCastWindowDropsForSpellCompletion > 0)
 			{
@@ -561,12 +562,13 @@ namespace E3Core.Classes
         public static void StartMelody(string melodyName, bool force=false)
         {
              _songs.Clear();
-			MQ.Cmd("/stopsong");
+			
 			//lets find the melody in the character ini.
 			CharacterSettings.LoadKeyData($"{melodyName} Melody", "Song", E3.CharacterSettings.ParsedData, _songs);
             if(_songs.Count>0)
             {
-                MQ.Write($"\aoStart Melody:\ag{melodyName}");
+				MQ.Cmd("/stopsong");
+				MQ.Write($"\aoStart Melody:\ag{melodyName}");
              
                 _nextBardCast = Core.StopWatch.ElapsedMilliseconds;
 				_forceOverride = force;
