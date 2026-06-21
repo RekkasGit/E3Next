@@ -372,12 +372,11 @@ namespace E3Core.Processors
                     if (!MQ.Query<bool>("${AdvPath.State}"))
                     {
                         //they are in range
-                        if (MQ.Query<bool>($"${{Spawn[{FollowTargetName}].LineOfSight}}"))
+                       // if (MQ.Query<bool>($"${{Spawn[pc {FollowTargetName}].LineOfSight}}"))
                         {
                             if (Casting.TrueTarget(s.ID))
                             {
-                                MQ.Delay(100);
-                                MQ.Delay(100);
+                                MQ.Delay(500);
                                 //if a bot, use afollow, else use stick
                                 string mqcommand = $"/afollow on nodoor {_followMeDistance}";
 								MQ.Cmd(mqcommand);

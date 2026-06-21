@@ -1930,6 +1930,8 @@ namespace E3Core.Processors
 						if (MQ.Query<bool>($"${{Me.CombatAbility[{aura}]}}")) _selectAura = new Spell(aura);
 						if (MQ.Query<bool>($"${{Me.Book[{aura}]}}")) _selectAura = new Spell(aura);
 						if (MQ.Query<bool>($"${{Me.AltAbility[{aura}]}}")) _selectAura = new Spell(aura);
+						if (MQ.Query<bool>($"${{FindItem[{aura}]}}")) _selectAura = new Spell(aura);
+
 					}
 					_initAuras = true;
 					if (_selectAura != null)
