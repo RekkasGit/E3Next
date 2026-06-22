@@ -43,9 +43,6 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EasyToast">
-      <HintPath>.\EasyToast.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -127,6 +124,12 @@
     <Content Include="e3nv2.ico" />
     <Content Include="e3n_logo.ico" />
     <Content Include="FodyWeavers.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EasyToast\EasyToast.csproj">
+      <Project>{6bfdf3bb-ac34-492e-ab4d-21c824feff81}</Project>
+      <Name>EasyToast</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

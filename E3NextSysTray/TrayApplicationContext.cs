@@ -29,7 +29,7 @@ namespace E3NextSysTray
 
 		private Toast _primaryToast;
 		private string _releaseID = "v1.55.25-3.1.4.9";
-		private Boolean is32Bit = true;
+		//private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
 		private Task _downloadTask = null;

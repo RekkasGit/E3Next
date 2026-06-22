@@ -32,7 +32,11 @@
         },
         "frameworks": {
           "net48": {
-            "projectReferences": {}
+            "projectReferences": {
+              "C:\\Projects\\MQ2MonoSharp\\EasyToast\\EasyToast.csproj": {
+                "projectPath": "C:\\Projects\\MQ2MonoSharp\\EasyToast\\EasyToast.csproj"
+              }
+            }
           }
         },
         "warningProperties": {
@@ -91,6 +95,22 @@
         "win-x86": {
           "#import": []
         }
+      }
+    },
+    "C:\\Projects\\MQ2MonoSharp\\EasyToast\\EasyToast.csproj": {
+      "restore": {
+        "projectUniqueName": "C:\\Projects\\MQ2MonoSharp\\EasyToast\\EasyToast.csproj",
+        "projectName": "EasyToast",
+        "projectPath": "C:\\Projects\\MQ2MonoSharp\\EasyToast\\EasyToast.csproj",
+        "UsingMicrosoftNETSdk": false,
+        "frameworks": {
+          "net48": {
+            "projectReferences": {}
+          }
+        }
+      },
+      "frameworks": {
+        "net48": {}
       }
     }
   }

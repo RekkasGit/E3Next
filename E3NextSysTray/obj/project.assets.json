@@ -347,6 +347,15 @@
             "related": ".xml"
           }
         }
+      },
+      "EasyToast/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/EasyToast.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/EasyToast.dll": {}
+        }
       }
     },
     ".NETFramework,Version=v4.8/win": {
@@ -682,6 +691,15 @@
           "lib/net47/System.ValueTuple.dll": {
             "related": ".xml"
           }
+        }
+      },
+      "EasyToast/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/EasyToast.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/EasyToast.dll": {}
         }
       }
     },
@@ -1019,6 +1037,15 @@
             "related": ".xml"
           }
         }
+      },
+      "EasyToast/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/EasyToast.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/EasyToast.dll": {}
+        }
       }
     },
     ".NETFramework,Version=v4.8/win-x64": {
@@ -1355,6 +1382,15 @@
             "related": ".xml"
           }
         }
+      },
+      "EasyToast/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/EasyToast.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/EasyToast.dll": {}
+        }
       }
     },
     ".NETFramework,Version=v4.8/win-x86": {
@@ -1690,6 +1726,15 @@
           "lib/net47/System.ValueTuple.dll": {
             "related": ".xml"
           }
+        }
+      },
+      "EasyToast/1.0.0": {
+        "type": "project",
+        "compile": {
+          "bin/placeholder/EasyToast.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/EasyToast.dll": {}
         }
       }
     }
@@ -2267,6 +2312,11 @@
         "useSharedDesignerContext.txt",
         "version.txt"
       ]
+    },
+    "EasyToast/1.0.0": {
+      "type": "project",
+      "path": "../EasyToast/EasyToast.csproj",
+      "msbuildProject": "../EasyToast/EasyToast.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -2274,6 +2324,7 @@
       "Costura.Fody >= 6.0.0",
       "CustomSelectFileDlg >= 1.0.0",
       "DotNetZip.Original >= 2025.2.15",
+      "EasyToast >= 1.0.0",
       "NetMQ >= 4.0.1.13",
       "Newtonsoft.Json >= 13.0.4",
       "Octokit >= 14.0.0"
@@ -2311,7 +2362,11 @@
       },
       "frameworks": {
         "net48": {
-          "projectReferences": {}
+          "projectReferences": {
+            "C:\\Projects\\MQ2MonoSharp\\EasyToast\\EasyToast.csproj": {
+              "projectPath": "C:\\Projects\\MQ2MonoSharp\\EasyToast\\EasyToast.csproj"
+            }
+          }
         }
       },
       "warningProperties": {
