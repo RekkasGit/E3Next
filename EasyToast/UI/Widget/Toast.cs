@@ -6,6 +6,10 @@ using System.Collections.Generic;
 
 namespace System.UI.Widget
 {
+	/// <summary>
+	/// Taken from the original EasyToast and updated for the needs of the E3N Project.
+	/// While it was a good base to start from, it had some ... limiting issues.
+	/// </summary>
 	public class Toast
 	{
 		#region Private fields

@@ -40,9 +40,9 @@ namespace E3Core.Processors
         private static ISpawns _spawns = E3.Spawns;
         public static DoorDataFile _doorData = new DoorDataFile();
         private static Int64 _nextAnchorCheck = 0;
-        private static Int64 _nextAnchorCheckInterval = 1000;
+        private static Int64 _nextAnchorCheckInterval = 500;
         public static Int64 _nextFollowCheck = 0;
-        private static Int64 _nextFollowCheckInterval = 1000;
+        private static Int64 _nextFollowCheckInterval = 500;
         public static Int64 _nextE3FollowCheck = 0;
         public static bool _e3follow_navfallback = true;
         public static bool _e3follow_replay = false;

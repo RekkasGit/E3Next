@@ -97,6 +97,140 @@ namespace E3Core.Processors
 					}
 				}
 
+				String targetName = String.Empty;
+				if (_spawns.TryByID(targetID, out var s))
+				{
+					//targets of 0 means keep current target
+					if (targetID > 0)
+					{
+						targetName = s.CleanName;
+					}
+					else
+					{
+						targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
+					}
+					MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
+				}
+				#region validation checks
+
+				if (!isNowCast && MQ.Query<bool>("${Me.Invis}"))
+				{
+
+					E3.ActionTaken = true;
+
+					_log.Write($"SkipCast-Invis ${spell.CastName} {targetName} : {targetID}");
+					return CastReturn.CAST_INVIS;
+
+				}
+
+				if (!String.IsNullOrWhiteSpace(spell.Reagent))
+				{
+
+					_log.Write($"Checking for reagent required for spell cast:{targetName} value:{spell.Reagent}");
+					//spell requires a regent, lets check if we have it.
+					Int32 itemCount = MQ.Query<Int32>($"${{FindItemCount[={spell.Reagent}]}}");
+					if (itemCount < 1)
+					{
+						spell.ReagentOutOfStock = true;
+						_log.Write($"Cannot cast [{spell.CastName}], I do not have any [{spell.Reagent}], removing this spell from array. Restock for this spell to cast again.", Logging.LogLevels.Error);
+						E3.Bots.Broadcast($"Cannot cast [{spell.CastName}], I do not have any [{spell.Reagent}], removing this spell from array. Restock for this spell to cast again.");
+						e3util.Beep();
+						return CastReturn.CAST_REAGENT;
+					}
+					else
+					{
+						_log.Write($"Reagent found!");
+
+					}
+
+				}
+
+				_log.Write("Checking for zoning...");
+				if (Zoning.CurrentZone.Id != MQ.Query<Int32>("${Zone.ID}"))
+				{
+					_log.Write("Currently zoning, delaying for 1second");
+					//we are zoning, we need to chill for a bit.
+					MQ.Delay(1000);
+					return CastReturn.CAST_ZONING;
+				}
+
+				_log.Write("Checking for Feigning....");
+				if (MQ.Query<bool>("${Me.Feigning}") && String.Compare(spell.CastName, "Mend", true) != 0)
+				{
+					E3.Bots.Broadcast($"skipping [{spell.CastName}] , i am feigned.");
+					MQ.Delay(200);
+					return CastReturn.CAST_FEIGN;
+				}
+				_log.Write("Checking for Open spell book....");
+				if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
+				{
+					if (!e3util.IsManualControl())
+					{
+						MQ.Cmd("/stand");
+					}
+					else
+					{
+						E3.ActionTaken = true;
+						E3.Bots.Broadcast($"skipping [{spell.CastName}] , spellbook is open.");
+						MQ.Delay(200);
+						return CastReturn.CAST_SPELLBOOKOPEN;
+					}
+
+				}
+
+				_log.Write("Checking for LoS for non beneficial...");
+				if (!spell.SpellType.Contains("Beneficial"))
+				{
+					_log.Write("Checking for LoS for non disc and not self...");
+					if (!(spell.CastType.Equals("Disc") && spell.TargetType.Equals("Self")))
+					{
+						_log.Write("Checking for LoS for non PB AE and Self...");
+						if (!(spell.TargetType.Equals("PB AE") || spell.TargetType.Equals("Self")))
+						{
+							_log.Write("Checking for LoS if target has LoS...");
+							if (!MQ.Query<bool>($"${{Spawn[id {targetID}].LineOfSight}}"))
+							{
+								_log.Write($"I cannot see {targetName}");
+								MQ.Write($"SkipCast-LoS {spell.CastName} ${spell.CastID} {targetName} {targetID}");
+								return CastReturn.CAST_CANNOTSEE;
+
+							}
+						}
+					}
+				}
+				
+				//now to get the target
+				_log.Write("Checking to see if we need to aquire a target for non self /pbaoe");
+				if (spell.TargetType != "PB AE" && spell.TargetType != "Self")
+				{
+					if (Basics.InCombat() && targetID != Assist.AssistTargetID && MQ.Query<bool>("${Stick.Active}"))
+					{
+						MQ.Cmd("/stick pause");
+						stickPaused = true;
+					}
+					if (!TrueTarget(targetID))
+					{
+
+						E3.Bots.Broadcast($"Spell Target failure for targetid:{targetID} for spell {spell.SpellName}");
+						E3.Spawns.RefreshList(full: true);
+						return CastReturn.CAST_NOTARGET;
+					}
+				}
+				if (spell.SpellType.Equals("Detrimental") && (spell.TargetType != "PB AE" && spell.TargetType != "Self"))
+				{
+					TrueTarget(targetID);
+					bool isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
+
+					if (isCorpse || !MQ.Query<bool>("${Target.ID}"))
+					{
+						//shouldn't nuke dead things
+						Assist.AssistOff();
+						Interrupt();
+						return CastReturn.CAST_INTERRUPTED;
+					}
+				}
+				#endregion
+
 				if (targetID < 1)
 				{
 					if (!(spell.TargetType == "Self" || spell.TargetType == "Group v1" || spell.TargetType == "Group v2" || spell.TargetType == "PB AE"))
@@ -115,23 +249,10 @@ namespace E3Core.Processors
 						TrueTarget(targetID);
 
 					}
-					String targetName = String.Empty;
+					
 					BeforeEventCheck(spell);
 					BeforeSpellCheck(spell, targetID);
-
-					if (_spawns.TryByID(targetID, out var s))
-					{
-						//targets of 0 means keep current target
-						if (targetID > 0)
-						{
-							targetName = s.CleanName;
-						}
-						else
-						{
-							targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
-						}
-						MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
-					}
+					
 
 					MQ.Cmd($"/alt activate {spell.CastID}");
 
@@ -162,19 +283,9 @@ namespace E3Core.Processors
 					//note bards are special and cast do insta casts while doing normal singing. they have their own 
 					//sing area, so only go here to do item/aa casts while singing. can't do IsCasting checks as it will catch
 					//on the singing... so just kick out and assume all is well.
-					if (_spawns.TryByID(targetID, out var s))
+					if (_spawns.TryByID(targetID, out var _))
 					{
 
-						String targetName = String.Empty;
-						//targets of 0 means keep current target
-						if (targetID > 0)
-						{
-							targetName = s.CleanName;
-						}
-						else
-						{
-							targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
-						}
 						TrueTarget(targetID);
 
 						//this lets bard kick regardless of current song status, otherwise will wait until between songs to kick
@@ -331,138 +442,10 @@ namespace E3Core.Processors
 				{
 
 
-					if (_spawns.TryByID(targetID, out var s))
+					if (_spawns.TryByID(targetID, out var _))
 					{
 
-						String targetName = String.Empty;
-						//targets of 0 means keep current target
-						if (targetID > 0)
-						{
-							targetName = s.CleanName;
-						}
-						else
-						{
-							targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
-						}
-						_log.Write($"TargetName:{targetName}");
-						//why we should not cast.. for whatever reason.
-						#region validation checks
-						if (!isNowCast && MQ.Query<bool>("${Me.Invis}"))
-						{
-
-							E3.ActionTaken = true;
-
-							_log.Write($"SkipCast-Invis ${spell.CastName} {targetName} : {targetID}");
-							return CastReturn.CAST_INVIS;
-
-						}
-
-						if (!String.IsNullOrWhiteSpace(spell.Reagent))
-						{
-
-							_log.Write($"Checking for reagent required for spell cast:{targetName} value:{spell.Reagent}");
-							//spell requires a regent, lets check if we have it.
-							Int32 itemCount = MQ.Query<Int32>($"${{FindItemCount[={spell.Reagent}]}}");
-							if (itemCount < 1)
-							{
-								spell.ReagentOutOfStock = true;
-								_log.Write($"Cannot cast [{spell.CastName}], I do not have any [{spell.Reagent}], removing this spell from array. Restock for this spell to cast again.", Logging.LogLevels.Error);
-								E3.Bots.Broadcast($"Cannot cast [{spell.CastName}], I do not have any [{spell.Reagent}], removing this spell from array. Restock for this spell to cast again.");
-								e3util.Beep();
-								return CastReturn.CAST_REAGENT;
-							}
-							else
-							{
-								_log.Write($"Reagent found!");
-
-							}
-
-						}
-
-						_log.Write("Checking for zoning...");
-						if (Zoning.CurrentZone.Id != MQ.Query<Int32>("${Zone.ID}"))
-						{
-							_log.Write("Currently zoning, delaying for 1second");
-							//we are zoning, we need to chill for a bit.
-							MQ.Delay(1000);
-							return CastReturn.CAST_ZONING;
-						}
-
-						_log.Write("Checking for Feigning....");
-						if (MQ.Query<bool>("${Me.Feigning}") && String.Compare(spell.CastName, "Mend", true) != 0)
-						{
-							E3.Bots.Broadcast($"skipping [{spell.CastName}] , i am feigned.");
-							MQ.Delay(200);
-							return CastReturn.CAST_FEIGN;
-						}
-						_log.Write("Checking for Open spell book....");
-						if (MQ.Query<bool>("${Window[SpellBookWnd].Open}"))
-						{
-							if (!e3util.IsManualControl())
-							{
-								MQ.Cmd("/stand");
-							}
-							else
-							{
-								E3.ActionTaken = true;
-								E3.Bots.Broadcast($"skipping [{spell.CastName}] , spellbook is open.");
-								MQ.Delay(200);
-								return CastReturn.CAST_SPELLBOOKOPEN;
-							}
-
-						}
-
-						_log.Write("Checking for LoS for non beneficial...");
-						if (!spell.SpellType.Contains("Beneficial"))
-						{
-							_log.Write("Checking for LoS for non disc and not self...");
-							if (!(spell.CastType.Equals("Disc") && spell.TargetType.Equals("Self")))
-							{
-								_log.Write("Checking for LoS for non PB AE and Self...");
-								if (!(spell.TargetType.Equals("PB AE") || spell.TargetType.Equals("Self")))
-								{
-									_log.Write("Checking for LoS if target has LoS...");
-									if (!MQ.Query<bool>($"${{Spawn[id {targetID}].LineOfSight}}"))
-									{
-										_log.Write($"I cannot see {targetName}");
-										MQ.Write($"SkipCast-LoS {spell.CastName} ${spell.CastID} {targetName} {targetID}");
-										return CastReturn.CAST_CANNOTSEE;
-
-									}
-								}
-							}
-						}
-						#endregion
-						//now to get the target
-						_log.Write("Checking to see if we need to aquire a target for non self /pbaoe");
-						if (spell.TargetType != "PB AE" && spell.TargetType != "Self")
-						{
-							if (Basics.InCombat() && targetID != Assist.AssistTargetID && MQ.Query<bool>("${Stick.Active}"))
-							{
-								MQ.Cmd("/stick pause");
-								stickPaused = true;
-							}
-							if (!TrueTarget(targetID))
-							{
-
-								E3.Bots.Broadcast($"Spell Target failure for targetid:{targetID} for spell {spell.SpellName}");
-								E3.Spawns.RefreshList(full: true);
-								return CastReturn.CAST_NOTARGET;
-							}
-						}
-						if (spell.SpellType.Equals("Detrimental") && (spell.TargetType != "PB AE" && spell.TargetType != "Self"))
-						{
-							TrueTarget(targetID);
-							bool isCorpse = MQ.Query<bool>("${Target.Type.Equal[Corpse]}");
-
-							if (isCorpse || !MQ.Query<bool>("${Target.ID}"))
-							{
-								//shouldn't nuke dead things
-								Assist.AssistOff();
-								Interrupt();
-								return CastReturn.CAST_INTERRUPTED;
-							}
-						}
+						
 
 						BeforeEventCheck(spell);
 
@@ -1915,6 +1898,11 @@ namespace E3Core.Processors
 			{
 				return false;
 			}
+			if (MQ.Query<bool>("${Me.Feigning}") && String.Compare(spell.CastName, "Mend", true) != 0)
+			{
+				return false;
+			}
+
 			if (spell.CastType == CastingType.None) return false;
 			//do we need to memorize it?
 			if ((spell.CastType == CastingType.Spell || spell.CastType == CastingType.Item || spell.CastType == CastingType.AA) && MQ.Query<bool>("${Debuff.Silenced}")) return false;
