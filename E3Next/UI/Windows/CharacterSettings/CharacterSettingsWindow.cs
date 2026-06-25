@@ -2602,6 +2602,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_InlineHelpButton("SpellEditor_MinAggroHelp", "Only cast once your aggro percent is at least this value.");
 					Render_TwoColumn_TableInt("##SpellEditor_MaxAggro", "Max Aggro:", currentSpell.MaxAggro, (u) => { currentSpell.MaxAggro = u; });
 					Render_InlineHelpButton("SpellEditor_MaxAggroHelp", "Hold off whenever your aggro percent meets or exceeds this limit.");
+				
+
 				}
 			}
 		}
@@ -2825,6 +2827,8 @@ namespace E3Core.UI.Windows.CharacterSettings
 					Render_TwoColumn_TableCheckbox("##Flag_NoMidSongCast", "No Mid Song Cast:", currentSpell.NoMidSongCast, (u) => { currentSpell.NoMidSongCast = u; }, tooltip: "Bards: block this action while a song is already channeling so twisting is not disrupted.");
 					Render_TwoColumn_TableCheckbox("##Flag_GoM", "Gift of Mana Required:", currentSpell.GiftOfMana, (u) => { currentSpell.GiftOfMana = u; }, tooltip: "Only cast when a Gift of Mana-style proc is active, saving mana on expensive spells.");
 					Render_TwoColumn_TableCheckbox("##Flag_Debug", "Debug output:", currentSpell.Debug, (u) => { currentSpell.Debug = u; }, tooltip: "Enable detailed logging for this spell to the MQ chat/log window.");
+					Render_TwoColumn_TableCheckbox("##Flag_IgnoreReadyCheck", "Ignore Ready Check:", currentSpell.IgnoreReadyCheck, (u) => { currentSpell.IgnoreReadyCheck = u; },tooltip: "For broken AA timers, click this to ignore them.");
+			
 				}
 			}
 		}
