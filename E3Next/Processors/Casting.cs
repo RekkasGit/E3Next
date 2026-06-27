@@ -109,7 +109,7 @@ namespace E3Core.Processors
 					{
 						targetName = MQ.Query<string>($"${{Spawn[id ${{Target.ID}}].CleanName}}");
 					}
-					MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
+					//MQ.Write($"\ag{spell.CastName} \am{targetName} \ao{targetID}");
 				}
 				#region validation checks
 
