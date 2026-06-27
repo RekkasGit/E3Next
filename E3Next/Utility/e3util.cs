@@ -2018,7 +2018,8 @@ namespace E3Core.Utility
 						if (!s.Targetable) continue;
 						if (!s.Aggressive) continue;
 						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
-						if (s.CleanName.EndsWith("s pet")) continue;
+						if (s.CleanName.EndsWith("s pet", StringComparison.OrdinalIgnoreCase)) continue;
+						if (s.CleanName.EndsWith("s Animated Corpse", StringComparison.OrdinalIgnoreCase)) continue;
 						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
 						if (s.Distance3D > 60) continue;
 
@@ -2055,7 +2056,8 @@ namespace E3Core.Utility
 						if (!s.Targetable) continue;
 						if (!s.Aggressive) continue;
 						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
-						if (s.CleanName.EndsWith("s pet")) continue;
+						if (s.CleanName.EndsWith("s pet", StringComparison.OrdinalIgnoreCase)) continue;
+						if (s.CleanName.EndsWith("s Animated Corpse", StringComparison.OrdinalIgnoreCase)) continue;
 						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
 						if (s.Distance3D > 60) continue;
 
@@ -2099,7 +2101,8 @@ namespace E3Core.Utility
 						if (!s.Targetable) continue;
 						if (!s.Aggressive) continue;
 						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
-						if (s.CleanName.EndsWith("s pet")) continue;
+						if (s.CleanName.EndsWith("s pet", StringComparison.OrdinalIgnoreCase)) continue;
+						if (s.CleanName.EndsWith("s Animated Corpse", StringComparison.OrdinalIgnoreCase)) continue;
 						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
 						if (s.Distance3D > 60) continue;
 
@@ -2138,7 +2141,8 @@ namespace E3Core.Utility
 						if (!s.Targetable) continue;
 						if (!s.Aggressive) continue;
 						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
-						if (s.CleanName.EndsWith("s pet")) continue;
+						if (s.CleanName.EndsWith("s pet", StringComparison.OrdinalIgnoreCase)) continue;
+						if (s.CleanName.EndsWith("s Animated Corpse",StringComparison.OrdinalIgnoreCase)) continue;
 						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
 						if (s.Distance3D > 60) continue;
 

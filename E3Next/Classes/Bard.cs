@@ -276,6 +276,7 @@ namespace E3Core.Classes
 						if (!s.Targetable) continue;
 						if (!s.Aggressive) continue;
 						if (s.CleanName.EndsWith("s pet")) continue;
+						if (s.CleanName.EndsWith("s Animated Corpse")) continue;
 						if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
 						if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
 													 //its valid to attack!

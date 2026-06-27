@@ -243,9 +243,10 @@ namespace E3Core.Settings.FeatureSettings
 						if (s.Dead) continue;
 						if (!s.Targetable) continue;
 						if (string.IsNullOrWhiteSpace(s.CleanName)) continue; //no name, possibly swarm pet
-						if (s.CleanName.EndsWith("s pet")) continue;
+						if (s.CleanName.EndsWith("s pet", StringComparison.OrdinalIgnoreCase)) continue;
+						if (s.CleanName.EndsWith("s Animated Corpse", StringComparison.OrdinalIgnoreCase)) continue;
 
-						mobName= s.CleanName; ;
+						mobName = s.CleanName; ;
 						
 						if (!ZoneData.TryGetValue(mobName, out var Resist))
 						{

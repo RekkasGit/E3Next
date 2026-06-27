@@ -18,7 +18,7 @@ namespace E3Core.Processors
 
         public GiveMeItem(string input)
         {
-            //eg: Alara|Sanguine Mind Crystal III|30s|SpellNameToUse
+            //eg: Alara|Sanguine Mind Crystal III|30s|SpellNameToUse|Single/Group|qty
             //split this up by |
 
             string[] splits = input.Split('|');
@@ -60,8 +60,24 @@ namespace E3Core.Processors
 						}
 						if (splits.Length > 4)
 						{
+
                             var targetTypeString = splits[4].Trim();
-                            Enum.TryParse(targetTypeString, true, out TargetType);
+                            
+                            if(!String.IsNullOrWhiteSpace(targetTypeString))
+                            {
+								Enum.TryParse(targetTypeString, true, out TargetType);
+
+							}
+						}
+                        if(splits.Length>5)
+						{
+
+							var qtyNumber = splits[5].Trim();
+							if (!String.IsNullOrWhiteSpace(qtyNumber))
+                            {
+								Int32.TryParse(qtyNumber, out qty);
+
+							}
 						}
 					}
                 }
@@ -74,6 +90,7 @@ namespace E3Core.Processors
         public Int32 Delay = 30;
         public double NextCheck = 0;
 		public bool NoCombat = false;
+        public Int32 qty = 1;
     }
 
     public static class GiveMe
@@ -275,11 +292,11 @@ namespace E3Core.Processors
                                         //lets ask for it!
 										if(!String.IsNullOrWhiteSpace(item.SpellToUse))
 										{
-											E3.Bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {1} {E3.CurrentName} \"{item.SpellToUse}\" \"{item.TargetType.ToString()}\"");
+											E3.Bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {item.qty} {E3.CurrentName} \"{item.SpellToUse}\" \"{item.TargetType.ToString()}\"");
 										}
 										else
 										{
-											E3.Bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {1} {E3.CurrentName}");
+											E3.Bots.BroadcastCommandToPerson(item.Supplier, $"/giveme {item.Supplier} \"{item.ItemName}\" {item.qty} {E3.CurrentName}");
 										}
                                        
                                     }

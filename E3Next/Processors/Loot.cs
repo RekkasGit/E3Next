@@ -664,8 +664,9 @@ namespace E3Core.Processors
                     if (s.TypeDesc != "NPC") continue;
                     if (!s.Targetable) continue;
                     if (!s.Aggressive) continue;
-                    if (s.CleanName.EndsWith("s pet")) continue;
-                    if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
+					if (s.CleanName.EndsWith("s pet", StringComparison.OrdinalIgnoreCase)) continue;
+					if (s.CleanName.EndsWith("s Animated Corpse", StringComparison.OrdinalIgnoreCase)) continue;
+					if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
                     if (s.Distance3D > 30) break;//mob is too far away, and since it is ordered, kick out.
 
                     return false;
