@@ -425,7 +425,7 @@ namespace E3Core.Server
 									args.RemoveAt(0);
 									EventProcessor.CommandMatch commandMatch = new EventProcessor.CommandMatch() { eventName = "TempE3NCommand", eventString = command, args = args, hasAllFlag = false };
 
-									if (!e3util.FilterMe(commandMatch))
+									if (!(e3util.FilterMe(commandMatch) && typeInfo != OnCommandData.CommandType.OnCommandName))
 									{
 										EventProcessor.ProcessMQCommand(command);
 									}
