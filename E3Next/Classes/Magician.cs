@@ -34,7 +34,33 @@ namespace E3Core.Classes
         private static Spell _dskGloveSpell = null;
 		private static Spell _dskCodexSpell = null;
 
-		private static Dictionary<string, string> _weaponMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+        private static Dictionary<string, string> _weaponSpellMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            {"Summoned: Dagger of Symbols", "Dagger of Symbols" },
+            {"Summoned: Blade of Walnan", "Blade of Walnan" },
+            {"Summoned: Hand of Ixiblat", "Fist of Ixiblat"},
+            {"Summoned: Blade of the Kedge", "Blade of the Kedge"},
+            {"Summoned: Fireblade", "Fireblade"},
+            {"Summoned: Staff of the North Wind", "Summon Staff of the North Wind" },
+            {"Summoned: Dagger of the Deep", "Summon Dagger of the Deep"},
+            {"Summoned: Fist of Flame", "Grant Spectral Armaments"},
+            {"Summoned: Orb of Chilling Water", "Grant Spectral Armaments" },
+            {"Summoned: Buckler of Draining Defense", "Grant Spectral Armaments" },
+            {"Summoned: Short Sword of Warding", "Grant Spectral Armaments" },
+            {"Summoned: Mace of Temporal Distortion", "Grant Spectral Armaments" },
+            {"Summoned: Spear of Maliciousness", "Grant Spectral Armaments" },
+            {"Summoned: Wand of Dismissal", "Grant Spectral Armaments" },
+            {"Summoned: Tendon Carver", "Grant Spectral Armaments" },
+            {"None", null }
+        };
+
+        private static Dictionary<string, string> _weaponMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            {"Phys35", "Summoned: Dagger of Symbols" },
+            {"Wind61", "Summoned: Blade of Walnan" },
+            {"Fire62", "Summoned: Hand of Ixiblat"},
+            {"Ice63", "Summoned: Blade of the Kedge"},
+            {"Fire66", "Summoned: Fireblade"},
+            {"Wind67", "Summoned: Staff of the North Wind" },
+            {"Ice67", "Summoned: Dagger of the Deep"},
             {"Fire", "Summoned: Fist of Flame"},
             {"Water", "Summoned: Orb of Chilling Water" },
             {"Shield", "Summoned: Buckler of Draining Defense" },
@@ -682,6 +708,8 @@ namespace E3Core.Classes
                     }
                 }
 
+                //Cast spell to summon selected weapon
+                _weaponSpell = _weaponSpellMap[weapon];
                 var summonResult = SummonItem(_weaponSpell, true);
                 if (!summonResult.success)
                 {
