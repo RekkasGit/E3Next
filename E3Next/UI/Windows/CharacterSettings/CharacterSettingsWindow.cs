@@ -1025,6 +1025,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var activeSection = pd.Sections.GetSectionData(state.SelectedSection ?? string.Empty);
 
 			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY);
+			
 			using (var table = ImGUITable.Aquire())
 			{
 				if (table.BeginTable("ToolsInfoTable", 1, tableFlags, 0, 0))

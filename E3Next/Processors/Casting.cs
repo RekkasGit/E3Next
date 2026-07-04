@@ -1905,7 +1905,9 @@ namespace E3Core.Processors
 
 			if (spell.CastType == CastingType.None) return false;
 			//do we need to memorize it?
-			if ((spell.CastType == CastingType.Spell || spell.CastType == CastingType.Item || spell.CastType == CastingType.AA) && MQ.Query<bool>("${Debuff.Silenced}")) return false;
+			
+			//items can cast while silenced from what I am told.
+			if ((spell.CastType == CastingType.Spell || spell.CastType == CastingType.AA) && MQ.Query<bool>("${Debuff.Silenced}")) return false;
 
 			//_log.Write($"CheckReady on {spell.CastName}");
 			if (!skipCastCheck)

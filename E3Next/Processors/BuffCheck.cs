@@ -1336,7 +1336,16 @@ namespace E3Core.Processors
 							if (!spell.IgnoreStackRules)
 							{
 								willStack = false;
-								var stackingresults = E3.Bots.BuffRegistgeredStackingResult(target);
+								Dictionary<int, (int, int)> stackingresults = null;
+								if (usePets)
+								{
+									stackingresults = E3.Bots.PetBuffRegistgeredStackingResult(target);
+								}
+								else
+								{
+									 stackingresults= E3.Bots.BuffRegistgeredStackingResult(target);
+								}
+								
 								if (stackingresults.ContainsKey(spell.SpellID))
 								{
 									willStack = stackingresults[spell.SpellID].Item1 > 0 ? true : false;

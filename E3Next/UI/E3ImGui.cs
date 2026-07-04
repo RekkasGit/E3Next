@@ -3212,12 +3212,8 @@ namespace MonoCore
 				IsOpen = imgui_BeginTable(id, columns, flags, outerWidth, outerHeight);
 				return IsOpen;
 			}
-			#region objectPoolingStuff
-			//private constructor, needs to be created so that you are forced to use the pool.
-			private ImGUITable()
-			{
+			private ImGUITable() { } //private constructor, needs to be created so that you are forced to use the pool.
 
-			}
 			public static ImGUITable Aquire()
 			{
 				ImGUITable obj;
@@ -3242,29 +3238,17 @@ namespace MonoCore
 				IsOpen = false;
 				StaticObjectPool.Push(this);
 			}
-			~ImGUITable()
-			{
-				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
-				//if this is called, it will cause the domain to hang in the GC when shuttind down
-				//This is only here to warn you
-
-			}
-
-			#endregion
+			~ImGUITable() { }
 		}
 		public class ImGUIChild : IDisposable
 		{
-
 			public bool BeginChild(string id, float width, float height, int child_flags, int window_flags)
 			{
 				return imgui_BeginChild(id, width, height, child_flags, window_flags);
 			}
 			#region objectPoolingStuff
 			//private constructor, needs to be created so that you are forced to use the pool.
-			private ImGUIChild()
-			{
-
-			}
+			private ImGUIChild() { }
 			public static ImGUIChild Aquire()
 			{
 				ImGUIChild obj;
@@ -3272,7 +3256,6 @@ namespace MonoCore
 				{
 					obj = new ImGUIChild();
 				}
-
 				return obj;
 			}
 			public void Dispose()
@@ -3280,14 +3263,7 @@ namespace MonoCore
 				imgui_EndChild();
 				StaticObjectPool.Push(this);
 			}
-			~ImGUIChild()
-			{
-				//DO NOT CALL DISPOSE FROM THE FINALIZER! This should only ever be used in using statements
-				//if this is called, it will cause the domain to hang in the GC when shuttind down
-				//This is only here to warn you
-
-			}
-
+			~ImGUIChild(){}
 			#endregion
 		}
 		public class PushStyle : IDisposable
