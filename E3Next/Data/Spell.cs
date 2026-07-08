@@ -597,6 +597,11 @@ namespace E3Core.Data
                     CastType = CastingType.Spell;
                     SpellInBook = true;
                 }
+                else if(MQ.Query<bool>($"${{Me.Gem[{CastName}]}}"))
+                {
+                    CastType = CastingType.Spell;
+					SpellInBook = false;
+                }
                 else if (MQ.Query<bool>($"${{Me.CombatAbility[{CastName}]}}"))
                 {
                     CastType = CastingType.Disc;

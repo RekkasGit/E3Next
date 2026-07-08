@@ -1034,7 +1034,20 @@ namespace E3Core.Processors
 			{
 				//this was actully fixed sometime a little before version 
 				//3.1.1.28 of EMU, but i know its after i released mq2mono 0.422, so we will use that.
-				MQ.Cmd($"/cast \"={spell.CastName}\"");
+				
+				if(spell.SpellInBook)
+				{
+					MQ.Cmd($"/cast \"={spell.CastName}\"");
+				}
+				else
+				{
+					Int32 gemNumber = MQ.Query<Int32>($"${{Me.Gem[{spell.CastName}]}}");
+					if(gemNumber>0)
+					{
+						MQ.Cmd($"/cast {gemNumber}");
+					}
+				}
+				
 			}
 			else
 			{
@@ -1922,7 +1935,7 @@ namespace E3Core.Processors
 			}
 
 			bool returnValue = false;
-			if (spell.CastType == Data.CastingType.Spell && spell.SpellInBook)
+			if (spell.CastType == Data.CastingType.Spell && (spell.SpellInBook || MQ.Query<bool>($"${{Me.Gem[{spell.CastName}]}}")))
 			{
 				_log.Write("Checking spell in book cooldown...");
 				//do we already have it memed?

@@ -30,7 +30,7 @@ namespace MQServerClient
 
 
 			AsyncIO.ForceDotNet.Force();
-            MonoCore.Core._MQ2MonoVersion = 0.40m;
+            MonoCore.Core._MQ2MonoVersion = 0.442m;
             MonoCore.Core.mqInstance = new NetMQMQ();
             MonoCore.Core.spawnInstance = new NetMQSpawns();
             MonoCore.Core.OnInit();

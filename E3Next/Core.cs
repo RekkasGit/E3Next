@@ -1145,8 +1145,8 @@ namespace MonoCore
 		public static ISpawns spawnInstance;
 		public static Logging logInstance;
 		public volatile static bool IsProcessing = false;
-		public const string _coreVersion = "0.411";
-		public static Decimal _MQ2MonoVersion = 0.411m;
+		public const string _coreVersion = "0.442";
+		public static Decimal _MQ2MonoVersion = 0.442m;
 
 		//Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
 		//only use the events you need to prevent string allocations to be passed in

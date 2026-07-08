@@ -648,7 +648,7 @@ namespace E3Core.Settings
 
             if (!MQ.Query<bool>($"${{Me.Book[{thing}]}}") && !MQ.Query<bool>($"${{Me.AltAbility[{thing}]}}") &&
                 !MQ.Query<bool>($"${{Me.CombatAbility[{thing}]}}") && !MQ.Query<bool>($"${{Me.Ability[{thing}]}}") &&
-                !MQ.Query<bool>($"${{FindItem[={thing}]}}"))
+                !MQ.Query<bool>($"${{FindItem[={thing}]}}") && !MQ.Query<bool>($"${{Me.Gem[{thing}]}}"))
             {
                 E3.Bots.Broadcast($"\ayI do not have {thing} that is configured in bot ini.");
             }
