@@ -330,6 +330,8 @@ namespace E3Core.UI.Windows.Hud
 		public int ButtonSizeY { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeY; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_ButtonSizeY = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_Locked; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_Locked = value; IsDirty = true; } }
 
+
+
 		public State_HotbuttonsWindow()
 		{
 			IsDirty = false;

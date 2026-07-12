@@ -320,6 +320,38 @@ namespace E3Core.Settings
 				}
 			}
 		}
+		public static void LoadKeyData(string sectionKey, IniData parsedData, Dictionary<string,Hotbutton_DynamicButton_Color> list)
+		{
+			var section = parsedData.Sections[sectionKey];
+			if (section != null)
+			{
+				var keyData = section;
+				if (keyData != null)
+				{
+					foreach (var data in keyData)
+					{
+						Hotbutton_DynamicButton_Color dynamicButtonColor = new Hotbutton_DynamicButton_Color();
+                        dynamicButtonColor.Name = data.KeyName;
+						if (!String.IsNullOrWhiteSpace(data.Value))
+						{
+							//first splace the value via comma
+							string[] dataList = data.Value.Split(',');
+							for (Int32 i = 0; i < dataList.Length; i++)
+							{
+								if (i < dynamicButtonColor.colors.Length)
+								{
+									if (float.TryParse(dataList[i], out var floatValue))
+									{
+										dynamicButtonColor.colors[i] = floatValue;
+									}
+								}
+							}
+						}
+						list[dynamicButtonColor.Name]=dynamicButtonColor;
+					}
+				}
+			}
+		}
 		public static void LoadKeyData<K>(string sectionKey, IniData parsedData, IDictionary<K, CommandSet> dictionary)
 		{
 			var section = parsedData.Sections[sectionKey];

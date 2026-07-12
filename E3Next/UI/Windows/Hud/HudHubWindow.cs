@@ -18,6 +18,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.UI.WebControls;
 using static MonoCore.E3ImGUI;
 using static System.Windows.Forms.AxHost;
 
@@ -3352,7 +3353,7 @@ namespace E3Core.UI.Windows.Hud
 					imgui_TableSetupColumn_Default("Hotbuttons");
 					Int32 counter = 0;
 
-					foreach (var stats in E3.CharacterSettings.E3Hud_Hub_HotButtons_DynamicButtons)
+					foreach (var buttonInfo in E3.CharacterSettings.E3Hud_Hub_HotButtons_DynamicButtons)
 					{
 						if (counter % numberOfBuffsPerRow == 0)
 						{
@@ -3367,10 +3368,28 @@ namespace E3Core.UI.Windows.Hud
 						{
 							imguiFont.PushFont(state.SelectedFont);
 							imguiFont.PushFontSize(state.SelectedFontSize);
-							if (imgui_ButtonEx(stats.Name, state.ButtonSizeX, state.ButtonSizeY))
+							
+							if (E3.CharacterSettings.E3Hud_Hub_HotButtons_DynamicButtons_Colors.TryGetValue(buttonInfo.Name, out var dcolorobj) && !(dcolorobj.colors[0]==0 && dcolorobj.colors[0] == 0 && dcolorobj.colors[0] == 0))
 							{
-								E3ImGUI.MQCommandQueue.Enqueue(stats.Command);
+								var dcolor = dcolorobj.colors;
+								using (var buttonStyle = PushStyle.Aquire())
+								{
+									buttonStyle.PushStyleColor((int)ImGuiCol.Button, dcolor[0], dcolor[1], dcolor[2], dcolor[3]);
+									if (imgui_ButtonEx(buttonInfo.Name, state.ButtonSizeX, state.ButtonSizeY))
+									{
+										E3ImGUI.MQCommandQueue.Enqueue(buttonInfo.Command);
+									}
+								}
 							}
+							else
+							{
+								if (imgui_ButtonEx(buttonInfo.Name, state.ButtonSizeX, state.ButtonSizeY))
+								{
+									E3ImGUI.MQCommandQueue.Enqueue(buttonInfo.Command);
+								}
+
+							}
+							
 						}
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
@@ -3378,6 +3397,7 @@ namespace E3Core.UI.Windows.Hud
 							{
 								using (var style = PushStyle.Aquire())
 								{
+
 									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 
 									if (state.Detached)
@@ -3496,6 +3516,30 @@ namespace E3Core.UI.Windows.Hud
 									}
 									state.ButtonSizeY = updated;
 									imgui_InputInt_Clear(keyForInput);
+								}
+								imgui_Separator();
+								using (var style = PushStyle.Aquire())
+								{
+									style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+									imgui_Text("Button Color");
+
+								}
+								if (!E3.CharacterSettings.E3Hud_Hub_HotButtons_DynamicButtons_Colors.TryGetValue(buttonInfo.Name, out var dcolorobj))
+								{
+									dcolorobj = new TableRow_GroupInfo.Hotbutton_DynamicButton_Color();
+									dcolorobj.Name = buttonInfo.Name;
+									E3.CharacterSettings.E3Hud_Hub_HotButtons_DynamicButtons_Colors.Add(buttonInfo.Name, dcolorobj);
+
+								}
+								if (imgui_ColorPicker4_Float("##Hotbutton_Window_Color_Set", dcolorobj.colors[0], dcolorobj.colors[1], dcolorobj.colors[2], dcolorobj.colors[3], 0))
+								{
+									float[] newColors = imgui_ColorPicker_GetRGBA_Float("##Hotbutton_Window_Color_Set");
+									dcolorobj.colors[0] = newColors[0];
+									dcolorobj.colors[1] = newColors[1];
+									dcolorobj.colors[2] = newColors[2];
+									dcolorobj.colors[3] = newColors[3];
+									state.IsDirty = true;
+
 								}
 							}
 						}
@@ -5479,6 +5523,11 @@ namespace E3Core.UI.Windows.Hud
 			{
 				public string Name = String.Empty;
 				public string Command = String.Empty;
+			}
+			public class Hotbutton_DynamicButton_Color
+			{
+				public string Name = String.Empty;
+				public float[] colors = new float[4] {0.0f,0.0f,0.0f,1.0f};
 			}
 		}
 	}

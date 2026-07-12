@@ -318,6 +318,10 @@ namespace E3Core.Settings
 		[INI_Section("E3Hud_Hub_HotButtons_Dynamic", "")]
 		public List<Hotbutton_DynamicButton> E3Hud_Hub_HotButtons_DynamicButtons = new List<Hotbutton_DynamicButton>();
 
+		[INI_Section("E3Hud_Hub_HotButtons_Dynamic_Colors", "")]
+		public Dictionary<String, Hotbutton_DynamicButton_Color> E3Hud_Hub_HotButtons_DynamicButtons_Colors = new Dictionary<string, Hotbutton_DynamicButton_Color>(100, StringComparer.OrdinalIgnoreCase);
+
+
 		[INI_Section("E3Hud_Hub_Debuff", "SelectedFont")]
 		public string E3Hud_Hub_Debuff_SelectedFont = "robo";
 		[INI_Section("E3Hud_Hub_Debuff", "SelectedFontSize")]
@@ -1030,6 +1034,8 @@ namespace E3Core.Settings
 
 			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic", ParsedData_UI, E3Hud_Hub_HotButtons_DynamicButtons);
 
+			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic_Colors", ParsedData_UI, E3Hud_Hub_HotButtons_DynamicButtons_Colors);
+
 			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData_UI, ref E3Hud_Hub_Debuff_Alpha);
 			LoadKeyData("E3Hud_Hub_Debuff", "Detached", ParsedData_UI, ref E3Hud_Hub_Debuff_Detached);
 			LoadKeyData("E3Hud_Hub_Debuff", "IconSize", ParsedData_UI, ref E3Hud_Hub_Debuff_IconSize);
@@ -1552,6 +1558,8 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Move to Me", "/mtm");
 			}
 
+			newFile.Sections.AddSection("E3Hud_Hub_HotButtons_Dynamic_Colors");
+		
 			newFile.Sections.AddSection("E3Hud_Hub_HotButtons");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons");
 			section.Keys.AddKey("Alpha", "0.8");
@@ -2291,6 +2299,14 @@ namespace E3Core.Settings
 								foreach (var hb in hotbuttons)
 								{
 									section_keyCollection.AddKey(hb.Name, hb.Command);
+								}
+							}
+							else if (reference is IDictionary<string,Hotbutton_DynamicButton_Color>)
+							{
+								IDictionary<string, Hotbutton_DynamicButton_Color> hotbuttons = (IDictionary<string,Hotbutton_DynamicButton_Color>)reference;
+								foreach (var hb in hotbuttons)
+								{
+									section_keyCollection.AddKey(hb.Value.Name, String.Join(",", hb.Value.colors));
 								}
 							}
 							else if (reference is IDictionary<string, CommandSet>)
