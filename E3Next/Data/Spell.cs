@@ -1206,7 +1206,31 @@ namespace E3Core.Data
                 }
             }
         }
-        public bool IsNukeSection = false;
+
+		public string SpellID_TimerKey { 
+            get 
+               {
+				if (String.IsNullOrWhiteSpace(this._spellID_TimerKey))
+				{
+					if (this.CastType == CastingType.AA)
+					{
+						this._spellID_TimerKey = $"AA_{this.SpellID}_{this.AAID}";
+
+					}
+					else if (this.CastType == CastingType.Item)
+					{
+						this._spellID_TimerKey = $"Item_{this.SpellID}_{this.CastName}";
+					}
+					else
+					{
+						this._spellID_TimerKey = $"Spell_{this.SpellID}";
+					}
+				}
+                return this._spellID_TimerKey;
+			}
+		}
+
+		public bool IsNukeSection = false;
 		public Int32 AAID = 0;
         public decimal MyCastTimeInSeconds = 0;
         public Double MyRange;
@@ -1244,7 +1268,8 @@ namespace E3Core.Data
 		public Dictionary<string, Int64> StackSpellCooldown = new Dictionary<string, long>();
 		public Boolean GiftOfMana;
         public Int32 SpellID;
-        public Int32 PctAggro;
+		private string _spellID_TimerKey = String.Empty;
+		public Int32 PctAggro;
         public Int32 MinAggro;
         public Int32 MaxAggro;
         public String Zone = "All";

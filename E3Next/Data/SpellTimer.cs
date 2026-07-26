@@ -11,9 +11,9 @@ namespace E3Core.Data
     public class SpellTimer
     {
         public Int32 MobID;
-        public Dictionary<Int32, Int64> Timestamps = new Dictionary<Int32, Int64>();
-		public Dictionary<Int32, Int64> TimestampBySpellDuration = new Dictionary<Int32, Int64>();
-		public Dictionary<Int32, Int64> Lockedtimestamps = new Dictionary<Int32, Int64>();
+        public Dictionary<String, Int64> Timestamps = new Dictionary<String, Int64>();
+		public Dictionary<String, Int64> TimestampBySpellDuration = new Dictionary<String, Int64>();
+		public Dictionary<String, Int64> Lockedtimestamps = new Dictionary<String, Int64>();
 
         public static SpellTimer Aquire()
         {

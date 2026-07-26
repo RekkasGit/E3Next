@@ -427,7 +427,7 @@ namespace E3Core.Processors
                 if (timers.TryGetValue(mobid, out s))
                 {
                     Int64 timestamp;
-                    if (s.Timestamps.TryGetValue(spell.SpellID, out timestamp))
+                    if (s.Timestamps.TryGetValue(spell.SpellID_TimerKey, out timestamp))
                     {
 						if ((Core.StopWatch.ElapsedMilliseconds + (spell.MinDurationBeforeRecast)) < timestamp)
                         {
@@ -604,12 +604,12 @@ namespace E3Core.Processors
             //if we have no time left, as it was not found, just set it to 0 in ours
             if (timers.TryGetValue(mobid, out s))
             {
-                if (!s.Timestamps.ContainsKey(spell.SpellID))
+                if (!s.Timestamps.ContainsKey(spell.SpellID_TimerKey))
                 {
-                    s.Timestamps.Add(spell.SpellID, 0);
+                    s.Timestamps.Add(spell.SpellID_TimerKey, 0);
                 }
 
-                s.Timestamps[spell.SpellID] = Core.StopWatch.ElapsedMilliseconds + timeLeftInMS;
+                s.Timestamps[spell.SpellID_TimerKey] = Core.StopWatch.ElapsedMilliseconds + timeLeftInMS;
 
             }
             else
@@ -617,7 +617,7 @@ namespace E3Core.Processors
                 SpellTimer ts = SpellTimer.Aquire();
                 ts.MobID = mobid;
 
-                ts.Timestamps.Add(spell.SpellID, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
+                ts.Timestamps.Add(spell.SpellID_TimerKey, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
                 timers.Add(mobid, ts);
             }
         }

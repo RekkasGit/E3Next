@@ -989,24 +989,10 @@ namespace E3Core.Utility
 			{
 				foreach (var kvp2 in kvp.Value.Timestamps)
 				{
-					Data.Spell spell;
-					if (Spell._loadedSpells.TryGetValue(kvp2.Key, out spell))
+					Spawn s;
+					if (_spawns.TryByID(kvp.Value.MobID, out s))
 					{
-						Spawn s;
-						if (_spawns.TryByID(kvp.Value.MobID, out s))
-						{
-							MQ.Write($"\ap{s.CleanName} \aw: \ag{spell.CastName} \aw: {(kvp2.Value - Core.StopWatch.ElapsedMilliseconds) / 1000} seconds");
-
-						}
-					}
-					else
-					{
-						Spawn s;
-						if (_spawns.TryByID(kvp.Value.MobID, out s))
-						{
-							MQ.Write($"\ap{s.CleanName} \aw: \agspellid:{kvp2.Key} \aw: {(kvp2.Value - Core.StopWatch.ElapsedMilliseconds) / 1000} seconds");
-
-						}
+						MQ.Write($"\ap{s.CleanName} \aw: \agspellid:{kvp2.Key} \aw: {(kvp2.Value - Core.StopWatch.ElapsedMilliseconds) / 1000} seconds");
 
 					}
 				}
@@ -1014,9 +1000,7 @@ namespace E3Core.Utility
 			if (timers.Count > 0)
 			{
 				MQ.Write("\aw===================");
-
 			}
-
 		}
 		public static void CursorTryDestroyItem(string item)
 		{
@@ -2291,6 +2275,13 @@ namespace E3Core.Utility
 			if (className == "Shadow Knight")
 			{
 				return "Shadowknight";
+			}
+
+			if(String.Equals(serverName, "theheroesjourney", StringComparison.OrdinalIgnoreCase))
+			{
+				//custom server that has many classes, just return ranger.
+
+				return "Ranger";
 			}
 
 			if (String.Equals(serverName, "thrulesanc", StringComparison.OrdinalIgnoreCase))

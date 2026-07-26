@@ -160,7 +160,7 @@ namespace E3Core.Processors
 						{
 							if (_spawns.TryByID(targetedMobID, out var tmob))
 							{
-								if (!tmob.Dead && tmob.TypeDesc == "NPC" && tmob.Targetable && tmob.Aggressive)
+								if (!tmob.Dead && (tmob.TypeDesc == "NPC"|| tmob.TypeDesc=="Pet") && tmob.Targetable && tmob.Aggressive)
 								{
 									MobToAttack = tmob.ID;
 								}

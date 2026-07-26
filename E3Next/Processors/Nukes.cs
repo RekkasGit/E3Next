@@ -71,7 +71,7 @@ namespace E3Core.Processors
         {
             if (PBAEEnabled  && E3.CharacterSettings.PBAE.Count>0&& MQ.Query<bool>($"!${{Bool[${{SpawnCount[npc radius {E3.GeneralSettings.Assists_AEThreatRange}]}}]}}"))
             {
-                E3.Bots.Broadcast($"\aoDisabiling PBAE as no more mobs in {E3.GeneralSettings.Assists_AEThreatRange} radius");
+                E3.Bots.Broadcast($"\aoDisabling PBAE as no more mobs in {E3.GeneralSettings.Assists_AEThreatRange} radius");
                 PBAEEnabled = false;
             }
             if (PBAEEnabled)

@@ -343,7 +343,7 @@ namespace E3Core.Classes
 								if (_autoMezTimers.TryGetValue(mobid, out s))
 								{
 									Int64 timestamp;
-									if (s.Timestamps.TryGetValue(spell.SpellID, out timestamp))
+									if (s.Timestamps.TryGetValue(spell.SpellID_TimerKey, out timestamp))
 									{
 										Int64 timeAndMinDuration = (Core.StopWatch.ElapsedMilliseconds + (spell.MinDurationBeforeRecast));
 										if (timeAndMinDuration < timestamp)

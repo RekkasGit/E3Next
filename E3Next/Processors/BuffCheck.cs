@@ -43,7 +43,7 @@ namespace E3Core.Processors
 		private static Int64 _nextBotCacheCheckTimeInterval = 1000;
 		private static Int64 _nextInstantBuffRefresh = 0;
 		private static Int64 _nextInstantRefreshTimeInterval = 250;
-		private static List<Int32> _keyList = new List<int>();
+		private static List<String> _keyList = new List<String>();
 		//private static Int64 _printoutTimer;
 		private static Data.Spell _selectAura = null;
 		private static Int64 _nextBuffCheck = 0;
@@ -967,6 +967,7 @@ namespace E3Core.Processors
 
 
 			if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName}", Logging.LogLevels.Error);
+			//if(spell.SpellID== 30663) _log.Write($"Buffs-Spell-{spell.CastName}", Logging.LogLevels.Error);
 			//using (_log.Trace($"SingleBuff-Spell-{spell.CastName}"))
 			{
 				Spawn s;
@@ -1038,7 +1039,7 @@ namespace E3Core.Processors
 						if (!(Casting.CheckMana(spell) && Casting.CheckReady(spell)))
 						{
 							//spell not ready, are we in GCD?
-
+							//if (spell.SpellID == 30663) _log.Write($"Buffs-Spell-{spell.CastName} spell not ready, skipping.", Logging.LogLevels.Error);
 
 							UpdateBuffTimers(s.ID, spell, 1000, 1000, true, true);
 							return BuffBots_ReturnType.Continue;
@@ -1049,7 +1050,8 @@ namespace E3Core.Processors
 					{
 						if (!Casting.Ifs(spell))
 						{
-						
+							if (spell.SpellID == 30663) _log.Write($"Buffs-Spell-{spell.CastName} ifs failed, skipping.", Logging.LogLevels.Error);
+
 							UpdateBuffTimers(s.ID, spell, 1500, -1, true);
 							return BuffBots_ReturnType.Continue;
 						}
@@ -1058,6 +1060,8 @@ namespace E3Core.Processors
 					
 					if (!Casting.InRange(s.ID, spell))
 					{
+						if (spell.SpellID == 30663) _log.Write($"Buffs-Spell-{spell.CastName} not in range, skipping.", Logging.LogLevels.Error);
+
 						return BuffBots_ReturnType.Continue;
 					}
 					if (s.ID == E3.CurrentId)
@@ -1106,6 +1110,8 @@ namespace E3Core.Processors
 
 						if (BuffTimerIsGood(spell, s, usePets))
 						{
+							if (spell.SpellID == 30663) _log.Write($"Buffs-Spell-{spell.CastName} buff timer good, skipping.", Logging.LogLevels.Error);
+
 							return BuffBots_ReturnType.Continue;
 						}
 
@@ -1186,7 +1192,7 @@ namespace E3Core.Processors
 								//hasCachedCheckFor = MQ.Query<bool>($"${{Bool[${{Spawn[${{Me.Pet.ID}}].Buff[{checkforItem}]}}]}}");
 								if (hasCheckFor || hasCachedCheckFor)
 								{
-
+									if (spell.SpellID == 30663) _log.Write($"Buffs-Spell-{spell.CastName} Has checkfor, skipping.", Logging.LogLevels.Error);
 									UpdateBuffTimers(s.ID, spell, 3000, -1, true);
 									shouldContinue = true;
 									break;
@@ -1198,6 +1204,7 @@ namespace E3Core.Processors
 						//Is the buff still good? if so, skip
 						if (BuffTimerIsGood(spell, s, usePets))
 						{
+							if (spell.SpellID == 30663) _log.Write($"Buffs-Spell-{spell.CastName} buff timer is good, skipping.", Logging.LogLevels.Error);
 							return BuffBots_ReturnType.Continue;
 						}
 						bool willStack = true;
@@ -1214,8 +1221,8 @@ namespace E3Core.Processors
 								if (!willStack) buffStackClash = petresults[spell.SpellID].Item2;
 							}
 						}
-						
-					recastSpell:
+						if (spell.SpellID == 30663) _log.Write($"Buffs-Spell-{spell.CastName} willstack:{willStack}", Logging.LogLevels.Error);
+						recastSpell:
 						if (willStack && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 						{
 							CastReturn result;
@@ -1719,6 +1726,8 @@ namespace E3Core.Processors
 		}
 		public static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets)
 		{
+
+			
 			//using(_log.Trace())
 			{
 				SpellTimer st;
@@ -1726,14 +1735,14 @@ namespace E3Core.Processors
 				{
 					if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} have buff timer", Logging.LogLevels.Error);
 					Int64 timestamp;
-					if (st.Timestamps.TryGetValue(spell.SpellID, out timestamp))
+					if (st.Timestamps.TryGetValue(spell.SpellID_TimerKey, out timestamp))
 					{
 						//our timer says the buff is still good, but lets make sure in case of dispel.
 						if (Core.StopWatch.ElapsedMilliseconds < timestamp)
 						{
 							if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} timer good , checking for dispel", Logging.LogLevels.Error);
 							//is this timestamp locked?
-							if (st.Lockedtimestamps.TryGetValue(spell.SpellID, out var lockedtimestamp))
+							if (st.Lockedtimestamps.TryGetValue(spell.SpellID_TimerKey, out var lockedtimestamp))
 							{
 								if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} Has locked timestamp checking values TS:{lockedtimestamp} Current:{Core.StopWatch.ElapsedMilliseconds}", Logging.LogLevels.Error);
 
@@ -1742,7 +1751,7 @@ namespace E3Core.Processors
 									//means this lock is no longer valuid
 									if (spell.Debug) _log.Write($"Buffs-Spell-{spell.CastName} removing locked timestamp", Logging.LogLevels.Error);
 
-									st.Lockedtimestamps.Remove(spell.SpellID);
+									st.Lockedtimestamps.Remove(spell.SpellID_TimerKey);
 								}
 								else
 								{
@@ -1953,7 +1962,7 @@ namespace E3Core.Processors
 			if (_selectAura != null)
 			{
 				string currentAura = MQ.Query<string>("${Me.Aura[1]}");
-				if (currentAura==_selectAura.SpellName)
+				if (String.Equals(currentAura, _selectAura.SpellName, StringComparison.OrdinalIgnoreCase))
 				{
 					return;
 				}
@@ -2020,12 +2029,12 @@ namespace E3Core.Processors
 			SpellTimer s;
 			if (_buffTimers.TryGetValue(mobid, out s))
 			{
-				if (!s.Timestamps.ContainsKey(spell.SpellID))
+				if (!s.Timestamps.ContainsKey(spell.SpellID_TimerKey))
 				{
 					return -1;
 				}
 
-				return s.Timestamps[spell.SpellID];
+				return s.Timestamps[spell.SpellID_TimerKey];
 
 			}
 			else
@@ -2033,64 +2042,7 @@ namespace E3Core.Processors
 				return -1;
 			}
 		}
-		//used to just store removed items, keep it around to not create garbage
-		private static List<Int32> _refreshBuffCacheRemovedItems = new List<int>();
-		public static void RefresBuffCacheForBots()
-		{
-			if (Core.StopWatch.ElapsedMilliseconds > _nextBotCacheCheckTime)
-			{
-				//this is so we can get up to date buff data from the bots, without having to target/etc.
-				_refreshBuffCacheRemovedItems.Clear();
-				//_spawns.RefreshList();
-				foreach (var kvp in _buffTimers)
-				{
-
-					Int32 userID = kvp.Key;
-					Spawn s;
-					if (_spawns.TryByID(userID, out s))
-					{
-						List<Int32> list = E3.Bots.BuffList(s.Name);
-						if (list.Count == 0)
-						{
-							continue;
-						}
-						//this is one of our bots!
-						//doing it this way to not generate garbage by creating new lists.
-						_keyList.Clear();
-						foreach (var pair in kvp.Value.Timestamps)
-						{
-							if (!list.Contains(pair.Key))
-							{
-								_keyList.Add(pair.Key);
-							}
-						}
-						foreach (var key in _keyList)
-						{
-							if (!kvp.Value.Lockedtimestamps.ContainsKey(key))
-							{
-								kvp.Value.Timestamps[key] = 0;
-							}
-
-						}
-					}
-					else
-					{
-						//remove them from the collection.
-						_refreshBuffCacheRemovedItems.Add(kvp.Key);
-					}
-				}
-				foreach (Int32 removedItem in _refreshBuffCacheRemovedItems)
-				{
-					if (_buffTimers.ContainsKey(removedItem))
-					{
-						_buffTimers[removedItem].Dispose();
-						_buffTimers.Remove(removedItem);
-					}
-				}
-				_refreshBuffCacheRemovedItems.Clear();
-				_nextBotCacheCheckTime = Core.StopWatch.ElapsedMilliseconds + _nextBotCacheCheckTimeInterval;
-			}
-		}
+		
 
 
 		public static void ClearBuffTimers()
@@ -2120,34 +2072,35 @@ namespace E3Core.Processors
 
 				if (_buffTimers.TryGetValue(mobid, out s))
 				{
-					if (!s.Timestamps.ContainsKey(spell.SpellID))
+
+					if (!s.Timestamps.ContainsKey(spell.SpellID_TimerKey))
 					{
-						s.Timestamps.Add(spell.SpellID, 0);
-						s.TimestampBySpellDuration.Add(spell.SpellID, 0);
+						s.Timestamps.Add(spell.SpellID_TimerKey, 0);
+						s.TimestampBySpellDuration.Add(spell.SpellID_TimerKey, 0);
 					}
 
-					s.Timestamps[spell.SpellID] = Core.StopWatch.ElapsedMilliseconds + timeLeftInMS;
+					s.Timestamps[spell.SpellID_TimerKey] = Core.StopWatch.ElapsedMilliseconds + timeLeftInMS;
 					if (!ignoreRealDuration)
 					{
-						s.TimestampBySpellDuration[spell.SpellID] = Core.StopWatch.ElapsedMilliseconds + realDurationLeft;
+						s.TimestampBySpellDuration[spell.SpellID_TimerKey] = Core.StopWatch.ElapsedMilliseconds + realDurationLeft;
 
 					}
 					if (locked)
 					{
-						if (!s.Lockedtimestamps.ContainsKey(spell.SpellID))
+						if (!s.Lockedtimestamps.ContainsKey(spell.SpellID_TimerKey))
 						{
-							s.Lockedtimestamps.Add(spell.SpellID, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
+							s.Lockedtimestamps.Add(spell.SpellID_TimerKey, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
 						}
 						else
 						{
-							s.Lockedtimestamps[spell.SpellID] = Core.StopWatch.ElapsedMilliseconds + timeLeftInMS;
+							s.Lockedtimestamps[spell.SpellID_TimerKey] = Core.StopWatch.ElapsedMilliseconds + timeLeftInMS;
 						}
 					}
 					else
 					{
-						if (s.Lockedtimestamps.ContainsKey(spell.SpellID))
+						if (s.Lockedtimestamps.ContainsKey(spell.SpellID_TimerKey))
 						{
-							s.Lockedtimestamps.Remove(spell.SpellID);
+							s.Lockedtimestamps.Remove(spell.SpellID_TimerKey);
 						}
 					}
 
@@ -2157,21 +2110,21 @@ namespace E3Core.Processors
 					SpellTimer ts = SpellTimer.Aquire();
 					ts.MobID = mobid;
 
-					ts.Timestamps.Add(spell.SpellID, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
-					ts.TimestampBySpellDuration.Add(spell.SpellID, spell.DurationTotalSeconds * 1000);
-					_buffTimers.Add(mobid, ts);
+					ts.Timestamps.Add(spell.SpellID_TimerKey, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
+						ts.TimestampBySpellDuration.Add(spell.SpellID_TimerKey, spell.DurationTotalSeconds * 1000);
+						_buffTimers.Add(mobid, ts);
 					if (locked)
 					{
-						if (!ts.Lockedtimestamps.ContainsKey(spell.SpellID))
+						if (!ts.Lockedtimestamps.ContainsKey(spell.SpellID_TimerKey))
 						{
-							ts.Lockedtimestamps.Add(spell.SpellID, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
+							ts.Lockedtimestamps.Add(spell.SpellID_TimerKey, Core.StopWatch.ElapsedMilliseconds + timeLeftInMS);
 						}
 					}
 					else
 					{
-						if (ts.Lockedtimestamps.ContainsKey(spell.SpellID))
+						if (ts.Lockedtimestamps.ContainsKey(spell.SpellID_TimerKey))
 						{
-							ts.Lockedtimestamps.Remove(spell.SpellID);
+							ts.Lockedtimestamps.Remove(spell.SpellID_TimerKey);
 						}
 					}
 				}
