@@ -2007,6 +2007,79 @@ namespace E3Core.UI.Windows.Hud
 
 			}
 		}
+		private static void RenderSpellInfo_SpellInfo(Data.Spell spell)
+		{
+			imgui_Text($"Spell:{spell.SpellName}");
+			imgui_Text($"SpellID:{spell.SpellID}");
+
+			imgui_Separator();
+			foreach (var item in spell.SpellEffects)
+			{
+				imgui_Text(item);
+			}
+
+			foreach(var subspell in spell.SubSpells)
+			{
+				imgui_Text("=======");
+				imgui_Text("");
+				RenderSpellInfo_SpellInfo(subspell);
+			}
+
+		}
+		private static void RenderSpellInfo_SpellInfo_Clipboard(StringBuilder sb,Data.Spell spell)
+		{
+			sb.AppendLine($"Spell:{spell.SpellName}");
+			sb.AppendLine($"SpellID:{spell.SpellID}");
+
+			sb.AppendLine();
+			foreach (var item in spell.SpellEffects)
+			{
+				sb.AppendLine(item);
+			}
+
+			foreach (var subspell in spell.SubSpells)
+			{
+				sb.AppendLine("=======");
+				sb.AppendLine("");
+				RenderSpellInfo_SpellInfo_Clipboard(sb,subspell);
+			}
+
+		}
+		private static void RenderSpellInfo()
+		{
+			
+			var state = _state.GetState<State_SpellInfoWindow>();
+
+			if(state.SpellInfo_Show && state.SpellInfo_Data!=null)
+			{
+
+				using(var window = ImGUIWindow.Aquire())
+				{
+					int flags =  (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar;
+
+					if (window.Begin(state.WindowName, flags))
+					{
+						RenderSpellInfo_SpellInfo(state.SpellInfo_Data);
+
+						if (imgui_Button("Close"))
+						{
+							state.SpellInfo_Show = false;
+						}
+						imgui_SameLine();
+						if(imgui_Button("Copy"))
+						{
+							StringBuilder sb = new StringBuilder();
+							RenderSpellInfo_SpellInfo_Clipboard(sb,state.SpellInfo_Data);
+							imgui_SetClipboardText(sb.ToString());
+						}
+					}
+				}
+
+
+
+			}
+
+		}
 		private static void RenderTargetInfo()
 		{
 
@@ -2509,7 +2582,13 @@ namespace E3Core.UI.Windows.Hud
 							imgui_GetWindowDrawList_AddRectFilled(iconX, iconY, iconX + bt, iconY + iconSize, iconBorderColor);
 							imgui_GetWindowDrawList_AddRectFilled(iconX + iconSize - bt, iconY, iconX + iconSize, iconY + iconSize, iconBorderColor);
 						}
-
+						if(imgui_IsItemClicked((int)ImGuiMouseButton.Left))
+						{
+							var si_state = _state.GetState<State_SpellInfoWindow>();
+							si_state.SpellInfo_Show = true;
+							si_state.SpellInfo_Data = state.TargetBuffs[i].Spell;
+							
+						}
 						if (imgui_IsItemHovered())
 						{
 							using (var tooltip = ImGUIToolTip.Aquire())
@@ -2717,6 +2796,7 @@ namespace E3Core.UI.Windows.Hud
 
 						try
 						{
+							RenderSpellInfo();
 							RenderHub_MainWindow();
 
 						}
@@ -3119,7 +3199,13 @@ namespace E3Core.UI.Windows.Hud
 									imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.HitCount);
 
 								}
+								if (imgui_IsItemClicked((int)ImGuiMouseButton.Left) && stats.Spell!=null)
+								{
+									var si_state = _state.GetState<State_SpellInfoWindow>();
+									si_state.SpellInfo_Show = true;
+									si_state.SpellInfo_Data = stats.Spell;
 
+								}
 								if (imgui_IsItemHovered())
 								{
 									using (var tooltip = ImGUIToolTip.Aquire())
@@ -3711,9 +3797,6 @@ namespace E3Core.UI.Windows.Hud
 											}
 										}
 									}
-
-
-									// Hover tooltip with duration
 									if (imgui_IsItemHovered())
 									{
 										using (var tooltip = ImGUIToolTip.Aquire())
@@ -3921,7 +4004,12 @@ namespace E3Core.UI.Windows.Hud
 
 								}
 							}
-
+							if (imgui_IsItemClicked((int)ImGuiMouseButton.Left) && stats.Spell!=null)
+							{
+								var si_state = _state.GetState<State_SpellInfoWindow>();
+								si_state.SpellInfo_Show = true;
+								si_state.SpellInfo_Data = stats.Spell;
+							}
 							if (imgui_IsItemHovered())
 							{
 								using (var tooltip = ImGUIToolTip.Aquire())
@@ -4287,7 +4375,12 @@ namespace E3Core.UI.Windows.Hud
 										imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.HitCount);
 
 									}
-
+									if (imgui_IsItemClicked((int)ImGuiMouseButton.Left) && stats.Spell != null)
+									{
+										var si_state = _state.GetState<State_SpellInfoWindow>();
+										si_state.SpellInfo_Show = true;
+										si_state.SpellInfo_Data = stats.Spell;
+									}
 									if (imgui_IsItemHovered())
 									{
 										using (var tooltip = ImGUIToolTip.Aquire())
@@ -4415,6 +4508,12 @@ namespace E3Core.UI.Windows.Hud
 									{
 										imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.Display_CounterNumber);
 
+									}
+									if (imgui_IsItemClicked((int)ImGuiMouseButton.Left) && stats.Spell != null)
+									{
+										var si_state = _state.GetState<State_SpellInfoWindow>();
+										si_state.SpellInfo_Show = true;
+										si_state.SpellInfo_Data = stats.Spell;
 									}
 									if (imgui_IsItemHovered())
 									{
@@ -4792,7 +4891,12 @@ namespace E3Core.UI.Windows.Hud
 									imgui_GetWindowDrawList_AddText(x, y, GetColor(255, 255, 255, 255), stats.HitCount);
 
 								}
-
+								if (imgui_IsItemClicked((int)ImGuiMouseButton.Left) && stats.Spell != null)
+								{
+									var si_state = _state.GetState<State_SpellInfoWindow>();
+									si_state.SpellInfo_Show = true;
+									si_state.SpellInfo_Data = stats.Spell;
+								}
 								if (imgui_IsItemHovered())
 								{
 									using (var tooltip = ImGUIToolTip.Aquire())

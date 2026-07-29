@@ -32,6 +32,7 @@ namespace E3Core.UI.Windows.Hud
 		private State_HotbuttonsWindow _hotbuttonWindowState = new State_HotbuttonsWindow();
 		private State_PlayerInfoWindow _playerInfoWindowState = new State_PlayerInfoWindow();
 		private State_TargetInfoWindow _targetInfoWindowState = new State_TargetInfoWindow();
+		private State_SpellInfoWindow _spellInfoWindowState = new State_SpellInfoWindow();
 		private State_PeerAAWindow _peerAAWindowState = new State_PeerAAWindow();
 
 		
@@ -69,6 +70,10 @@ namespace E3Core.UI.Windows.Hud
 			if (type == typeof(State_TargetInfoWindow))
 			{
 				return (T)(object)_targetInfoWindowState;
+			}
+			if (type == typeof(State_SpellInfoWindow))
+			{
+				return (T)(object)_spellInfoWindowState;
 			}
 			if (type == typeof(State_PeerAAWindow))
 			{
@@ -460,8 +465,16 @@ namespace E3Core.UI.Windows.Hud
 		public Int64 LastUpdated = 0;
 		public Int64 UpdateInterval = 1000;
 	}
+	public class State_SpellInfoWindow
+	{
+		public Data.Spell SpellInfo_Data = null;
+		public Boolean SpellInfo_Show = false;
+		public string WindowName = "E3 Spell Info";
+
+	}
 	public class State_TargetInfoWindow
 	{
+	
 		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_IconSize; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_IconSize = value; IsDirty = true; } }
 
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_SelectedFont = value; IsDirty = true; } }

@@ -95,8 +95,8 @@ namespace E3Core.Settings.FeatureSettings
 					var d = item.Value;
 					sb.Clear();	
 					sb.Append($"\ayNPC:\ag{d.NPCName} ");
-					if(d.MagicResistant) sb.Append($"\ayMR ");
-					if(d.MagicImmune) sb.Append($"\ayMRI ");
+					if (d.MagicResistant) sb.Append($"\ayMR ");
+					if (d.MagicImmune) sb.Append($"\ayMRI ");
 					if (d.FireResistant) sb.Append($"\ayFR ");
 					if (d.FireImmune) sb.Append($"\ayFRI ");
 					if (d.ColdResistant) sb.Append($"\ayCR ");
@@ -111,6 +111,7 @@ namespace E3Core.Settings.FeatureSettings
 					if (d.CharmImmune) sb.Append($"\ayCharmI ");
 					if (d.PacifyImmune) sb.Append($"\ayPacifyI ");
 					if (d.MezImmune) sb.Append($"\ayMezI ");
+					if (d.SlowImmune) sb.Append($"\aySlowI ");
 					MQ.Write(sb.ToString());
 				}
 

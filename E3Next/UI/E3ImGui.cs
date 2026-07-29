@@ -2396,6 +2396,13 @@ namespace MonoCore
 		public extern static void imgui_PopTextWrapPos();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_IsMouseClicked(int button);
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_IsItemClicked(int button);
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_SetClipboardText(string text);
+
+		//
 		// Image display
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_Image(IntPtr textureId, float width, float height);

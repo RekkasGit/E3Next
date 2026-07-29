@@ -26,6 +26,7 @@ namespace E3Core.Data
 
     public class Spell
     {
+        public List<Spell> SubSpells = new List<Spell>();
         public static Dictionary<Int32, Data.Spell> _loadedSpells = new Dictionary<int, Spell>();
         public static Dictionary<string, Data.Spell> LoadedSpellsByName = new Dictionary<string, Spell>();
         public static Dictionary<string, Data.Spell> LoadedSpellByConfigEntry = new Dictionary<string, Data.Spell>();

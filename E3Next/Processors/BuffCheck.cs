@@ -540,18 +540,114 @@ namespace E3Core.Processors
 						var spell = new Data.Spell(key.ToString());
 						if (spell.CastType == CastingType.Spell || spell.CastType == CastingType.AA)
 						{
-							for (Int32 inc = 0; inc < 12; inc++)
-							{
-								string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), inc);
-								if (!String.IsNullOrEmpty(teffect))
-								{
-									spell.SpellEffects.Add(teffect);
-								}
-							}
+							HashSet<Int32> SubspellsFoundSoFar = new HashSet<int>();
+							GetSubSpells(spell, SubspellsFoundSoFar);
 						}
 						BuffCheck.BuffInfoCache.TryAdd(key, spell);
 					}
 					BuffCacheLookupQueue.TryRemove(key, out _);
+				}
+			}
+		}
+		private static void GetSubSpells(Data.Spell spell,HashSet<Int32> foundSpells)
+		{
+			for (Int32 inc = 0; inc < 12; inc++)
+			{
+				string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), inc);
+				if (!String.IsNullOrEmpty(teffect))
+				{
+					try
+					{
+						if (teffect.Contains("Add Defensive Proc: "))
+						{
+							//we have a sub spell, lets add it. 
+							Int32 IndexOfSpell = teffect.IndexOf("Add Defensive Proc: ") + 20;
+							Int32 stopIndex = teffect.IndexOf(" (", IndexOfSpell);
+							if (stopIndex == -1) stopIndex = teffect.Length - 1;
+							string spellName = teffect.Substring(IndexOfSpell, stopIndex - IndexOfSpell);
+							var subspell = new Data.Spell(spellName);
+
+							if (!foundSpells.Contains(subspell.SpellID))
+							{
+								spell.SubSpells.Add(subspell);
+								foundSpells.Add(subspell.SpellID);
+								GetSubSpells(subspell, foundSpells);
+
+							}
+						}
+						else if (teffect.Contains("(Spell:"))
+						{
+							//we have a sub spell, lets add it. 
+							Int32 IndexOfSpell = teffect.IndexOf("(Spell: ") + 8;
+							Int32 stopIndex = teffect.IndexOf(")", IndexOfSpell);
+							if (stopIndex == -1) stopIndex = teffect.Length - 1;
+							string spellName = teffect.Substring(IndexOfSpell, stopIndex - IndexOfSpell);
+							var subspell = new Data.Spell(spellName);
+							
+							if(!foundSpells.Contains(subspell.SpellID))
+							{
+								spell.SubSpells.Add(subspell);
+								foundSpells.Add(subspell.SpellID);
+								GetSubSpells(subspell, foundSpells);
+
+							}
+						}
+						else if (teffect.Contains(", Spell:"))
+						{
+							//we have a sub spell, lets add it. 
+							Int32 IndexOfSpell = teffect.IndexOf(", Spell: ") + 9;
+							Int32 stopIndex = teffect.IndexOf(")", IndexOfSpell);
+							if (stopIndex == -1) stopIndex = teffect.Length - 1;
+							string spellName = teffect.Substring(IndexOfSpell, stopIndex - IndexOfSpell);
+							var subspell = new Data.Spell(spellName);
+
+							if (!foundSpells.Contains(subspell.SpellID))
+							{
+								spell.SubSpells.Add(subspell);
+								foundSpells.Add(subspell.SpellID);
+								GetSubSpells(subspell, foundSpells);
+
+							}
+						}
+						else if (teffect.Contains("Add Proc: "))
+						{
+							Int32 IndexOfSpell = teffect.IndexOf("Add Proc: ") + 10;
+							Int32 stopIndex = teffect.IndexOf(" (", IndexOfSpell);
+							if (stopIndex == -1) stopIndex = teffect.Length - 1;
+							string spellName = teffect.Substring(IndexOfSpell, stopIndex - IndexOfSpell);
+							var subspell = new Data.Spell(spellName);
+							if (!foundSpells.Contains(subspell.SpellID))
+							{
+								spell.SubSpells.Add(subspell);
+								foundSpells.Add(subspell.SpellID);
+								GetSubSpells(subspell, foundSpells);
+
+							}
+						} else if (teffect.Contains("Ranged Proc: "))
+						{
+							Int32 IndexOfSpell = teffect.IndexOf("Ranged Proc: ") + 13;
+							Int32 stopIndex = teffect.IndexOf(" (", IndexOfSpell);
+							if (stopIndex == -1) stopIndex = teffect.Length - 1;
+							string spellName = teffect.Substring(IndexOfSpell, stopIndex - IndexOfSpell);
+							var subspell = new Data.Spell(spellName);
+
+							if (!foundSpells.Contains(subspell.SpellID))
+							{
+								spell.SubSpells.Add(subspell);
+								foundSpells.Add(subspell.SpellID);
+								GetSubSpells(subspell, foundSpells);
+
+							}
+						}
+
+					}
+					catch(Exception ex)
+					{
+
+					}
+				
+
+					spell.SpellEffects.Add(teffect);
 				}
 			}
 		}
