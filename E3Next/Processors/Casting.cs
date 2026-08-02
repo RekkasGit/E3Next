@@ -371,6 +371,7 @@ namespace E3Core.Processors
 							E3.ActionTaken = true;
 							//fire of emergency heal asap! checks targets in network and xtarget
 							Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana, true);
+							e3util.PutOriginalTargetBackIfNeeded(targetID);
 							return CastReturn.CAST_INTERRUPTFORHEAL;
 						}
 						if (!isEmergency && Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana))
@@ -382,6 +383,7 @@ namespace E3Core.Processors
 							//fire of emergency heal asap!
 							//checks group members
 							Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana, true);
+							e3util.PutOriginalTargetBackIfNeeded(targetID);
 							return CastReturn.CAST_INTERRUPTFORHEAL;
 						}
 
@@ -745,6 +747,7 @@ namespace E3Core.Processors
 								E3.ActionTaken = true;
 								//fire of emergency heal asap! checks targets in network and xtarget
 								Heals.SomeoneNeedEmergencyHealing(currentMana, pctMana, true);
+								e3util.PutOriginalTargetBackIfNeeded(targetID);
 								return CastReturn.CAST_INTERRUPTFORHEAL;
 							}
 							if (!isEmergency && Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana))
@@ -756,6 +759,7 @@ namespace E3Core.Processors
 								//fire of emergency heal asap!
 								//checks group members
 								Heals.SomeoneNeedEmergencyHealingGroup(currentMana, pctMana, true);
+								e3util.PutOriginalTargetBackIfNeeded(targetID);
 								return CastReturn.CAST_INTERRUPTFORHEAL;
 							}
 
