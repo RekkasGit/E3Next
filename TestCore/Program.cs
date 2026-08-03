@@ -300,6 +300,11 @@ namespace TestCore
 			{
 				throw new NotImplementedException();
 			}
+
+			public Int32[] GetSpellIds(string spellName)
+			{
+				throw new NotImplementedException();
+			}
 		}
 
     }

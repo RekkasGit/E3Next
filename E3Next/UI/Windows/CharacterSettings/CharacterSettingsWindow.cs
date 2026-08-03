@@ -2552,7 +2552,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 							if (String.IsNullOrWhiteSpace(tKey)) continue;
 							if (!currentSpell.CheckForCollection.ContainsKey(tKey))
 							{
-								currentSpell.CheckForCollection.Add(tKey, 0);
+								currentSpell.CheckForCollection.Add(tKey, new List<Int32>());
 							}
 						}
 					});

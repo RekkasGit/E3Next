@@ -83,7 +83,12 @@ namespace E3Core.Processors
 							var bufflist = E3.Bots.BuffList(s.CleanName);
 							foreach (var checkforItem in spell.CheckForCollection.Keys)
 							{
-								if (bufflist.Contains(spell.CheckForCollection[checkforItem]))
+								bool hasCheckFor = false;
+								foreach (int spellid in spell.CheckForCollection[checkforItem])
+								{
+									if (bufflist.Contains(spellid)) { hasCheckFor = true; break; }
+								}
+								if (hasCheckFor)
 								{
 									if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
 									{
@@ -251,15 +256,20 @@ namespace E3Core.Processors
 					{
 						foreach (var pair in spell.CheckForCollection)
 						{
-							if (buffList.Contains(pair.Value))
+							foreach (int spellid in pair.Value)
 							{
-
-								if (Casting.InRange(s.ID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
+								if (buffList.Contains(spellid))
 								{
-									Casting.Cast(s.ID, spell);
-									return;
+
+									if (Casting.InRange(s.ID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
+									{
+										Casting.Cast(s.ID, spell);
+										return;
+									}
 								}
 							}
+
+							
 						}
 
 					}

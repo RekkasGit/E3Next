@@ -1616,6 +1616,9 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern void mq_LookAt(float x, float y, float z);
 
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int[] mq_GetSpellIds(string spellName);
+
 
 		#endregion
 
@@ -1688,6 +1691,7 @@ namespace MonoCore
 		unsafe byte* GetSpawns3_DeltaPtr(out int length);
 		unsafe byte* GetTargetBuffDataPtr(Int32 spawnId, out int length);
 		unsafe byte* GetDiscIdsDataPtr(out int length);
+		int[] GetSpellIds(string spellName);
 		/// <summary>
 		/// delay lock to prevent releasing back to MQ until done.
 		/// </summary>
@@ -2173,6 +2177,11 @@ namespace MonoCore
 			DisableDelay();
 			return mqLock;
 
+		}
+
+		public int[] GetSpellIds(string spellName)
+		{
+			return Core.mq_GetSpellIds(spellName);
 		}
 
 		public class MQLock : IMQLock

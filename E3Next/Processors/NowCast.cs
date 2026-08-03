@@ -194,7 +194,11 @@ namespace E3Core.Processors
                                 {
                                     //keys are check for spell names, the value is the spell id
 
-                                    bool hasCheckFor = E3.Bots.BuffList(spawn.CleanName).Contains(spell.CheckForCollection[checkforItem]);
+                                    bool hasCheckFor = false;
+                                    foreach (Int32 spellid in spell.CheckForCollection[checkforItem])
+                                    {
+                                        if (E3.Bots.BuffList(spawn.CleanName).Contains(spellid)) {  hasCheckFor = true; break; }
+                                    }
                                     //can't check for target song buffs, be aware. will have to check netbots. 
                                     if (hasCheckFor)
                                     {

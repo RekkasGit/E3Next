@@ -146,7 +146,7 @@ namespace E3Core.Processors
         {
             Int32 pctHps = MQ.Query<Int32>("${Me.Pet.PctHPs}");
             Int32 pctMendHps = E3.CharacterSettings.Pet_MendPercent;
-            
+            Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
             if (pctHps < pctMendHps)
             {
                 if (MQ.Query<bool>("${Me.AltAbilityReady[Replenish Companion]}"))
@@ -180,6 +180,7 @@ namespace E3Core.Processors
                     if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
                     {
                         Casting.Cast(petID, spell);
+                        e3util.PutOriginalTargetBackIfNeeded(currentTarget);
                         return;
                     }
                 }

@@ -234,7 +234,7 @@ namespace E3Core.Data
                         {
                             if(!CheckForCollection.ContainsKey(checkFor.Trim()))
                             {
-								CheckForCollection.Add(checkFor.Trim(), 0);
+								CheckForCollection.Add(checkFor.Trim(), new List<int>());
 							}
                         }
 					}
@@ -1153,16 +1153,21 @@ namespace E3Core.Data
 			gotoCheckCollectionPopulation:
             foreach(string key in CheckForCollection.Keys.ToList())
             {
-                Int32 tcID = 0;
+				Int32 tcID = 0;
 				if (MQ.Query<bool>($"${{Bool[${{AltAbility[{key}].Spell}}]}}"))
 				{
 					tcID = MQ.Query<Int32>($"${{AltAbility[{key}].Spell.ID}}");
+					CheckForCollection[key].Add(tcID);
 				}
 				else if (MQ.Query<bool>($"${{Bool[${{Spell[{key}].ID}}]}}"))
-				{
-					tcID = MQ.Query<Int32>($"${{Spell[{key}].ID}}");
+			    {
+					Int32[] results = MQ.GetSpellIds(key);
+                    CheckForCollection[key].AddRange(results);
+					
 				}
-                CheckForCollection[key] = tcID;
+              
+
+             
             }
 
         }
@@ -1185,7 +1190,7 @@ namespace E3Core.Data
         public Int32 GiveUpTimer;
         private const Int32 MaxTriesDefault = 5;
         public Int32 MaxTries = MaxTriesDefault;
-        public Dictionary<string, Int32> CheckForCollection = new Dictionary<string, int>();
+        public Dictionary<string, List<Int32>> CheckForCollection = new Dictionary<string, List<Int32>>();
         public string CheckForRaw = String.Empty;
 		public HashSet<string> ExcludedClasses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 		public HashSet<string> ExcludedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1422,7 +1427,7 @@ namespace E3Core.Data
 			{
 				if(!r.CheckForCollection.ContainsKey(entry))
 				{
-					r.CheckForCollection.Add(entry,0);
+					r.CheckForCollection.Add(entry,new List<Int32>());
 				}
 			}
 			foreach (var entry in source.ExcludedClasses)

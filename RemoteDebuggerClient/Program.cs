@@ -924,7 +924,75 @@ namespace MQServerClient
 
 			return mqReturnValue;
 		}
+		public Int32[] GetSpellIds(string spellName)
+		{
+			if (_requestMsg.IsInitialised)
+			{
+				_requestMsg.Close();
+			}
+			_requestMsg.InitEmpty();
+			//send empty frame
 
+			//create query+parm buffer
+			string pramQuery = spellName;
+
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, true);
+
+			_payloadLength = System.Text.Encoding.Default.GetBytes(pramQuery, 0, pramQuery.Length, _payload, 0);
+
+			_requestMsg.Close();
+
+			//include command+ length in payload
+			_requestMsg.InitPool(_payloadLength + 8);
+
+
+
+			unsafe
+			{
+				fixed (byte* src = _payload)
+				{
+
+					fixed (byte* dest = _requestMsg.Data)
+					{   //4 bytes = commandtype
+						//4 bytes = length
+						//N-bytes = payload
+						byte* tPtr = dest;
+						*((Int32*)tPtr) = 17;
+						tPtr += 4;
+						*(Int32*)tPtr = _payloadLength; //init/modify
+						tPtr += 4;
+						Buffer.MemoryCopy(src, tPtr, _requestMsg.Data.Length, _payloadLength);
+					}
+
+				}
+			}
+
+			_requestSocket.TrySend(ref _requestMsg, SendTimeout, false);
+
+
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+
+			//recieve the empty frame
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+			_requestMsg.Close();
+			_requestMsg.InitEmpty();
+			while (!_requestSocket.TryReceive(ref _requestMsg, RecieveTimeout))
+			{
+				//wait for the message to come back
+			}
+
+			//data is back, lets parse out the data
+
+			Int32[] returnValue = new Int32[_requestMsg.Size / sizeof(Int32)];
+			Buffer.BlockCopy(_requestMsg.Data, 0, returnValue, 0, _requestMsg.Size);
+            _requestMsg.Close();
+
+			return returnValue;
+		}
 		public int SpellDataGetLineCount(string query)
 		{
 			if (_requestMsg.IsInitialised)

@@ -100,7 +100,7 @@ namespace E3Core.Data
 			{
 				if (!r.CheckForCollection.ContainsKey(entry))
 				{
-					r.CheckForCollection.Add(entry, 0);
+					r.CheckForCollection.Add(entry, new List<Int32>());
 				}
 			}
 			r.Enabled = source.Enabled;

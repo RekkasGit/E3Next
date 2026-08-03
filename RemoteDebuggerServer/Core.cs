@@ -56,7 +56,8 @@ namespace MonoCore
         GetTargetData,
         GetAAList,
         GetDiscList,
-		GetMyBuffData
+		GetMyBuffData,
+        GetSpellIds
 
 	}
 
@@ -79,6 +80,7 @@ namespace MonoCore
         GetAAList,
         GetDiscList,
 		GetMyBuffData,
+		GetSpellIds
 
 	}
 	public static class RemoteDebugServerConfig
@@ -355,6 +357,20 @@ namespace MonoCore
 								foundRequestCount++;
 							}
 
+						}
+						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetSpellIds];
+						while (q.Count > 0)
+						{
+							RouterMessage message;
+							if (q.TryDequeue(out message))
+							{
+								string query = System.Text.Encoding.Default.GetString(message.payload, 0, message.payloadLength);
+								int[] response = MQ.GetSpellIds(query);
+
+                                message.payloadLength = response.Length * sizeof(int);
+                                Buffer.BlockCopy(response, 0, message.payload, 0, message.payloadLength);
+								RouterServer._responseQueues[(int)ResponseQueueTypes.GetSpellIds].Enqueue(message);
+							}
 						}
 						q = RouterServer._requestQueues[(int)RequestQueueTypes.GetSpawns3Delta];
 						while (q.Count > 0)
@@ -1206,6 +1222,9 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public static extern byte* mq_GetAvilableDiscIds(out int length);
 
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int[] mq_GetSpellIds(string spellName);
+
 		#endregion
 		#endregion
 
@@ -1274,12 +1293,17 @@ namespace MonoCore
         unsafe byte* GetTargetBuffDataPtr(Int32 spawnid,out int length);
 		unsafe byte* GetAAIdsDataPtr(out int length);
         unsafe byte* GetDiscIdsDataPtr(out int length);
-
+        int[] GetSpellIds(string spellName);
 	}
     public class MQ : IMQ
     {   //**************************************************************************************************
 		//NONE OF THESE METHODS SHOULD BE CALLED ON THE C++ Thread, as it will cause a deadlock due to delay calls
 		//**************************************************************************************************
+
+		public Int32[] GetSpellIds(string spellName)
+        {
+            return Core.mq_GetSpellIds(spellName);
+        }
 		public bool ShouldCheck(ref Int64 nextCheck, Int64 nextCheckInterval)
 		{
 			if (Core.StopWatch.ElapsedMilliseconds < nextCheck)

@@ -246,7 +246,7 @@ namespace E3NextConfigEditor.Models
 					_spell.CheckForCollection.Clear();
 					foreach(var spell in splitArray)
 					{
-						_spell.CheckForCollection.Add(spell, 0);
+						_spell.CheckForCollection.Add(spell, new List<Int32>());
 					}
 				}
 				else

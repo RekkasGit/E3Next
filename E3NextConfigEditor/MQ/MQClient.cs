@@ -251,5 +251,10 @@ namespace E3NextConfigEditor.MQ
 		{
 			
 		}
+
+		public int[] GetSpellIds(string spellName)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }
