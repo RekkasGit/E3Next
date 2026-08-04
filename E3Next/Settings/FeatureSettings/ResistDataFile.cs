@@ -360,11 +360,14 @@ namespace E3Core.Settings.FeatureSettings
 				//Delete bogus old coluns that shouldn't exist. 
 				if (columnNames.Contains("PACITYR"))
 				{
-					_sqlite.Execute("ALTER TABLE resist_data DROP COLUMN PACITYR");
+					try { _sqlite.Execute("ALTER TABLE resist_data DROP COLUMN PACITYR"); }
+					catch (Exception) { }
 				}
 				if (columnNames.Contains("PACITYI"))
 				{
-					_sqlite.Execute("ALTER TABLE resist_data DROP COLUMN PACITYR");
+					try{_sqlite.Execute("ALTER TABLE resist_data DROP COLUMN PACITYI");	}
+					catch (Exception){}
+					
 				}
 
 
