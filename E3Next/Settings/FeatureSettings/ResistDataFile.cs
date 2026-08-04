@@ -96,7 +96,7 @@ namespace E3Core.Settings.FeatureSettings
 					sb.Clear();	
 					sb.Append($"\ayNPC:\ag{d.NPCName} ");
 					if (d.MagicResistant) sb.Append($"\ayMR ");
-					if (d.MagicImmune) sb.Append($"\ayMRI ");
+					if(d.MagicImmune) sb.Append($"\ayMRI ");
 					if (d.FireResistant) sb.Append($"\ayFR ");
 					if (d.FireImmune) sb.Append($"\ayFRI ");
 					if (d.ColdResistant) sb.Append($"\ayCR ");
@@ -316,8 +316,8 @@ namespace E3Core.Settings.FeatureSettings
 												MEZI INTEGER NOT NULL,
 												CHARMR INTEGER NOT NULL,
 												CHARMI INTEGER NOT NULL,
-												PACITYR INTEGER NOT NULL,
-												PACITYI INTEGER NOT NULL,
+												PACIFYR INTEGER NOT NULL,
+												PACIFYI INTEGER NOT NULL,
 												PRIMARY KEY (zoneid,name)
 											);";
 			command.CommandText = sql_Create_Resists;
@@ -355,7 +355,19 @@ namespace E3Core.Settings.FeatureSettings
 
 						}
 					}
+					
 				}
+				//Delete bogus old coluns that shouldn't exist. 
+				if (columnNames.Contains("PACITYR"))
+				{
+					_sqlite.Execute("ALTER TABLE resist_data DROP COLUMN PACITYR");
+				}
+				if (columnNames.Contains("PACITYI"))
+				{
+					_sqlite.Execute("ALTER TABLE resist_data DROP COLUMN PACITYR");
+				}
+
+
 
 				//possible need to update the table with new columns
 			}
