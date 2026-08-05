@@ -30,6 +30,7 @@ namespace E3Core.Classes
         private static string _weaponBag = "Pouch of Quellious";
         private static string _armorOrHeirloomBag = "Phantom Satchel";
 		private static string _dskGloveItem = "Glyphwielder's Ascendant Gloves of the Summoner";
+        private static string _donGoveItem = "Keeper's Ascendant Gloves of the Summoner";
 		private static string _dskCodex = "Codex of Minion's Materiel";
         private static Spell _dskGloveSpell = null;
 		private static Spell _dskCodexSpell = null;
@@ -224,7 +225,9 @@ namespace E3Core.Classes
 
 				var hasDskGloves = MQ.Query<bool>($"${{FindItem[{_dskGloveItem}]}}");
 
-                if (hasDskGloves)
+                if(!hasDskGloves) hasDskGloves= MQ.Query<bool>($"${{FindItem[{_donGoveItem}]}}");
+
+				if (hasDskGloves)
                 {
                     if (_dskGloveSpell == null)
                     {
