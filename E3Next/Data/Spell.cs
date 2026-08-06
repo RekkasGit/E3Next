@@ -1182,6 +1182,7 @@ namespace E3Core.Data
         public String Subcategory = String.Empty;
         public String Category = String.Empty;
         public String SpellName = String.Empty;//the spell's name. If the item clicks, this is the spell it casts
+        public String AuraName = String.Empty;
         public String CastName = String.Empty;//this can be the item, spell, aa, disc. What is required to cast it. 
 		public CastingType CastType = CastingType.None;
 		public CastingType CastTypeOverride = CastingType.None;

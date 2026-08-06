@@ -2061,7 +2061,7 @@ namespace E3Core.Processors
 					_initAuras = true;
 					if (_selectAura != null)
 					{
-						_selectAura.SpellName = _selectAura.SpellName.Replace("'s", "s");
+						_selectAura.AuraName = _selectAura.SpellName.Replace("'s", "s");
 					}
 				}
 			}
@@ -2069,7 +2069,7 @@ namespace E3Core.Processors
 			if (_selectAura != null)
 			{
 				string currentAura = MQ.Query<string>("${Me.Aura[1]}");
-				if (String.Equals(currentAura, _selectAura.SpellName, StringComparison.OrdinalIgnoreCase))
+				if (String.Equals(currentAura, _selectAura.AuraName, StringComparison.OrdinalIgnoreCase))
 				{
 					return;
 				}
