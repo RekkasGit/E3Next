@@ -2065,9 +2065,13 @@ namespace E3Core.Processors
 					}
 				}
 			}
+
 			//we have something we want on!
 			if (_selectAura != null)
 			{
+				if(String.IsNullOrEmpty(_selectAura.AuraName)) _selectAura.AuraName= _selectAura.SpellName.Replace("'s", "s");
+
+
 				string currentAura = MQ.Query<string>("${Me.Aura[1]}");
 				if (String.Equals(currentAura, _selectAura.AuraName, StringComparison.OrdinalIgnoreCase))
 				{
