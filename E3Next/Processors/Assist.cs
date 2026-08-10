@@ -730,9 +730,16 @@ namespace E3Core.Processors
 
                 if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
                 {
-                    MQ.Cmd($"/pet attack {AssistTargetID}");
-                     
-                }
+                    if(E3.CharacterSettings.Pet_DelayOnAttack>0)
+                    {
+						MQ.Cmd($"/timed {E3.CharacterSettings.Pet_DelayOnAttack*10} /pet attack {AssistTargetID}");
+					}
+                    else
+                    {
+						MQ.Cmd($"/pet attack {AssistTargetID}");
+					}
+
+				}
 				if (e3util.IsEQLive())
 				{
 					MQ.Cmd("/pet swarm");
@@ -944,8 +951,17 @@ namespace E3Core.Processors
                    {
                        //we are asking to ignore ourself, but might want to send out our pet still
                        if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
-                       {
-                           MQ.Cmd($"/pet attack {targetID}");
+					   {
+						   if (E3.CharacterSettings.Pet_DelayOnAttack > 0)
+						   {
+							   MQ.Cmd($"/timed {E3.CharacterSettings.Pet_DelayOnAttack * 10} /pet attack {targetID}");
+						   }
+						   else
+						   {
+							   MQ.Cmd($"/pet attack {targetID}");
+
+						   }
+						 
 						  
 					   }
 					   if (e3util.IsEQLive())

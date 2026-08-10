@@ -493,7 +493,26 @@ namespace E3Core.Processors
 					{
 						foreach (var checkforItem in spell.CheckForCollection.Keys)
 						{
-							if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
+							
+                            if(Int32.TryParse(checkforItem,out var spellIDToCheck))
+                            {
+                                Int64 buffDuration = Casting.CurrentTarget_TimeLeftOnMySpellID(spellIDToCheck);
+
+								if (buffDuration > 0)
+                                {
+									if (buffDuration < 1000)
+									{
+										buffDuration = 1000;
+									}
+									UpdateDotDebuffTimers(mobid, spell, buffDuration, timers);
+									shouldContinue = true;
+                                    break;
+
+								}
+                                continue;
+                            }
+                            
+                            if (MQ.Query<bool>($"${{Bool[${{Target.Buff[{checkforItem}]}}]}}"))
 							{
 								//has the buff already
 								//lets set the timer for it so we dont' have to keep targeting it.

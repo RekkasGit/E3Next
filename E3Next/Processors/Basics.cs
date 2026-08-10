@@ -718,11 +718,13 @@ namespace E3Core.Processors
 			EventProcessor.RegisterCommand("/dropinvis", (x) =>
 			{
 				E3.Bots.BroadcastCommandToGroup("/makemevisible", x);
+				if (e3util.FilterMe(x)) return;
 				MQ.Cmd("/makemevisible");
 			}, "remove invis for your entire group");
 			EventProcessor.RegisterCommand("/droplev", (x) =>
 			{
 				E3.Bots.BroadcastCommandToGroup("/removelev", x);
+				if (e3util.FilterMe(x)) return;
 				MQ.Cmd("/removelev");
 			}, "remove levitate for your entire group");
 			EventProcessor.RegisterCommand("/shutdown", (x) =>

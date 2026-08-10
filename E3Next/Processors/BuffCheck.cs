@@ -1962,8 +1962,8 @@ namespace E3Core.Processors
 						{
 							// someone else
 							// by targeting and getting the information
-
-							if (Casting.TrueTarget(s.ID))
+							//but don't do it if you have aggro, since you can't check without changing target
+							if (Casting.TrueTarget(s.ID) && !Basics.InCombat())
 							{
 								MQ.Delay(2000, "${Target.BuffsPopulated}");
 								Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);

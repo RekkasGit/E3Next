@@ -2823,7 +2823,7 @@ namespace E3Core.Processors
 
 			}
 		}
-		public static bool TrueTarget(Int32 targetID, bool allowClear = false)
+		public static bool TrueTarget(Int32 targetID, bool allowClear = false, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
 		{
 			//0 means don't change target
 			if (allowClear && targetID == 0)
@@ -2847,6 +2847,7 @@ namespace E3Core.Processors
 				//try 3 times
 				for (Int32 i = 0; i < 3; i++)
 				{
+					//MQ.Write($"Iussing truetarget on: {targetID} CALLED BY:{memberName} FN:{fileName} LN:{lineNumber}");
 					MQ.Cmd($"/target id {targetID}");
 					MQ.Delay(300, $"${{Target.ID}}=={targetID}");
 					//swapping targets turn off autofire
@@ -2858,21 +2859,24 @@ namespace E3Core.Processors
 					}
 					if (MQ.Query<Int32>("${Target.ID}") == targetID)
 					{
+
 						return true;
 
 					}
 					e3util.YieldToEQ();
 				}
+				MQ.Write($"Couldn't target mob: {targetID}");
 				return false;
 			}
 			else
 			{
 				if (allowClear)
 				{
+					MQ.Write("TrueTarget has no spawncount, clearing");
 					MQ.Cmd("/squelch /target clear");
 					return false;
 				}
-				//MQ.Write("TrueTarget has no spawncount");
+				MQ.Write("TrueTarget has no spawncount");
 				return false;
 			}
 
@@ -2991,9 +2995,72 @@ namespace E3Core.Processors
 			//assume success at this point.
 			return CastReturn.CAST_SUCCESS;
 		}
-		public static Int64 TimeLeftOnMySpell(Data.Spell spell)
+		public static Int64 CurrentTarget_TimeLeftOnMySpellID(Int32 spellIDToCheck)
 		{
 
+			unsafe
+			{
+				Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+				int length;
+				byte* p = E3.MQ.GetTargetBuffDataPtr(targetID, out length);
+				Int32 counter = 0;
+				if (length > 0)
+				{
+					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+					int dataStartingLength = data.Length;
+					bool buffsPopulated = false;
+					if (data.Length > 0)
+					{
+						//lets pull out the if buffs are being populated
+						buffsPopulated = MemoryMarshal.Read<Boolean>(data);
+						data = data.Slice(1);
+					}
+					while (data.Length > 0)
+					{
+						counter++;
+						Int32 spellID = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 duration = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 spellType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 casterNameLength = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						string CasterName = string.Empty;
+						if (casterNameLength > 0)
+						{
+							unsafe
+							{
+								fixed (byte* ptostr = data)
+								{
+									//pull reused strings, without having to allocate them.
+									CasterName = StringPool.Shared.GetOrAdd(data.Slice(0, casterNameLength), Encoding.ASCII);
+								}
+							}
+							data = data.Slice(casterNameLength);
+						}
+						//MQ.WriteDelayed($"TimeLeftOnSpells: index:{counter} ID:{spellID} d:{duration} stype:{spellType} casterName:{CasterName}");
+
+						if (spellIDToCheck == spellID)
+						{
+							//MQ.WriteDelayed($"Found My Spell:{spell.SpellID} with duration:{duration}");
+							//check if its mine
+							if (E3.CurrentName == CasterName)
+							{
+								//its my spell!
+								Int64 millisecondsLeft = duration * 6 * 1000;
+								return millisecondsLeft;
+							}
+						}
+
+					}
+				}
+			}
+
+			return -1;
+		}
+		public static Int64 TimeLeftOnMySpell(Data.Spell spell)
+		{
 			if (Core._MQ2MonoVersion >= 0.420m || Debugger.IsAttached)
 			{
 				unsafe

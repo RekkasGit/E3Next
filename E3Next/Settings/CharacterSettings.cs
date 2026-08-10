@@ -457,6 +457,8 @@ namespace E3Core.Settings
 		public List<Spell> PetBuffs = new List<Spell>();
 		[INI_Section("Pets", "Pet Buff")]
 		public List<Spell> PetOwnerBuffs = new List<Spell>();
+		[INI_Section("Pets", "Pet Delay on attack")]
+		public Int32 Pet_DelayOnAttack = 0;
 
 		[INI_Section("Buffs", "Combat Pet Buff")]
 		public List<Spell> CombatPetBuffs = new List<Spell>();
@@ -1332,6 +1334,7 @@ namespace E3Core.Settings
 			LoadKeyData("Pets", "Pet Taunt (On/Off)", ParsedData, ref Pet_TauntEnabled);
 			LoadKeyData("Pets", "Pet Auto-Shrink (On/Off)", ParsedData, ref Pet_AutoShrink);
 			LoadKeyData("Pets", "Pet Summon Combat (On/Off)", ParsedData, ref Pet_SummonCombat);
+			LoadKeyData("Pets", "Pet Delay on attack", ParsedData, ref Pet_DelayOnAttack);
 
 			LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
 			LoadKeyData("Rez", "AutoAcceptRez", ParsedData, ref Rez_AutoAcceptRez);
@@ -1760,6 +1763,8 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Pet Auto-Shrink (On/Off)", "Off");
 				section.Keys.AddKey("Pet Summon Combat (On/Off)", "Off");
 				section.Keys.AddKey("Blocked Pet Buff", "");
+				section.Keys.AddKey("Pet Delay on attack", "0");
+				
 			}
 
 			if ((CharacterClass & Class.Druid) == CharacterClass)
