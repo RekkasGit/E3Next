@@ -91,6 +91,7 @@ namespace E3Core.Processors
         public double NextCheck = 0;
 		public bool NoCombat = false;
         public Int32 qty = 1;
+        
     }
 
     public static class GiveMe
@@ -118,6 +119,8 @@ namespace E3Core.Processors
 			_groupSpellRequests.Add("Sanguine Mind Crystal II", new Spell("Sanguine Mind Crystal"));
 			_groupSpellRequests.Add("Sanguine Mind Crystal I", new Spell("Sanguine Mind Crystal"));
 			_groupSpellRequests.Add("Blazing Void Orb", new Spell("Glyphwielder's Eternal Bracer"));
+			_groupSpellRequests.Add("Orb of the Sanguine", new Spell("Blightbringer's Eternal Bracer"));
+			_groupSpellRequests.Add("Orb of the Shadows", new Spell("Keeper's Eternal Bracer of the Grave"));
 			_groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
             _groupSpellRequests.Add("Lava orb", new Spell("Summon: Lava Orb"));
             _groupSpellRequests.Add("Rod of Mystical Transvergence", new Spell("Mass Mystical Transvergence"));
@@ -434,7 +437,12 @@ namespace E3Core.Processors
                 if (!Basics.GroupMembersInZone.Contains(spawn.ID)) return;
 
                 Spell s;
-                if(!String.IsNullOrWhiteSpace(spellToUse))
+				bool islore = true;
+				if (MQ.Query<bool>($"${{FindItem[{whatToGive}]}}"))
+				{
+					islore = MQ.Query<bool>($"${{FindItem[{whatToGive}].Lore}}");
+				}
+				if (!String.IsNullOrWhiteSpace(spellToUse))
                 {
 					if (!Spell.LoadedSpellsByName.TryGetValue(spellToUse, out s))
 					{
@@ -442,10 +450,15 @@ namespace E3Core.Processors
 					}
 					if (Casting.CheckMana(s) && Casting.CheckReady(s))
 					{
+                       
 						//lets tell everyone else to destroy their items and destroy our own.
-						E3.Bots.BroadcastCommandToGroup($"/E3DestroyNoRent \"{whatToGive}\"");
-						e3util.DeleteNoRentItem(whatToGive);
-						MQ.Delay(2000);
+                        if(islore)
+                        {
+							E3.Bots.BroadcastCommandToGroup($"/E3DestroyNoRent \"{whatToGive}\"");
+							e3util.DeleteNoRentItem(whatToGive);
+							MQ.Delay(2000);
+
+						}
 						Casting.Cast(0, s);
 						MQ.Delay(1000);
 						e3util.ClearCursor();
@@ -455,11 +468,15 @@ namespace E3Core.Processors
                 {
                     if (Casting.CheckMana(s) && Casting.CheckReady(s))
                     {
-                        //lets tell everyone else to destroy their items and destroy our own.
-                        E3.Bots.BroadcastCommandToGroup($"/E3DestroyNoRent \"{whatToGive}\"");
-                        e3util.DeleteNoRentItem(whatToGive);
-                        MQ.Delay(2000);
-                        Casting.Cast(0, s);
+						//lets tell everyone else to destroy their items and destroy our own.
+						if (islore)
+						{
+							E3.Bots.BroadcastCommandToGroup($"/E3DestroyNoRent \"{whatToGive}\"");
+							e3util.DeleteNoRentItem(whatToGive);
+							MQ.Delay(2000);
+
+						}
+						Casting.Cast(0, s);
 						MQ.Delay(1000);
 						e3util.ClearCursor();
                     }

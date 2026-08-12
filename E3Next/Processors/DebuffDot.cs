@@ -493,7 +493,7 @@ namespace E3Core.Processors
 					{
 						foreach (var checkforItem in spell.CheckForCollection.Keys)
 						{
-							
+							//If they specify a spell ID
                             if(Int32.TryParse(checkforItem,out var spellIDToCheck))
                             {
                                 Int64 buffDuration = Casting.CurrentTarget_TimeLeftOnMySpellID(spellIDToCheck);
