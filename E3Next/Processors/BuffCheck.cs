@@ -1963,7 +1963,7 @@ namespace E3Core.Processors
 							// someone else
 							// by targeting and getting the information
 							//but don't do it if you have aggro, since you can't check without changing target
-							if (Casting.TrueTarget(s.ID) && !Basics.InCombat())
+							if (!Basics.InCombat() && Casting.TrueTarget(s.ID) )
 							{
 								MQ.Delay(2000, "${Target.BuffsPopulated}");
 								Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
@@ -2004,7 +2004,7 @@ namespace E3Core.Processors
 					else
 					{
 						// by targeting and getting the information
-						if (Casting.TrueTarget(s.ID) && !Basics.InCombat())
+						if (!Basics.InCombat() && Casting.TrueTarget(s.ID))
 						{
 							MQ.Delay(2000, "${Target.BuffsPopulated}");
 							Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
