@@ -2004,7 +2004,7 @@ namespace E3Core.Processors
 					else
 					{
 						// by targeting and getting the information
-						if (Casting.TrueTarget(s.ID))
+						if (Casting.TrueTarget(s.ID) && !Basics.InCombat())
 						{
 							MQ.Delay(2000, "${Target.BuffsPopulated}");
 							Int64 timeinMS = Casting.TimeLeftOnTargetBuff(spell);
