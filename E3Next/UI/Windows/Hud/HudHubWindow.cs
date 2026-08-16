@@ -1194,6 +1194,8 @@ namespace E3Core.UI.Windows.Hud
 					}
 				}
 				state.Display_CurrentNameSize = imgui_CalcTextSizeX(E3.CurrentName);
+			
+			
 			}
 
 			// Refresh target buffs on a slower cadence, or immediately on target change
@@ -1391,6 +1393,16 @@ namespace E3Core.UI.Windows.Hud
 					}
 
 				}
+			}
+			if(state.TargetBuffs.Count>0)
+			{
+				state.TargetBuffCountString = $"({state.TargetBuffs.Count})";
+
+			}
+			else
+			{
+
+				state.TargetBuffCountString = String.Empty;
 			}
 		}
 		private static void RefreshPeerAAInfo()
@@ -2560,13 +2572,33 @@ namespace E3Core.UI.Windows.Hud
 					int iconSize = state.IconSize;
 					int iconsPerRow = Math.Max(1, (int)widthAvail / (iconSize + 2));
 
-					for (int i = 0; i < state.TargetBuffs.Count; i++)
+					for (int i = 0; i <= state.TargetBuffs.Count; i++)
 					{
+						
+
+						if(i== state.TargetBuffs.Count)
+						{
+							//we are on the last value, put the count and kickout
+							if(!String.IsNullOrEmpty(state.TargetBuffCountString))
+							{
+								if (i > 0 && (i % iconsPerRow) != 0)
+								{
+									imgui_SameLine(0, 2);
+								}
+								using (var targetbuffFont = IMGUI_Fonts.Aquire())
+								{
+									targetbuffFont.PushFont(state.SelectedFont);
+									targetbuffFont.PushFontSize(state.IconSize);
+									imgui_Text(state.TargetBuffCountString);
+								}
+
+							}
+							continue;
+						}
 						if (i > 0 && (i % iconsPerRow) != 0)
 						{
 							imgui_SameLine(0, 2);
 						}
-
 						float iconX = imgui_GetCursorScreenPosX();
 						float iconY = imgui_GetCursorScreenPosY();
 						imgui_DrawSpellIconBySpellID(state.TargetBuffs[i].SpellID, iconSize);

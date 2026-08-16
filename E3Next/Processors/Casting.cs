@@ -2836,7 +2836,13 @@ namespace E3Core.Processors
 				if (targetID == 0) return false;
 
 			}
+			string spawnName = "unknown";
 
+
+			if(_spawns.TryByID(targetID,out var s))
+			{
+				spawnName = s.CleanName;
+			}
 			_log.Write("Trying to Aquire true target on :" + targetID);
 
 			if (MQ.Query<Int32>("${Target.ID}") == targetID) return true;
@@ -2847,7 +2853,7 @@ namespace E3Core.Processors
 				//try 3 times
 				for (Int32 i = 0; i < 3; i++)
 				{
-					//MQ.Write($"Iussing truetarget on: {targetID} CALLED BY:{memberName} FN:{fileName} LN:{lineNumber}");
+					MQ.Write($"Iussing truetarget on: {targetID}:{spawnName} CALLED BY:{memberName} FN:{fileName} LN:{lineNumber}");
 					MQ.Cmd($"/target id {targetID}");
 					MQ.Delay(300, $"${{Target.ID}}=={targetID}");
 					//swapping targets turn off autofire

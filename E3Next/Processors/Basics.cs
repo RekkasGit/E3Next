@@ -466,7 +466,7 @@ namespace E3Core.Processors
 			});
 
 			///this is now handled via the Zoning.ProcessZoneIfneeded
-			/// and the OnZone event.
+			/// and the OnZone event. //this is no longer the case as onZone had a bug, tho it got fixed, should we go back?
 			
 				EventProcessor.RegisterEvent("Zoned", @"You have entered (.+)\.", (x) =>
 				{

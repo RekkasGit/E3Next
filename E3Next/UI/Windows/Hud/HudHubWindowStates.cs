@@ -502,6 +502,7 @@ namespace E3Core.UI.Windows.Hud
 		public (float r, float g, float b, float a) TargetNameColor;
 		public (float r, float g, float b, float a) TargetDistanceColor;
 		public List<TableRow_BuffInfo> TargetBuffs = new List<TableRow_BuffInfo>();
+		public string TargetBuffCountString = String.Empty;
 		public Int64 TargetBuffLastUpdated = 0;
 		public Int64 TargetBuffUpdateInterval = 500;
 		public int PreviousTargetID = 0;
