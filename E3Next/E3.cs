@@ -1,28 +1,16 @@
 ﻿using E3Core.Classes;
-using E3Core.Data;
 using E3Core.Server;
 using E3Core.Settings;
 using E3Core.Settings.FeatureSettings;
-using E3Core.UI.Windows.CharacterSettings;
-using E3Core.UI.Windows.Hud;
 using E3Core.Utility;
 using MonoCore;
 using NetMQ;
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using System.ServiceModel.Channels;
-using System.ServiceModel.Configuration;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace E3Core.Processors
 {

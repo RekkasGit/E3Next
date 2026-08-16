@@ -426,7 +426,7 @@ namespace E3Core.Utility
 			{
 				if (EventProcessor.CommandListQueue.Count > 0 ||  NetMQServer.SharedDataClient.CommandQueue.Count>0)
 				{
-					E3.Bots.Broadcast("Exiting nav to process command.");
+					MQ.Write("Exiting nav to process command.");
 					return;
 				}
 				Double tmeX = MQ.Query<Double>("${Me.X}");
