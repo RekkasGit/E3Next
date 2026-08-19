@@ -1834,7 +1834,12 @@ namespace E3Core.Processors
 		public static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets)
 		{
 
+			//don't buff temp pets
+			if (string.IsNullOrWhiteSpace(s.CleanName)) return true;//no name, possibly swarm pet
+			if (s.CleanName.EndsWith("s pet", StringComparison.OrdinalIgnoreCase)) return true;
+			if (s.CleanName.EndsWith("s Animated Corpse", StringComparison.OrdinalIgnoreCase)) return true;
 			
+
 			//using(_log.Trace())
 			{
 				SpellTimer st;

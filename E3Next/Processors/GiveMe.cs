@@ -119,6 +119,7 @@ namespace E3Core.Processors
 			_groupSpellRequests.Add("Sanguine Mind Crystal II", new Spell("Sanguine Mind Crystal"));
 			_groupSpellRequests.Add("Sanguine Mind Crystal I", new Spell("Sanguine Mind Crystal"));
 			_groupSpellRequests.Add("Blazing Void Orb", new Spell("Glyphwielder's Eternal Bracer"));
+			_groupSpellRequests.Add("Blazing Shadow Orb", new Spell("Keeper's Eternal Bracer of the Summoner"));
 			_groupSpellRequests.Add("Orb of the Sanguine", new Spell("Blightbringer's Eternal Bracer"));
 			_groupSpellRequests.Add("Orb of the Shadows", new Spell("Keeper's Eternal Bracer of the Grave"));
 			_groupSpellRequests.Add("Molten orb", new Spell("Summon: Molten Orb"));
