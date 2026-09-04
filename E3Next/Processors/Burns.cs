@@ -263,7 +263,7 @@ namespace E3Core.Processors
 			if (burnToUse.Active)
             {	
 
-				Int32 previousTarget = initialTarget;
+				Int32 currentTarget = initialTarget;
 				Int32 petId = MQ.Query<Int32>("${Me.Pet.ID}");
 
 				foreach (var burn in burnToUse.ItemsToBurn)
@@ -306,8 +306,8 @@ namespace E3Core.Processors
 							//hotfix to possibly work around the issue of swarm type pets on healers who might not have the assist target , targeted.
 							//if it works, need to restructure this a bit.
 							Casting.TrueTarget(Assist.AssistTargetID);
-							previousTarget = Assist.AssistTargetID;
-							
+							currentTarget = Assist.AssistTargetID;
+
 						}
 						else if (isManualControl && Assist.AssistTargetID != initialTarget)
 						{
@@ -315,7 +315,13 @@ namespace E3Core.Processors
 							return;
 
 						}
-						if (Casting.InRange(previousTarget, burn))
+
+
+						if (!String.IsNullOrWhiteSpace(burn.CastTarget) && _spawns.TryByName(burn.CastTarget, out var spelltarget))
+						{
+							currentTarget = spelltarget.ID;
+						}
+						if (Casting.InRange(currentTarget, burn))
 						{
 							if (burn.CastType == Data.CastingType.Disc)
 							{
@@ -332,29 +338,30 @@ namespace E3Core.Processors
 							bool targetPC = false;
 							bool isMyPet = false;
 							bool isGroupMember = false;
-							if (_spawns.TryByID(previousTarget, out var spawn))
+							if (_spawns.TryByID(currentTarget, out var spawn))
 							{
 								Int32 groupMemberIndex = MQ.Query<Int32>($"${{Group.Member[{spawn.CleanName}].Index}}");
 								if (groupMemberIndex > 0) isGroupMember = true;
 								targetPC = (spawn.TypeDesc == "PC");
-								isMyPet = (previousTarget == MQ.Query<Int32>("${Me.Pet.ID}"));
+								isMyPet = (currentTarget == MQ.Query<Int32>("${Me.Pet.ID}"));
 
 							}
 							var chatOutput = $"{burnToUse.Name}: {burn.CastName}";
 							//so you don't target other groups or your pet for burns if your target happens to be on them.
-							if (!String.IsNullOrWhiteSpace(burn.CastTarget) && _spawns.TryByName(burn.CastTarget, out var spelltarget))
-							{
 
-								if (Casting.Cast(spelltarget.ID, burn) == CastReturn.CAST_INTERRUPTFORHEAL)
+
+							if (!String.IsNullOrWhiteSpace(burn.CastTarget))
+							{
+								if (Casting.Cast(currentTarget, burn) == CastReturn.CAST_INTERRUPTFORHEAL)
 								{
 									return;
 								}
-								if (previousTarget > 0)
+								if (initialTarget > 0)
 								{
-									Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
-									if (previousTarget != currentTarget)
+									currentTarget = MQ.Query<Int32>("${Target.ID}");
+									if (initialTarget != currentTarget)
 									{
-										Casting.TrueTarget(previousTarget);
+										Casting.TrueTarget(initialTarget);
 									}
 								}
 								E3.Bots.Broadcast(chatOutput);
@@ -367,12 +374,12 @@ namespace E3Core.Processors
 									return;
 								}
 
-								if (previousTarget > 0)
+								if (initialTarget > 0)
 								{
-									Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
-									if (previousTarget != currentTarget)
+									currentTarget = MQ.Query<Int32>("${Target.ID}");
+									if (initialTarget != currentTarget)
 									{
-										Casting.TrueTarget(previousTarget);
+										Casting.TrueTarget(initialTarget);
 									}
 								}
 								E3.Bots.Broadcast(chatOutput);

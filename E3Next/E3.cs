@@ -919,7 +919,19 @@ namespace E3Core.Processors
 			//sometimes the zoning doesn't update like it should
 			//making super sure zone changes are caught.
 			var currentZone = MQ.Query<Int32>("${Zone.ID}");
-			Zoning.Zoned(currentZone);
+			bool hasTarget = MQ.Query<Boolean>("${Target.ID}");
+			if(hasTarget)
+			{
+				TimeSinceNoTarget = 0;
+			}
+			else
+			{
+				if(TimeSinceNoTarget==0)
+				{
+					TimeSinceNoTarget = Core.StopWatch.ElapsedMilliseconds;
+				}
+			}
+				Zoning.Zoned(currentZone);
 			////////////
 
 			Zoning.ProcessZoneIfNeeded();
@@ -1103,7 +1115,8 @@ namespace E3Core.Processors
 		private static Int64 _nextReloadSettingsCheck = 0;
         private static Int64 _nextReloadSettingsInterval = 2000;
         private static Int64 _lastGCCollect = 0;
-        public volatile static bool NetMQ_PubServerThradRun = true;
+		public static Int64 TimeSinceNoTarget = 0;
+		public volatile static bool NetMQ_PubServerThradRun = true;
 		public volatile static bool NetMQ_SharedDataServerThreadRun = true;
 		public volatile static bool NetMQ_RouterServerThradRun = true;
 		public volatile static bool NetMQ_PubClientThradRun = true;

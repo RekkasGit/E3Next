@@ -26,6 +26,8 @@ namespace E3Core.Processors
 		//maybe after combat?
 		public static Dictionary<Int32, SpellTimer> _buffTimers = new Dictionary<Int32, SpellTimer>();
 
+		
+
 		private static Int64 _nextGroupBuffRequestCheckTime = 0;
 		private static Int64 _nextGroupBuffRequestCheckTimeInterval = 1000;
 		private static Int64 _nextRaidBuffRequestCheckTime = 0;
@@ -350,7 +352,7 @@ namespace E3Core.Processors
 			if (E3.CharacterSettings.Misc_RemoveTorporAfterCombat)
 			{
 				//auto remove torpor if not in combat and full health
-				if (MQ.Query<Int32>("${Me.PctHPs}") > 95 && !Basics.InCombat())
+				if ((MQ.Query<Int32>("${Me.PctHPs}") > 95 && !Basics.InCombat()) || (E3.TimeSinceNoTarget!=0 && (Core.StopWatch.ElapsedMilliseconds - E3.TimeSinceNoTarget >1000)))
 				{
 					//For lazarus
 					if (MQ.Query<bool>("${Me.Song[Transcendent Torpor]}") || MQ.Query<bool>("${Me.Buff[Transcendent Torpor]}"))

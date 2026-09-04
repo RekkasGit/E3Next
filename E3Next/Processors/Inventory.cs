@@ -461,7 +461,7 @@ namespace E3Core.Processors
                 string itemName = x.args[0];
                 if (x.args.Count == 1)
                 {
-                    E3.Bots.BroadcastCommand($"/fic \"{itemName}\" all");
+                    E3.Bots.BroadcastCommand($"/fic \"{itemName}\" all",false,x);
                 }
 
                 if (!e3util.FilterMe(x))

@@ -123,8 +123,24 @@ namespace E3Core.Processors
                                     continue;
                                 }
                             }
-                            //if there are resist settings setup for this spawn.
-                            if (E3.ResistSettings!=null && E3.ResistSettings.ShouldSkip(spell, s)) continue;
+                            //allow for other buff checks
+                            bool haveDebuff = false;
+                            Int32 haveDebuffCount = 0;
+							if (spell.CheckForCollection.Count > 0)
+							{
+								foreach (var spellName in spell.CheckForCollection.Keys)
+								{
+									haveDebuff = MQ.Query<bool>($"${{Bool[${{Target.Buff[{spellName}]}}]}}");
+
+                                    if (haveDebuff) haveDebuffCount++;
+
+								}
+                                if (haveDebuffCount!=spell.CheckForCollection.Count) continue;
+
+							}
+
+							//if there are resist settings setup for this spawn.
+							if (E3.ResistSettings!=null && E3.ResistSettings.ShouldSkip(spell, s)) continue;
 
 							//can't cast if it isn't ready
 							if (Casting.InRange(Assist.AssistTargetID, spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))

@@ -721,7 +721,7 @@ namespace E3NextSysTray
 								   .Select(f => Path.GetFileName(f).ToLower().Replace(".exe", ""))
 								   .ToHashSet();
 
-				//kill all proceesses that are in the mq directory, or are equal to eqgame.xe
+				//kill all proceesses that are in the mq directory, or are equal to eqgame.exe
 				foreach (var p in Process.GetProcesses())
 				{
 					string processNameLower = p.ProcessName.ToLower();
