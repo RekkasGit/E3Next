@@ -65,7 +65,7 @@ namespace E3Core.Processors
 			pctMana = MQ.Query<Int32>("${Me.PctMana}");
 
 
-			if (MQ.Query<bool>("${Cursor.ID}"))
+			if (MQ.Query<bool>("${Cursor.ID}") && (Basics.InCombat() || !e3util.IsManualControl()))
 			{
 				e3util.ClearCursor();
 			}
@@ -346,6 +346,7 @@ namespace E3Core.Processors
 				}
 				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastingType.Spell)
 				{
+					return CastReturn.CAST_NOTREADY;
 					while (IsCasting())
 					{
 						MQ.Delay(50);
@@ -453,7 +454,7 @@ namespace E3Core.Processors
 
 						//remove item from cursor before casting
 						_log.Write("Checking for item on cursor...");
-						if (MQ.Query<bool>("${Cursor.ID}"))
+						if (MQ.Query<bool>("${Cursor.ID}") && (Basics.InCombat() || !e3util.IsManualControl()))
 						{
 							MQ.Write($"Issuing auto inventory on {MQ.Query<string>("${Cursor}")} for spell: {spell.CastName}");
 							e3util.ClearCursor();
@@ -1165,7 +1166,7 @@ namespace E3Core.Processors
 				}
 				if (CheckMana(spell.AfterSpellData) && CheckReady(spell.AfterSpellData))
 				{
-					e3util.ClearCursor();
+					//e3util.ClearCursor();
 				retrycast:
 					Int32 retryCounter = 0;
 					if (Casting.Cast(targetID, spell.AfterSpellData) == CastReturn.CAST_FIZZLE)

@@ -351,8 +351,11 @@ namespace E3Core.Processors
 			//shoving this here for now
 			if (E3.CharacterSettings.Misc_RemoveTorporAfterCombat)
 			{
+				Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+				double targetDistance = MQ.Query<double>("${Target.Distance}");
+
 				//auto remove torpor if not in combat and full health
-				if ((MQ.Query<Int32>("${Me.PctHPs}") > 95 && !Basics.InCombat()) || (E3.TimeSinceNoTarget!=0 && (Core.StopWatch.ElapsedMilliseconds - E3.TimeSinceNoTarget >1000)))
+				if ((MQ.Query<Int32>("${Me.PctHPs}") > 95 && !Basics.InCombat()) || (targetID>0 && targetDistance>30) || (E3.TimeSinceNoTarget!=0 && (Core.StopWatch.ElapsedMilliseconds - E3.TimeSinceNoTarget >1000)))
 				{
 					//For lazarus
 					if (MQ.Query<bool>("${Me.Song[Transcendent Torpor]}") || MQ.Query<bool>("${Me.Buff[Transcendent Torpor]}"))
@@ -1238,9 +1241,19 @@ namespace E3Core.Processors
 						{
 							CastReturn result;
 						recastSpell:
+							
 							if (spell.TargetType == "Self" || spell.TargetType == "Group v1" || spell.TargetType == "Group v2")
 							{
-								result = Casting.Cast(0, spell);
+								int currentTarget = MQ.Query<Int32>("${Target.ID}");
+								if (spell.TargetType == "Self" || (currentTarget >0 && Casting.InRange(currentTarget, spell)))
+								{
+									result = Casting.Cast(0, spell);
+								}
+								else
+								{
+									result = Casting.Cast(s.ID, spell);
+
+								}
 							}
 							else
 							{

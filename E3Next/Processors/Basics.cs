@@ -1903,7 +1903,9 @@ namespace E3Core.Processors
 		{
 			if (!e3util.ShouldCheck(ref _nextResourceCheck, _nextResourceCheckInterval)) return;
 
+			if (e3util.IsActionBlockingWindowOpen()) return;
 			if (e3util.IsEQLive()) return;
+			if (MQ.Query<bool>("${Me.Feigning}")) return;
 
 			if (e3util.IsEQEMU() && E3.ServerName == "Lazarus")
 			{
@@ -2010,7 +2012,7 @@ namespace E3Core.Processors
 
 
 
-				if (hasManaStone && amIStanding)
+				if (hasManaStone)
 				{
 					Casting.BeforeEventCheck(manaStoneSpell);
 					try

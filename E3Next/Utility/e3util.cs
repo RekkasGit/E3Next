@@ -2609,6 +2609,7 @@ namespace E3Core.Utility
 			if(MQ.Query<bool>("${Window[GuildBankWnd]}")) return true;
 			if(MQ.Query<bool>("${Window[TradeWnd]}")) return true;
 			if(MQ.Query<bool>("${Window[GiveWnd]}")) return true;
+			if(MQ.Query<bool>("${Window[LootWnd]}")) return true;
 			return false;
 		}
 
