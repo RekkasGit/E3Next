@@ -5059,7 +5059,6 @@ namespace E3Core.UI.Windows.Hud
 									imgui_SameLine(0);
 									imgui_Text("Show Only Group");
 									imgui_Separator();
-									imgui_Separator();
 									using (var style = PushStyle.Aquire())
 									{
 										style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
