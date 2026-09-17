@@ -102,7 +102,7 @@ namespace E3Core.UI.Windows.Hud
 		public bool ShowColumnDistance { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnDistance; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnDistance = value; IsDirty = true; } }
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_SelectedFont = value; IsDirty = true; } }
 		public Int32 SelectedFontSize { get => E3.CharacterSettings.E3Hud_Hub_SelectedFontSize; set { E3.CharacterSettings.E3Hud_Hub_SelectedFontSize = value; IsDirty = true; } }
-
+		public bool ShowGroupOnly { get => E3.CharacterSettings.E3Hud_Hub_ShowGroupOnly; set { E3.CharacterSettings.E3Hud_Hub_ShowGroupOnly = value; IsDirty = true; } }
 		public bool ShowColumnAggro { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggro; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggro = value; IsDirty = true; } }
 		public bool ShowColumnAggroXTarget { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroXTarget; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroXTarget = value;IsDirty = true; } }
 		public bool ShowColumnAggroMinXTarget { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnAggroMinXTarget = value; IsDirty = true; } }

@@ -171,6 +171,8 @@ namespace E3Core.Settings
 		public string E3Hud_Hub_SelectedFont = "robo";
 		[INI_Section("E3Hud_Hub", "SelectedFontSize")]
 		public Int32 E3Hud_Hub_SelectedFontSize = 16;
+		[INI_Section("E3Hud_Hub", "ShowGroupOnly")]
+		public bool E3Hud_Hub_ShowGroupOnly = true;
 		[INI_Section("E3Hud_Hub", "Locked")]
 		public bool E3Hud_Hub_Locked = false;
 		[INI_Section("E3Hud_Hub", "DisplayHPBar")]
@@ -949,6 +951,7 @@ namespace E3Core.Settings
 
 			LoadKeyData("E3Hud_Hub", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_SelectedFont);
 			LoadKeyData("E3Hud_Hub", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub", "ShowGroupOnly", ParsedData_UI, ref E3Hud_Hub_ShowGroupOnly);
 
 			LoadKeyData("E3Hud_Hub", "Locked", ParsedData_UI, ref E3Hud_Hub_Locked);
 			LoadKeyData("E3Hud_Hub", "DisplayHPBar", ParsedData_UI, ref E3Hud_Hub_DisplayHPBar);
@@ -1450,6 +1453,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("ShowColumnAggro", "True");
 			section.Keys.AddKey("ShowColumnAggroXTarget", "True");
 			section.Keys.AddKey("ShowColumnAggroMinXTarget", "False");
+			section.Keys.AddKey("ShowGroupOnly", "True");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("RGBA_NameColor", "0.9486451,0.9714931,0.9768786,1");
 			section.Keys.AddKey("RGBA_HealthBar", "0.9843137,0,0.1686275,0.4509804");

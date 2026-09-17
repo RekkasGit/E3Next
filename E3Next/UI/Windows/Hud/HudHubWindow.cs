@@ -954,11 +954,20 @@ namespace E3Core.UI.Windows.Hud
 				foreach (var user in users)
 				{
 					if (state.GroupMembersAdded.Contains(user)) continue;
-
-					bool inGroupOrRaid = false;
-					if (Basics.GroupMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
-					if (!inGroupOrRaid && Basics.RaidMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
-					if (!inGroupOrRaid) continue;
+					if(state.ShowGroupOnly)
+					{
+						bool InGroup = false;
+						if (Basics.GroupMemberNamesLookup.ContainsKey(user)) InGroup = true;
+						if (!InGroup) continue;
+					}
+					else
+					{
+						bool inGroupOrRaid = false;
+						if (Basics.GroupMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
+						if (!inGroupOrRaid && Basics.RaidMemberNamesLookup.ContainsKey(user)) inGroupOrRaid = true;
+						if (!inGroupOrRaid) continue;
+					}
+				
 					var row = RefreshGroupInfo_GetRowDataForBot(user);
 					state.GroupInfo.Add(row);
 
@@ -5041,6 +5050,15 @@ namespace E3Core.UI.Windows.Hud
 
 									}
 
+									
+									imgui_Separator();
+									if(imgui_Checkbox("##groupInfo_ShowGroupOnly",state.ShowGroupOnly))
+									{
+										state.ShowGroupOnly = imgui_Checkbox_Get("##groupInfo_ShowGroupOnly");
+									}
+									imgui_SameLine(0);
+									imgui_Text("Show Only Group");
+									imgui_Separator();
 									imgui_Separator();
 									using (var style = PushStyle.Aquire())
 									{
@@ -5048,9 +5066,6 @@ namespace E3Core.UI.Windows.Hud
 										imgui_Text("Show Columns");
 
 									}
-
-									imgui_Separator();
-
 									if (imgui_Checkbox("##col_hp", state.ShowColumnHP))
 										state.ShowColumnHP = imgui_Checkbox_Get("##col_hp");
 									imgui_SameLine(0);

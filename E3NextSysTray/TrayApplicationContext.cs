@@ -28,7 +28,7 @@ namespace E3NextSysTray
 		private readonly SynchronizationContext _syncContext;
 
 		private Toast _primaryToast;
-		private string _releaseID = "v1.55.43-3.1.4.9";
+		private string _releaseID = "v1.55.43.1-3.1.4.9";
 		//private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
@@ -186,7 +186,7 @@ namespace E3NextSysTray
 			checkForUpdateItem = new ToolStripMenuItem("Check for Update", null, OnCheckForUpdate);
 			exitItem = new ToolStripMenuItem("Exit", null, OnExit);
 			updateItem = new ToolStripMenuItem("Update", null, OnUpdate);
-			updateItem.Enabled = false;
+			updateItem.Enabled = true;
 			progressItem = new ToolStripMenuItem("Show Progress", null, OnShowProgress);
 			debugItem = new ToolStripMenuItem("Show Debug", null, OnDebug);
 			progressItem.Enabled = false;
@@ -639,7 +639,7 @@ namespace E3NextSysTray
 				downloadFileName = Path.Combine(_currentDirectory, downloadFileName);
 
 				//first lets get the e3nextandmqbinary without framework
-				var latestRelease = GetLatestRelease();
+				var latestRelease = GetLatestRelease(repo);
 				if (latestRelease == null) return;
 				var stopwatch = new Stopwatch();
 
@@ -844,25 +844,28 @@ namespace E3NextSysTray
 			UpdateToastStatus($"Total Downloaded: {mbRead:F2} MB");
 		}
 
-		private Release GetLatestRelease()
+		private Release GetLatestRelease(string repo="")
 		{
 			Release latestRelease = null;
+
+			if (String.IsNullOrWhiteSpace(repo)) repo = _repoName;
+
 			try
 			{
 				GitHubClient client = new GitHubClient(new ProductHeaderValue("E3NextUpdater"));
 
 				if (channelItem_prod.Checked)
 				{
-					latestRelease = client.Repository.Release.GetLatest(_githubUserName, _repoName).Result;
+					latestRelease = client.Repository.Release.GetLatest(_githubUserName, repo).Result;
 				}
 				else
 				{
-					var allReleases = client.Repository.Release.GetAll(_githubUserName, _repoName).Result;
+					var allReleases = client.Repository.Release.GetAll(_githubUserName, repo).Result;
 					var latestPrerelease = allReleases.FirstOrDefault(r => r.Prerelease);
 					latestRelease = latestPrerelease;
 					if (latestRelease == null)
 					{
-						latestRelease = client.Repository.Release.GetLatest(_githubUserName, _repoName).Result;
+						latestRelease = client.Repository.Release.GetLatest(_githubUserName, repo).Result;
 					}
 
 				}
@@ -927,7 +930,7 @@ namespace E3NextSysTray
 				{
 					_primaryToast.FrmToast.Show();
 				}
-				updateItem.Enabled = false;
+				updateItem.Enabled = true;
 
 
 			}
