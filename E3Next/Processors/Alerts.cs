@@ -325,6 +325,13 @@ namespace E3Core.Processors
 				Basics.Pause(true);
 			});
 
+			
+			pattern = @"Your enemies have forgotten you!";
+			EventProcessor.RegisterEvent("AgroClear", pattern, (x) => {
+
+				E3.Bots.Broadcast("\agMy Aggro Has been cleared!");
+
+			});
 			pattern = @"It will take about 5 more seconds to prepare your camp\.";
 			EventProcessor.RegisterEvent("ShutdownForCamp", pattern, (x) => {
 			
