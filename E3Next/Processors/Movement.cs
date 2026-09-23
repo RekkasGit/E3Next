@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -540,7 +541,134 @@ namespace E3Core.Processors
              
                 E3.Bots.BroadcastCommandToGroup($"/e3movetorandomloc \"{currentX}\" \"{currentY}\" \"{Distance}\"",x,true);
             });
-            EventProcessor.RegisterCommand("/e3movetorandomloc", (x) => {
+
+			EventProcessor.RegisterCommand("/e3scatter", (x) => {
+
+                E3.Bots.Broadcast($"/mtm {E3.CurrentName}");
+                E3.Bots.Broadcast($"/followoff me");
+                MQ.Delay(1000);
+                List<string> connectedBots = E3.Bots.BotsConnected().Where(name=>name!=E3.CurrentName).ToList();
+
+				Int32 Distance = 10;
+				if (x.args.Count > 0)
+				{
+					Int32.TryParse(x.args[0], out Distance);
+				}
+				float currentX = (float)MQ.Query<double>("${Me.X}");
+				float currentY = (float)MQ.Query<double>("${Me.Y}");
+
+				if (x.args.Count<2 || x.args[1]=="random")
+                {
+                    //random!
+                }
+                else if(x.args[1]=="circle")
+                {
+                    float radius = (float)Distance;
+					//get the locations for the toons to move to.
+					var intersections = new (float X, float Y)[connectedBots.Count];
+
+					// 360 degrees in radians divided by N segments
+					double angleStep = (2 * Math.PI) / connectedBots.Count;
+
+					for (int i = 0; i < connectedBots.Count; i++)
+					{
+						double angle = i * angleStep;
+
+						// Project radius using standard trigonometry
+						float newx = currentX + (float)(radius * Math.Cos(angle));
+						float newy = currentY + (float)(radius * Math.Sin(angle));
+
+						intersections[i] = (newx, newy);
+					}
+                    Int32 counter = 0;
+                    foreach(var loc in intersections)
+                    {
+                        E3.Bots.BroadcastCommandToPerson(connectedBots[counter],$"/e3movetoloc {loc.X} {loc.Y}");
+                        counter++;
+                    }
+				}
+				else if (x.args[1] == "semi-circle")
+				{
+					double heading = MQ.Query<double>("${Me.Heading.Degrees}");
+                    heading = (heading + 90f) % 360f;
+					
+
+					float radius = (float)Distance;
+					//get the locations for the toons to move to.
+					var intersections = new (float X, float Y)[connectedBots.Count];
+
+					// A semi-circle spans PI radians (180 degrees)
+					double facingAngleInRadians = heading * (Math.PI / 180.0);
+					double angleStep =  ((Math.PI) / (connectedBots.Count-1));
+                    double startAngle = facingAngleInRadians - (Math.PI / 2.0);
+
+					for (int i = 0; i < connectedBots.Count; i++)
+					{
+						double angle = startAngle +i * angleStep;
+
+						// Project radius using standard trigonometry
+						float newx = currentX + (float)(radius * Math.Cos(angle));
+						float newy = currentY + (float)(radius * Math.Sin(angle));
+
+						intersections[i] = (newx, newy);
+					}
+					Int32 counter = 0;
+					foreach (var loc in intersections)
+					{
+						E3.Bots.BroadcastCommandToPerson(connectedBots[counter], $"/e3movetoloc {loc.X} {loc.Y}");
+						counter++;
+					}
+				}
+                else if (x.args[1] == "line" && connectedBots.Count>2)
+				{
+					double heading = MQ.Query<double>("${Me.Heading.Degrees}");
+					heading = (heading + 90f) % 360f;
+					var points = new (float X, float Y)[connectedBots.Count];
+
+                    int n = connectedBots.Count;
+					// 1. Convert facing direction to radians
+					double facingRadians = heading * (Math.PI / 180.0);
+
+					// 2. Find the center point of the wall directly in front of the origin
+					float lineCenterX = currentX + (float)(15 * Math.Cos(facingRadians));
+					float lineCenterY = currentY + (float)(15 * Math.Sin(facingRadians));
+
+					// 3. Find the perpendicular angle (90 degrees / PI/2 to the side)
+					double perpRadians = facingRadians + (Math.PI / 2.0);
+					float perpDX = (float)Math.Cos(perpRadians);
+					float perpDY = (float)Math.Sin(perpRadians);
+
+					// 4. Calculate starting offsets (half width to the left, half width to the right)
+					float halfWidth = Distance / 2f;
+
+					// Find the absolute start position (left edge of the wall)
+					float startX = lineCenterX - (perpDX * halfWidth);
+					float startY = lineCenterY - (perpDY * halfWidth);
+
+					// Find the absolute end position (right edge of the wall)
+					float endX = lineCenterX + (perpDX * halfWidth);
+					float endY = lineCenterY + (perpDY * halfWidth);
+
+					// 5. Linearly interpolate N points from the start edge to the end edge
+					for (int i = 0; i < n; i++)
+					{
+						float t = (float)i / (n - 1); // Progression factor from 0.0 to 1.0
+
+						float newx = startX + (endX - startX) * t;
+						float newy = startY + (endY - startY) * t;
+
+						points[i] = (newx, newy);
+					}
+					Int32 counter = 0;
+					foreach (var loc in points)
+					{
+						E3.Bots.BroadcastCommandToPerson(connectedBots[counter], $"/e3movetoloc {loc.X} {loc.Y}");
+						counter++;
+					}
+				}
+			});
+
+			EventProcessor.RegisterCommand("/e3movetorandomloc", (x) => {
                 double currentX = 0;
                 double currentY = 0;
                 Int32 distance = 10;

@@ -325,7 +325,7 @@ namespace E3Core.Processors
 						{
 							if (burn.CastType == Data.CastingType.Disc)
 							{
-								if (burn.TargetType == "Self")
+								if (burn.TargetType == "Self" && !burn.StacksWithDiscs)
 								{
 									if (MQ.Query<bool>("${Me.ActiveDisc.ID}"))
 									{

@@ -1144,6 +1144,7 @@ namespace E3Core.Data
                 Level = MQ.Query<Int32>($"${{Spell[{CastName}].Level}}");
 				Subcategory = MQ.Query<string>($"${{Spell[{CastName}].Subcategory}}");
 				Category = MQ.Query<string>($"${{Spell[{CastName}].Category}}");
+                StacksWithDiscs = MQ.Query<Boolean>($"${{Spell[{CastName}].StacksWithDiscs}}");
 
 			}
 			else if (CastType == CastingType.Ability)
@@ -1180,6 +1181,7 @@ namespace E3Core.Data
         }
         public string RawEntry = String.Empty;
         public String Subcategory = String.Empty;
+        public Boolean StacksWithDiscs = false;
         public String Category = String.Empty;
         public String SpellName = String.Empty;//the spell's name. If the item clicks, this is the spell it casts
         public String AuraName = String.Empty;

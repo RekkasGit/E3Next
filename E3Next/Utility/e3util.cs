@@ -1224,7 +1224,87 @@ namespace E3Core.Utility
 				}
 			}
 		}
-		public static char[] GetBuffDataForPubSubHighPerf(out int returnLength)
+		public static void GetBuffDataCounts(out int buffCount, out int songCount)
+		{
+			unsafe
+			{
+				int length;
+				buffCount = 0;
+				byte* p = MQ.GetMyBuffDataPtr(out length);
+				ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+				//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+				int dataStartingLength = data.Length;
+				for (int i = 0; i < e3util.MaxBuffSlots; i++)
+				{
+					Int32 spellID = MemoryMarshal.Read<Int32>(data);
+
+					data = data.Slice(4);
+					Int32 casterId = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 duration = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+
+					Int32 hitcount = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 spellType = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 counterType = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					bool IsSong = MemoryMarshal.Read<bool>(data);
+					data = data.Slice(1);
+
+					if (spellID > 0)
+					{
+						buffCount++;
+					}
+
+
+					if (dataStartingLength - data.Length >= length)
+					{
+						//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+						break;
+					}
+					//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
+				}
+				songCount = 0;
+				for (int i = 0; i < e3util.MaxSongSlots; i++)
+				{
+					Int32 spellID = MemoryMarshal.Read<Int32>(data);
+
+					data = data.Slice(4);
+					Int32 casterId = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 duration = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 hitcount = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 spellType = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 counterType = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					bool IsSong = MemoryMarshal.Read<bool>(data);
+					data = data.Slice(1);
+					//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
+
+					if (spellID > 0)
+					{
+						songCount++;
+					}
+
+					if (dataStartingLength - data.Length >= length)
+					{
+						//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
+						break;
+					}
+				}
+			}
+		}
+		public static char[] GetBuffDataForPubSubHighPerf(out int returnLength,out int buffCount,out int songCount)
 		{
 			unsafe
 			{
@@ -1232,6 +1312,7 @@ namespace E3Core.Utility
 				try
 				{
 					int length;
+					buffCount = 0;
 					byte* p = MQ.GetMyBuffDataPtr(out length);
 					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
 					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
@@ -1259,6 +1340,7 @@ namespace E3Core.Utility
 
 						if (spellID > 0)
 						{
+							buffCount++;
 							if (duration > 0) duration = duration * 6 * 1000;
 
 							if (!BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
@@ -1290,6 +1372,7 @@ namespace E3Core.Utility
 						//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
 
 					}
+					songCount = 0;
 					for (int i = 0; i < e3util.MaxSongSlots; i++)
 					{
 						Int32 spellID = MemoryMarshal.Read<Int32>(data);
@@ -1313,6 +1396,7 @@ namespace E3Core.Utility
 
 						if (spellID > 0)
 						{
+							songCount++;
 							if (!BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
 							{
 								BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);

@@ -282,7 +282,7 @@ namespace E3Core.Processors
 				//E3.Bots.Broadcast(output);
 
 			}, "Print out AA you currently have");
-			EventProcessor.RegisterCommand("/e3printDics", (x) =>
+			EventProcessor.RegisterCommand("/e3printDiscs", (x) =>
 			{
 				List<Data.Spell> aas = e3util.ListAllDiscData();
 

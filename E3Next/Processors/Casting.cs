@@ -2347,6 +2347,22 @@ namespace E3Core.Processors
 					}
 				}
 			}
+			if (tIF.IndexOf("${E3N.State.Me.", 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				Int32 buffCount = 0;
+				Int32 songCount = 0;
+				e3util.GetBuffDataCounts(out buffCount, out songCount);
+
+				//currently state.me only looks for buff/song counts, if we add more, change the logic to not always call getbuffdatacounts
+				if (tIF.IndexOf("${E3N.State.Me.BuffCount}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					tIF = tIF.ReplaceInsensitive("${E3N.State.Me.BuffCount}",buffCount.ToString());
+				}
+				if (tIF.IndexOf("${E3N.State.Me.SongCount}", 0, StringComparison.OrdinalIgnoreCase) > -1)
+				{
+					tIF = tIF.ReplaceInsensitive("${E3N.State.Me.SongCount}", songCount.ToString());
+				}
+			}
 			if (tIF.IndexOf("${E3N.State.Bots.", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
 

@@ -729,7 +729,9 @@ namespace E3Core.Processors
 			if (Core._MQ2MonoVersion >= 0.411m)
 			{
 				Int32 length = 0;
-				char[] payload = e3util.GetBuffDataForPubSubHighPerf(out length);
+				Int32 buffCount = 0;
+				Int32 songCount = 0;
+				char[] payload = e3util.GetBuffDataForPubSubHighPerf(out length,out buffCount,out songCount);
 				PubServer.AddTopicMessageFromPool("${Me.BuffInfo}", payload, length);
 				payload = e3util.GetPetBuffDataForPubSubHighPerf(out length);
 				PubServer.AddTopicMessageFromPool("${Me.PetBuffInfo}", payload,length);
