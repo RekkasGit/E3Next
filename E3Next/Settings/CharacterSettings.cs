@@ -2080,6 +2080,7 @@ namespace E3Core.Settings
 				//this is because there is a filter on createNewINI data
 				LoadKeyData("E3Hud_Hub_HotButtons", "UseDefaultDynamicButtons", tParsedData_UI, ref E3Hud_Hub_HotButtons_UseDefaultDynamicButtons);
 				newFile = createNewINIData(false);
+				
 				newFile_UI = createNew_UI_INIData(forBrandNewFile: false);
 
 				if (_mergeUpdates)

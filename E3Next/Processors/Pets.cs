@@ -92,7 +92,7 @@ namespace E3Core.Processors
                     }
                 }
                 //var buffIndex = MQ.Query<int>($"${{Me.Pet.Buff[{buff.SpellName}]}}");
-                if (Casting.TryGetPetBuffDuration(buff.SpellName,out var _))
+                if (Casting.TryGetPetBuffDuration(buff.SpellID,out var _))
                 {
                     MQ.Cmd($"/removebuff -pet {buff.SpellName}");
                 }

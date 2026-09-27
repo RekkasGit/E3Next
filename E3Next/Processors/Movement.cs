@@ -621,6 +621,8 @@ namespace E3Core.Processors
 				}
                 else if (x.args[1] == "line" && connectedBots.Count>2)
 				{
+                    //need at least 2 so that the line can be split
+
 					double heading = MQ.Query<double>("${Me.Heading.Degrees}");
 					heading = (heading + 90f) % 360f;
 					var points = new (float X, float Y)[connectedBots.Count];

@@ -3236,7 +3236,40 @@ namespace E3Core.Processors
 			}
 			return false;
 		}
+		public static bool TryGetPetBuffDuration(Int32 buffspellid, out int return_duration)
+		{
+			Int32 buff_spellID = MQ.Query<Int32>($"${{Spell[{buffspellid}].ID}}");
+			return_duration = 0;
+			unsafe
+			{
+				int length;
+				byte* p = MQ.GetPetBuffDataPtr(out length);
+				if (length > 0)
+				{
+					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
+					int dataStartingLength = data.Length;
+					while (data.Length > 0)
+					{
+						Int32 spellID = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 duration = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
+						Int32 spellType = MemoryMarshal.Read<Int32>(data);
+						data = data.Slice(4);
 
+						if (buff_spellID == spellID)
+						{
+							return_duration = duration;
+							return true;
+
+						}
+					}
+				}
+				return false;
+			}
+
+		}
 		//only for TimeLeftOnMyPetBuff useage
 		private static Int64 TimeLeftOnMyPetBuffPerf(Data.Spell spell)
 		{
