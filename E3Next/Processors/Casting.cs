@@ -346,10 +346,12 @@ namespace E3Core.Processors
 				}
 				else if (E3.CurrentClass == Class.Bard && spell.CastType == CastingType.Spell)
 				{
-					return CastReturn.CAST_NOTREADY;
+					//wait for current song to finish
 					while (IsCasting())
 					{
 						MQ.Delay(50);
+						//do melee only abilities
+						Assist.CombatAbilties();
 					}
 					Sing(targetID, spell);
 					//Int32 delay = (int)MQ.Query<int>("${Me.CastTimeLeft}") + Classes.Bard.BardLatency();

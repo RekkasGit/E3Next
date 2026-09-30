@@ -315,6 +315,19 @@ namespace E3Core.Processors
         /// </summary>
         public static void CombatAbilties()
         {
+			if (AssistTargetID == 0) return;
+			Int32 targetId = MQ.Query<Int32>("${Target.ID}");
+			bool manualControl = e3util.IsManualControl();
+
+			if (MQ.Query<bool>("${Me.Feigning}"))
+			{
+				if (E3.CharacterSettings.IfFDStayDown) return;
+				E3.Bots.Broadcast("I'm Feigned, trying to stand up");
+				MQ.Cmd("/stand");
+			}
+
+			if (targetId != AssistTargetID && manualControl) return;
+
 			if (MQ.Query<bool>("${Me.Feigning}"))
 			{
 				if (E3.CharacterSettings.IfFDStayDown) return;
@@ -471,10 +484,11 @@ namespace E3Core.Processors
                             }
                            
                             Casting.Cast(AssistTargetID, ability);
+                            continue;
                         }
                         else if (ability.CastType == Data.CastingType.AA)
                         {
-							
+
                             Casting.Cast(AssistTargetID, ability);
                         }
                         else if (ability.CastType == Data.CastingType.Disc)
@@ -509,6 +523,8 @@ namespace E3Core.Processors
                         {
                             Casting.Cast(AssistTargetID, ability);
                         }
+						
+                       
                     }
 					if (E3.ActionTaken)
 					{

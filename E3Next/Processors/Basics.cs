@@ -1753,14 +1753,14 @@ namespace E3Core.Processors
 				}
 			}
 
-			if (E3.CurrentClass == Data.Class.Necromancer)
-			{
-				bool deathBloom = MQ.Query<bool>("${Bool[${Me.Buff[Death Bloom]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Death Bloom]}]}");
-				if (deathBloom)
-				{
-					return false;
-				}
-			}
+			//if (E3.CurrentClass == Data.Class.Necromancer)
+			//{
+			//	bool deathBloom = MQ.Query<bool>("${Bool[${Me.Buff[Death Bloom]}]}") || MQ.Query<bool>("${Bool[${Me.Song[Death Bloom]}]}");
+			//	if (deathBloom)
+			//	{
+			//		return false;
+			//	}
+			//}
 
 			if (MQ.Query<bool>("${Me.ItemReady[Summoned: Large Modulation Shard]}"))
 			{
@@ -1797,57 +1797,57 @@ namespace E3Core.Processors
 				}
 			}
 
-			if (E3.CurrentClass == Data.Class.Necromancer && pctMana < 50 && E3.CurrentInCombat)
-			{
-				bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}");
-				if (deathBloomReady && currentHps > 8000)
-				{
-					Spell s;
-					if (!Spell.LoadedSpellsByName.TryGetValue("Death Bloom", out s))
-					{
-						s = new Spell("Death Bloom");
-					}
-					if (s.CastType != CastingType.None)
-					{
-						Casting.Cast(0, s);
-						return true;
-					}
-				}
-			}
-			if (E3.CurrentClass == Data.Class.Cleric && pctMana < 30 && E3.CurrentInCombat)
-			{
-				bool miracleReady = MQ.Query<bool>("${Me.AltAbilityReady[Quiet Miracle]}");
-				if (miracleReady)
-				{
-					Spell s;
-					if (!Spell.LoadedSpellsByName.TryGetValue("Quiet Miracle", out s))
-					{
-						s = new Spell("Quiet Miracle");
-					}
-					if (s.CastType != CastingType.None)
-					{
-						Casting.Cast(E3.CurrentId, s);
-						return true;
-					}
-				}
-			}
-			if (E3.CurrentClass == Data.Class.Wizard && pctMana < 15 && E3.CurrentInCombat)
-			{
-				bool harvestReady = MQ.Query<bool>("${Me.AltAbilityReady[Harvest of Druzzil]}");
-				if (harvestReady)
-				{
-					Spell s;
-					if (!Spell.LoadedSpellsByName.TryGetValue("Harvest of Druzzil", out s))
-					{
-						s = new Spell("Harvest of Druzzil");
-					}
-					if (s.CastType != CastingType.None)
-					{
-						Casting.Cast(0, s);
-						return true;
-					}
-				}
-			}
+			//if (E3.CurrentClass == Data.Class.Necromancer && pctMana < 50 && E3.CurrentInCombat)
+			//{
+			//	bool deathBloomReady = MQ.Query<bool>("${Me.AltAbilityReady[Death Bloom]}");
+			//	if (deathBloomReady && currentHps > 8000)
+			//	{
+			//		Spell s;
+			//		if (!Spell.LoadedSpellsByName.TryGetValue("Death Bloom", out s))
+			//		{
+			//			s = new Spell("Death Bloom");
+			//		}
+			//		if (s.CastType != CastingType.None)
+			//		{
+			//			Casting.Cast(0, s);
+			//			return true;
+			//		}
+			//	}
+			//}
+			//if (E3.CurrentClass == Data.Class.Cleric && pctMana < 30 && E3.CurrentInCombat)
+			//{
+			//	bool miracleReady = MQ.Query<bool>("${Me.AltAbilityReady[Quiet Miracle]}");
+			//	if (miracleReady)
+			//	{
+			//		Spell s;
+			//		if (!Spell.LoadedSpellsByName.TryGetValue("Quiet Miracle", out s))
+			//		{
+			//			s = new Spell("Quiet Miracle");
+			//		}
+			//		if (s.CastType != CastingType.None)
+			//		{
+			//			Casting.Cast(E3.CurrentId, s);
+			//			return true;
+			//		}
+			//	}
+			//}
+			//if (E3.CurrentClass == Data.Class.Wizard && pctMana < 15 && E3.CurrentInCombat)
+			//{
+			//	bool harvestReady = MQ.Query<bool>("${Me.AltAbilityReady[Harvest of Druzzil]}");
+			//	if (harvestReady)
+			//	{
+			//		Spell s;
+			//		if (!Spell.LoadedSpellsByName.TryGetValue("Harvest of Druzzil", out s))
+			//		{
+			//			s = new Spell("Harvest of Druzzil");
+			//		}
+			//		if (s.CastType != CastingType.None)
+			//		{
+			//			Casting.Cast(0, s);
+			//			return true;
+			//		}
+			//	}
+			//}
 			if (E3.CurrentClass == Data.Class.Enchanter && pctMana < 50 && E3.CurrentInCombat)
 			{
 				bool manaDrawReady = MQ.Query<bool>("${Me.AltAbilityReady[Mana Draw]}");
