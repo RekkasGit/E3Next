@@ -1941,23 +1941,16 @@ namespace E3Core.Utility
 					data = data.Slice(4);
 					Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
 					data = data.Slice(4);
-
-
 					if (targetTypes != XTargetTypes.XTARGET_AUTO_HATER) continue;
-			
 					if (mobId > 0)
 					{
 						Spawn s;
 						if (_spawns.TryByID(mobId, out s))
 						{
-							//if (s.Aggressive)
-							{
 								MQ.Write($"Slot:{slotNumber} \aw[\ay{s.ID}\aw] \aw[\ag{s.Level}\aw]\ay {s.CleanName} \ag{s.ClassShortName} \aw:\ar {pctHPs}%");
-							}
 						}
 					}
 					slotNumber++;
-
 				}
 			}
 		}
@@ -2783,7 +2776,7 @@ namespace E3Core.Utility
 		{
 			if (args.Count > 0)
 			{
-				if (args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+				if (args[0].Equals("off", StringComparison.OrdinalIgnoreCase) || args[0].Equals("false", StringComparison.OrdinalIgnoreCase))
 				{
 					if (booleanObject)
 					{
@@ -2791,7 +2784,7 @@ namespace E3Core.Utility
 						E3.Bots.Broadcast($"\agTurning off {Name}");
 					}
 				}
-				else if (args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+				else if (args[0].Equals("on", StringComparison.OrdinalIgnoreCase)|| args[0].Equals("true", StringComparison.OrdinalIgnoreCase))
 				{
 					if (!booleanObject)
 					{

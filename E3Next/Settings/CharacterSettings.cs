@@ -247,6 +247,23 @@ namespace E3Core.Settings
 		[INI_Section("E3Hud_Hub_Buff", "ShowProgressBars")]
 		public bool E3Hud_Hub_Buff_ShowProgressBars = true;
 
+		[INI_Section("E3Hud_Hub_XTarget", "Detached")]
+		public bool E3Hud_Hub_XTarget_Detached = false;
+		[INI_Section("E3Hud_Hub_XTarget", "IconSize")]
+		public int E3Hud_Hub_XTarget_IconSize = 40;
+		[INI_Section("E3Hud_Hub_XTarget", "FadeTimeInMS")]
+		public Int32 E3Hud_Hub_XTarget_FadeTimeInMS = 1000;
+		[INI_Section("E3Hud_Hub_XTarget", "Alpha")]
+		public float E3Hud_Hub_XTarget_Alpha = 0.8f;
+		[INI_Section("E3Hud_Hub_XTarget", "Locked")]
+		public bool E3Hud_Hub_XTarget_Locked = false;
+
+		[INI_Section("E3Hud_Hub_XTarget", "SelectedFont")]
+		public string E3Hud_Hub_XTarget_SelectedFont = "robo";
+
+		[INI_Section("E3Hud_Hub_XTarget", "SelectedFontSize")]
+		public Int32 E3Hud_Hub_XTarget_SelectedFontSize = 16;
+
 		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor")]
 		public float[] E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor = {0.8f,0.2f, 0.2f, 0.4f };
 		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor")]
@@ -1005,6 +1022,18 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor", ParsedData_UI, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor);
 			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor", ParsedData_UI, E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor);
 			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_NameColor", ParsedData_UI, E3Hud_Hub_Buff_RGBA_ListView_NameColor);
+
+
+			LoadKeyData("E3Hud_Hub_XTarget", "Alpha", ParsedData_UI, ref E3Hud_Hub_XTarget_Alpha);
+			LoadKeyData("E3Hud_Hub_XTarget", "Detached", ParsedData_UI, ref E3Hud_Hub_XTarget_Detached);
+			LoadKeyData("E3Hud_Hub_XTarget", "IconSize", ParsedData_UI, ref E3Hud_Hub_XTarget_IconSize);
+			LoadKeyData("E3Hud_Hub_XTarget", "FadeTimeInMS", ParsedData_UI, ref E3Hud_Hub_XTarget_FadeTimeInMS);
+			LoadKeyData("E3Hud_Hub_XTarget", "Locked", ParsedData_UI, ref E3Hud_Hub_XTarget_Locked);
+			LoadKeyData("E3Hud_Hub_XTarget", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_XTarget_SelectedFont);
+			LoadKeyData("E3Hud_Hub_XTarget", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_XTarget_SelectedFontSize);
+			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_NameColor", ParsedData_UI, E3Hud_Hub_Buff_RGBA_ListView_NameColor);
+
+
 
 			LoadKeyData("E3Hud_Hub_PetBuff", "Alpha", ParsedData_UI, ref E3Hud_Hub_PetBuff_Alpha);
 			LoadKeyData("E3Hud_Hub_PetBuff", "Detached", ParsedData_UI, ref E3Hud_Hub_PetBuff_Detached);

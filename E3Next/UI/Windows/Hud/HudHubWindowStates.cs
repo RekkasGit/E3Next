@@ -1,5 +1,6 @@
 ﻿using E3Core.Processors;
 using E3Core.Settings;
+using E3Core.Utility;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.SqlServer.Server;
 using MonoCore;
@@ -25,6 +26,8 @@ namespace E3Core.UI.Windows.Hud
 			if (Core._MQ2MonoVersion >= 0.422m) ClearWindows();
 		}
 		private State_HubWindow _hubWindowState = new State_HubWindow();
+		private State_XTargetWindow _xtargetWindowState = new State_XTargetWindow();
+
 		private State_BuffWindow _buffWindowState = new State_BuffWindow();
 		private State_PetBuffWindow _petBuffWindowState = new State_PetBuffWindow();
 		private State_DebuffWindow _debuffWindowState = new State_DebuffWindow();
@@ -42,6 +45,10 @@ namespace E3Core.UI.Windows.Hud
 			if (type == typeof(State_HubWindow))
 			{
 				return (T)(object)_hubWindowState;
+			}
+			if (type == typeof(State_XTargetWindow))
+			{
+				return (T)(object)_xtargetWindowState;
 			}
 			if (type == typeof(State_BuffWindow))
 			{
@@ -153,6 +160,61 @@ namespace E3Core.UI.Windows.Hud
 		public Int32 SpellIcon = 0;
 
 
+	}
+	public class State_XTargetWindow
+	{
+		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_XTarget_Alpha; set { E3.CharacterSettings.E3Hud_Hub_XTarget_Alpha = value; IsDirty = true; } }
+		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_XTarget_Detached; set { E3.CharacterSettings.E3Hud_Hub_XTarget_Detached = value; IsDirty = true; } }
+		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFont = value; IsDirty = true; } }
+		public Int32 SelectedFontSize { get => E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFontSize; set { E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFontSize = value; IsDirty = true; } }
+
+		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_XTarget_IconSize; set { E3.CharacterSettings.E3Hud_Hub_XTarget_IconSize = value; IsDirty = true; } }
+		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_XTarget_Locked; set { E3.CharacterSettings.E3Hud_Hub_XTarget_Locked = value; IsDirty = true; } }
+	
+		public float[] XTargetListView_ProgressBGColor;
+		public float[] RGBA_ListView_ProgressBarBlinkColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor; }
+		public float[] RGBA_ListView_ProgressBarColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor; }
+		public float[] RGBA_ListView_NameColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_NameColor; }
+
+		public bool IsDirty = false;
+
+		public HashSet<Int32> PreviousBuffs = new HashSet<Int32>();
+		public Dictionary<Int32, Int64> NewBuffsTimeStamps = new Dictionary<Int32, Int64>();
+		public string PreviousBuffInfo = string.Empty;
+
+		public string WindowName = $"E3 XTarget Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+		public Int64 LastUpdated = 0;
+		public Int64 LastUpdateInterval = 250;
+		public List<TableRow_XTargetInfo> XTargetInfo = new List<TableRow_XTargetInfo>();
+
+
+		private int fadeTimeInMS = 1000;
+		public double FadeRatio = 0;
+
+		public State_XTargetWindow()
+		{
+			if (!Debugger.IsAttached)
+			{
+				XTargetListView_ProgressBGColor = GetRGBAFloatsFromColor(imgui_GetColorU32((int)ImGuiCol.WindowBg, 1));
+			}
+			else
+			{
+				XTargetListView_ProgressBGColor = new float[4] { 0, 0, 0, 0 };
+			}
+			FadeRatio = ((double)255) / E3.CharacterSettings.E3Hud_Hub_Buff_FadeTimeInMS;
+			IsDirty = false;
+			//prepopulate the xtarget information as it frankly never changes.
+
+			for(Int32 i  = 0; i < e3util.XtargetMax; i++)
+			{
+				XTargetInfo.Add(new TableRow_XTargetInfo(-1));
+			}
+		}
+
+		public void UpdateSettings_WithoutSaving()
+		{
+			IsDirty = false;
+		}
 	}
 	public class State_BuffWindow
 	{

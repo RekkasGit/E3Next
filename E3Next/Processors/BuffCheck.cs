@@ -25,8 +25,6 @@ namespace E3Core.Processors
 		//needs to be refreshed every so often in case of dispels
 		//maybe after combat?
 		public static Dictionary<Int32, SpellTimer> _buffTimers = new Dictionary<Int32, SpellTimer>();
-
-
 		private static Dictionary<string, Int64> _rebuffOverride = new Dictionary<string, long>();
 		private static Int64 _nextGroupBuffRequestCheckTime = 0;
 		private static Int64 _nextGroupBuffRequestCheckTimeInterval = 1000;
@@ -41,11 +39,11 @@ namespace E3Core.Processors
 		public static ConcurrentDictionary<Int32, Spell> BuffInfoCache = new ConcurrentDictionary<int, Spell>();
 		public static ConcurrentDictionary<Int32, Int32> BuffCacheLookupQueue = new ConcurrentDictionary<int, int>();
 
-		private static Int64 _nextBotCacheCheckTime = 0;
-		private static Int64 _nextBotCacheCheckTimeInterval = 1000;
 		private static Int64 _nextInstantBuffRefresh = 0;
 		private static Int64 _nextInstantRefreshTimeInterval = 250;
-		private static List<String> _keyList = new List<String>();
+
+		private static bool _disableCombatCheck = false;
+
 		//private static Int64 _printoutTimer;
 		private static Data.Spell _selectAura = null;
 		private static Int64 _nextBuffCheck = 0;
@@ -110,13 +108,36 @@ namespace E3Core.Processors
 					E3.Bots.BroadcastCommandToGroup($"/removebuff {buffToDrop}");
 				}
 			});
-			EventProcessor.RegisterCommand("/e3buffs-clear", (x) =>
+			EventProcessor.RegisterCommand("/e3buffs", (x) =>
 			{
-				DropAllBuffs();
-				if (x.args.Count == 0)
+				if (x.args.Count > 0)
 				{
-					E3.Bots.BroadcastCommandToGroup($"/e3buffs-clear me");
+					string arg = x.args[0];
+
+					if(String.Compare(arg,"clear",true) == 0)
+					{
+						DropAllBuffs();
+						if (x.args.Count == 0)
+						{
+							E3.Bots.BroadcastCommandToGroup($"/e3buffs-clear me");
+						}
+					}
+					else if(String.Compare(arg,"combat-check",true)==0)
+					{
+						x.args.RemoveAt(0);
+						e3util.ToggleBooleanSetting(ref _disableCombatCheck, "Disable buff combat checks", x.args);
+						E3.Bots.BroadcastCommand($"/e3buffs combat-check-broadcast {_disableCombatCheck}",false,x);
+					}
+					else if (String.Compare(arg, "combat-check-broadcast", true) == 0)
+					{
+						if (e3util.FilterMe(x)) return;
+						x.args.RemoveAt(0);
+						e3util.ToggleBooleanSetting(ref _disableCombatCheck, "Disable buff combat checks", x.args);
+					}
+
 				}
+
+				
 			});
 			EventProcessor.RegisterCommand("/dropbuffid", (x) =>
 			{
@@ -138,15 +159,7 @@ namespace E3Core.Processors
 
 			});
 
-			EventProcessor.RegisterCommand("/e3rebuff", (x) =>
-			{
-
-				//what shall we rebuff?
-				//how long should this override last?
-
-
-
-			});
+		
 			EventProcessor.RegisterCommand("/blockbuff", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -722,30 +735,24 @@ namespace E3Core.Processors
 							}
 
 						}
-						if(!Assist.IsAssisting)
-						{
-							//using (_log.Trace("Buffs-Self"))
-							{
-
-								if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
-
-							}
-
-						}
 						//if not manual control, and not in combat and your either not following or standing still for 10 sec
 						//if manual control, and not in combat and wait at least 3 seconds of standing still before you buff
-						if ((!isManualControl && !inCombat && (IsNotFollowing || Movement.StandingStillForTimePeriod()) && Movement.MillisecondsSinceLastFD(3000))
+						if ((!isManualControl && (!inCombat || _disableCombatCheck) && (IsNotFollowing || Movement.StandingStillForTimePeriod()) && Movement.MillisecondsSinceLastFD(3000))
 							  || (isManualControl && !inCombat && Movement.StandingStillForTimePeriod(3000) && Movement.MillisecondsSinceLastFD(3000)))
 						{
 
-							if (!E3.CurrentInCombat)
+							if (!E3.CurrentInCombat || _disableCombatCheck)
 							{
 								//using (_log.Trace("Buffs-Aura"))
 								{
 									if (!E3.ActionTaken) BuffAuras();
 
 								}
-								
+								//using (_log.Trace("Buffs-Self"))
+								{
+
+									if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
+								}
 								//using (_log.Trace("Buffs-Bot"))
 								{
 									if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.BotBuffs);
