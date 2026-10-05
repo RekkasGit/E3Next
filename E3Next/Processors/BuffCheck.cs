@@ -26,8 +26,8 @@ namespace E3Core.Processors
 		//maybe after combat?
 		public static Dictionary<Int32, SpellTimer> _buffTimers = new Dictionary<Int32, SpellTimer>();
 
-		
 
+		private static Dictionary<string, Int64> _rebuffOverride = new Dictionary<string, long>();
 		private static Int64 _nextGroupBuffRequestCheckTime = 0;
 		private static Int64 _nextGroupBuffRequestCheckTimeInterval = 1000;
 		private static Int64 _nextRaidBuffRequestCheckTime = 0;
@@ -137,8 +137,16 @@ namespace E3Core.Processors
 				ClearBuffTimers();
 
 			});
-			
 
+			EventProcessor.RegisterCommand("/e3rebuff", (x) =>
+			{
+
+				//what shall we rebuff?
+				//how long should this override last?
+
+
+
+			});
 			EventProcessor.RegisterCommand("/blockbuff", (x) =>
 			{
 				if (x.args.Count > 0)
@@ -714,7 +722,16 @@ namespace E3Core.Processors
 							}
 
 						}
+						if(!Assist.IsAssisting)
+						{
+							//using (_log.Trace("Buffs-Self"))
+							{
 
+								if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
+
+							}
+
+						}
 						//if not manual control, and not in combat and your either not following or standing still for 10 sec
 						//if manual control, and not in combat and wait at least 3 seconds of standing still before you buff
 						if ((!isManualControl && !inCombat && (IsNotFollowing || Movement.StandingStillForTimePeriod()) && Movement.MillisecondsSinceLastFD(3000))
@@ -728,11 +745,7 @@ namespace E3Core.Processors
 									if (!E3.ActionTaken) BuffAuras();
 
 								}
-								//using (_log.Trace("Buffs-Self"))
-								{
-									if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.SelfBuffs);
-
-								}
+								
 								//using (_log.Trace("Buffs-Bot"))
 								{
 									if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.BotBuffs);

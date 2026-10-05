@@ -1302,6 +1302,10 @@ namespace E3Core.Utility
 						break;
 					}
 				}
+
+
+				
+				
 			}
 		}
 		public static char[] GetBuffDataForPubSubHighPerf(out int returnLength,out int buffCount,out int songCount)
@@ -1915,6 +1919,47 @@ namespace E3Core.Utility
 				return true;
 			}
 			return false;
+		}
+
+		public unsafe static void PrintXTargetData()
+		{
+			unsafe
+			{
+				int length;
+				byte* p;
+				p = MQ.GetXtargetDataPtr(out length);
+				ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+				Int32 slotNumber = 1;
+				while (data.Length > 0)
+				{
+					XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+
+					Int32 mobId = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+
+
+					if (targetTypes != XTargetTypes.XTARGET_AUTO_HATER) continue;
+			
+					if (mobId > 0)
+					{
+						Spawn s;
+						if (_spawns.TryByID(mobId, out s))
+						{
+							//if (s.Aggressive)
+							{
+								MQ.Write($"Slot:{slotNumber} \aw[\ay{s.ID}\aw] \aw[\ag{s.Level}\aw]\ay {s.CleanName} \ag{s.ClassShortName} \aw:\ar {pctHPs}%");
+							}
+						}
+					}
+					slotNumber++;
+
+				}
+			}
 		}
 
 		public unsafe static Int32 GetXTargetMinAggro(ReadOnlySpan<byte> input_data)

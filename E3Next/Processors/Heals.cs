@@ -86,7 +86,13 @@ namespace E3Core.Processors
 						_useXTargetCommand = true;
 						//first we need to know what type of command this is
 						string command = x.args[0].ToLower();
-						if (command == "add")
+						if (command == "list")
+						{
+
+							e3util.PrintXTargetData();
+
+						}
+						else if (command == "add")
 						{
 							if (x.args.Count < 2) return;
 							string target = x.args[1].ToLower();
@@ -160,6 +166,10 @@ namespace E3Core.Processors
 						{
 							_useXTargetCommand = true;//turn auto on
 						}
+					}
+					else
+					{
+						e3util.PrintXTargetData();
 					}
 				}
 			}, "setup for xtarget healing and what not");

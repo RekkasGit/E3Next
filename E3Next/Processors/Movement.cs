@@ -40,6 +40,7 @@ namespace E3Core.Processors
         private static IMQ MQ = E3.MQ;
         private static ISpawns _spawns = E3.Spawns;
         public static DoorDataFile _doorData = new DoorDataFile();
+        private static Int64 _lastGoodLos = 0;
         private static Int64 _nextAnchorCheck = 0;
         private static Int64 _nextAnchorCheckInterval = 500;
         public static Int64 _nextFollowCheck = 0;
@@ -282,6 +283,12 @@ namespace E3Core.Processors
 
                 var distance = e3util.GetDistanceFromMe(c_x, c_y, c_z);
                 var inLoS = MQ.Query<bool>($"${{Spawn[{E3FollowTargetName}].LineOfSight}}");
+
+                if (inLoS)
+                {
+                    _lastGoodLos = Core.StopWatch.ElapsedMilliseconds;
+                }
+
                 bool isStuck = MQ.Query<bool>("${MoveUtils.Stuck}");
 				if (distance > 400)
                 {
@@ -289,7 +296,7 @@ namespace E3Core.Processors
                     path.Clear();
                     return;
                 }
-                else if(distance > (decimal)_followMeDistance || !inLoS)
+                else if(distance > (decimal)_followMeDistance || (!inLoS && (Core.StopWatch.ElapsedMilliseconds - _lastGoodLos)>3000))
                 {
 					if (!Debugger.IsAttached)
 					{
