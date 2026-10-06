@@ -105,9 +105,22 @@ namespace E3Core.UI.Windows.Hud
 		{
 			if (Debugger.IsAttached) return;
 			var state = _state.GetState<State_HubWindow>();
-
+			var xtarget_State = _state.GetState<State_XTargetWindow>();
 			if (Core._MQ2MonoVersion < 0.41m) return;
 			E3ImGUI.RegisterWindow(state.WindowName, RenderHub);
+			E3ImGUI.RegisterWindow(xtarget_State.WindowName, RenderXTargetInfo);
+
+			EventProcessor.RegisterCommand("/e3hud_xtarget", (x) =>
+			{
+				if (Core._MQ2MonoVersion < 0.422m)
+				{
+					MQ.Write("This requires MQ2Mono 0.421 or greater");
+					return;
+				}
+				var xtarget_state = _state.GetState<State_XTargetWindow>();
+				ToggleGenericWindow(xtarget_state);
+				
+			}, "toggle xtarget window");
 
 			EventProcessor.RegisterCommand("/e3hud_hub", (x) =>
 			{
@@ -116,32 +129,26 @@ namespace E3Core.UI.Windows.Hud
 					MQ.Write("This requires MQ2Mono 0.421 or greater");
 					return;
 				}
-				if (x.args.Count > 0)
-				{
+				var hub_state = _state.GetState<State_HubWindow>();
 
-
-					//float.TryParse(x.args[0], out state.WindowAlpha);
-					//MQ.Write($"Setting alpha to {_windowAlpha}");
-
-				}
-				ToggleWindow();
+				ToggleGenericWindow(hub_state);
 			}, "toggle hub window");
 		}
-		public static void ToggleWindow()
+		public static void ToggleGenericWindow(State_BaseWindow state)
 		{
 			try
 			{
-				var state = _state.GetState<State_HubWindow>();
-
 				if (!_windowInitialized)
 				{
 					_windowInitialized = true;
 					imgui_Begin_OpenFlagSet(state.WindowName, true);
+					state.Show = true;
 				}
 				else
 				{
 					bool open = imgui_Begin_OpenFlagGet(state.WindowName);
 					bool newState = !open;
+					state.Show = newState;
 					imgui_Begin_OpenFlagSet(state.WindowName, newState);
 				}
 				_imguiContextReady = true;
@@ -152,6 +159,7 @@ namespace E3Core.UI.Windows.Hud
 				_imguiContextReady = false;
 			}
 		}
+		
 		private static (float r, float g, float b, float a) GetAggroSeverityColor(double distance)
 		{
 
@@ -1478,7 +1486,7 @@ namespace E3Core.UI.Windows.Hud
 		private static void RefreshPeerAAInfo()
 		{
 			var state = _state.GetState<State_PeerAAWindow>();
-			if (!state.IsOpen) return;
+			if (!state.Show) return;
 			if (!e3util.ShouldCheck(ref state.LastUpdated, state.UpdateInterval)) return;
 
 			var hubState = _state.GetState<State_HubWindow>();
@@ -1674,8 +1682,8 @@ namespace E3Core.UI.Windows.Hud
 						var peerAAState = _state.GetState<State_PeerAAWindow>();
 						if (imgui_Button("##PeerAAToggle"))
 						{
-							peerAAState.IsOpen = !peerAAState.IsOpen;
-							imgui_Begin_OpenFlagSet(peerAAState.WindowName, peerAAState.IsOpen);
+							peerAAState.Show = !peerAAState.Show;
+							imgui_Begin_OpenFlagSet(peerAAState.WindowName, peerAAState.Show);
 						}
 					}
 					float windowWidth = imgui_GetWindowWidth();
@@ -1709,7 +1717,16 @@ namespace E3Core.UI.Windows.Hud
 										if (imgui_MenuItem("Lock")) state.Locked = true;
 									}
 								}
+								imgui_Separator();
+								var peerAAState = _state.GetState<State_PeerAAWindow>();
 
+								if (imgui_Checkbox("##show_peer_aa", peerAAState.Show))
+								{
+									peerAAState.Show = imgui_Checkbox_Get("##show_peer_aa");
+									//imgui_Begin_OpenFlagSet(peerAAState.WindowName, peerAAState.Show);
+								}
+								imgui_SameLine(0);
+								imgui_Text("Show Peer AA");
 								imgui_Separator();
 								using (var style = PushStyle.Aquire())
 								{
@@ -2862,9 +2879,9 @@ namespace E3Core.UI.Windows.Hud
 				targetInfoState.Detached = false;
 			}
 			var peerAAState = _state.GetState<State_PeerAAWindow>();
-			if (peerAAState.IsOpen && !imgui_Begin_OpenFlagGet(peerAAState.WindowName))
+			if (peerAAState.Show && !imgui_Begin_OpenFlagGet(peerAAState.WindowName))
 			{
-				peerAAState.IsOpen = false;
+				peerAAState.Show = false;
 			}
 		}
 		private static void RenderHub()
@@ -2888,7 +2905,7 @@ namespace E3Core.UI.Windows.Hud
 							RefreshPetBuffInfo();
 							RefreshPlayerInfo();
 							RefreshTargetInfo();
-							RefreshXTargetInfo();
+							
 
 						}
 						catch (Exception ex)
@@ -2901,7 +2918,7 @@ namespace E3Core.UI.Windows.Hud
 						{
 							RenderSpellInfo();
 							RenderHub_MainWindow();
-							RenderXTargetInfo();
+							
 
 						}
 						catch (Exception ex)
@@ -2936,7 +2953,7 @@ namespace E3Core.UI.Windows.Hud
 								RenderHub_TryDetached(buttonState.WindowName, buttonState.Detached, RenderHotbuttons, buttonState.WindowAlpha, noTitleBar: true, locked: buttonState.Locked);
 							}
 							var peerAAState = _state.GetState<State_PeerAAWindow>();
-							if (peerAAState.IsOpen)
+							if (peerAAState.Show)
 							{
 								RenderHub_TryDetached(peerAAState.WindowName, true, RenderPeerAAWindow, peerAAState.WindowAlpha);
 							}
@@ -3746,8 +3763,13 @@ namespace E3Core.UI.Windows.Hud
 
 			var state = _state.GetState<State_XTargetWindow>();
 
+
+
+
 			if (state.Show)
 			{
+
+				RefreshXTargetInfo();
 
 				using (var window = ImGUIWindow.Aquire())
 				{

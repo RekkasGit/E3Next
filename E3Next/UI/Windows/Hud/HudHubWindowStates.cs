@@ -97,10 +97,17 @@ namespace E3Core.UI.Windows.Hud
 		}
 
 	}
-	public class State_HubWindow
+	public class State_BaseWindow
+	{
+		public string WindowName;
+		public bool IsInitlized = false;
+		public Boolean Show = true;
+		public bool IsDirty = false;
+	}
+	public class State_HubWindow : State_BaseWindow
 	{
 		public HashSet<String> GroupMembersAdded = new HashSet<string>();
-		public string WindowName = $"E3 Main Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+		
 		private float _windowAlpha = 0.8f;
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_Alpha; set { E3.CharacterSettings.E3Hud_Hub_Alpha = value; IsDirty = true; } }
  		public bool ShowColumnHP { get => E3.CharacterSettings.E3Hud_Hub_ShowColumnHP; set { E3.CharacterSettings.E3Hud_Hub_ShowColumnHP = value; IsDirty = true; } }
@@ -138,11 +145,12 @@ namespace E3Core.UI.Windows.Hud
 
 		public int SelectedRow = -1;
 		public string SelectedToonName = String.Empty;
-		public bool IsDirty = false;
+		
 
 		public State_HubWindow()
 		{
-				IsDirty = false;
+			WindowName = $"E3 Main Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+			IsDirty = false;
 		}
 
 
@@ -161,9 +169,9 @@ namespace E3Core.UI.Windows.Hud
 
 
 	}
-	public class State_XTargetWindow
+	public class State_XTargetWindow : State_BaseWindow
 	{
-		public Boolean Show = true;
+	
 	
 		
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_XTarget_Alpha; set { E3.CharacterSettings.E3Hud_Hub_XTarget_Alpha = value; IsDirty = true; } }
@@ -178,14 +186,11 @@ namespace E3Core.UI.Windows.Hud
 		public float[] RGBA_ListView_ProgressBarBlinkColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor; }
 		public float[] RGBA_ListView_ProgressBarColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor; }
 		public float[] RGBA_ListView_NameColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_NameColor; }
-
-		public bool IsDirty = false;
-
 		public HashSet<Int32> PreviousBuffs = new HashSet<Int32>();
 		public Dictionary<Int32, Int64> NewBuffsTimeStamps = new Dictionary<Int32, Int64>();
 		public string PreviousBuffInfo = string.Empty;
 
-		public string WindowName = $"E3 XTarget Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+		
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 250;
 		public List<TableRow_XTargetInfo> XTargetInfo = new List<TableRow_XTargetInfo>();
@@ -196,6 +201,7 @@ namespace E3Core.UI.Windows.Hud
 
 		public State_XTargetWindow()
 		{
+			WindowName = $"E3 XTarget Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 			if (!Debugger.IsAttached)
 			{
 				XTargetListView_ProgressBGColor = GetRGBAFloatsFromColor(imgui_GetColorU32((int)ImGuiCol.WindowBg, 1));
@@ -219,7 +225,7 @@ namespace E3Core.UI.Windows.Hud
 			IsDirty = false;
 		}
 	}
-	public class State_BuffWindow
+	public class State_BuffWindow : State_BaseWindow
 	{
 
 	
@@ -251,13 +257,10 @@ namespace E3Core.UI.Windows.Hud
 		public float[] RGBA_ListView_ProgressBarColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor; }
 		public float[] RGBA_ListView_NameColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_NameColor; }
 
-		public bool IsDirty = false;
-
 		public HashSet<Int32> PreviousBuffs = new HashSet<Int32>();
 		public Dictionary<Int32, Int64> NewBuffsTimeStamps = new Dictionary<Int32, Int64>();
 		public string PreviousBuffInfo = string.Empty;
 		
-		public string WindowName = $"E3 Buff Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;
 		public List<TableRow_BuffInfo> BuffInfo = new List<TableRow_BuffInfo>();
@@ -268,6 +271,7 @@ namespace E3Core.UI.Windows.Hud
 	
 		public State_BuffWindow()
 		{
+			WindowName = $"E3 Buff Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 			if (!Debugger.IsAttached)
 			{
 				BuffListView_ProgressBGColor = GetRGBAFloatsFromColor(imgui_GetColorU32((int)ImGuiCol.WindowBg, 1));
@@ -288,7 +292,7 @@ namespace E3Core.UI.Windows.Hud
 
 	
 
-	public class State_PetBuffWindow
+	public class State_PetBuffWindow:State_BaseWindow
 	{
 
 		public ConcurrentDictionary<Int32, BuffCacheEntry> BuffCache = new ConcurrentDictionary<int, BuffCacheEntry>();
@@ -313,13 +317,11 @@ namespace E3Core.UI.Windows.Hud
 				IsDirty = true;
 			}
 		}
-		public bool IsDirty = false;
-
+	
 		public HashSet<Int32> PreviousBuffs = new HashSet<Int32>();
 		public Dictionary<Int32, Int64> NewBuffsTimeStamps = new Dictionary<Int32, Int64>();
 		public string PreviousBuffInfo = string.Empty;
 
-		public string WindowName = $"E3 Pet Buff Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public Int64 LastUpdated = 0;
 		public Int64 LastUpdateInterval = 500;
 		public List<TableRow_BuffInfo> BuffInfo = new List<TableRow_BuffInfo>();
@@ -332,6 +334,7 @@ namespace E3Core.UI.Windows.Hud
 
 		public State_PetBuffWindow()
 		{
+			WindowName = $"E3 Pet Buff Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 			FadeRatio = ((double)255) / E3.CharacterSettings.E3Hud_Hub_PetBuff_FadeTimeInMS;
 			IsDirty = false;
 		}
@@ -341,7 +344,7 @@ namespace E3Core.UI.Windows.Hud
 			IsDirty = false;
 		}
 	}
-	public class State_SongWindow
+	public class State_SongWindow : State_BaseWindow
 	{
 		private bool _detached = false;
 		private float _windowAlpha = 0.8f;
@@ -368,14 +371,13 @@ namespace E3Core.UI.Windows.Hud
 			}
 		}
 		public List<TableRow_BuffInfo> SongInfo = new List<TableRow_BuffInfo>();
-		public string WindowName = $"E3 Song Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public Int32 FontSize = 8;
 		private int fadeTimeInMS = 1000;
 		public double FadeRatio = 0;
-		public bool IsDirty = false;
 		
 		public State_SongWindow()
 		{
+			WindowName = $"E3 Song Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 			FadeRatio = ((double)255) / E3.CharacterSettings.E3Hud_Hub_Song_FadeTimeInMS;
 			IsDirty = false;
 		}
@@ -387,10 +389,9 @@ namespace E3Core.UI.Windows.Hud
 
 
 
-	public class State_HotbuttonsWindow
+	public class State_HotbuttonsWindow:State_BaseWindow
 	{	
-		public string WindowName = $"E3 Hotbutton Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
-		public bool IsDirty = false;
+		
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_Alpha; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_Detached; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_Detached = value; IsDirty = true; } }
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_HotButtons_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_HotButtons_SelectedFont = value; IsDirty = true; } }
@@ -404,6 +405,7 @@ namespace E3Core.UI.Windows.Hud
 
 		public State_HotbuttonsWindow()
 		{
+			WindowName = $"E3 Hotbutton Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 			IsDirty = false;
 		}
 
@@ -413,7 +415,7 @@ namespace E3Core.UI.Windows.Hud
 		}
 	}
 
-	public class State_DebuffWindow
+	public class State_DebuffWindow:State_BaseWindow
 	{
 
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_Debuff_Alpha; set { E3.CharacterSettings.E3Hud_Hub_Debuff_Alpha = value; IsDirty = true; } }
@@ -436,15 +438,14 @@ namespace E3Core.UI.Windows.Hud
 				IsDirty = true;
 			}
 		}
-		public bool IsDirty = false;
-
+	
 		public List<TableRow_BuffInfo> DebuffInfo = new List<TableRow_BuffInfo>();
-		public string WindowName = $"E3 Debuff Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public Int32 FontSize = 8;
 		private int fadeTimeInMS = 1000;
 		public double FadeRatio = 0;
 		public State_DebuffWindow()
 		{
+			WindowName = $"E3 Debuff Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 			FadeRatio = ((double)255) / E3.CharacterSettings.E3Hud_Hub_Debuff_FadeTimeInMS;
 			IsDirty = false;
 		}
@@ -457,7 +458,7 @@ namespace E3Core.UI.Windows.Hud
 		}
 
 	}
-	public class State_PlayerInfoWindow
+	public class State_PlayerInfoWindow:State_BaseWindow
 	{
 		public bool InCombat = false;
 		string _playerInfoDisplay = String.Empty;
@@ -465,7 +466,6 @@ namespace E3Core.UI.Windows.Hud
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_SelectedFont = value; IsDirty = true; } }
 		public Int32 SelectedFontSize { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_SelectedFontSize; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_SelectedFontSize = value; IsDirty = true; } }
 
-		public string WindowName = $"E3 PlayerInfo Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Detached = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Locked; set { E3.CharacterSettings.E3Hud_Hub_PlayerInfo_Locked = value; IsDirty = true; } }
@@ -513,6 +513,7 @@ namespace E3Core.UI.Windows.Hud
 		public string Display = "";
 		public State_PlayerInfoWindow()
 		{
+			WindowName = $"E3 PlayerInfo Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 			IsDirty = false;
 		}
 		public void UpdateSettings_WithoutSaving()
@@ -520,37 +521,46 @@ namespace E3Core.UI.Windows.Hud
 			IsDirty = false;
 		}
 	}
-	public class State_PeerAAWindow
+	public class State_PeerAAWindow:State_BaseWindow
 	{
-		public string WindowName = $"E3 Peer AA - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+		
 		public float WindowAlpha = 0.8f;
-		public bool IsDirty = false;
-		public bool IsOpen = false;
 		public List<(string Name, string AAPoints)> PeerAAInfo = new List<(string Name, string AAPoints)>();
 		public Int64 LastUpdated = 0;
 		public Int64 UpdateInterval = 1000;
+		public State_PeerAAWindow()
+		{
+			WindowName = $"E3 Peer AA - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+			IsDirty = false;
+			Show = false;
+		}
 	}
-	public class State_SpellInfoWindow
+	public class State_SpellInfoWindow:State_BaseWindow
 	{
 		public Data.Spell SpellInfo_Data = null;
 		public Boolean SpellInfo_Show = false;
-		public string WindowName = "E3 Spell Info";
+	
+		public State_SpellInfoWindow()
+		{
+			WindowName = "E3 Spell Info";
+			IsDirty = false;
+		}
 
 	}
-	public class State_TargetInfoWindow
+	public class State_TargetInfoWindow:State_BaseWindow
 	{
 	
 		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_IconSize; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_IconSize = value; IsDirty = true; } }
 
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_SelectedFont = value; IsDirty = true; } }
 		public Int32 SelectedFontSize { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_SelectedFontSize; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_SelectedFontSize = value; IsDirty = true; } }
-		public string WindowName = $"E3 TargetInfo Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+		
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Alpha; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Detached = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_Locked; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_Locked = value; IsDirty = true; } }
 		// 0=off (con-colored text), 1=border around name, 2=border around name+HP
 		public int ConColorBorder { get => E3.CharacterSettings.E3Hud_Hub_TargetInfo_ConColorBorder; set { E3.CharacterSettings.E3Hud_Hub_TargetInfo_ConColorBorder = value; IsDirty = true; } }
-		public bool IsDirty = false;
+	
 		public Int64 TargetInfoLastUpdated = 0;
 		public Int64 TargetInfoUpdateInterval = 100;
 		public bool HasTarget = false;
@@ -584,6 +594,7 @@ namespace E3Core.UI.Windows.Hud
 
 		public State_TargetInfoWindow()
 		{
+			WindowName = $"E3 TargetInfo Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 			IsDirty = false;
 		}
 		public void UpdateSettings_WithoutSaving()
