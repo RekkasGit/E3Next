@@ -163,6 +163,9 @@ namespace E3Core.UI.Windows.Hud
 	}
 	public class State_XTargetWindow
 	{
+		public Boolean Show = true;
+	
+		
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_XTarget_Alpha; set { E3.CharacterSettings.E3Hud_Hub_XTarget_Alpha = value; IsDirty = true; } }
 		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_XTarget_Detached; set { E3.CharacterSettings.E3Hud_Hub_XTarget_Detached = value; IsDirty = true; } }
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFont = value; IsDirty = true; } }
@@ -207,7 +210,7 @@ namespace E3Core.UI.Windows.Hud
 
 			for(Int32 i  = 0; i < e3util.XtargetMax; i++)
 			{
-				XTargetInfo.Add(new TableRow_XTargetInfo(-1));
+				XTargetInfo.Add(new TableRow_XTargetInfo(-1,i+1));
 			}
 		}
 

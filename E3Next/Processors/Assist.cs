@@ -266,6 +266,7 @@ namespace E3Core.Processors
 								StickToAssistTarget();
 							}
 						}
+                        
                        
 
                     }
@@ -796,7 +797,21 @@ namespace E3Core.Processors
                         Rogue.RogueStrike();
 
                     }
-                    MQ.Cmd("/attack on");
+					if (E3.CharacterSettings.Assist_Type.Equals("AutoAttack", StringComparison.OrdinalIgnoreCase))
+					{
+						if (E3.CharacterSettings.Assist_MeleeStickPoint == "behindonce")
+						{
+							string delayedStrafeOption = " delaystrafe";
+							if (!E3.CharacterSettings.Assist_DelayStrafeEnabled) delayedStrafeOption = String.Empty;
+
+							MQ.Cmd($"/stick id {Assist.AssistTargetID} snaproll uw");
+							MQ.Delay(500);
+							MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
+							//MQ.Cmd($"/squelch /stick hold moveback behindonce {_assistDistance} uw{delayedStrafeOption}");
+							MQ.Cmd($"/squelch /stick off");
+						}
+					}
+					MQ.Cmd("/attack on");
 
                 }
                 else if (_rangeTypes.Contains(E3.CharacterSettings.Assist_Type, StringComparer.OrdinalIgnoreCase))
@@ -874,19 +889,21 @@ namespace E3Core.Processors
 					MQ.Cmd("/stick snaproll uw");
                     MQ.Delay(500);
                     MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
-                    MQ.Cmd($"/squelch /stick hold moveback behindonce {_assistDistance} uw{delayedStrafeOption}");
-                });
+					//MQ.Cmd($"/squelch /stick hold moveback behindonce {_assistDistance} uw{delayedStrafeOption}");
+					MQ.Cmd($"/squelch /stick off");
+				});
                 stw.Add("pin", () =>
                 {
 					string delayedStrafeOption = " delaystrafe";
                     if (!E3.CharacterSettings.Assist_DelayStrafeEnabled) delayedStrafeOption = String.Empty;
 
-					MQ.Cmd("/stick snaproll uw");
+					MQ.Cmd($"/stick id {Assist.AssistTargetID} snaproll uw");
                     MQ.Delay(500);
                     MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");
                     MQ.Cmd($"/squelch /stick hold moveback pin {_assistDistance} uw{delayedStrafeOption}");
                 });
-                stw.Add("!front", () =>
+				
+				stw.Add("!front", () =>
                 {
                     MQ.Cmd("/stick snaproll uw");
                     MQ.Delay(2000, $"${{Bool[${{Stick.Behind}} && ${{Stick.Stopped}}]}}");

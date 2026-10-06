@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using System.Web.UI.WebControls;
 using static MonoCore.E3ImGUI;
 using static System.Windows.Forms.AxHost;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace E3Core.UI.Windows.Hud
 {
@@ -533,9 +534,9 @@ namespace E3Core.UI.Windows.Hud
 					{
 						Spawn s;
 						//remember to not force an update, only check what is in cache
-						if (_spawns.TryByID(mobId, out s,false,true))
+						if (_spawns.TryByID(mobId, out s, false, true))
 						{
-							if(s.Dead)
+							if (s.Dead)
 							{
 								slotData.Reset();
 							}
@@ -543,10 +544,13 @@ namespace E3Core.UI.Windows.Hud
 							{
 								slotData.NPCID = mobId;
 								slotData.Level = s.Level;
-								slotData.CleanName = s.CleanName;
+								slotData.CleanName = $"{s.CleanName} - ({s.PctHps}%)";
 								slotData.ShortClassName = s.ClassShortName;
 								slotData.PctHPs = pctHPs;
 								slotData.PctAggro = aggroPct;
+								slotData.Distance = (int)s.Distance3D;
+								slotData.DistanceColor = GetDistanceSeverityColor(s.Distance3D);
+								slotData.NPCConColor = GetConColorRGB(s.ConColorID);
 							}
 						}
 						else
@@ -2897,6 +2901,7 @@ namespace E3Core.UI.Windows.Hud
 						{
 							RenderSpellInfo();
 							RenderHub_MainWindow();
+							RenderXTargetInfo();
 
 						}
 						catch (Exception ex)
@@ -3736,150 +3741,176 @@ namespace E3Core.UI.Windows.Hud
 			}
 		}
 
-
 		private static void RenderXTargetInfo()
 		{
-			var hubState = _state.GetState<State_HubWindow>();
-			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp);
+
 			var state = _state.GetState<State_XTargetWindow>();
 
-			
-				
-				imgui_SameLine(0);
-				float windowWidth = imgui_GetWindowWidth();
-				imgui_SameLine(0);
-				float availSpace = imgui_GetContentRegionAvailX();
-				float buttonWidth = 40;
-				float alignX = imgui_GetCursorPosX() + availSpace - buttonWidth;
-				imgui_SetCursorPosX(alignX);
+			if (state.Show)
+			{
 
-				//first we create the invis button for right click options
-				if (imgui_InvisibleButton("##XTargetInfoSettingsInvisButton", buttonWidth, 20, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
+				using (var window = ImGUIWindow.Aquire())
 				{
-				}
-				//right click options
-				using (var popup = ImGUIPopUpContext.Aquire())
-				{
-					if (popup.BeginPopupContextItem("##XTargetWindowSettingsPopup", 1))
+					imgui_SetNextWindowBgAlpha(state.WindowAlpha);
+					int flags = (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar;
+					if (state.Locked)
 					{
-						using (var style = PushStyle.Aquire())
-						{
-							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							if (state.Locked)
-							{
-								if (imgui_MenuItem("UnLock"))
-								{
-									state.Locked = false;
-								}
-							}
-							else
-							{
-								if (imgui_MenuItem("Lock"))
-								{
-									state.Locked = true;
-								}
-							}
-						}
-
-						imgui_Separator();
-						using (var style = PushStyle.Aquire())
-						{
-							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							imgui_Text("Alpha");
-						}
-						string keyForInput = "##XTargetWindow_alpha_set";
-						imgui_SetNextItemWidth(100);
-						if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
-						{
-							int updated = imgui_InputInt_Get(keyForInput);
-
-							if (updated > 255)
-							{
-								updated = 255;
-
-							}
-							if (updated < 0)
-							{
-								updated = 0;
-
-							}
-							state.WindowAlpha = ((float)updated) / 255f;
-						}
-						imgui_Separator();
-						using (var style = PushStyle.Aquire())
-						{
-							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							imgui_Text("Icon Size");
-
-						}
-						imgui_SetNextItemWidth(100);
-						if (imgui_InputInt("##XTargetWindow_icon_set", state.IconSize, 1, 20))
-						{
-							int updated = imgui_InputInt_Get("##XTargetWindow_icon_set");
-
-							if (updated > 100)
-							{
-								updated = 100;
-
-							}
-							if (updated < 25)
-							{
-								updated = 25;
-
-							}
-							state.IconSize = updated;
-						}
-
-						imgui_Separator();
-						using (var style = PushStyle.Aquire())
-						{
-							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							imgui_Text("Font");
-						}
-
-
-						using (var combo = ImGUICombo.Aquire())
-						{
-							if (combo.BeginCombo("##Select Font for XTargetBuffWindow", state.SelectedFont))
-							{
-								foreach (var pair in E3ImGUI.FontList)
-								{
-									bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
-
-									if (imgui_Selectable($"{pair.Key}", sel))
-									{
-										state.SelectedFont = pair.Key;
-									}
-								}
-							}
-						}
-						using (var style = PushStyle.Aquire())
-						{
-							style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-							imgui_Text("Font Size");
-
-						}
-						imgui_SetNextItemWidth(100);
-						keyForInput = "##XTargetWindow_fontsize_set";
-						if (imgui_InputInt(keyForInput, state.SelectedFontSize, 1, 20))
-						{
-							int updated = imgui_InputInt_Get(keyForInput);
-
-							if (updated > 100)
-							{
-								updated = 100;
-
-							}
-							if (updated < 1)
-							{
-								updated = 1;
-
-							}
-							state.SelectedFontSize = updated;
-							imgui_InputInt_Clear(keyForInput);
-						}
+						flags = flags | (int)ImGuiWindowFlags.ImGuiWindowFlags_NoMove;
+					}
+					//imgui_SetNextWindowSizeConstraints(300, 250, 500, 400);
+					if (window.Begin(state.WindowName, flags))
+					{
+						RenderXTargetInfo_Table();
+						
 					}
 				}
+			}
+
+		}
+		private static void RenderXTargetInfo_Table()
+		{
+			var hubState = _state.GetState<State_HubWindow>();
+			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_Resizable );
+			var state = _state.GetState<State_XTargetWindow>();
+
+
+
+			imgui_SameLine(0);
+			float windowWidth = imgui_GetWindowWidth();
+			imgui_SameLine(0);
+			float availSpace = imgui_GetContentRegionAvailX();
+			float buttonWidth = 40;
+			float alignX = imgui_GetCursorPosX() + availSpace - buttonWidth;
+			imgui_SetCursorPosX(alignX);
+
+			//first we create the invis button for right click options
+			if (imgui_InvisibleButton("##XTargetInfoSettingsInvisButton", buttonWidth, 10, (int)ImGuiMouseButton.Right | (int)ImGuiMouseButton.Left))
+			{
+			}
+			//right click options
+			using (var popup = ImGUIPopUpContext.Aquire())
+			{
+				if (popup.BeginPopupContextItem("##XTargetWindowSettingsPopup", 1))
+				{
+					using (var style = PushStyle.Aquire())
+					{
+						
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						if (state.Locked)
+						{
+							if (imgui_MenuItem("UnLock"))
+							{
+								state.Locked = false;
+							}
+						}
+						else
+						{
+							if (imgui_MenuItem("Lock"))
+							{
+								state.Locked = true;
+							}
+						}
+					}
+
+					imgui_Separator();
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Alpha");
+					}
+					string keyForInput = "##XTargetWindow_alpha_set";
+					imgui_SetNextItemWidth(100);
+					if (imgui_InputInt(keyForInput, (int)(state.WindowAlpha * 255), 1, 20))
+					{
+						int updated = imgui_InputInt_Get(keyForInput);
+
+						if (updated > 255)
+						{
+							updated = 255;
+
+						}
+						if (updated < 0)
+						{
+							updated = 0;
+
+						}
+						state.WindowAlpha = ((float)updated) / 255f;
+					}
+					imgui_Separator();
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Icon Size");
+
+					}
+					imgui_SetNextItemWidth(100);
+					if (imgui_InputInt("##XTargetWindow_icon_set", state.IconSize, 1, 20))
+					{
+						int updated = imgui_InputInt_Get("##XTargetWindow_icon_set");
+
+						if (updated > 100)
+						{
+							updated = 100;
+
+						}
+						if (updated < 25)
+						{
+							updated = 25;
+
+						}
+						state.IconSize = updated;
+					}
+
+					imgui_Separator();
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Font");
+					}
+
+
+					using (var combo = ImGUICombo.Aquire())
+					{
+						if (combo.BeginCombo("##Select Font for XTargetBuffWindow", state.SelectedFont))
+						{
+							foreach (var pair in E3ImGUI.FontList)
+							{
+								bool sel = string.Equals(state.SelectedFont, pair.Key, StringComparison.OrdinalIgnoreCase);
+
+								if (imgui_Selectable($"{pair.Key}", sel))
+								{
+									state.SelectedFont = pair.Key;
+								}
+							}
+						}
+					}
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Font Size");
+
+					}
+					imgui_SetNextItemWidth(100);
+					keyForInput = "##XTargetWindow_fontsize_set";
+					if (imgui_InputInt(keyForInput, state.SelectedFontSize, 1, 20))
+					{
+						int updated = imgui_InputInt_Get(keyForInput);
+
+						if (updated > 100)
+						{
+							updated = 100;
+
+						}
+						if (updated < 1)
+						{
+							updated = 1;
+
+						}
+						state.SelectedFontSize = updated;
+						imgui_InputInt_Clear(keyForInput);
+					}
+				}
+			}
 
 			//RenderBuffListView(state.SongInfo, "E3HubSongTableListView", state.IconSize, state.FadeRatio, state.FadeTimeInMS, buffState.NewBuffsTimeStamps, state.SelectedFont, state.ShowProgressBars, state.WindowAlpha, state.SelectedFontSize);
 
@@ -3893,13 +3924,18 @@ namespace E3Core.UI.Windows.Hud
 				//remove padding between rows
 				using (var stylevar = PushStyle.Aquire())
 				{
-					stylevar.PushStyleVarVec2((int)ImGuiStyleVar.CellPadding, 0, 0);
+					//stylevar.PushStyleVarVec2((int)ImGuiStyleVar.CellPadding, 5, 5);
 					using (var table = ImGUITable.Aquire())
 					{
-						if (table.BeginTable(tableName, 1, tableFlags, 0f, 0))
+						
+						if (table.BeginTable(tableName,5, tableFlags, 0f, 0))
 						{
-							//imgui_TableSetupColumn("Icon", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, state.SelectedFontSize + 8);
-							imgui_TableSetupColumn_Default("Name");
+							imgui_TableSetupColumn("Dist",(int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed,0);
+							imgui_TableSetupColumn("ID", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 0);
+							imgui_TableSetupColumn("Level", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 0);
+							imgui_TableSetupColumn("Class", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 0);
+							imgui_TableSetupColumn("Name", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0);
+							imgui_TableHeadersRow();
 
 							using (var igFont = IMGUI_Fonts.Aquire())
 							{
@@ -3909,18 +3945,47 @@ namespace E3Core.UI.Windows.Hud
 								{
 
 									imgui_TableNextRow();
-									imgui_TableSetColumnIndex(0);
+									
+									if(stats.NPCID>0)
+									{
+										imgui_TableSetColumnIndex(0);
+										var dc = stats.DistanceColor;
+										imgui_TextColored(dc.r, dc.g, dc.b, 1.0f, e3util.GetIntStr(stats.Distance));
+										
+										imgui_TableSetColumnIndex(1);
+										imgui_Text(e3util.GetIntStr(stats.NPCID));
+										imgui_TableSetColumnIndex(2);
+										var cc = stats.NPCConColor;
+										imgui_TextColored(cc.r, cc.g, cc.b, 1.0f, e3util.GetIntStr(stats.Level));
+										imgui_TableSetColumnIndex(3);
+										imgui_Text(stats.ShortClassName);
+										imgui_TableSetColumnIndex(4);
+
+									}
+									else
+									{
+										imgui_TableSetColumnIndex(0);
+										imgui_Text(String.Empty);
+										imgui_TableSetColumnIndex(1);
+										imgui_Text(String.Empty);
+										imgui_TableSetColumnIndex(2);
+										imgui_Text(String.Empty);
+										imgui_TableSetColumnIndex(3);
+										imgui_Text(String.Empty);
+										imgui_TableSetColumnIndex(4);
+									}
 
 									int smallIconSize = state.SelectedFontSize;
 									//imgui_DrawSpellIconByIconIndex(stats.iconID, smallIconSize);
-									imgui_TableSetColumnIndex(1);
+									//imgui_TableSetColumnIndex(1);
 
 									// Yellow text for buffs expiring soon (< 5 minutes)
-								
+
 									float textPosX, textPosY;
 
-									
 
+									if (stats.NPCID > 0)
+									{
 										using (var style = PushStyle.Aquire())
 										{
 											bool show_alternate = (int)(((float)Core.StopWatch.ElapsedMilliseconds / 1000f) * 1.0f) % 2 == 0;
@@ -3957,18 +4022,20 @@ namespace E3Core.UI.Windows.Hud
 										//float textPosX = barPos[0] + (barSize[0] - textSize[0]) * 0.5f;
 										textPosX = barPos[0];
 										textPosY = barPos[1] + (barSize[1] - state.SelectedFontSize) * 0.5f;
-									
-									imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(state.RGBA_ListView_NameColor[0], state.RGBA_ListView_NameColor[1], state.RGBA_ListView_NameColor[2], state.RGBA_ListView_NameColor[3]), stats.CleanName);
 
+										imgui_GetWindowDrawList_AddText(textPosX, textPosY, GetColor(state.RGBA_ListView_NameColor[0], state.RGBA_ListView_NameColor[1], state.RGBA_ListView_NameColor[2], state.RGBA_ListView_NameColor[3]), stats.CleanName);
+										//float textStop = imgui_CalcTextSizeX(stats.CleanName);
+										//imgui_GetWindowDrawList_AddText(textPosX + textStop, textPosY, GetColor(state.RGBA_ListView_NameColor[0], state.RGBA_ListView_NameColor[1], state.RGBA_ListView_NameColor[2], state.RGBA_ListView_NameColor[3]), "Testing more text");
+										imgui_SameLine(0, 4);
+									}
 									
-									imgui_SameLine(0, 4);
 									bool selected = false;
 									string selectableKey = String.Empty;
 									ValueStringBuilder sb = new ValueStringBuilder(64);
 									try
 									{
 										sb.Append("##XTarget_TargetNPC_");
-										sb.Append(e3util.GetIntStr(stats.NPCID));
+										sb.Append(e3util.GetIntStr(stats.SlotID));
 										selectableKey = StringPool.Shared.GetOrAdd(sb.AsSpan());
 									}
 									finally
@@ -3979,40 +4046,12 @@ namespace E3Core.UI.Windows.Hud
 									if (imgui_Selectable_WithFlags(selectableKey, selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns))
 									{
 										// Left-click command
-										string command = $"/target id {stats.NPCID}";
-										if (!String.IsNullOrWhiteSpace(hubState.SelectedToonForBuffs))
+										if(stats.NPCID>0)
 										{
-											E3.Bots.BroadcastCommandToPerson(hubState.SelectedToonForBuffs, command);
-										}
-										else
-										{
+											string command = $"/target id {stats.NPCID}";
 											E3ImGUI.MQCommandQueue.Enqueue(command);
 										}
 									}
-									
-									//if (imgui_IsItemHovered())
-									//{
-									//	using (var tooltip = ImGUIToolTip.Aquire())
-									//	{
-									//		imgui_Text($"Spell: {stats.Name}");
-									//		imgui_Text($"SpellID: {stats.SpellID}");
-									//		imgui_Text($"Duration: {stats.HoverOver_Display_Duration}");
-									//		if (!String.IsNullOrWhiteSpace(stats.CounterType))
-									//		{
-									//			imgui_Text($"CounterType: {stats.CounterType}");
-									//			imgui_Text($"CounterNumber: {stats.Display_CounterNumber}");
-									//		}
-									//		if (stats.Spell != null && stats.Spell.SpellEffects.Count > 0)
-									//		{
-									//			imgui_Separator();
-									//			foreach (var effect in stats.Spell.SpellEffects)
-									//			{
-									//				if (!string.IsNullOrWhiteSpace(effect))
-									//					imgui_Text(effect);
-									//			}
-									//		}
-									//	}
-									//}
 
 									// Right-click context menu
 									using (var popup = ImGUIPopUpContext.Aquire())
@@ -4029,7 +4068,7 @@ namespace E3Core.UI.Windows.Hud
 										{
 											sb.Append(tableName);
 											sb.Append("_Context_");
-											sb.Append(e3util.GetIntStr(stats.NPCID));
+											sb.Append(e3util.GetIntStr(stats.SlotID));
 											selectableKey = StringPool.Shared.GetOrAdd(sb.AsSpan());
 										}
 										finally
@@ -6004,15 +6043,21 @@ namespace E3Core.UI.Windows.Hud
 			public XTargetTypes StateType = XTargetTypes.XTARGET_AUTO_HATER;
 
 			public Int32 NPCID = 0;
+			public Int32 SlotID = 0;
 			public Int32 PctHPs = 0;
 			public Int32 PctAggro = 0;
 			public String CleanName;
 			public String ShortClassName;
 			public Int32 Level;
+			public Int32 Distance;
+			public (float r, float g, float b, float a) DistanceColor;
+			public (float r, float g, float b, float a) NPCConColor;
+			
 
-			public TableRow_XTargetInfo(Int32 npcid)
+			public TableRow_XTargetInfo(Int32 npcid, int slotID)
 			{
 				NPCID = npcid;
+				SlotID = slotID;
 			}
 			public void Reset()
 			{
@@ -6022,6 +6067,11 @@ namespace E3Core.UI.Windows.Hud
 				Level = 0;
 				ShortClassName = String.Empty;
 				CleanName = string.Empty;
+				Distance = 0;
+				DistanceColor.r = 0;
+				DistanceColor.g = 0;
+				DistanceColor.b = 0;
+				DistanceColor.a = 0;
 			}
 		}
 		public class TableRow_BuffInfo
