@@ -567,6 +567,9 @@ namespace E3Core.UI.Windows.Hud
 		public Int64 TargetInfoUpdateInterval = 100;
 		public bool HasTarget = false;
 		public string TargetName = string.Empty;
+		public string TargetRawName = String.Empty;
+		public Int32 TargetID = 0;
+		public string TypeDesc = string.Empty;
 		public string Display_TargetName = String.Empty;
 		public string PreviousTargetName = String.Empty;
 		public float TargetNameSize = 0;

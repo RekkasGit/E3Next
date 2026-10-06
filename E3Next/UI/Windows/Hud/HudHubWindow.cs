@@ -1171,6 +1171,8 @@ namespace E3Core.UI.Windows.Hud
 			if (targetID == 0)
 			{
 				state.HasTarget = false;
+				state.TargetID = 0;
+
 				return;
 			}
 
@@ -1191,11 +1193,12 @@ namespace E3Core.UI.Windows.Hud
 				{
 					state.PreviousTargetName = state.TargetName;
 					state.TargetName = spawn.CleanName;
+					state.TargetRawName = spawn.Name;
 					state.Display_TargetName = $"{state.TargetName} ({targetID})";
 					state.TargetNameSize = imgui_CalcTextSizeX(state.TargetName);
+					state.TypeDesc = spawn.TypeDesc;
 				}
-
-
+				state.TargetID = spawn.ID;
 				state.TargetHP = MQ.Query<Int32>("${Target.PctHPs}");
 
 				//if (spawn.Dead) state.TargetHP = 0;
@@ -4100,13 +4103,16 @@ namespace E3Core.UI.Windows.Hud
 												}
 												if (imgui_MenuItem("Set current target to slot"))
 												{
-													//E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
-													//E3.Bots.BroadcastCommandToGroup($"/removebuff {stats.Name}");
+													var targetstate = _state.GetState<State_TargetInfoWindow>();
+													
+													if (targetstate.HasTarget)
+													{
+														E3ImGUI.MQCommandQueue.Enqueue($"/xtarget set {stats.SlotID} {targetstate.TargetRawName}");
+													}
 												}
-												if (imgui_MenuItem("Remove current target from slot"))
+												if (imgui_MenuItem("Set to Auto Hater"))
 												{
-													//E3ImGUI.MQCommandQueue.Enqueue($"/removebuff {stats.Name}");
-													//E3.Bots.BroadcastCommand($"/removebuff {stats.Name}");
+													E3ImGUI.MQCommandQueue.Enqueue($"/xtarget set {stats.SlotID} autohater");
 												}
 											}
 
