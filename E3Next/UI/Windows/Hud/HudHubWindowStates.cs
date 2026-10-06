@@ -151,6 +151,7 @@ namespace E3Core.UI.Windows.Hud
 		{
 			WindowName = $"E3 Main Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
 			IsDirty = false;
+			Show = false;
 		}
 
 
@@ -202,6 +203,7 @@ namespace E3Core.UI.Windows.Hud
 		public State_XTargetWindow()
 		{
 			WindowName = $"E3 XTarget Hud - {E3.CurrentName}-{E3.CurrentClass.ToString()}-{E3.ServerName}";
+			Show = false;
 			if (!Debugger.IsAttached)
 			{
 				XTargetListView_ProgressBGColor = GetRGBAFloatsFromColor(imgui_GetColorU32((int)ImGuiCol.WindowBg, 1));

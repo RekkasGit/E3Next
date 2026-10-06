@@ -138,19 +138,8 @@ namespace E3Core.UI.Windows.Hud
 		{
 			try
 			{
-				if (!_windowInitialized)
-				{
-					_windowInitialized = true;
-					imgui_Begin_OpenFlagSet(state.WindowName, true);
-					state.Show = true;
-				}
-				else
-				{
-					bool open = imgui_Begin_OpenFlagGet(state.WindowName);
-					bool newState = !open;
-					state.Show = newState;
-					imgui_Begin_OpenFlagSet(state.WindowName, newState);
-				}
+				state.Show = !state.Show;
+				imgui_Begin_OpenFlagSet(state.WindowName, state.Show);
 				_imguiContextReady = true;
 			}
 			catch (Exception ex)
