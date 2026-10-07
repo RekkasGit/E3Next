@@ -2397,6 +2397,8 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_IsMouseClicked(int button);
 		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_IsMouseDoubleClicked(int button);
+		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_IsItemClicked(int button);
 
 		[MethodImpl(MethodImplOptions.InternalCall)]

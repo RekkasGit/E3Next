@@ -3787,7 +3787,7 @@ namespace E3Core.UI.Windows.Hud
 		private static void RenderXTargetInfo_Table()
 		{
 			var hubState = _state.GetState<State_HubWindow>();
-			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_Resizable );
+			int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_Resizable | ImGuiTableFlags.ImGuiTableFlags_Reorderable);
 			var state = _state.GetState<State_XTargetWindow>();
 
 
@@ -4063,13 +4063,29 @@ namespace E3Core.UI.Windows.Hud
 										sb.Dispose();
 									}
 
-									if (imgui_Selectable_WithFlags(selectableKey, selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns))
+									if (imgui_Selectable_WithFlags(selectableKey, selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns|(int)ImGuiSelectableFlags.ImGuiSelectableFlags_AllowDoubleClick))
 									{
 										// Left-click command
 										if(stats.NPCID>0)
 										{
 											string command = $"/target id {stats.NPCID}";
 											E3ImGUI.MQCommandQueue.Enqueue(command);
+										}
+										if(stats.NPCID>0)
+										{
+											if (imgui_IsMouseDoubleClicked(0))
+											{
+
+												if(String.IsNullOrEmpty(state.XTargetDoubleClickOverrideFlags))
+												{
+													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID}");
+												}
+												else
+												{
+													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID} {state.XTargetDoubleClickOverrideFlags}");
+												}
+											}
+
 										}
 									}
 
@@ -4119,6 +4135,24 @@ namespace E3Core.UI.Windows.Hud
 												if (imgui_MenuItem("Set to Auto Hater"))
 												{
 													E3ImGUI.MQCommandQueue.Enqueue($"/xtarget set {stats.SlotID} autohater");
+												}
+												imgui_Separator();
+												if (imgui_MenuItem("Assist"))
+												{
+													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID}");
+												}
+												if (imgui_MenuItem("Assist (not me)"))
+												{
+													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID} /ignoreme");
+												}
+												imgui_Separator();
+												if (imgui_MenuItem("Assist /All"))
+												{
+													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID} /all");
+												}
+												if (imgui_MenuItem("Assist (not me) /All"))
+												{
+													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID} /ignoreme /all");
 												}
 											}
 

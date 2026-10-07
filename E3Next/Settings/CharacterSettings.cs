@@ -275,6 +275,8 @@ namespace E3Core.Settings
 		[INI_Section("E3Hud_Hub_XTarget", "RGBA_ListView_NameColor")]
 		public float[] E3Hud_Hub_XTarget_RGBA_ListView_NameColor = { 1, 1, 1, 1 };
 
+		[INI_Section("E3Hud_Hub_XTarget", "XTarget_DoubleClickOverrideFlags")]
+		public string E3Hud_Hub_XTarget_DoubleClickOverrideFlags = String.Empty;
 
 
 		[INI_Section("E3Hud_Hub_PetBuff", "SelectedFont")]
@@ -1035,6 +1037,7 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_XTarget", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_XTarget_SelectedFont);
 			LoadKeyData("E3Hud_Hub_XTarget", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_XTarget_SelectedFontSize);
 			LoadKeyData("E3Hud_Hub_XTarget", "RGBA_ListView_NameColor", ParsedData_UI, E3Hud_Hub_XTarget_RGBA_ListView_NameColor);
+			LoadKeyData("E3Hud_Hub_XTarget", "XTarget_DoubleClickOverrideFlags", ParsedData_UI,ref E3Hud_Hub_XTarget_DoubleClickOverrideFlags);
 
 
 			LoadKeyData("E3Hud_Hub_XTarget", "RGBA_ListView_ProgressBarBlinkColor", ParsedData_UI, E3Hud_Hub_XTarget_RGBA_ListView_ProgressBarBlinkColor);
@@ -1562,6 +1565,7 @@ namespace E3Core.Settings
 			section.Keys.AddKey("RGBA_ListView_ProgressBarBlinkColor", "0.8,0.2f,0.2f,0.4f");
 			section.Keys.AddKey("RGBA_ListView_ProgressBarColor", "0,1,0.9756098,0.4");
 			section.Keys.AddKey("RGBA_ListView_NameColor", "1,1,1,1");
+			section.Keys.AddKey("XTarget_DoubleClickOverrideFlags", "");
 
 
 			newFile.Sections.AddSection("E3Hud_Hub_PetBuff");

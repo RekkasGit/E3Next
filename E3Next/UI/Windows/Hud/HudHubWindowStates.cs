@@ -174,7 +174,7 @@ namespace E3Core.UI.Windows.Hud
 	{
 	
 	
-		
+		public string XTargetDoubleClickOverrideFlags { get => E3.CharacterSettings.E3Hud_Hub_XTarget_DoubleClickOverrideFlags; }
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_XTarget_Alpha; set { E3.CharacterSettings.E3Hud_Hub_XTarget_Alpha = value; IsDirty = true; } }
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFont = value; IsDirty = true; } }
 		public Int32 SelectedFontSize { get => E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFontSize; set { E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFontSize = value; IsDirty = true; } }
