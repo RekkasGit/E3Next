@@ -232,6 +232,14 @@ namespace E3Core.Settings
 		[INI_Section("E3Hud_Hub_Buff", "SelectedFontSize")]
 		public Int32 E3Hud_Hub_Buff_SelectedFontSize = 16;
 
+		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor")]
+		public float[] E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor = { 0.8f, 0.2f, 0.2f, 0.4f };
+		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor")]
+		public float[] E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor = { 0, 0, 1, 0.4f };
+		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_NameColor")]
+		public float[] E3Hud_Hub_Buff_RGBA_ListView_NameColor = { 1, 1, 1, 1 };
+
+
 		[INI_Section("E3Hud_Hub_Buff", "Detached")]
 		public bool E3Hud_Hub_Buff_Detached = false;
 		[INI_Section("E3Hud_Hub_Buff", "IconSize")]
@@ -247,10 +255,7 @@ namespace E3Core.Settings
 		[INI_Section("E3Hud_Hub_Buff", "ShowProgressBars")]
 		public bool E3Hud_Hub_Buff_ShowProgressBars = true;
 
-		[INI_Section("E3Hud_Hub_XTarget", "Detached")]
-		public bool E3Hud_Hub_XTarget_Detached = false;
-		[INI_Section("E3Hud_Hub_XTarget", "IconSize")]
-		public int E3Hud_Hub_XTarget_IconSize = 40;
+	
 		[INI_Section("E3Hud_Hub_XTarget", "FadeTimeInMS")]
 		public Int32 E3Hud_Hub_XTarget_FadeTimeInMS = 1000;
 		[INI_Section("E3Hud_Hub_XTarget", "Alpha")]
@@ -263,13 +268,13 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Hub_XTarget", "SelectedFontSize")]
 		public Int32 E3Hud_Hub_XTarget_SelectedFontSize = 16;
+		[INI_Section("E3Hud_Hub_XTarget", "RGBA_ListView_ProgressBarBlinkColor")]
+		public float[] E3Hud_Hub_XTarget_RGBA_ListView_ProgressBarBlinkColor = { 0.8f, 0.2f, 0.2f, 0.4f };
+		[INI_Section("E3Hud_Hub_XTarget", "RGBA_ListView_ProgressBarColor")]
+		public float[] E3Hud_Hub_XTarget_RGBA_ListView_ProgressBarColor = { 0, 0, 1, 0.4f };
+		[INI_Section("E3Hud_Hub_XTarget", "RGBA_ListView_NameColor")]
+		public float[] E3Hud_Hub_XTarget_RGBA_ListView_NameColor = { 1, 1, 1, 1 };
 
-		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarBlinkColor")]
-		public float[] E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor = {0.8f,0.2f, 0.2f, 0.4f };
-		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_ProgressBarColor")]
-		public float[] E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor ={0,0,1,0.4f };
-		[INI_Section("E3Hud_Hub_Buff", "RGBA_ListView_NameColor")]
-		public float[] E3Hud_Hub_Buff_RGBA_ListView_NameColor = { 1,1,1,1 };
 
 
 		[INI_Section("E3Hud_Hub_PetBuff", "SelectedFont")]
@@ -1025,13 +1030,16 @@ namespace E3Core.Settings
 
 
 			LoadKeyData("E3Hud_Hub_XTarget", "Alpha", ParsedData_UI, ref E3Hud_Hub_XTarget_Alpha);
-			LoadKeyData("E3Hud_Hub_XTarget", "Detached", ParsedData_UI, ref E3Hud_Hub_XTarget_Detached);
-			LoadKeyData("E3Hud_Hub_XTarget", "IconSize", ParsedData_UI, ref E3Hud_Hub_XTarget_IconSize);
 			LoadKeyData("E3Hud_Hub_XTarget", "FadeTimeInMS", ParsedData_UI, ref E3Hud_Hub_XTarget_FadeTimeInMS);
 			LoadKeyData("E3Hud_Hub_XTarget", "Locked", ParsedData_UI, ref E3Hud_Hub_XTarget_Locked);
 			LoadKeyData("E3Hud_Hub_XTarget", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_XTarget_SelectedFont);
 			LoadKeyData("E3Hud_Hub_XTarget", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_XTarget_SelectedFontSize);
-			LoadKeyData("E3Hud_Hub_Buff", "RGBA_ListView_NameColor", ParsedData_UI, E3Hud_Hub_Buff_RGBA_ListView_NameColor);
+			LoadKeyData("E3Hud_Hub_XTarget", "RGBA_ListView_NameColor", ParsedData_UI, E3Hud_Hub_XTarget_RGBA_ListView_NameColor);
+
+
+			LoadKeyData("E3Hud_Hub_XTarget", "RGBA_ListView_ProgressBarBlinkColor", ParsedData_UI, E3Hud_Hub_XTarget_RGBA_ListView_ProgressBarBlinkColor);
+			LoadKeyData("E3Hud_Hub_XTarget", "RGBA_ListView_ProgressBarColor", ParsedData_UI, E3Hud_Hub_XTarget_RGBA_ListView_ProgressBarColor);
+			LoadKeyData("E3Hud_Hub_XTarget", "RGBA_ListView_NameColor", ParsedData_UI, E3Hud_Hub_XTarget_RGBA_ListView_NameColor);
 
 
 
@@ -1534,12 +1542,23 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Detached", "False");
 			section.Keys.AddKey("SelectedFont", "robo");
 			section.Keys.AddKey("SelectedFontSize", "16");
-
 			section.Keys.AddKey("IconSize", "40");
 			section.Keys.AddKey("FadeTimeInMS", "1000");
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("ListView", "False");
 			section.Keys.AddKey("ShowProgressBars", "True");
+			section.Keys.AddKey("RGBA_ListView_ProgressBarBlinkColor", "0.8,0.2f,0.2f,0.4f");
+			section.Keys.AddKey("RGBA_ListView_ProgressBarColor", "0,1,0.9756098,0.4");
+			section.Keys.AddKey("RGBA_ListView_NameColor", "1,1,1,1");
+
+
+			newFile.Sections.AddSection("E3Hud_Hub_XTarget");
+			section = newFile.Sections.GetSectionData("E3Hud_Hub_XTarget");
+			section.Keys.AddKey("Alpha", "0.8");
+			section.Keys.AddKey("SelectedFont", "robo");
+			section.Keys.AddKey("SelectedFontSize", "16");
+			section.Keys.AddKey("FadeTimeInMS", "1000");
+			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("RGBA_ListView_ProgressBarBlinkColor", "0.8,0.2f,0.2f,0.4f");
 			section.Keys.AddKey("RGBA_ListView_ProgressBarColor", "0,1,0.9756098,0.4");
 			section.Keys.AddKey("RGBA_ListView_NameColor", "1,1,1,1");

@@ -176,17 +176,15 @@ namespace E3Core.UI.Windows.Hud
 	
 		
 		public float WindowAlpha { get => E3.CharacterSettings.E3Hud_Hub_XTarget_Alpha; set { E3.CharacterSettings.E3Hud_Hub_XTarget_Alpha = value; IsDirty = true; } }
-		public bool Detached { get => E3.CharacterSettings.E3Hud_Hub_XTarget_Detached; set { E3.CharacterSettings.E3Hud_Hub_XTarget_Detached = value; IsDirty = true; } }
 		public string SelectedFont { get => E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFont; set { E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFont = value; IsDirty = true; } }
 		public Int32 SelectedFontSize { get => E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFontSize; set { E3.CharacterSettings.E3Hud_Hub_XTarget_SelectedFontSize = value; IsDirty = true; } }
 
-		public int IconSize { get => E3.CharacterSettings.E3Hud_Hub_XTarget_IconSize; set { E3.CharacterSettings.E3Hud_Hub_XTarget_IconSize = value; IsDirty = true; } }
 		public bool Locked { get => E3.CharacterSettings.E3Hud_Hub_XTarget_Locked; set { E3.CharacterSettings.E3Hud_Hub_XTarget_Locked = value; IsDirty = true; } }
 	
 		public float[] XTargetListView_ProgressBGColor;
-		public float[] RGBA_ListView_ProgressBarBlinkColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarBlinkColor; }
-		public float[] RGBA_ListView_ProgressBarColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_ProgressBarColor; }
-		public float[] RGBA_ListView_NameColor { get => E3.CharacterSettings.E3Hud_Hub_Buff_RGBA_ListView_NameColor; }
+		public float[] RGBA_ListView_ProgressBarBlinkColor { get => E3.CharacterSettings.E3Hud_Hub_XTarget_RGBA_ListView_ProgressBarBlinkColor; }
+		public float[] RGBA_ListView_ProgressBarColor { get => E3.CharacterSettings.E3Hud_Hub_XTarget_RGBA_ListView_ProgressBarColor; }
+		public float[] RGBA_ListView_NameColor { get => E3.CharacterSettings.E3Hud_Hub_XTarget_RGBA_ListView_NameColor; }
 		public HashSet<Int32> PreviousBuffs = new HashSet<Int32>();
 		public Dictionary<Int32, Int64> NewBuffsTimeStamps = new Dictionary<Int32, Int64>();
 		public string PreviousBuffInfo = string.Empty;

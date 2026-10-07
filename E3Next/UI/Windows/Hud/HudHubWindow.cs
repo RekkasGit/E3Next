@@ -3766,6 +3766,7 @@ namespace E3Core.UI.Windows.Hud
 				using (var window = ImGUIWindow.Aquire())
 				{
 					imgui_SetNextWindowBgAlpha(state.WindowAlpha);
+					
 					int flags = (int)ImGuiWindowFlags.ImGuiWindowFlags_NoTitleBar;
 					if (state.Locked)
 					{
@@ -3774,6 +3775,14 @@ namespace E3Core.UI.Windows.Hud
 					//imgui_SetNextWindowSizeConstraints(300, 250, 500, 400);
 					if (window.Begin(state.WindowName, flags))
 					{
+						if (state.IsDirty)
+						{
+							if (imgui_Button("Save"))
+							{
+								E3.CharacterSettings.SaveData();
+								state.IsDirty = false;
+							}
+						}
 						RenderXTargetInfo_Table();
 						
 					}
@@ -3854,31 +3863,6 @@ namespace E3Core.UI.Windows.Hud
 					using (var style = PushStyle.Aquire())
 					{
 						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
-						imgui_Text("Icon Size");
-
-					}
-					imgui_SetNextItemWidth(100);
-					if (imgui_InputInt("##XTargetWindow_icon_set", state.IconSize, 1, 20))
-					{
-						int updated = imgui_InputInt_Get("##XTargetWindow_icon_set");
-
-						if (updated > 100)
-						{
-							updated = 100;
-
-						}
-						if (updated < 25)
-						{
-							updated = 25;
-
-						}
-						state.IconSize = updated;
-					}
-
-					imgui_Separator();
-					using (var style = PushStyle.Aquire())
-					{
-						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
 						imgui_Text("Font");
 					}
 
@@ -3922,6 +3906,34 @@ namespace E3Core.UI.Windows.Hud
 						}
 						state.SelectedFontSize = updated;
 						imgui_InputInt_Clear(keyForInput);
+					}
+					imgui_Separator();
+					imgui_Text("Name color picker");
+					imgui_SetNextItemWidth(150.0f);
+					if (imgui_ColorPicker4_Float("##XTargetListView_NameColorPicker", state.RGBA_ListView_NameColor[0], state.RGBA_ListView_NameColor[1], state.RGBA_ListView_NameColor[2], state.RGBA_ListView_NameColor[3], 0))
+					{
+						float[] newColors = imgui_ColorPicker_GetRGBA_Float("##XTargetListView_NameColorPicker");
+						state.RGBA_ListView_NameColor[0] = newColors[0];
+						state.RGBA_ListView_NameColor[1] = newColors[1];
+						state.RGBA_ListView_NameColor[2] = newColors[2];
+						state.RGBA_ListView_NameColor[3] = newColors[3];
+						state.IsDirty = true;
+
+					}
+
+					imgui_Separator();
+					imgui_Text("Progress color picker");
+					imgui_SetNextItemWidth(150.0f);
+					if (imgui_ColorPicker4_Float("##XTargetListView_ProgressColorPicker", state.RGBA_ListView_ProgressBarColor[0], state.RGBA_ListView_ProgressBarColor[1], state.RGBA_ListView_ProgressBarColor[2], state.RGBA_ListView_ProgressBarColor[3], 0))
+					{
+						float[] newColors = imgui_ColorPicker_GetRGBA_Float("##XTargetListView_ProgressColorPicker");
+						state.RGBA_ListView_ProgressBarColor[0] = newColors[0];
+						state.RGBA_ListView_ProgressBarColor[1] = newColors[1];
+						state.RGBA_ListView_ProgressBarColor[2] = newColors[2];
+						state.RGBA_ListView_ProgressBarColor[3] = newColors[3];
+						state.IsDirty = true;
+
+
 					}
 				}
 			}
@@ -4116,34 +4128,7 @@ namespace E3Core.UI.Windows.Hud
 												}
 											}
 
-											imgui_Separator();
-											imgui_Text("Name color picker");
-											imgui_SetNextItemWidth(150.0f);
-											if (imgui_ColorPicker4_Float("##XTargetListView_NameColorPicker", state.RGBA_ListView_NameColor[0], state.RGBA_ListView_NameColor[1], state.RGBA_ListView_NameColor[2], state.RGBA_ListView_NameColor[3], 0))
-											{
-												float[] newColors = imgui_ColorPicker_GetRGBA_Float("##XTargetListView_NameColorPicker");
-												state.RGBA_ListView_NameColor[0] = newColors[0];
-												state.RGBA_ListView_NameColor[1] = newColors[1];
-												state.RGBA_ListView_NameColor[2] = newColors[2];
-												state.RGBA_ListView_NameColor[3] = newColors[3];
-												state.IsDirty = true;
-
-											}
-
-											imgui_Separator();
-											imgui_Text("Progress color picker");
-											imgui_SetNextItemWidth(150.0f);
-											if (imgui_ColorPicker4_Float("##XTargetListView_ProgressColorPicker", state.RGBA_ListView_ProgressBarColor[0], state.RGBA_ListView_ProgressBarColor[1], state.RGBA_ListView_ProgressBarColor[2], state.RGBA_ListView_ProgressBarColor[3], 0))
-											{
-												float[] newColors = imgui_ColorPicker_GetRGBA_Float("##XTargetListView_ProgressColorPicker");
-												state.RGBA_ListView_ProgressBarColor[0] = newColors[0];
-												state.RGBA_ListView_ProgressBarColor[1] = newColors[1];
-												state.RGBA_ListView_ProgressBarColor[2] = newColors[2];
-												state.RGBA_ListView_ProgressBarColor[3] = newColors[3];
-												state.IsDirty = true;
-
-
-											}
+											
 										}
 									}
 								}
