@@ -3752,15 +3752,9 @@ namespace E3Core.UI.Windows.Hud
 
 		private static void RenderXTargetInfo()
 		{
-
 			var state = _state.GetState<State_XTargetWindow>();
-
-
-
-
 			if (state.Show)
 			{
-
 				RefreshXTargetInfo();
 
 				using (var window = ImGUIWindow.Aquire())
