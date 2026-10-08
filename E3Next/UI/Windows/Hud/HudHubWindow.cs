@@ -4066,11 +4066,7 @@ namespace E3Core.UI.Windows.Hud
 									if (imgui_Selectable_WithFlags(selectableKey, selected, (int)ImGuiSelectableFlags.ImGuiSelectableFlags_SpanAllColumns|(int)ImGuiSelectableFlags.ImGuiSelectableFlags_AllowDoubleClick))
 									{
 										// Left-click command
-										if(stats.NPCID>0)
-										{
-											string command = $"/target id {stats.NPCID}";
-											E3ImGUI.MQCommandQueue.Enqueue(command);
-										}
+										
 										if(stats.NPCID>0)
 										{
 											if (imgui_IsMouseDoubleClicked(0))
@@ -4079,10 +4075,19 @@ namespace E3Core.UI.Windows.Hud
 												if(String.IsNullOrEmpty(state.XTargetDoubleClickOverrideFlags))
 												{
 													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID}");
+
 												}
 												else
 												{
 													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID} {state.XTargetDoubleClickOverrideFlags}");
+												}
+											}
+											else if(imgui_IsMouseClicked(0))
+											{
+												if (stats.NPCID > 0)
+												{
+													string command = $"/target id {stats.NPCID}";
+													E3ImGUI.MQCommandQueue.Enqueue(command);
 												}
 											}
 

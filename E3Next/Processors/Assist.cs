@@ -981,7 +981,6 @@ namespace E3Core.Processors
 					E3.Bots.Broadcast("Not a valid spawnid!");
 					return;
 				}
-
 				if (targetID == E3.CurrentId)
 				{
 					E3.Bots.Broadcast("I cannot assist on myself.");
@@ -1000,35 +999,11 @@ namespace E3Core.Processors
 						AssistOn(targetID, Zoning.CurrentZone.Id);
 					}
 				}
-				else
-				{
-					//we are asking to ignore ourself, but might want to send out our pet still
-					if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
-					{
-						if (E3.CharacterSettings.Pet_DelayOnAttack > 0)
-						{
-							MQ.Cmd($"/timed {E3.CharacterSettings.Pet_DelayOnAttack * 10} /pet attack {targetID}");
-						}
-						else
-						{
-							MQ.Cmd($"/pet attack {targetID}");
-
-						}
-					}
-					if (e3util.IsEQLive())
-					{
-						MQ.Cmd("/pet swarm");
-					}
-				}
 				E3.Bots.BroadcastCommandToGroup($"/e3assistme-relay {targetID} {Zoning.CurrentZone.Id}", x);
-
-
-
-
 			});
 			EventProcessor.RegisterCommand("/e3assistme-relay", (x) =>
 			{
-
+				if (x.args.Count < 2) return;
 				if (!e3util.FilterMe(x))
 				{
 					//don't process assist if paused.
