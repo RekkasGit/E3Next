@@ -274,22 +274,22 @@ namespace E3Core.Processors
 							{
 								if (Filters.Count > 0)
 								{
-									E3.Bots.BroadcastCommand($"/assistme-relay {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
+									E3.Bots.BroadcastCommand($"/e3assistme-relay {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
 								}
 								else
 								{
-									E3.Bots.BroadcastCommand($"/assistme-relay {mobId} {Zoning.CurrentZone.Id}");
+									E3.Bots.BroadcastCommand($"/e3assistme-relay {mobId} {Zoning.CurrentZone.Id}");
 								}
 							}
 							else
 							{
 								if (Filters.Count > 0)
 								{
-									E3.Bots.BroadcastCommandToGroup($"/assistme-relay {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
+									E3.Bots.BroadcastCommandToGroup($"/e3assistme-relay {mobId} {Zoning.CurrentZone.Id} \"{string.Join(" ", Filters)}\"");
 								}
 								else
 								{
-									E3.Bots.BroadcastCommandToGroup($"/assistme-relay {mobId} {Zoning.CurrentZone.Id}");
+									E3.Bots.BroadcastCommandToGroup($"/e3assistme-relay {mobId} {Zoning.CurrentZone.Id}");
 								}
 							}
 
