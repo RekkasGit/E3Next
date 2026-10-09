@@ -1041,7 +1041,7 @@ namespace E3Core.Data
                     SpellID = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].ID}}");
                     CastID = SpellID;
                     SpellIcon = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].SpellIcon}}");
-					Level = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].Level}}");
+					Level = MQ.Query<Int32>($"${{Me.Book[{bookNumber}].MinCasterLevel}}");
 
 				}
                 else
@@ -1065,7 +1065,7 @@ namespace E3Core.Data
                     Subcategory = MQ.Query<string>($"${{Spell[{CastName}].Subcategory}}");
                     Category = MQ.Query<string>($"${{Spell[{CastName}].Category}}");
                     SpellIcon = MQ.Query<Int32>($"${{Spell[{CastName}].SpellIcon}}");
-                    Level = MQ.Query<Int32>($"${{Spell[{CastName}].Level}}");
+                    Level = MQ.Query<Int32>($"${{Spell[{CastName}].MinCasterLevel}}");
                     Description = MQ.Query<string>($"${{Spell[{CastName}].Description}}");
 					ResistType = MQ.Query<String>($"${{Spell[{CastName}].ResistType}}");
 					ResistAdj = MQ.Query<Int32>($"${{Spell[{CastName}].ResistAdj}}");
@@ -1141,7 +1141,7 @@ namespace E3Core.Data
                 Description = MQ.Query<String>($"${{Spell[{CastName}].Description}}");
 				ResistType = MQ.Query<String>($"${{Spell[{CastName}].ResistType}}");
 				ResistAdj = MQ.Query<Int32>($"${{Spell[{CastName}].ResistAdj}}");
-                Level = MQ.Query<Int32>($"${{Spell[{CastName}].Level}}");
+                Level = MQ.Query<Int32>($"${{Spell[{CastName}].MinCasterLevel}}");
 				Subcategory = MQ.Query<string>($"${{Spell[{CastName}].Subcategory}}");
 				Category = MQ.Query<string>($"${{Spell[{CastName}].Category}}");
                 StacksWithDiscs = MQ.Query<Boolean>($"${{Spell[{CastName}].StacksWithDiscs}}");

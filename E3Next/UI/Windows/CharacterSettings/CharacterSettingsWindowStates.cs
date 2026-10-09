@@ -42,6 +42,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 		public string SelectedCategory = String.Empty;
 		public string SelectedSubCategory = String.Empty;
 		public string Filter = string.Empty;
+		public bool HideHigherLevelSpells = false;
 		public CatalogMode Mode = CatalogMode.Standard;
 		public AddType CurrentAddType = AddType.Spells;
 
