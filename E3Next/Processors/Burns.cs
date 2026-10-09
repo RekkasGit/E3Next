@@ -3,6 +3,7 @@ using E3Core.Utility;
 using MonoCore;
 using System;
 using System.Collections.Generic;
+using System.Net;
 
 namespace E3Core.Processors
 {
@@ -249,12 +250,15 @@ namespace E3Core.Processors
 		}
 	    private static void UseBurn(Burn burnToUse)
         {
-			if (!Assist.IsAssisting)
+			
+			if (!Assist.IsAssisting && ((Core.StopWatch.ElapsedMilliseconds - Assist.LastAssistEndedTimestamp) > 3000))
 			{
-				E3.Bots.Broadcast($"Not assisting, disabling Burn:{burnToUse.Name}");
+				E3.Bots.Broadcast($"Not assisting for the last 3 seconds, disabling Burn:{burnToUse.Name}");
 				burnToUse.Active = false;
 				return;
 			}
+			if (!Assist.IsAssisting) return;
+
 
 			Int32 initialTarget = MQ.Query<Int32>("${Target.ID}");
 			bool isManualControl = e3util.IsManualControl();

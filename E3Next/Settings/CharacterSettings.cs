@@ -346,6 +346,8 @@ namespace E3Core.Settings
 
 		[INI_Section("E3Hud_Hub_HotButtons_Dynamic_Colors", "")]
 		public Dictionary<String, Hotbutton_DynamicButton_Color> E3Hud_Hub_HotButtons_DynamicButtons_Colors = new Dictionary<string, Hotbutton_DynamicButton_Color>(100, StringComparer.OrdinalIgnoreCase);
+		[INI_Section("E3Hud_Hub_HotButtons_Dynamic_Colors_Text", "")]
+		public Dictionary<String, Hotbutton_DynamicButton_Color> E3Hud_Hub_HotButtons_DynamicButtons_Colors_Text = new Dictionary<string, Hotbutton_DynamicButton_Color>(100, StringComparer.OrdinalIgnoreCase);
 
 
 		[INI_Section("E3Hud_Hub_Debuff", "SelectedFont")]
@@ -1080,6 +1082,7 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic", ParsedData_UI, E3Hud_Hub_HotButtons_DynamicButtons);
 
 			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic_Colors", ParsedData_UI, E3Hud_Hub_HotButtons_DynamicButtons_Colors);
+			LoadKeyData("E3Hud_Hub_HotButtons_Dynamic_Colors_Text", ParsedData_UI, E3Hud_Hub_HotButtons_DynamicButtons_Colors_Text);
 
 			LoadKeyData("E3Hud_Hub_Debuff", "Alpha", ParsedData_UI, ref E3Hud_Hub_Debuff_Alpha);
 			LoadKeyData("E3Hud_Hub_Debuff", "Detached", ParsedData_UI, ref E3Hud_Hub_Debuff_Detached);
@@ -1618,7 +1621,8 @@ namespace E3Core.Settings
 			}
 
 			newFile.Sections.AddSection("E3Hud_Hub_HotButtons_Dynamic_Colors");
-		
+			newFile.Sections.AddSection("E3Hud_Hub_HotButtons_Dynamic_Colors_Text");
+
 			newFile.Sections.AddSection("E3Hud_Hub_HotButtons");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_HotButtons");
 			section.Keys.AddKey("Alpha", "0.8");
