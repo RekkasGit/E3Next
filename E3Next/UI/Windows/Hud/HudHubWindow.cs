@@ -3578,7 +3578,8 @@ namespace E3Core.UI.Windows.Hud
 								if(bgcolor!=null)
 								{
 									var dcolor = bgcolor.colors;
-									if (dcolor[0]!=0 && dcolor[1]!=0 && dcolor[2]!=0 &&  dcolor[3]!=0)
+									
+									if (!(dcolor[0] == 0 && dcolor[0] == 0 && dcolor[0] == 0))
 									{
 										buttonStyle.PushStyleColor((int)ImGuiCol.Button, dcolor[0], dcolor[1], dcolor[2], dcolor[3]);
 
@@ -3587,7 +3588,7 @@ namespace E3Core.UI.Windows.Hud
 								if(txtcolor!=null)
 								{
 									var dcolor = txtcolor.colors;
-									if (dcolor[0] != 0 && dcolor[1] != 0 && dcolor[2] != 0 && dcolor[3] != 0)
+									if (!(dcolor[0] == 0 && dcolor[0] == 0 && dcolor[0] == 0))
 									{
 										buttonStyle.PushStyleColor((int)ImGuiCol.Text, dcolor[0], dcolor[1], dcolor[2], dcolor[3]);
 									}
@@ -3598,14 +3599,6 @@ namespace E3Core.UI.Windows.Hud
 								}
 							}
 							
-							//else
-							//{
-							//	if (imgui_ButtonEx(buttonInfo.Name, state.ButtonSizeX, state.ButtonSizeY))
-							//	{
-							//		E3ImGUI.MQCommandQueue.Enqueue(buttonInfo.Command);
-							//	}
-
-							//}
 
 						}
 						using (var popup = ImGUIPopUpContext.Aquire())
