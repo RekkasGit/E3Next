@@ -3009,6 +3009,12 @@ namespace E3Core.UI.Windows.CharacterSettings
 			if (imgui_InputText("##filter", state.Filter ?? string.Empty))
 				state.Filter = imgui_InputText_Get("##filter") ?? string.Empty;
 
+			imgui_SameLine();
+			if (imgui_Checkbox("Hide higher level spells", state.HideHigherLevelSpells))
+			{
+				state.HideHigherLevelSpells = imgui_Checkbox_Get("Hide higher level spells");
+			}
+
 			// Catalog source info and refresh button
 			imgui_Separator();
 			imgui_TextColored(0.8f, 0.9f, 1.0f, 1.0f, "Catalog Source:");
@@ -3166,6 +3172,11 @@ namespace E3Core.UI.Windows.CharacterSettings
 									else
 										entries = submap2.Values.SelectMany(x => x).ToList();
 								}
+							}
+							if (state.HideHigherLevelSpells)
+							{
+								int myLevel = MQ.Query<Int32>("${Me.Level}");
+								entries = entries.Where(e => e.Level <= myLevel).ToList();
 							}
 							string filter = (state.Filter ?? string.Empty).Trim();
 							if (filter.Length > 0)
