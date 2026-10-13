@@ -133,6 +133,11 @@ namespace E3Core.Settings
 		public string E3Hud_Casting_SelectedFont = "robo";
 		[INI_Section("E3Hud_Casting", "SelectedFontSize")]
 		public Int32 E3Hud_Casting_SelectedFontSize = 16;
+		[INI_Section("E3Hud_Casting", "ShowGroupOnly")]
+		public Boolean E3Hud_Casting_ShowGroupOnly = true;
+		[INI_Section("E3Hud_Casting", "ColumnCounts")]
+		public Int32 E3Hud_Casting_ColumnCounts = 3;
+
 		[INI_Section("E3Hud_Casting", "Alpha")]
 		public float E3Hud_Casting_Alpha = 0.8f;
 		[INI_Section("E3Hud_Casting", "Locked")]
@@ -992,10 +997,13 @@ namespace E3Core.Settings
 
 			LoadKeyData("E3Hud_Casting", "SelectedFont", ParsedData_UI, ref E3Hud_Casting_SelectedFont);
 			LoadKeyData("E3Hud_Casting", "SelectedFontSize", ParsedData_UI, ref E3Hud_Casting_SelectedFontSize);
+			LoadKeyData("E3Hud_Casting", "ColumnCounts", ParsedData_UI, ref E3Hud_Casting_ColumnCounts);
+
 
 			LoadKeyData("E3Hud_Casting", "Alpha", ParsedData_UI, ref E3Hud_Casting_Alpha);
 			LoadKeyData("E3Hud_Casting", "Locked", ParsedData_UI, ref E3Hud_Casting_Locked);
 			LoadKeyData("E3Hud_Casting", "RGBA_NameColor", ParsedData_UI, E3Hud_Casting_RGBA_NameColor);
+			LoadKeyData("E3Hud_Casting", "ShowGroupOnly", ParsedData_UI, ref E3Hud_Casting_ShowGroupOnly);
 
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_SelectedFont);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_SelectedFontSize);
@@ -1517,6 +1525,8 @@ namespace E3Core.Settings
 			section.Keys.AddKey("RGBA_NameColor", "0.169f, 1f, 0f, 1f");
 			section.Keys.AddKey("Alpha", "0.8");
 			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("ShowGroupOnly", "True");
+			section.Keys.AddKey("ColumnCounts", "3");
 
 			newFile.Sections.AddSection("E3Hud_Hub_PlayerInfo");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_PlayerInfo");

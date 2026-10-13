@@ -4118,13 +4118,12 @@ namespace E3Core.UI.Windows.Hud
 													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID} {state.XTargetDoubleClickOverrideFlags}");
 												}
 											}
-											else if(imgui_IsMouseClicked(0))
+											else
 											{
-												if (stats.NPCID > 0)
-												{
-													string command = $"/target id {stats.NPCID}";
-													E3ImGUI.MQCommandQueue.Enqueue(command);
-												}
+												
+												string command = $"/target id {stats.NPCID}";
+												E3ImGUI.MQCommandQueue.Enqueue(command);
+												
 											}
 
 										}

@@ -24,6 +24,7 @@ namespace E3Core.UI.Windows.Hud
 		private static bool _imguiContextReady = false;
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
+		
 		[SubSystemInit]
 		public static void Init()
 		{
@@ -88,7 +89,11 @@ namespace E3Core.UI.Windows.Hud
 			{
 				bool inGroupOrRaid = false;
 				if (Basics.GroupMemberNames.Contains(user)) inGroupOrRaid = true;
-				if (!inGroupOrRaid && Basics.RaidMemberNames.Contains(user)) inGroupOrRaid = true;
+				
+				if(!_state.ShowGroupOnly)
+				{
+					if (!inGroupOrRaid && Basics.RaidMemberNames.Contains(user)) inGroupOrRaid = true;
+				}
 				if (!inGroupOrRaid) continue;
 				string casting = E3.Bots.Query<String>(user, "${Me.Casting}");
 				string targetidString = E3.Bots.Query<String>(user, "${Me.CurrentTargetID}");
@@ -187,8 +192,8 @@ namespace E3Core.UI.Windows.Hud
 	
 		private static void RenderBotCastingGrid(IReadOnlyList<TableRow> entries)
 		{
-			int columnCount = 3;
-			if (entries.Count > 6) columnCount = 4;
+			int columnCount = E3.CharacterSettings.E3Hud_Casting_ColumnCounts;
+			if (entries.Count > 6) columnCount = 6;
 			int tableFlags = (int)( ImGuiTableFlags.ImGuiTableFlags_Resizable);
 			using (var table = ImGUITable.Aquire())
 			{
@@ -231,6 +236,13 @@ namespace E3Core.UI.Windows.Hud
 					}
 
 					imgui_Separator();
+					imgui_Separator();
+					if (imgui_Checkbox("##CastingGroupInfo_ShowGroupOnly", _state.ShowGroupOnly))
+					{
+						_state.ShowGroupOnly = imgui_Checkbox_Get("##CastingGroupInfo_ShowGroupOnly");
+					}
+					imgui_SameLine(0);
+					imgui_Text("Show Only Group");
 					using (var style = PushStyle.Aquire())
 					{
 						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -307,8 +319,35 @@ namespace E3Core.UI.Windows.Hud
 					
 						imgui_InputInt_Clear(keyForInput);
 					}
-
 					imgui_Separator();
+					using (var style = PushStyle.Aquire())
+					{
+						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
+						imgui_Text("Column Count");
+
+					}
+					keyForInput = $"##CastingHud_columncount_set";
+					imgui_SetNextItemWidth(100);
+					if (imgui_InputInt(keyForInput, _state.ColumnCounts, 1, 1))
+					{
+						int updated = imgui_InputInt_Get(keyForInput);
+
+						if (updated > 6)
+						{
+							updated = 6;
+
+						}
+						if (updated < 1)
+						{
+							updated = 1;
+
+						}
+						_state.ColumnCounts = updated;
+						imgui_InputInt_Clear(keyForInput);
+					}
+					imgui_Separator();
+					
+					
 					using (var style = PushStyle.Aquire())
 					{
 						style.PushStyleColor((int)ImGuiCol.Text, 0.95f, 0.85f, 0.35f, 1.0f);
@@ -399,8 +438,8 @@ namespace E3Core.UI.Windows.Hud
 
 			public string SelectedFont { get => E3.CharacterSettings.E3Hud_Casting_SelectedFont; set { E3.CharacterSettings.E3Hud_Casting_SelectedFont = value; IsDirty = true; } }
 			public Int32 SelectedFontSize { get => E3.CharacterSettings.E3Hud_Casting_SelectedFontSize; set { E3.CharacterSettings.E3Hud_Casting_SelectedFontSize = value; IsDirty = true; } }
-
-			
+			public Boolean ShowGroupOnly { get => E3.CharacterSettings.E3Hud_Casting_ShowGroupOnly; set { E3.CharacterSettings.E3Hud_Casting_ShowGroupOnly = value; IsDirty = true; } }
+			public Int32 ColumnCounts { get => E3.CharacterSettings.E3Hud_Casting_ColumnCounts; set { E3.CharacterSettings.E3Hud_Casting_ColumnCounts = value; IsDirty = true; } }
 
 		}
 
