@@ -1873,7 +1873,8 @@ namespace E3Core.Processors
 			if (string.IsNullOrWhiteSpace(s.CleanName)) return true;//no name, possibly swarm pet
 			if (s.CleanName.EndsWith("s pet", StringComparison.OrdinalIgnoreCase)) return true;
 			if (s.CleanName.EndsWith("s Animated Corpse", StringComparison.OrdinalIgnoreCase)) return true;
-			
+			if (s.CleanName.EndsWith("s doppelganger", StringComparison.OrdinalIgnoreCase)) return true;
+
 
 			//using(_log.Trace())
 			{
