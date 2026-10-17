@@ -997,6 +997,7 @@ namespace E3Core.Processors
 						{
 
 							E3FollowTargetName = user;
+							Following = true;
 							if (E3.CurrentClass != Class.Bard)
 							{
 								Casting.Interrupt();

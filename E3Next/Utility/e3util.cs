@@ -2299,7 +2299,7 @@ namespace E3Core.Utility
 				}
 				else
 				{
-					Int32 targetID = MQ.Query<Int32>("${Target.ID}");
+				Int32 targetID = MQ.Query<Int32>("${Target.ID}");
 					if (targetID > 0)
 					{
 						if (_spawns.TryByID(targetID, out var spawn))

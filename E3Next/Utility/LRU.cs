@@ -1,4 +1,5 @@
-﻿using MonoCore;
+﻿using E3Core.Processors;
+using MonoCore;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Management;
 
 namespace E3Core.Utility
 {
@@ -28,7 +30,7 @@ namespace E3Core.Utility
 	}
 	public class LRU<TKey, TValue>
 	{
-		private Dictionary<TKey, ICacheNode> _values;
+		public Dictionary<TKey, ICacheNode> _values;
 		private ICacheNode _firstNode;
 		private ICacheNode _lastNode;
 		private object _lock = new object();
@@ -40,7 +42,7 @@ namespace E3Core.Utility
 		private Boolean _isCloneable = false;
 		private Pool<ICacheNode> _nodePool;
 		public Action<TKey, TValue, TValue> _tryUpdate;
-
+		private static IMQ MQ = E3.MQ;
 		private int _poolMaxSize;
 		public Action<TKey, TValue, TValue> TryUpdateAction = null;
 
@@ -73,7 +75,7 @@ namespace E3Core.Utility
 			_values = new Dictionary<TKey, ICacheNode>(comparer);
 			_poolMaxSize = MaxCacheSize;
 			_maxSize = MaxCacheSize;
-			_nodePool = new Pool<ICacheNode>(_maxSize + 1, p => new CacheNodePool(p), LoadingMode.Lazy, AccessMode.FIFO, CollectionMode.Exception, true);
+			_nodePool = new Pool<ICacheNode>(_maxSize + 2, p => new CacheNodePool(p), LoadingMode.Lazy, AccessMode.FIFO, CollectionMode.Exception, true);
 
 			if (typeof(TValue).GetInterface("IDisposable") != null)
 			{
@@ -157,53 +159,61 @@ namespace E3Core.Utility
 					MoveToHead(_values[key]);
 					return false;
 				}
-
-				ICacheNode node = _nodePool.Acquire();
-				node.Key = key;
-				node.Value = value;
-				node.LastAccessed = DateTime.Now.Ticks;
-
-				_values.Add(key, node);
-
-				node.NextNode = _firstNode;
-				if (_firstNode != null)
+				try
 				{
-					_firstNode.PreviousNode = node;
-				}
-				_firstNode = node;
+					ICacheNode node = _nodePool.Acquire();
+					node.Key = key;
+					node.Value = value;
+					node.LastAccessed = DateTime.Now.Ticks;
 
-				if (_lastNode == null)
-				{
-					_lastNode = node;
-				}
+					_values.Add(key, node);
 
-				if (_values.Count > _maxSize && _lastNode != null)
-				{
-					var removingNode = _lastNode;
-
-					if (removingNode.PreviousNode != null)
+					node.NextNode = _firstNode;
+					if (_firstNode != null)
 					{
-						removingNode.PreviousNode.NextNode = null;
+						_firstNode.PreviousNode = node;
+					}
+					_firstNode = node;
+
+					if (_lastNode == null)
+					{
+						_lastNode = node;
 					}
 
-					_lastNode = removingNode.PreviousNode;
-
-					_values.Remove(removingNode.Key);
-
-					if (_valueUsesIDispose)
+					if (_values.Count > _maxSize && _lastNode != null)
 					{
-						IDisposable tempObject = (IDisposable)removingNode.Value;
-						tempObject.Dispose();
+						var removingNode = _lastNode;
+
+						if (removingNode.PreviousNode != null)
+						{
+							removingNode.PreviousNode.NextNode = null;
+						}
+
+						_lastNode = removingNode.PreviousNode;
+
+						_values.Remove(removingNode.Key);
+
+						if (_valueUsesIDispose)
+						{
+							IDisposable tempObject = (IDisposable)removingNode.Value;
+							tempObject.Dispose();
+
+						}
+						else
+						{
+							System.Diagnostics.Debug.WriteLine("Non Disposeable object");
+						}
+						removingNode.PreviousNode = null;
+						removingNode.Dispose();
 
 					}
-					else
-					{
-						System.Diagnostics.Debug.WriteLine("Non Disposeable object");
-					}
-					removingNode.PreviousNode = null;
-					removingNode.Dispose();
-
 				}
+				catch(Exception ex)
+				{
+					E3.Bots.Broadcast($"Error trying to add key: {key} value:{value} with error {ex.Message}");
+					return false;
+				}
+				
 			}
 
 			return true;

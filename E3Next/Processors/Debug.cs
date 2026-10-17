@@ -18,6 +18,7 @@ namespace E3Core.Processors
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 		private static Logging _log = E3.Log;
+		private static LRU<Int32, Int32> _lruTest = new LRU<Int32, Int32>(3);
 
 		[SubSystemInit]
 		public static void Debug_Init()
@@ -205,6 +206,33 @@ namespace E3Core.Processors
 					}
 				}
 			});
+
+			EventProcessor.RegisterCommand("/e3debug_check_lru", (x) =>
+			{
+			if (x.args.Count > 0)
+			{
+
+				Int32 value = Int32.Parse(x.args[0]);
+
+				if (!_lruTest.ContainsKey(value))
+				{
+					_lruTest.TryAdd(value, 0);
+				}
+					_lruTest[value]++;
+
+				}
+				else
+				{
+
+					foreach(var pair in _lruTest._values)
+					{
+						MQ.Write($"{pair.Key}:{pair.Value.Value}:{pair.Value.LastAccessed}");
+					}
+				
+				}
+			}, "test lru object");
+
+
 			EventProcessor.RegisterCommand("/e3debug_check_petbuffs", x =>
 			{
 

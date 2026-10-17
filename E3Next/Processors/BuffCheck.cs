@@ -152,12 +152,7 @@ namespace E3Core.Processors
 					}
 				}
 			});
-			EventProcessor.RegisterCommand("/e3clearbufftimers", (x) =>
-			{
-				E3.Bots.Broadcast("Clearing buff timers");
-				ClearBuffTimers();
-
-			});
+			
 
 		
 			EventProcessor.RegisterCommand("/blockbuff", (x) =>

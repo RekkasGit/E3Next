@@ -1,4 +1,6 @@
-﻿using E3Core.Settings;
+﻿using E3Core.Data;
+using E3Core.Settings;
+using E3Core.UI.Windows.CharacterSettings;
 using E3Core.Utility;
 using MonoCore;
 using System;
@@ -19,10 +21,13 @@ namespace E3Core.Processors
 		private static Int64 _nextDispelCheckInterval = 500;
 		[ExposedData("Dispel","MobsToDispel")]
 		public static HashSet<Int32> _mobsToDispel = new HashSet<int>();
+		private static LRU<Int32, Int32> DispelAttemptsByMobID = new LRU<Int32, Int32>(3);
 
 		[SubSystemInit]
 		public static void Init_Dispel()
 		{
+
+			
 
 			e3util.RegisterCommandWithTarget("/e3dispel", DispelOn,"similar to /debuff or /dotson but for dispels");
 			EventProcessor.RegisterCommand("/e3dispeloff", (x) =>
@@ -41,6 +46,7 @@ namespace E3Core.Processors
         public static void Reset()
         {
             _mobsToDispel.Clear();
+			DispelAttemptsByMobID.Clear();
         }
 
 		public static void DispelOn(Int32 mobid)
@@ -83,7 +89,7 @@ namespace E3Core.Processors
 						{
 							if (!CheckDispelCurrentTarget())
 							{
-								E3.Bots.Broadcast($"\agRemoving mob: [\ap{s.CleanName}\ag] (\aw{s.ID}\ag) from Dispel list, no longer has dispelable buffs.");
+								E3.Bots.Broadcast($"\agRemoving mob: [\ap{s.CleanName}\ag] (\aw{s.ID}\ag) from Dispel list, no longer has dispelable buffs or max tries reached.");
 								_mobsToDispel.Remove(target);
 							}
 						}
@@ -99,6 +105,16 @@ namespace E3Core.Processors
 			if (targetId != Assist.AssistTargetID && e3util.IsManualControl())
 			{
 				return false;
+			}
+			if (DispelAttemptsByMobID.ContainsKey(targetId) && E3.CharacterSettings.Dispels.Count>0)
+			{
+				//technically you can have multiple dispel items, but this isn't how this is really used. as people only ever use one.
+				var tspell = E3.CharacterSettings.Dispels[0];
+				Int32 count = DispelAttemptsByMobID[targetId];
+				if (tspell.MaxTries != Spell.MaxTriesDefault && count > tspell.MaxTries)
+				{
+					return true;
+				}
 			}
 			if (Casting.TrueTarget(targetId))
 			{
@@ -152,6 +168,16 @@ namespace E3Core.Processors
 									if (Casting.InRange(targetId,spell) && Casting.CheckMana(spell) && Casting.CheckReady(spell))
 									{
 										Casting.Cast(0, spell);
+										if(!DispelAttemptsByMobID.ContainsKey(targetId))
+										{
+											DispelAttemptsByMobID.TryAdd(targetId, 0);
+										}
+										//check again, as the try add can possibly fail.
+										if (DispelAttemptsByMobID.ContainsKey(targetId))
+										{
+											DispelAttemptsByMobID[targetId]++;
+										}
+											
 									}
 								}
 								//returning true so that it can be called again and eventually return false when there are no more buffs on the mob

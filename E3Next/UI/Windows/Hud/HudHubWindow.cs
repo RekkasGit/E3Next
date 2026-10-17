@@ -74,7 +74,7 @@ namespace E3Core.UI.Windows.Hud
 			(400d, 500d, 1.0f, 0.35f, 0.2f),
 			(500d, double.MaxValue, 1.0f, 0.05f, 0.05f)
 		};
-		private static readonly (double MinDist, double MaxDist, float R, float G, float B)[] _aggroSeverity = new[]
+		private static readonly (double MinAggro, double MaxAggro, float R, float G, float B)[] _aggroSeverity = new[]
 		{
 			(0d, 10,  0.25f, 0.85f, 0.25f),
 			(10d, 20d,0.6f, 0.9f, 0.6f),
@@ -149,12 +149,12 @@ namespace E3Core.UI.Windows.Hud
 			}
 		}
 		
-		private static (float r, float g, float b, float a) GetAggroSeverityColor(double distance)
+		private static (float r, float g, float b, float a) GetAggroSeverityColor(double aggro)
 		{
 
 			foreach (var band in _aggroSeverity)
 			{
-				if (distance >= band.MinDist && distance < band.MaxDist)
+				if (aggro >= band.MinAggro && aggro < band.MaxAggro)
 				{
 					return (band.R, band.G, band.B, 1);
 				}
@@ -548,6 +548,7 @@ namespace E3Core.UI.Windows.Hud
 								slotData.Distance = (int)s.Distance3D;
 								slotData.DistanceColor = GetDistanceSeverityColor(s.Distance3D);
 								slotData.NPCConColor = GetConColorRGB(s.ConColorID);
+								slotData.AggroColor = GetAggroSeverityColor(aggroPct);
 							}
 						}
 						else
@@ -3984,12 +3985,13 @@ namespace E3Core.UI.Windows.Hud
 					using (var table = ImGUITable.Aquire())
 					{
 						
-						if (table.BeginTable(tableName,5, tableFlags, 0f, 0))
+						if (table.BeginTable(tableName,6, tableFlags, 0f, 0))
 						{
 							imgui_TableSetupColumn("Dist",(int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed,0);
 							imgui_TableSetupColumn("ID", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 0);
 							imgui_TableSetupColumn("Level", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 0);
 							imgui_TableSetupColumn("Class", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 0);
+							imgui_TableSetupColumn("Aggro", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed, 0);
 							imgui_TableSetupColumn("Name", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0);
 							imgui_TableHeadersRow();
 
@@ -4016,6 +4018,9 @@ namespace E3Core.UI.Windows.Hud
 										imgui_TableSetColumnIndex(3);
 										imgui_Text(stats.ShortClassName);
 										imgui_TableSetColumnIndex(4);
+										var ac = stats.AggroColor;
+										imgui_TextColored(ac.r,ac.g,ac.b,1.0f,e3util.GetIntStr(stats.PctAggro));
+										imgui_TableSetColumnIndex(5);
 
 									}
 									else
@@ -4029,6 +4034,8 @@ namespace E3Core.UI.Windows.Hud
 										imgui_TableSetColumnIndex(3);
 										imgui_Text(String.Empty);
 										imgui_TableSetColumnIndex(4);
+										imgui_Text(String.Empty);
+										imgui_TableSetColumnIndex(5);
 									}
 
 									int smallIconSize = state.SelectedFontSize;
@@ -6122,7 +6129,8 @@ namespace E3Core.UI.Windows.Hud
 			public Int32 Distance;
 			public (float r, float g, float b, float a) DistanceColor;
 			public (float r, float g, float b, float a) NPCConColor;
-			
+			public (float r, float g, float b, float a) AggroColor;
+
 
 			public TableRow_XTargetInfo(Int32 npcid, int slotID)
 			{

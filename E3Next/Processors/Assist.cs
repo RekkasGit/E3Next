@@ -800,7 +800,7 @@ namespace E3Core.Processors
 					}
 					if (E3.CharacterSettings.Assist_Type.Equals("AutoAttack", StringComparison.OrdinalIgnoreCase))
 					{
-						if (E3.CharacterSettings.Assist_MeleeStickPoint == "behindonce")
+						if (String.Equals(E3.CharacterSettings.Assist_MeleeStickPoint, "behindonce",StringComparison.OrdinalIgnoreCase))
 						{
 							string delayedStrafeOption = " delaystrafe";
 							if (!E3.CharacterSettings.Assist_DelayStrafeEnabled) delayedStrafeOption = String.Empty;

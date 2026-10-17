@@ -142,9 +142,90 @@ namespace E3Core.Processors
 					}
 				}
 			});
-		
+
+			EventProcessor.RegisterCommand("/e3clear", (x) =>
+			{
+				if (x.args.Count > 0)
+				{
+
+					if (x.args[0] == "bufftimers")
+					{
+						E3.Bots.Broadcast("Clearing buff timers");
+						BuffCheck.ClearBuffTimers();
+
+					}
+					else if (x.args[0] == "dispel")
+					{
+						E3.Bots.Broadcast("Clearing Dispel data");
+						Dispel.Reset();
+					}
+					else if (x.args[0] == "debuffdottimers")
+					{
+						E3.Bots.Broadcast("Clearing debuff/dot timers");
+						foreach (var pair in DebuffDot._debuffdotTimers)
+						{
+
+							pair.Value.Dispose();
+						}
+						DebuffDot._debuffdotTimers.Clear();
+					}
+				}
+
+			},"clear data from e3n. bufftimers,dispel,debuffdottimers");
+
+			EventProcessor.RegisterCommand("/e3print-", (x) =>
+			{
+				
+				if (x.args.Count > 0)
+				{
+
+					if (x.args[0] == "debuffdottimers")
+					{
+						e3util.PrintTimerStatus(DebuffDot._debuffdotTimers, "Debuff/Dot Timers");
+
+					}
+					else if (x.args[0] == "aa")
+					{
+						List<Data.Spell> aas = e3util.ListAllActiveAA();
 
 
+						foreach (var aa in aas)
+						{
+							E3.Bots.Broadcast($"{aa.CastName}:{aa.AAID}");
+						}
+						E3.Bots.Broadcast("Total Count:" + aas.Count);
+					}
+					else if (x.args[0] == "discs")
+					{
+						List<Data.Spell> aas = e3util.ListAllDiscData();
+
+
+						foreach (var aa in aas)
+						{
+							E3.Bots.Broadcast(aa.CastName);
+						}
+						E3.Bots.Broadcast("Total Count:" + aas.Count);
+					}
+					else if(x.args[0] =="ini")
+					{
+						// Print Character InI file 
+						CharacterSettings settings = E3.CharacterSettings;
+						IniData newFile = settings.ParsedData;
+						List<string> sections = newFile.Sections.Select(s => s.SectionName).ToList();
+
+						foreach (string elements in sections)
+						{
+							var KeyData = newFile.Sections[elements];
+							MQ.Write("\ag" + elements + ":");
+							foreach (var key in KeyData)
+							{
+								MQ.Write("---" + key.KeyName + " = " + key.Value);
+							}
+						}
+					}
+				}
+
+			}, "Print out data from e3n. debuffdottimers,aa,discs,ini");
 			EventProcessor.RegisterCommand("/e3toggle_amidead", (x) =>
 			{
 
@@ -267,53 +348,6 @@ namespace E3Core.Processors
 					}
 				}
 			}, "Brace for impact!");
-
-
-			EventProcessor.RegisterCommand("/e3printAA", (x) =>
-			{
-				List<Data.Spell> aas = e3util.ListAllActiveAA();
-
-
-				foreach (var aa in aas)
-				{
-					E3.Bots.Broadcast(aa.CastName);
-				}
-				E3.Bots.Broadcast("Total Count:" + aas.Count);
-				//E3.Bots.Broadcast(output);
-
-			}, "Print out AA you currently have");
-			EventProcessor.RegisterCommand("/e3printDiscs", (x) =>
-			{
-				List<Data.Spell> aas = e3util.ListAllDiscData();
-
-
-				foreach (var aa in aas)
-				{
-					E3.Bots.Broadcast(aa.CastName);
-				}
-				E3.Bots.Broadcast("Total Count:" + aas.Count);
-
-			}, "print out discs you currently have");
-
-
-			EventProcessor.RegisterCommand("/e3printini", (x) =>
-			{
-				// Print Character InI file 
-				CharacterSettings settings = E3.CharacterSettings;
-				IniData newFile = settings.ParsedData;
-				List<string> sections = newFile.Sections.Select(s => s.SectionName).ToList();
-
-				foreach (string elements in sections)
-				{
-					var KeyData = newFile.Sections[elements];
-					MQ.Write("\ag" + elements + ":");
-					foreach (var key in KeyData)
-					{
-						MQ.Write("---" + key.KeyName + " = " + key.Value);
-					}
-				}
-			}, "Print out your character ini file");
-			//_enableXTargetFix
 
 
 			EventProcessor.RegisterCommand("/e3consume", (x) =>

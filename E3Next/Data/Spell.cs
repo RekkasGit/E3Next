@@ -1191,7 +1191,7 @@ namespace E3Core.Data
         public String TargetType = String.Empty;
         public Int32 SpellGem;
         public Int32 GiveUpTimer;
-        private const Int32 MaxTriesDefault = 5;
+        public const Int32 MaxTriesDefault = 5;
         public Int32 MaxTries = MaxTriesDefault;
         public Dictionary<string, List<Int32>> CheckForCollection = new Dictionary<string, List<Int32>>();
         public string CheckForRaw = String.Empty;

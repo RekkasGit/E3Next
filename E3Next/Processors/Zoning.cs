@@ -124,6 +124,7 @@ namespace E3Core.Processors
 					Pets.Reset();
 					Nukes.Reset();
 					BuffCheck.AddToBuffCheckTimer(5000);
+					Dispel.Reset();
 
 					//clear out the timers as the ID's are no longer valid
 					BuffCheck.Reset();
