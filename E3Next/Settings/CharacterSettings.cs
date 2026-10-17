@@ -636,6 +636,8 @@ namespace E3Core.Settings
 		public string BandoBuff_BandoNameWithoutBuff = String.Empty;
 		[INI_Section("Bando Buff", "BandoNameWithoutDeBuff")]
 		public string BandoBuff_BandoNameWithoutDeBuff = String.Empty;
+		[INI_Section("Bando Buff", "ExceptionZone")]
+		public List<string> BandoBuff_ExceptionZones = new List<string> { };
 
 		//manastone
 		[INI_Section("Manastone", "Manastone Enabled (On/Off)")]
@@ -1159,6 +1161,15 @@ namespace E3Core.Settings
 			LoadKeyData("Bando Buff", "BandoNameWithBuff", ParsedData, ref BandoBuff_BandoName);
 			LoadKeyData("Bando Buff", "BandoNameWithoutBuff", ParsedData, ref BandoBuff_BandoNameWithoutBuff);
 			LoadKeyData("Bando Buff", "BandoNameWithoutDeBuff", ParsedData, ref BandoBuff_BandoNameWithoutDeBuff);
+			List<string> bandoZoneList = new List<string>();
+			LoadKeyData("Bando Buff", "ExceptionZone", ParsedData, bandoZoneList);
+			foreach (var zone in bandoZoneList)
+			{
+				if (!BandoBuff_ExceptionZones.Contains(zone, StringComparer.OrdinalIgnoreCase))
+				{
+					BandoBuff_ExceptionZones.Add(zone);
+				}
+			}
 
 			LoadKeyData("Assist Settings", "Assist Type (Melee/Ranged/Off)", ParsedData, ref Assist_Type);
 			LoadKeyData("Assist Settings", "Melee Stick Point", ParsedData, ref Assist_MeleeStickPoint);
