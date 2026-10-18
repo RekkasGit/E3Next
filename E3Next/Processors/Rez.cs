@@ -69,7 +69,7 @@ namespace E3Core.Processors
 
 			if (!E3.CharacterSettings.Rez_AutoAcceptRez) return;
 
-			if (e3util.IsRezDiaglogBoxOpen())
+			if (!e3util.IsManualControl() && e3util.IsRezDiaglogBoxOpen())
 			{
 				MQ.Delay(1000);
 				MQ.Cmd("/nomodkey /notify ConfirmationDialogBox Yes_Button leftmouseup", 2000);//start zone

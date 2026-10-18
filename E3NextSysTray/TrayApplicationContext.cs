@@ -25,10 +25,19 @@ namespace E3NextSysTray
 {
 	internal class TrayApplicationContext : ApplicationContext
 	{
+
+		public enum numberOfBits
+		{
+			bit32,
+			bit64,
+			unknown
+
+		}
+
 		private readonly SynchronizationContext _syncContext;
 
 		private Toast _primaryToast;
-		private string _releaseID = "v1.55.56-3.1.4.9";
+		private string _releaseID = "v1.55.58-3.1.4.9";
 		//private Boolean is32Bit = true;
 		private NotifyIcon trayIcon;
 		private ContextMenuStrip contextMenu;
@@ -44,9 +53,12 @@ namespace E3NextSysTray
 		ToolStripMenuItem channelItem_dev;
 		ToolStripMenuItem channelReleaseNotes;
 		private static string _repoName = "E3NextAndMQBinaryNoFramework";
+		private const string _repoName_TOB_x64 = "E3N-MQ-Binary-x64-TOB-NoFramework";
+		private const string _repoName_RoF2_x32 = "E3NextAndMQBinaryNoFramework";
 		private static string _githubUserName = "RekkasGit";
 		private AppSettings _appSettings;
-
+		private static numberOfBits _arch = numberOfBits.unknown;
+		private static string _archPath = String.Empty;
 		private string _mqLocation = String.Empty;
 		private string _downloadFullFileName = "full_e3n_mq_download.zip";
 		private string _currentExePath = Process.GetCurrentProcess().MainModule.FileName;
@@ -134,6 +146,8 @@ namespace E3NextSysTray
 		}
 		public TrayApplicationContext()
 		{
+			
+
 			//create the e3next.png if we need for the toast.
 			CreatePNGIfNeeded();
 			string tempPngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "E3Next.png");
@@ -153,6 +167,11 @@ namespace E3NextSysTray
 			_mqLocation = Process.GetCurrentProcess().MainModule.FileName;
 			_mqLocation = Path.GetDirectoryName(_mqLocation).Replace(@"\mono\macros\e3", "").Replace(@"/mono/macros/e3", "");
 			_currentDirectory = Path.GetDirectoryName(_currentExePath);
+			_archPath = Path.Combine(_currentDirectory, "MacroQuest.exe");
+
+			var numberOfBits = Program.GetCPPImageBits(_archPath);
+			if (numberOfBits == 64) _arch = TrayApplicationContext.numberOfBits.bit64;
+			if (numberOfBits == 32) _arch= TrayApplicationContext.numberOfBits.bit32;
 
 
 			//now that current directory is made, we can access the settings stuff
@@ -408,15 +427,12 @@ namespace E3NextSysTray
 			updateItem.Enabled = false;
 			progressItem.Enabled = true;
 			//lets check to see if macroquest.exe exists and if its 32bit or 64bit.
-			string pathToCheck = Path.Combine(_currentDirectory, "MacroQuest.exe");
-
-			var numberOfBits = Program.GetCPPImageBits(pathToCheck);
-
-			if (numberOfBits == -1)
+		
+			if (_arch == numberOfBits.unknown)
 			{
 				string choice = AskBitVersions.Show(
 						"Action Required",
-						$"Which version would you like? (Couldn't find macroquest in [{pathToCheck}])",
+						$"Which version would you like? (Couldn't find macroquest in [{_archPath}])",
 						"32bit (Rof2)",
 						"64bit (TOB+)"
 					);
@@ -424,17 +440,12 @@ namespace E3NextSysTray
 				if (choice == "32bit (Rof2)")
 				{
 					// Do upload logic
-					numberOfBits = 32;
+					_arch = numberOfBits.bit32;
 				}
 				else
 				{
-					numberOfBits = 64;
-
-					MessageBox.Show("Sorry 64bit is not yet supported on EMU");
-					updateItem.Enabled = true;
-					progressItem.Enabled = false;
-					return;
-
+					_arch = numberOfBits.bit64;
+		
 				}
 
 			}
@@ -458,15 +469,15 @@ namespace E3NextSysTray
 				List<(string, string)> filesDownloaded = new List<(string, string)>();
 
 
-				if (numberOfBits == 32 || numberOfBits == -1)
+				if (_arch== numberOfBits.bit32 || _arch == numberOfBits.unknown)
 				{
 				
 					UpdateToastStatus($"Downloading E3Next and MQ update");
 					System.Threading.Thread.Sleep(2000);
-					DownloadUpdate(_repoName, _downloadFullFileName);
+					DownloadUpdate(_repoName_RoF2_x32, _downloadFullFileName);
 					filesDownloaded.Add((_downloadFullFileName, _mqLocation));
 
-					pathToCheck = Path.Combine(_currentDirectory, "mono-2.0-sgen.dll");
+					var pathToCheck = Path.Combine(_currentDirectory, "mono-2.0-sgen.dll");
 					var sgenbits32 = Program.GetPEImageBits(pathToCheck);
 
 					if (sgenbits32 != 32 || !File.Exists(Path.Combine(_currentDirectory, @"resources\Mono\32bit\bin\mono.exe")))
@@ -482,21 +493,20 @@ namespace E3NextSysTray
 				}
 				else
 				{
-
 					//Insert 64bit MQ Here
+					UpdateToastStatus($"Downloading E3Next and MQ update x64 TOB");
+					System.Threading.Thread.Sleep(2000);
+					DownloadUpdate(_repoName_TOB_x64, _downloadFullFileName);
+					filesDownloaded.Add((_downloadFullFileName, _mqLocation));
 
-					pathToCheck = Path.Combine(_currentDirectory, "mono-2.0-sgen.dll");
+					var pathToCheck = Path.Combine(_currentDirectory, "mono-2.0-sgen.dll");
 					var sgenbits = Program.GetPEImageBits(pathToCheck);
-
-
-
 					if (sgenbits != 64 || !File.Exists(Path.Combine(_currentDirectory, @"resources\Mono\64bit\bin\mono.exe")))
 					{
 						UpdateToastStatus($"Downloading Mono framework....");
 						System.Threading.Thread.Sleep(2000);
 						DownloadUpdate("MQ2Mono-Framework64", "monoframework.zip");
 						filesDownloaded.Add(("monoframework.zip", Path.Combine(_currentDirectory, _mqLocation)));
-
 					}
 				}
 
@@ -848,7 +858,8 @@ namespace E3NextSysTray
 		{
 			Release latestRelease = null;
 
-			if (String.IsNullOrWhiteSpace(repo)) repo = _repoName;
+			if (String.IsNullOrWhiteSpace(repo) && _arch == numberOfBits.bit32) repo = _repoName_RoF2_x32;
+			if (String.IsNullOrWhiteSpace(repo) && _arch == numberOfBits.bit64) repo = _repoName_TOB_x64;
 
 			try
 			{

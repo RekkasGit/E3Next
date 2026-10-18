@@ -510,8 +510,17 @@ namespace E3Core.Processors
             }
             else
             {
-                
-                string traderName = MQ.Query<string>($"${{Window[TradeWnd].Child[TRDW_HisName].Text}}");
+
+                string MQQUery = "${Window[TradeWnd].Child[TRDW_HisName].Text}";
+                if (e3util.Is64Bit())
+                {
+                    //this was changed at some point for TOB it needs to be other.
+					MQQUery = "${Window[TradeWnd].Child[TRDW_OtherName].Text}";
+				}
+
+				string traderName = MQ.Query<string>(MQQUery);
+
+
                 Spawn trader;
                 
                 if (_spawns.TryByName(traderName,out trader))

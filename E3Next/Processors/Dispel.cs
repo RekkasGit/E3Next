@@ -21,7 +21,7 @@ namespace E3Core.Processors
 		private static Int64 _nextDispelCheckInterval = 500;
 		[ExposedData("Dispel","MobsToDispel")]
 		public static HashSet<Int32> _mobsToDispel = new HashSet<int>();
-		private static LRU<Int32, Int32> DispelAttemptsByMobID = new LRU<Int32, Int32>(3);
+		private static LRU<Int32, Int32> DispelAttemptsByMobID = new LRU<Int32, Int32>(500);
 
 		[SubSystemInit]
 		public static void Init_Dispel()

@@ -2,9 +2,12 @@
 using E3Core.Processors;
 using E3Core.Server;
 using E3Core.Settings;
+using E3Core.UI.Windows.CharacterSettings;
+using Google.Protobuf;
 using IniParser;
 using MonoCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.PerformanceData;
@@ -19,8 +22,6 @@ using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Text;
 using static MonoCore.EventProcessor;
-using Google.Protobuf;
-using System.Collections.Concurrent;
 
 namespace E3Core.Utility
 {
@@ -1594,9 +1595,11 @@ namespace E3Core.Utility
 							if (!BuffCheck.BuffInfoCache.ContainsKey(spell_id))
 							{
 								var spell = new Data.Spell(spellID);
+								
 								if (spell.CastType == CastingType.Spell || spell.CastType == CastingType.AA)
 								{
-									for (Int32 inc = 0; inc < 12; inc++)
+									Int32 dataLineCount = MQ.SpellDataGetLineCount(spell.SpellID.ToString());
+									for (Int32 inc = 0; inc < dataLineCount; inc++)
 									{
 										string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), inc);
 										if (!String.IsNullOrEmpty(teffect))
@@ -2710,16 +2713,40 @@ namespace E3Core.Utility
 		}
 		public static bool IsRezDiaglogBoxOpen()
 		{
-			bool dialogBoxOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
-			if (dialogBoxOpen)
+			if (e3util.Is64Bit())
 			{
-				string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
-				if ((message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
+				//in TOB the dialog box prevents the zoning form happening, let it happen so normal logic can take place for bots.
+				bool dialogBoxOpen = MQ.Query<bool>("${Window[RespawnWnd].Open}");
+				if (dialogBoxOpen)
 				{
-					//MQ.Cmd("/nomodkey /notify ConfirmationDialogBox No_Button leftmouseup");
-					return true; //not a rez dialog box, do not accept.
+					MQ.Cmd("/notify RespawnWnd SelectButton leftmouseup");
+					return false; 
+				}
+				dialogBoxOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
+				if (dialogBoxOpen)
+				{
+					string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
+					if ((message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
+					{
+						
+						return true; 
+					}
 				}
 			}
+			else
+			{
+				bool dialogBoxOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
+				if (dialogBoxOpen)
+				{
+					string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
+					if ((message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
+					{
+						
+						return true;
+					}
+				}
+			}
+				
 
 			return false;
 		}
@@ -2831,7 +2858,8 @@ namespace E3Core.Utility
 								var spell = new Data.Spell(spellName);
 								if (spell.CastType == CastingType.AA)
 								{
-									for (Int32 x = 0; x < 12; x++)
+									Int32 dataLineCount = MQ.SpellDataGetLineCount(spell.SpellID.ToString());
+									for (Int32 x = 0; x < dataLineCount; x++)
 									{
 										string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
 										spell.SpellEffects.Add(teffect);
@@ -2855,7 +2883,8 @@ namespace E3Core.Utility
 
 						if (spell.CastType == CastingType.AA)
 						{
-							for (Int32 x = 0; x < 12; x++)
+							Int32 dataLineCount = MQ.SpellDataGetLineCount(spell.SpellID.ToString());
+							for (Int32 x = 0; x < dataLineCount; x++)
 							{
 								string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
 								spell.SpellEffects.Add(teffect);
@@ -2900,8 +2929,8 @@ namespace E3Core.Utility
 					var spell = new Data.Spell(spellName);
 					if (spell.CastType == CastingType.Spell)
 					{
-
-						for (Int32 x = 0; x < 12; x++)
+						Int32 dataLineCount = MQ.SpellDataGetLineCount(spell.SpellID.ToString());
+						for (Int32 x = 0; x < dataLineCount; x++)
 						{
 							string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
 							spell.SpellEffects.Add(teffect);
@@ -2943,7 +2972,8 @@ namespace E3Core.Utility
 								var spell = new Data.Spell(spellName);
 								if (spell.CastType == CastingType.Disc)
 								{
-									for (Int32 x = 0; x < 12; x++)
+									Int32 dataLineCount = MQ.SpellDataGetLineCount(spell.SpellID.ToString());
+									for (Int32 x = 0; x < dataLineCount; x++)
 									{
 										string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
 										spell.SpellEffects.Add(teffect);
@@ -2973,7 +3003,8 @@ namespace E3Core.Utility
 					var spell = new Data.Spell(spellName);
 					if (spell.CastType == CastingType.Disc)
 					{
-						for (Int32 x = 0; x < 12; x++)
+						Int32 dataLineCount = MQ.SpellDataGetLineCount(spell.SpellID.ToString());
+						for (Int32 x = 0; x < dataLineCount; x++)
 						{
 							string teffect = MQ.SpellDataGetLine(spell.SpellID.ToString(), x);
 							spell.SpellEffects.Add(teffect);
@@ -3008,8 +3039,8 @@ namespace E3Core.Utility
 				{
 					string itemName = MQ.Query<string>($"${{Me.Inventory[{i}]}}");
 					var newSpell = new Data.Spell(itemName, null);
-
-					for (Int32 x = 0; x < 12; x++)
+					Int32 dataLineCount = MQ.SpellDataGetLineCount(newSpell.SpellID.ToString());
+					for (Int32 x = 0; x < dataLineCount; x++)
 					{
 						string teffect = MQ.SpellDataGetLine(newSpell.SpellName, x);
 						newSpell.SpellEffects.Add(teffect);
@@ -3033,7 +3064,8 @@ namespace E3Core.Utility
 							{
 								String bagItem = MQ.Query<String>($"${{Me.Inventory[pack{i}].Item[{e}]}}");
 								var newSpell = new Data.Spell(bagItem, null);
-								for (Int32 x = 0; x < 12; x++)
+								Int32 dataLineCount = MQ.SpellDataGetLineCount(newSpell.SpellID.ToString());
+								for (Int32 x = 0; x < dataLineCount; x++)
 								{
 									string teffect = MQ.SpellDataGetLine(newSpell.SpellName, x);
 									newSpell.SpellEffects.Add(teffect);
@@ -3051,7 +3083,8 @@ namespace E3Core.Utility
 						{
 							string itemName = MQ.Query<string>($"${{Me.Inventory[pack{i}]}}");
 							var newSpell = new Data.Spell(itemName, null);
-							for (Int32 x = 0; x < 12; x++)
+							Int32 dataLineCount = MQ.SpellDataGetLineCount(newSpell.SpellID.ToString());
+							for (Int32 x = 0; x < dataLineCount; x++)
 							{
 								string teffect = MQ.SpellDataGetLine(newSpell.SpellName, x);
 								newSpell.SpellEffects.Add(teffect);
