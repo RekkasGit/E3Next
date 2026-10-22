@@ -434,7 +434,7 @@ namespace E3Core.Settings.FeatureSettings
 									var z = pair.Value;
 									
 									command.CommandText = $"insert into resist_data (zoneid,name,mr,mri,fr,fri,cr,cri,pr,pri,dr,dri,cur,curi,slowr, slowi, snarer, snarei, mezr, mezi, charmr, charmi, pacifyr, pacifyi) " +
-														  $"values({Current_ZoneID},$name,$mr,$mri,$fr,$fri,$cr,$cri,$dr,$dri,$pr,$pri,$cur,$curi,$slowr, $slowi, $snarer, $snarei, $mezr, $mezi, $charmr, $charmi, $pacifyr, $pacifyi);";
+														  $"values({Current_ZoneID},$name,$mr,$mri,$fr,$fri,$cr,$cri,$pr,$pri,$dr,$dri,$cur,$curi,$slowr, $slowi, $snarer, $snarei, $mezr, $mezi, $charmr, $charmi, $pacifyr, $pacifyi);";
 									command.Parameters.Clear();
 									command.Parameters.AddWithValue("name", z.NPCName);
 									command.Parameters.AddWithValue("mr", z.MagicResistant);
