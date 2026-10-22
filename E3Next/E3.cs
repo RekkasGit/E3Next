@@ -964,10 +964,11 @@ namespace E3Core.Processors
 				//BufferPool.SetBufferManagerBufferPool(1024 * 1024 *10, (1024 *1024));
 				MQ.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
+
+				e3util.XtargetMax = MQ.Query<Int32>("${Me.XTargetSlots}");
 				if (e3util.IsEQLive())
 				{
 					e3util.MobMaxDebuffSlots = 200;
-					e3util.XtargetMax = 20;
 				}
 				Logging.TraceLogLevel = Logging.LogLevels.None; //log level we are currently at
                 Logging.MinLogLevelTolog = Logging.LogLevels.Error; //log levels have integers assoicatd to them. you can set this to Error to only log errors. 
