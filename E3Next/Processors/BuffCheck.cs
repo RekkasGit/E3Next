@@ -2289,6 +2289,7 @@ namespace E3Core.Processors
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BuffName)) return;
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoName)) return;
 			if (String.IsNullOrWhiteSpace(E3.CharacterSettings.BandoBuff_BandoNameWithoutBuff)) return;
+			if (E3.CharacterSettings.BandoBuff_ExceptionZones.Contains(Zoning.CurrentZone.ShortName, StringComparer.OrdinalIgnoreCase)) return;
 
 			bool hasBuff = true;
 			bool buffWillStack = MQ.Query<bool>($"${{Spell[{E3.CharacterSettings.BandoBuff_BuffName}].WillLand}}");
