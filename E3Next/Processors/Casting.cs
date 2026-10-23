@@ -907,6 +907,7 @@ namespace E3Core.Processors
 									ResistCounters[targetID].SpellCounters[spell.SpellID] = 0;
 								}
 							}
+							AutoLearnSpellLanded(spell, s);
 						}
 						else if (returnValue == CastReturn.CAST_RESIST || returnValue == CastReturn.CAST_TAKEHOLD)
 						{
@@ -924,9 +925,9 @@ namespace E3Core.Processors
 							resist.SpellMaxTries[spell.SpellID] = spell.MaxTries;
 
 							//takehold is a stacking issue, not a resist, so only learn from real resists
-							if (returnValue == CastReturn.CAST_RESIST && resist.SpellCounters[spell.SpellID] >= spell.MaxTries)
+							if (returnValue == CastReturn.CAST_RESIST)
 							{
-								AutoSaveResist(spell, s, resist.SpellCounters[spell.SpellID]);
+								AutoSaveResist(spell, s);
 							}
 
 						}
@@ -1053,72 +1054,81 @@ namespace E3Core.Processors
 				}
 			}
 		}
-		//CleanName|ResistType -> spawns that hit MaxTries resists for that type, in the current zone
-		private static Dictionary<string, HashSet<Int32>> _autoLearnSpawns = new Dictionary<string, HashSet<Int32>>();
+		//CleanName|type -> resists counted across every spawn with that name, in the current zone
+		private static Dictionary<string, Int32> _autoLearnResists = new Dictionary<string, Int32>();
 		private static Int32 _autoLearnZoneID = 0;
-		private static void AutoSaveResist(Spell spell, Spawn s, Int32 resistCount)
+		//slows learn as Slow, everything else by its element. other control spells (mez/charm/etc) aren't learned.
+		private static string GetAutoLearnType(Spell spell)
+		{
+			if (spell.Subcategory == "Slow") return "Slow";
+			if (IsControlSpell(spell)) return null;
+			switch (spell.ResistType)
+			{
+				case "Magic":
+				case "Fire":
+				case "Cold":
+				case "Poison":
+				case "Disease":
+				case "Corruption":
+					return spell.ResistType;
+			}
+			return null;
+		}
+		private static void CheckAutoLearnZone()
+		{
+			if (_autoLearnZoneID != E3.ResistSettings.Current_ZoneID)
+			{
+				_autoLearnZoneID = E3.ResistSettings.Current_ZoneID;
+				_autoLearnResists.Clear();
+			}
+		}
+		private static void AutoLearnSpellLanded(Spell spell, Spawn s)
+		{
+			if (E3.ResistSettings == null || s == null) return;
+			string learnType = GetAutoLearnType(spell);
+			if (learnType == null) return;
+			CheckAutoLearnZone();
+			//it landed, so the name isn't resistant to this type
+			_autoLearnResists.Remove(s.CleanName + "|" + learnType);
+		}
+		private static void AutoSaveResist(Spell spell, Spawn s)
 		{
 			if (!E3.GeneralSettings.General_AutoLearnResists) return;
 			if (E3.ResistSettings == null) return;
 			//the user asked for this spell to ignore the resist flags, so don't let it set them either
 			if (spell.IgnoreResistanceCheck) return;
 			if (String.IsNullOrWhiteSpace(s.CleanName)) return;
+			string learnType = GetAutoLearnType(spell);
+			if (learnType == null) return;
 
 			var ZoneData = E3.ResistSettings.ZoneData;
 			ZoneData.TryGetValue(s.CleanName, out var Resist);
+			if (Resist != null && IsAutoLearnFlagSet(Resist, learnType)) return;
 
-			//only the types ShouldSkip acts on
-			switch (spell.ResistType)
+			//named mobs are unique so they learn on their own resists, everything else counts resists
+			//across all spawns with that name (E3 stops casting a spell on one mob after MaxTries)
+			CheckAutoLearnZone();
+			Int32 resistsRequired = Math.Max(1, s.Named ? E3.GeneralSettings.General_AutoLearnResistsNamed : E3.GeneralSettings.General_AutoLearnResistsOther);
+			string learnKey = s.CleanName + "|" + learnType;
+			_autoLearnResists.TryGetValue(learnKey, out var resists);
+			resists++;
+			if (resists < resistsRequired)
 			{
-				case "Magic":
-					if (Resist != null && Resist.MagicResistant) return;
-					break;
-				case "Fire":
-					if (Resist != null && Resist.FireResistant) return;
-					break;
-				case "Cold":
-					if (Resist != null && Resist.ColdResistant) return;
-					break;
-				case "Poison":
-					if (Resist != null && Resist.PoisonResistant) return;
-					break;
-				case "Disease":
-					if (Resist != null && Resist.DiseaseResistant) return;
-					break;
-				case "Corruption":
-					if (Resist != null && Resist.CorruptResistant) return;
-					break;
-				default:
-					return;
+				_autoLearnResists[learnKey] = resists;
+				if (resists % 5 == 0)
+				{
+					MQ.Write($"\ay[E3Resist] \ag{s.CleanName} has resisted {learnType} {resists} times \ay({resists} of {resistsRequired} needed to flag {learnType} Resistant)");
+				}
+				return;
 			}
-
-			//one unlucky mob shouldn't flag every mob with that name, so it has to happen on more than one spawn.
-			//named mobs are unique, so one is enough for them.
-			if (_autoLearnZoneID != E3.ResistSettings.Current_ZoneID)
-			{
-				_autoLearnZoneID = E3.ResistSettings.Current_ZoneID;
-				_autoLearnSpawns.Clear();
-			}
-			Int32 mobsRequired = s.Named ? 1 : Math.Max(1, E3.GeneralSettings.General_AutoLearnResistsMobsRequired);
-			string learnKey = s.CleanName + "|" + spell.ResistType;
-			if (!_autoLearnSpawns.TryGetValue(learnKey, out var spawnIDs))
-			{
-				spawnIDs = new HashSet<Int32>();
-				_autoLearnSpawns.Add(learnKey, spawnIDs);
-			}
-			if (spawnIDs.Add(s.ID) && spawnIDs.Count < mobsRequired)
-			{
-				MQ.Write($"\ay[E3Resist] \ag{s.CleanName} resisted {spell.CastName} {resistCount} times \ay({spawnIDs.Count} of {mobsRequired} mobs needed to flag {spell.ResistType} Resistant)");
-			}
-			if (spawnIDs.Count < mobsRequired) return;
-			_autoLearnSpawns.Remove(learnKey);
+			_autoLearnResists.Remove(learnKey);
 
 			if (Resist == null)
 			{
 				Resist = new ResistData() { NPCName = s.CleanName };
 				ZoneData.Add(s.CleanName, Resist);
 			}
-			switch (spell.ResistType)
+			switch (learnType)
 			{
 				case "Magic": Resist.MagicResistant = true; break;
 				case "Fire": Resist.FireResistant = true; break;
@@ -1126,9 +1136,24 @@ namespace E3Core.Processors
 				case "Poison": Resist.PoisonResistant = true; break;
 				case "Disease": Resist.DiseaseResistant = true; break;
 				case "Corruption": Resist.CorruptResistant = true; break;
+				case "Slow": Resist.SlowResistant = true; break;
 			}
-			MQ.Write($"\ay[E3Resist] \agAuto-flagged \ay{s.CleanName} \agas \ay{spell.ResistType} Resistant \ag({spell.CastName} resisted {resistCount} times)");
+			MQ.Write($"\ay[E3Resist] \agAuto-flagged \ay{s.CleanName} \agas \ay{learnType} Resistant \ag(resisted {resists} times)");
 			E3.ResistSettings.SaveData();
+		}
+		private static bool IsAutoLearnFlagSet(ResistData resist, string learnType)
+		{
+			switch (learnType)
+			{
+				case "Magic": return resist.MagicResistant || resist.MagicImmune;
+				case "Fire": return resist.FireResistant || resist.FireImmune;
+				case "Cold": return resist.ColdResistant || resist.ColdImmune;
+				case "Poison": return resist.PoisonResistant || resist.PoisonImmune;
+				case "Disease": return resist.DiseaseResistant || resist.DiseaseImmune;
+				case "Corruption": return resist.CorruptResistant || resist.CorruptImmune;
+				case "Slow": return resist.SlowResistant || resist.SlowImmune;
+			}
+			return true;
 		}
 		//${E3N.State.Resist.Counters.<spawnID>} -> spellID:count:maxTries,... for that mob
 		private const string _resistCountersKey = "${E3N.State.Resist.Counters.";

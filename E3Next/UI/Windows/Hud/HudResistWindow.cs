@@ -29,6 +29,7 @@ namespace E3Core.UI.Windows.Hud
 		private const Int32 _counterImmune = 99;
 		private const Int32 _maxLogEntries = 50;
 		private const Int64 _bannerDuration = 10000;
+		private const Int32 _maxAlertsPerRefresh = 5;
 
 		private class ResistTypeInfo
 		{
@@ -216,6 +217,20 @@ namespace E3Core.UI.Windows.Hud
 				_zoneIDText = "Zone ID: " + _loadedZoneID;
 			}
 			_refreshStamp++;
+			//a reload or import can change a lot of mobs at once, report that as one line instead of an alert per mob
+			if (!baseline)
+			{
+				Int32 changedMobs = 0;
+				foreach (var pair in resist.ZoneData)
+				{
+					if (!_rowsByName.TryGetValue(pair.Key, out var existing) || existing.Flags != GetFlags(pair.Value)) changedMobs++;
+				}
+				if (changedMobs > _maxAlertsPerRefresh)
+				{
+					baseline = true;
+					AddAlert($"Reloaded resist data, {changedMobs} mobs changed", false);
+				}
+			}
 			bool needsSort = false;
 			foreach (var pair in resist.ZoneData)
 			{
@@ -237,7 +252,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				else if (row.Flags != flags)
 				{
-					for (Int32 i = 0; i < _types.Length; i++)
+					for (Int32 i = 0; i < _types.Length && !baseline; i++)
 					{
 						string before = IsImmune(row.Flags, i) ? "Immune" : IsResistant(row.Flags, i) ? "Resistant" : null;
 						string after = IsImmune(flags, i) ? "Immune" : IsResistant(flags, i) ? "Resistant" : null;

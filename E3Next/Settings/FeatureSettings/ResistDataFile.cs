@@ -55,6 +55,19 @@ namespace E3Core.Settings.FeatureSettings
 			RegisterEvents();
 			fileName = GetSettingsFilePath($"E3Resist_{E3.ServerName}.db");
 		}
+		public static bool IsControlSpell(Spell spell)
+		{
+			switch (spell.Subcategory)
+			{
+				case "Slow":
+				case "Snare":
+				case "Calm":
+				case "Enthrall":
+				case "Charm":
+					return true;
+			}
+			return false;
+		}
 		public bool ShouldSkip(Spell spell, Spawn s)
 		{
 			if (E3.ResistSettings==null)
@@ -77,17 +90,24 @@ namespace E3Core.Settings.FeatureSettings
 				else if (spell.Subcategory == "Slow" && resistInfo.SlowImmune) return true;
 
 
-				if (spell.ResistType == "Magic" && resistInfo.MagicResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.ResistType == "Fire" && resistInfo.FireResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.ResistType == "Cold" && resistInfo.ColdResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.ResistType == "Poison" && resistInfo.PoisonResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.ResistType == "Disease" && resistInfo.DiseaseResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.ResistType == "Corruption" && resistInfo.CorruptResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.Subcategory == "Slow" && resistInfo.SlowResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.Subcategory == "Snare" && resistInfo.SnareResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.Subcategory == "Calm" && resistInfo.PacifyResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.Subcategory == "Enthrall" && resistInfo.MezResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.Subcategory == "Charm" && resistInfo.CharmResistant && !spell.IgnoreResistanceCheck) return true;
+				if (spell.IgnoreResistanceCheck) return false;
+
+				//slow/snare/calm/mez/charm only go by their own resistant flags, being resistant to the
+				//element (ex: Magic) shouldn't stop a slow unless the mob is also flagged for slows.
+				if (!IsControlSpell(spell))
+				{
+					if (spell.ResistType == "Magic" && resistInfo.MagicResistant) return true;
+					else if (spell.ResistType == "Fire" && resistInfo.FireResistant) return true;
+					else if (spell.ResistType == "Cold" && resistInfo.ColdResistant) return true;
+					else if (spell.ResistType == "Poison" && resistInfo.PoisonResistant) return true;
+					else if (spell.ResistType == "Disease" && resistInfo.DiseaseResistant) return true;
+					else if (spell.ResistType == "Corruption" && resistInfo.CorruptResistant) return true;
+				}
+				else if (spell.Subcategory == "Slow" && resistInfo.SlowResistant) return true;
+				else if (spell.Subcategory == "Snare" && resistInfo.SnareResistant) return true;
+				else if (spell.Subcategory == "Calm" && resistInfo.PacifyResistant) return true;
+				else if (spell.Subcategory == "Enthrall" && resistInfo.MezResistant) return true;
+				else if (spell.Subcategory == "Charm" && resistInfo.CharmResistant) return true;
 
 			}
 			return false;
