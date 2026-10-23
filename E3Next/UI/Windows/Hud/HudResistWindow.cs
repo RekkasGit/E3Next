@@ -112,11 +112,23 @@ namespace E3Core.UI.Windows.Hud
 		private static Int32 _logSequence = 0;
 		private static string _bannerText = null;
 		private static Int64 _bannerUntil = 0;
-		private static bool _beepOnAlert = false;
 		private static string _dbPathText = null;
 		private static string _zoneIDText = null;
 		private static string _mobCountText = null;
 		private static Int32 _mobCountShown = 0;
+
+		//window settings, saved to the character's _UI.ini under [E3Hud_Resist]
+		private static string _ZoneWindowName = "E3 Resists - Zone";
+		private const string _detachZoneButtonID = FontAwesome.FAExternalLinkSquare + "##e3resist_detach_zone";
+		private static bool _isDirty = false;
+		private static string _alphaText = null;
+		private static string _zoneAlphaText = null;
+		private static bool BeepOnAlert { get => E3.CharacterSettings.E3Hud_Resist_BeepOnAlert; set { E3.CharacterSettings.E3Hud_Resist_BeepOnAlert = value; _isDirty = true; } }
+		private static bool Locked { get => E3.CharacterSettings.E3Hud_Resist_Locked; set { E3.CharacterSettings.E3Hud_Resist_Locked = value; _isDirty = true; } }
+		private static float WindowAlpha { get => E3.CharacterSettings.E3Hud_Resist_Alpha; set { E3.CharacterSettings.E3Hud_Resist_Alpha = value; _alphaText = null; _isDirty = true; } }
+		private static bool ZoneDetached { get => E3.CharacterSettings.E3Hud_Resist_ZoneDetached; set { E3.CharacterSettings.E3Hud_Resist_ZoneDetached = value; _isDirty = true; } }
+		private static bool ZoneLocked { get => E3.CharacterSettings.E3Hud_Resist_ZoneLocked; set { E3.CharacterSettings.E3Hud_Resist_ZoneLocked = value; _isDirty = true; } }
+		private static float ZoneAlpha { get => E3.CharacterSettings.E3Hud_Resist_ZoneAlpha; set { E3.CharacterSettings.E3Hud_Resist_ZoneAlpha = value; _zoneAlphaText = null; _isDirty = true; } }
 
 		[SubSystemInit]
 		public static void Init()
@@ -146,6 +158,8 @@ namespace E3Core.UI.Windows.Hud
 				{
 					_windowInitialized = true;
 					imgui_Begin_OpenFlagSet(_WindowName, true);
+					//bring back the zone window if it was left detached
+					if (ZoneDetached) imgui_Begin_OpenFlagSet(_ZoneWindowName, true);
 				}
 				else
 				{
@@ -375,7 +389,7 @@ namespace E3Core.UI.Windows.Hud
 				_bannerText = text;
 				_bannerUntil = Core.StopWatch.ElapsedMilliseconds + _bannerDuration;
 				//we are on the UI thread, so the command has to go through the queue
-				if (_beepOnAlert) E3ImGUI.MQCommandQueue.Enqueue("/beep");
+				if (BeepOnAlert) E3ImGUI.MQCommandQueue.Enqueue("/beep");
 			}
 		}
 		#endregion
@@ -384,7 +398,12 @@ namespace E3Core.UI.Windows.Hud
 		private static void RenderWindow()
 		{
 			if (!_imguiContextReady) return;
-			if (!imgui_Begin_OpenFlagGet(_WindowName)) return;
+			//closing the detached zone window docks it back into the tab
+			if (ZoneDetached && !imgui_Begin_OpenFlagGet(_ZoneWindowName)) ZoneDetached = false;
+
+			bool mainOpen = imgui_Begin_OpenFlagGet(_WindowName);
+			bool zoneOpen = ZoneDetached;
+			if (!mainOpen && !zoneOpen) return;
 			try
 			{
 				using (MQ.GetDelayLock())
@@ -398,43 +417,11 @@ namespace E3Core.UI.Windows.Hud
 				return;
 			}
 
-			imgui_SetNextWindowSizeWithCond(440, 600, (int)ImGuiCond.FirstUseEver);
 			E3ImGUI.PushCurrentTheme();
 			try
 			{
-				using (var window = ImGUIWindow.Aquire())
-				{
-					if (!window.Begin(_WindowName, (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse))
-						return;
-
-					if (_bannerText != null && Core.StopWatch.ElapsedMilliseconds < _bannerUntil)
-					{
-						imgui_TextColored(0.3f, 1.0f, 0.4f, 1.0f, _bannerText);
-						imgui_Separator();
-					}
-
-					RenderMobPanel();
-					imgui_Separator();
-
-					using (var tabBar = ImGUITabBar.Aquire())
-					{
-						if (tabBar.BeginTabBar("##e3resist_tabs"))
-						{
-							using (var tab = ImGUITabItem.Aquire())
-							{
-								if (tab.BeginTabItem("Zone")) RenderZoneTab();
-							}
-							using (var tab = ImGUITabItem.Aquire())
-							{
-								if (tab.BeginTabItem("Changes")) RenderLogTab();
-							}
-							using (var tab = ImGUITabItem.Aquire())
-							{
-								if (tab.BeginTabItem("Settings")) RenderSettingsTab();
-							}
-						}
-					}
-				}
+				if (mainOpen) RenderMainWindow();
+				if (zoneOpen) RenderZoneWindow();
 			}
 			catch (Exception ex)
 			{
@@ -443,6 +430,76 @@ namespace E3Core.UI.Windows.Hud
 			finally
 			{
 				E3ImGUI.PopCurrentTheme();
+			}
+		}
+		private static void RenderMainWindow()
+		{
+			imgui_SetNextWindowSizeWithCond(440, 600, (int)ImGuiCond.FirstUseEver);
+			imgui_SetNextWindowBgAlpha(WindowAlpha);
+			int flags = (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse;
+			if (Locked) flags |= (int)ImGuiWindowFlags.ImGuiWindowFlags_NoMove;
+			using (var window = ImGUIWindow.Aquire())
+			{
+				if (!window.Begin(_WindowName, flags))
+					return;
+
+				if (_isDirty)
+				{
+					if (imgui_Button("Save"))
+					{
+						E3.CharacterSettings.SaveData();
+						_isDirty = false;
+					}
+				}
+
+				if (_bannerText != null && Core.StopWatch.ElapsedMilliseconds < _bannerUntil)
+				{
+					imgui_TextColored(0.3f, 1.0f, 0.4f, 1.0f, _bannerText);
+					imgui_Separator();
+				}
+
+				RenderMobPanel();
+				imgui_Separator();
+
+				using (var tabBar = ImGUITabBar.Aquire())
+				{
+					if (tabBar.BeginTabBar("##e3resist_tabs"))
+					{
+						using (var tab = ImGUITabItem.Aquire())
+						{
+							if (tab.BeginTabItem("Zone")) RenderZoneTab();
+						}
+						using (var tab = ImGUITabItem.Aquire())
+						{
+							if (tab.BeginTabItem("Changes")) RenderLogTab();
+						}
+						using (var tab = ImGUITabItem.Aquire())
+						{
+							if (tab.BeginTabItem("Settings")) RenderSettingsTab();
+						}
+					}
+				}
+			}
+		}
+		private static void RenderZoneWindow()
+		{
+			imgui_SetNextWindowSizeWithCond(400, 400, (int)ImGuiCond.FirstUseEver);
+			imgui_SetNextWindowBgAlpha(ZoneAlpha);
+			int flags = (int)ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse;
+			if (ZoneLocked) flags |= (int)ImGuiWindowFlags.ImGuiWindowFlags_NoMove;
+			using (var window = ImGUIWindow.Aquire())
+			{
+				if (!window.Begin(_ZoneWindowName, flags))
+					return;
+
+				if (imgui_Button("Dock##e3resist_zone_dock"))
+				{
+					ZoneDetached = false;
+					imgui_Begin_OpenFlagSet(_ZoneWindowName, false);
+				}
+				imgui_SameLine();
+				if (imgui_Button(ZoneLocked ? "Unlock##e3resist_zone_lock" : "Lock##e3resist_zone_lock")) ZoneLocked = !ZoneLocked;
+				RenderZoneList(0f);
 			}
 		}
 		private static void RenderStatus(Int32 flags, Int32 typeIndex)
@@ -533,6 +590,36 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private static void RenderZoneTab()
 		{
+			if (ZoneDetached)
+			{
+				imgui_Text("The zone list is in its own window.");
+				if (imgui_Button("Dock it back here"))
+				{
+					ZoneDetached = false;
+					imgui_Begin_OpenFlagSet(_ZoneWindowName, false);
+				}
+				return;
+			}
+			if (imgui_Button(_detachZoneButtonID))
+			{
+				ZoneDetached = true;
+				imgui_Begin_OpenFlagSet(_ZoneWindowName, true);
+				return;
+			}
+			if (imgui_IsItemHovered())
+			{
+				using (var tooltip = ImGUIToolTip.Aquire())
+				{
+					tooltip.BeginToolTip();
+					imgui_Text("Pop the zone list out into its own window");
+				}
+			}
+			imgui_SameLine();
+			RenderZoneList(300f);
+		}
+		//tableHeight 0 fills the rest of the window
+		private static void RenderZoneList(float tableHeight)
+		{
 			if (imgui_InputText("##e3resist_filter", _filter))
 			{
 				_filter = imgui_InputText_Get("##e3resist_filter") ?? string.Empty;
@@ -543,7 +630,7 @@ namespace E3Core.UI.Windows.Hud
 			using (var table = ImGUITable.Aquire())
 			{
 				int tableFlags = (int)(ImGuiTableFlags.ImGuiTableFlags_Borders | ImGuiTableFlags.ImGuiTableFlags_RowBg | ImGuiTableFlags.ImGuiTableFlags_ScrollY | ImGuiTableFlags.ImGuiTableFlags_Resizable);
-				if (!table.BeginTable("##e3resist_zone", 3, tableFlags, 0f, 300f)) return;
+				if (!table.BeginTable("##e3resist_zone", 3, tableFlags, 0f, tableHeight)) return;
 
 				imgui_TableSetupColumn("Mob", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0);
 				imgui_TableSetupColumn("Flags", (int)ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch, 0);
@@ -593,16 +680,36 @@ namespace E3Core.UI.Windows.Hud
 		}
 		private static void RenderSettingsTab()
 		{
-			if (imgui_Checkbox("##e3resist_beep", _beepOnAlert))
-				_beepOnAlert = imgui_Checkbox_Get("##e3resist_beep");
+			if (imgui_Checkbox("##e3resist_beep", BeepOnAlert))
+				BeepOnAlert = imgui_Checkbox_Get("##e3resist_beep");
 			imgui_SameLine();
 			imgui_Text("Beep on new flag");
+
+			if (imgui_Checkbox("##e3resist_locked", Locked))
+				Locked = imgui_Checkbox_Get("##e3resist_locked");
+			imgui_SameLine();
+			imgui_Text("Lock window position");
+
+			if (_alphaText == null) _alphaText = $"Window opacity: {WindowAlpha:0.0}";
+			RenderAlphaControl(_alphaText, "-##e3resist_alpha", "+##e3resist_alpha", WindowAlpha, x => WindowAlpha = x);
+			if (_zoneAlphaText == null) _zoneAlphaText = $"Zone window opacity: {ZoneAlpha:0.0}";
+			RenderAlphaControl(_zoneAlphaText, "-##e3resist_zone_alpha", "+##e3resist_zone_alpha", ZoneAlpha, x => ZoneAlpha = x);
+			imgui_TextWrapped("Settings save to your _UI.ini when you press Save at the top of the window.");
+			imgui_Separator();
 
 			if (_dbPathText != null) imgui_TextWrapped(_dbPathText);
 			if (_zoneIDText != null) imgui_Text(_zoneIDText);
 			if (_mobCountText != null) imgui_Text(_mobCountText);
 
 			if (imgui_Button("Reload from DB")) E3ImGUI.MQCommandQueue.Enqueue("/e3resist-reload");
+		}
+		private static void RenderAlphaControl(string label, string minusID, string plusID, float value, Action<float> setValue)
+		{
+			imgui_Text(label);
+			imgui_SameLine();
+			if (imgui_Button(minusID)) setValue((float)Math.Max(0.1, Math.Round(value - 0.1, 1)));
+			imgui_SameLine();
+			if (imgui_Button(plusID)) setValue((float)Math.Min(1.0, Math.Round(value + 0.1, 1)));
 		}
 		#endregion
 	}
