@@ -98,9 +98,24 @@ namespace E3Core.UI.Windows.Hud
 		private static List<string>[] _counterSpells = new List<string>[_types.Length];
 		private static Dictionary<Int32, string> _countTextCache = new Dictionary<Int32, string>();
 
-		private static List<string> _log = new List<string>();
+		private class LogEntry
+		{
+			public string Text;
+			//set when the entry is a flag being added, so it can be undone from the log
+			public string MobName;
+			public Int32 TypeIndex = -1;
+			public Int32 ZoneID;
+			public string ClearButtonID;
+		}
+		private static List<LogEntry> _log = new List<LogEntry>();
+		private static Int32 _logSequence = 0;
 		private static string _bannerText = null;
 		private static Int64 _bannerUntil = 0;
+		private static bool _beepOnAlert = false;
+		private static string _dbPathText = null;
+		private static string _zoneIDText = null;
+		private static string _mobCountText = null;
+		private static Int32 _mobCountShown = 0;
 
 		[SubSystemInit]
 		public static void Init()
@@ -197,6 +212,8 @@ namespace E3Core.UI.Windows.Hud
 				_rowsSorted.Clear();
 				_pinnedName = null;
 				baseline = true;
+				_dbPathText = "DB: " + resist.FileName;
+				_zoneIDText = "Zone ID: " + _loadedZoneID;
 			}
 			_refreshStamp++;
 			bool needsSort = false;
@@ -209,7 +226,14 @@ namespace E3Core.UI.Windows.Hud
 					_rowsByName.Add(pair.Key, row);
 					_rowsSorted.Add(row);
 					needsSort = true;
-					if (!baseline && flags != 0) AddAlert($"Added {row.Name}: {row.Summary.Substring(7)}", true);
+					if (!baseline && flags != 0)
+					{
+						for (Int32 i = 0; i < _types.Length; i++)
+						{
+							string after = IsImmune(flags, i) ? "Immune" : IsResistant(flags, i) ? "Resistant" : null;
+							if (after != null) AddAlert($"{row.Name} is now {_types[i].Label} {after}", true, row.Name, i);
+						}
+					}
 				}
 				else if (row.Flags != flags)
 				{
@@ -218,7 +242,7 @@ namespace E3Core.UI.Windows.Hud
 						string before = IsImmune(row.Flags, i) ? "Immune" : IsResistant(row.Flags, i) ? "Resistant" : null;
 						string after = IsImmune(flags, i) ? "Immune" : IsResistant(flags, i) ? "Resistant" : null;
 						if (before == after) continue;
-						if (after != null) AddAlert($"{row.Name} is now {_types[i].Label} {after}", true);
+						if (after != null) AddAlert($"{row.Name} is now {_types[i].Label} {after}", true, row.Name, i);
 						else AddAlert($"{row.Name} cleared {_types[i].Label}", false);
 					}
 					row.Flags = flags;
@@ -236,6 +260,11 @@ namespace E3Core.UI.Windows.Hud
 				}
 			}
 			if (needsSort) _rowsSorted.Sort((a, b) => String.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+			if (_mobCountText == null || _mobCountShown != _rowsSorted.Count)
+			{
+				_mobCountShown = _rowsSorted.Count;
+				_mobCountText = _mobCountShown == 1 ? "1 mob in DB for this zone" : $"{_mobCountShown} mobs in DB for this zone";
+			}
 		}
 		private static void RefreshTarget()
 		{
@@ -319,15 +348,19 @@ namespace E3Core.UI.Windows.Hud
 			}
 		}
 		private static Int32[] _scratchHashes = new Int32[_types.Length];
-		private static void AddAlert(string text, bool isNew)
+		private static void AddAlert(string text, bool isNew, string mobName = null, Int32 typeIndex = -1)
 		{
-			_log.Insert(0, $"{DateTime.Now:HH:mm:ss}  {text}");
+			var entry = new LogEntry() { Text = $"{DateTime.Now:HH:mm:ss}  {text}", MobName = mobName, TypeIndex = typeIndex, ZoneID = _loadedZoneID };
+			if (mobName != null) entry.ClearButtonID = $"Clear##log_clear_{++_logSequence}";
+			_log.Insert(0, entry);
 			if (_log.Count > _maxLogEntries) _log.RemoveAt(_log.Count - 1);
 			MQ.WriteDelayed($"\ay[E3Resist] \ag{text}");
 			if (isNew)
 			{
 				_bannerText = text;
 				_bannerUntil = Core.StopWatch.ElapsedMilliseconds + _bannerDuration;
+				//we are on the UI thread, so the command has to go through the queue
+				if (_beepOnAlert) E3ImGUI.MQCommandQueue.Enqueue("/beep");
 			}
 		}
 		#endregion
@@ -379,6 +412,10 @@ namespace E3Core.UI.Windows.Hud
 							using (var tab = ImGUITabItem.Aquire())
 							{
 								if (tab.BeginTabItem("Changes")) RenderLogTab();
+							}
+							using (var tab = ImGUITabItem.Aquire())
+							{
+								if (tab.BeginTabItem("Settings")) RenderSettingsTab();
 							}
 						}
 					}
@@ -528,7 +565,29 @@ namespace E3Core.UI.Windows.Hud
 				return;
 			}
 			if (imgui_Button("Clear log")) _log.Clear();
-			foreach (var line in _log) imgui_Text(line);
+			foreach (var entry in _log)
+			{
+				//the resist commands only work on the current zone's data
+				if (entry.MobName != null && entry.ZoneID == _loadedZoneID)
+				{
+					if (imgui_Button(entry.ClearButtonID)) RunResistCommand(_types[entry.TypeIndex], "clear", entry.MobName);
+					imgui_SameLine();
+				}
+				imgui_Text(entry.Text);
+			}
+		}
+		private static void RenderSettingsTab()
+		{
+			if (imgui_Checkbox("##e3resist_beep", _beepOnAlert))
+				_beepOnAlert = imgui_Checkbox_Get("##e3resist_beep");
+			imgui_SameLine();
+			imgui_Text("Beep on new flag");
+
+			if (_dbPathText != null) imgui_TextWrapped(_dbPathText);
+			if (_zoneIDText != null) imgui_Text(_zoneIDText);
+			if (_mobCountText != null) imgui_Text(_mobCountText);
+
+			if (imgui_Button("Reload from DB")) E3ImGUI.MQCommandQueue.Enqueue("/e3resist-reload");
 		}
 		#endregion
 	}

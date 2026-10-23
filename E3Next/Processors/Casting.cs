@@ -1053,6 +1053,9 @@ namespace E3Core.Processors
 				}
 			}
 		}
+		//CleanName|ResistType -> spawns that hit MaxTries resists for that type, in the current zone
+		private static Dictionary<string, HashSet<Int32>> _autoLearnSpawns = new Dictionary<string, HashSet<Int32>>();
+		private static Int32 _autoLearnZoneID = 0;
 		private static void AutoSaveResist(Spell spell, Spawn s, Int32 resistCount)
 		{
 			if (!E3.GeneralSettings.General_AutoLearnResists) return;
@@ -1088,6 +1091,27 @@ namespace E3Core.Processors
 				default:
 					return;
 			}
+
+			//one unlucky mob shouldn't flag every mob with that name, so it has to happen on more than one spawn.
+			//named mobs are unique, so one is enough for them.
+			if (_autoLearnZoneID != E3.ResistSettings.Current_ZoneID)
+			{
+				_autoLearnZoneID = E3.ResistSettings.Current_ZoneID;
+				_autoLearnSpawns.Clear();
+			}
+			Int32 mobsRequired = s.Named ? 1 : Math.Max(1, E3.GeneralSettings.General_AutoLearnResistsMobsRequired);
+			string learnKey = s.CleanName + "|" + spell.ResistType;
+			if (!_autoLearnSpawns.TryGetValue(learnKey, out var spawnIDs))
+			{
+				spawnIDs = new HashSet<Int32>();
+				_autoLearnSpawns.Add(learnKey, spawnIDs);
+			}
+			if (spawnIDs.Add(s.ID) && spawnIDs.Count < mobsRequired)
+			{
+				MQ.Write($"\ay[E3Resist] \ag{s.CleanName} resisted {spell.CastName} {resistCount} times \ay({spawnIDs.Count} of {mobsRequired} mobs needed to flag {spell.ResistType} Resistant)");
+			}
+			if (spawnIDs.Count < mobsRequired) return;
+			_autoLearnSpawns.Remove(learnKey);
 
 			if (Resist == null)
 			{

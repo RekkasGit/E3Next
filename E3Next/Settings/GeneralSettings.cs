@@ -27,6 +27,7 @@ namespace E3Core.Settings
 		public bool General_CureWhileNavigating = true;
         public bool General_BeepNotifications = false;
         public bool General_AutoLearnResists = true;
+        public Int32 General_AutoLearnResistsMobsRequired = 2;
         public bool General_LazarusManaRecovery = true;
 
         public string General_Networking_ExternalIPToQueryForLocal = "8.8.8.8";
@@ -143,6 +144,7 @@ namespace E3Core.Settings
             LoadKeyData("General", "Beep Notifications (On/Off)", parsedData, ref General_BeepNotifications);
             LoadKeyData("General", "Cure While Navigating (On/Off)", parsedData, ref General_CureWhileNavigating);
             LoadKeyData("General", "Auto-Learn Resists (On/Off)", parsedData, ref General_AutoLearnResists);
+            LoadKeyData("General", "Auto-Learn Resists Mobs Required", parsedData, ref General_AutoLearnResistsMobsRequired);
             LoadKeyData("General", "LazarusManaRecovery (On/Off)", parsedData, ref General_LazarusManaRecovery);
             LoadKeyData("General", "ExternalIP To Query For Local Address (8.8.8.8 default)", parsedData, ref General_Networking_ExternalIPToQueryForLocal);
             LoadKeyData("General", "Local IP Override", parsedData, ref General_Networking_LocalIPOverride);
@@ -337,6 +339,7 @@ namespace E3Core.Settings
             section.Keys.AddKey("Cure While Navigating (On/Off)", "On");
             section.Keys.AddKey("Beep Notifications (On/Off)", "On");
             section.Keys.AddKey("Auto-Learn Resists (On/Off)", "On");
+            section.Keys.AddKey("Auto-Learn Resists Mobs Required", "2");
 
             newFile.Sections.AddSection("Discord Bot");
             section = newFile.Sections.GetSectionData("Discord Bot");
