@@ -12,6 +12,8 @@ namespace E3Core.Data
 
         public Int32 _mobID;
         public Dictionary<Int32, Int32> SpellCounters = new Dictionary<int, int>();
+        //MaxTries of the spell when it was last counted, so the counters can be shown against their limit
+        public Dictionary<Int32, Int32> SpellMaxTries = new Dictionary<int, int>();
 
         private ResistCounter()
         {
@@ -31,6 +33,7 @@ namespace E3Core.Data
         {
             _mobID = 0;
             SpellCounters.Clear();
+            SpellMaxTries.Clear();
 
             StaticObjectPool.Push(this);
         }

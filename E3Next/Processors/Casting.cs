@@ -921,6 +921,13 @@ namespace E3Core.Processors
 								resist.SpellCounters.Add(spell.SpellID, 0);
 							}
 							resist.SpellCounters[spell.SpellID]++;
+							resist.SpellMaxTries[spell.SpellID] = spell.MaxTries;
+
+							//takehold is a stacking issue, not a resist, so only learn from real resists
+							if (returnValue == CastReturn.CAST_RESIST && resist.SpellCounters[spell.SpellID] >= spell.MaxTries)
+							{
+								AutoSaveResist(spell, s, resist.SpellCounters[spell.SpellID]);
+							}
 
 						}
 						else if (returnValue == CastReturn.CAST_IMMUNE || returnValue == CastReturn.CAST_NOMEZ || returnValue == CastReturn.CAST_NOCHARM)
@@ -940,6 +947,7 @@ namespace E3Core.Processors
 								resist.SpellCounters.Add(spell.SpellID, 0);
 							}
 							resist.SpellCounters[spell.SpellID] = 99;
+							resist.SpellMaxTries[spell.SpellID] = spell.MaxTries;
 
 						}
 						//MQ.Write($"{spell.CastName} Result:{returnValue.ToString()}");
@@ -1007,33 +1015,121 @@ namespace E3Core.Processors
 					ZoneData.Add(s.CleanName, Resist);
 				}
 
+				string immuneType = String.Empty;
 				if (spell.Subcategory == "Slow" && returnValue == CastReturn.CAST_IMMUNE && !Resist.SlowImmune)
 				{
 					Resist.SlowImmune = true;
 					immuneTypeNeedsSaving = true;
+					immuneType = "Slow";
 				}
 				else if (spell.Subcategory == "Charm" && returnValue == CastReturn.CAST_NOCHARM && !Resist.CharmImmune)
 				{
 					Resist.CharmImmune = true;
 					immuneTypeNeedsSaving = true;
+					immuneType = "Charm";
 				}
 				else if (spell.Subcategory == "Enthrall" && returnValue == CastReturn.CAST_NOMEZ && !Resist.MezImmune)
 				{
 					Resist.MezImmune = true;
 					immuneTypeNeedsSaving = true;
+					immuneType = "Mez";
 				}
 				else if (spell.Subcategory == "Snare" && returnValue == CastReturn.CAST_IMMUNE && !Resist.SnareImmune)
 				{
 					Resist.SnareImmune = true;
 					immuneTypeNeedsSaving = true;
+					immuneType = "Snare";
 				}
 				else if (spell.Subcategory == "Calm" && returnValue == CastReturn.CAST_IMMUNE && !Resist.PacifyImmune)
 				{
 					Resist.PacifyImmune = true;
 					immuneTypeNeedsSaving = true;
+					immuneType = "Pacify";
 				}
-				if (immuneTypeNeedsSaving) E3.ResistSettings.SaveData();
+				if (immuneTypeNeedsSaving)
+				{
+					MQ.Write($"\ay[E3Resist] \agAuto-flagged \ay{s.CleanName} \agas \ar{immuneType} Immune");
+					E3.ResistSettings.SaveData();
+				}
 			}
+		}
+		private static void AutoSaveResist(Spell spell, Spawn s, Int32 resistCount)
+		{
+			if (!E3.GeneralSettings.General_AutoLearnResists) return;
+			if (E3.ResistSettings == null) return;
+			//the user asked for this spell to ignore the resist flags, so don't let it set them either
+			if (spell.IgnoreResistanceCheck) return;
+			if (String.IsNullOrWhiteSpace(s.CleanName)) return;
+
+			var ZoneData = E3.ResistSettings.ZoneData;
+			ZoneData.TryGetValue(s.CleanName, out var Resist);
+
+			//only the types ShouldSkip acts on
+			switch (spell.ResistType)
+			{
+				case "Magic":
+					if (Resist != null && Resist.MagicResistant) return;
+					break;
+				case "Fire":
+					if (Resist != null && Resist.FireResistant) return;
+					break;
+				case "Cold":
+					if (Resist != null && Resist.ColdResistant) return;
+					break;
+				case "Poison":
+					if (Resist != null && Resist.PoisonResistant) return;
+					break;
+				case "Disease":
+					if (Resist != null && Resist.DiseaseResistant) return;
+					break;
+				case "Corruption":
+					if (Resist != null && Resist.CorruptResistant) return;
+					break;
+				default:
+					return;
+			}
+
+			if (Resist == null)
+			{
+				Resist = new ResistData() { NPCName = s.CleanName };
+				ZoneData.Add(s.CleanName, Resist);
+			}
+			switch (spell.ResistType)
+			{
+				case "Magic": Resist.MagicResistant = true; break;
+				case "Fire": Resist.FireResistant = true; break;
+				case "Cold": Resist.ColdResistant = true; break;
+				case "Poison": Resist.PoisonResistant = true; break;
+				case "Disease": Resist.DiseaseResistant = true; break;
+				case "Corruption": Resist.CorruptResistant = true; break;
+			}
+			MQ.Write($"\ay[E3Resist] \agAuto-flagged \ay{s.CleanName} \agas \ay{spell.ResistType} Resistant \ag({spell.CastName} resisted {resistCount} times)");
+			E3.ResistSettings.SaveData();
+		}
+		//${E3N.State.Resist.Counters.<spawnID>} -> spellID:count:maxTries,... for that mob
+		private const string _resistCountersKey = "${E3N.State.Resist.Counters.";
+		private static string ReplaceResistCounters(string tIF)
+		{
+			Int32 start = tIF.IndexOf(_resistCountersKey, 0, StringComparison.OrdinalIgnoreCase);
+			while (start > -1)
+			{
+				Int32 end = tIF.IndexOf('}', start);
+				if (end < 0) break;
+				string idText = tIF.Substring(start + _resistCountersKey.Length, end - start - _resistCountersKey.Length);
+				_ifsStringBuilder.Clear();
+				if (Int32.TryParse(idText, out var mobID) && ResistCounters.TryGetValue(mobID, out var counter))
+				{
+					foreach (var pair in counter.SpellCounters)
+					{
+						if (_ifsStringBuilder.Length > 0) _ifsStringBuilder.Append(",");
+						counter.SpellMaxTries.TryGetValue(pair.Key, out var maxTries);
+						_ifsStringBuilder.Append($"{pair.Key}:{pair.Value}:{maxTries}");
+					}
+				}
+				tIF = tIF.Substring(0, start) + _ifsStringBuilder.ToString() + tIF.Substring(end + 1);
+				start = tIF.IndexOf(_resistCountersKey, start, StringComparison.OrdinalIgnoreCase);
+			}
+			return tIF;
 		}
 		public static void CastSpell(Spell spell)
 		{
@@ -2364,6 +2460,10 @@ namespace E3Core.Processors
 				{
 					tIF = tIF.ReplaceInsensitive("${E3N.State.Me.SongCount}", songCount.ToString());
 				}
+			}
+			if (tIF.IndexOf(_resistCountersKey, 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				tIF = ReplaceResistCounters(tIF);
 			}
 			if (tIF.IndexOf("${E3N.State.Bots.", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{
