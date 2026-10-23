@@ -46,6 +46,7 @@ namespace E3Core.Settings.FeatureSettings
 		}
 		public Dictionary<string, ResistData> ZoneData = new Dictionary<string, ResistData>();
 		string fileName;
+		public string FileName { get { return fileName; } }
 
 	
 
@@ -73,6 +74,7 @@ namespace E3Core.Settings.FeatureSettings
 				else if (spell.Subcategory == "Calm" && resistInfo.PacifyImmune) return true;
 				else if (spell.Subcategory == "Enthrall" && resistInfo.MezImmune) return true;
 				else if (spell.Subcategory == "Charm" && resistInfo.CharmImmune) return true;
+				else if (spell.Subcategory == "Slow" && resistInfo.SlowImmune) return true;
 
 
 				if (spell.ResistType == "Magic" && resistInfo.MagicResistant && !spell.IgnoreResistanceCheck) return true;
@@ -81,6 +83,11 @@ namespace E3Core.Settings.FeatureSettings
 				else if (spell.ResistType == "Poison" && resistInfo.PoisonResistant && !spell.IgnoreResistanceCheck) return true;
 				else if (spell.ResistType == "Disease" && resistInfo.DiseaseResistant && !spell.IgnoreResistanceCheck) return true;
 				else if (spell.ResistType == "Corruption" && resistInfo.CorruptResistant && !spell.IgnoreResistanceCheck) return true;
+				else if (spell.Subcategory == "Slow" && resistInfo.SlowResistant && !spell.IgnoreResistanceCheck) return true;
+				else if (spell.Subcategory == "Snare" && resistInfo.SnareResistant && !spell.IgnoreResistanceCheck) return true;
+				else if (spell.Subcategory == "Calm" && resistInfo.PacifyResistant && !spell.IgnoreResistanceCheck) return true;
+				else if (spell.Subcategory == "Enthrall" && resistInfo.MezResistant && !spell.IgnoreResistanceCheck) return true;
+				else if (spell.Subcategory == "Charm" && resistInfo.CharmResistant && !spell.IgnoreResistanceCheck) return true;
 
 			}
 			return false;
@@ -107,6 +114,11 @@ namespace E3Core.Settings.FeatureSettings
 					if (d.DiseaseImmune) sb.Append($"\ayDRI ");
 					if (d.CorruptResistant) sb.Append($"\ayCUR ");
 					if (d.CorruptImmune) sb.Append($"\ayCURI ");
+					if (d.SnareResistant) sb.Append($"\aySnareR ");
+					if (d.CharmResistant) sb.Append($"\ayCharmR ");
+					if (d.PacifyResistant) sb.Append($"\ayPacifyR ");
+					if (d.MezResistant) sb.Append($"\ayMezR ");
+					if (d.SlowResistant) sb.Append($"\aySlowR ");
 					if (d.SnareImmune) sb.Append($"\aySnareI ");
 					if (d.CharmImmune) sb.Append($"\ayCharmI ");
 					if (d.PacifyImmune) sb.Append($"\ayPacifyI ");
