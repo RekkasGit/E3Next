@@ -726,6 +726,7 @@ namespace E3Core.Processors
 							{
 								BuffBots(E3.CharacterSettings.CombatBuffs);
 								BuffBots(E3.CharacterSettings.CombatPetBuffs, true);
+								BuffMyExtraPets(E3.CharacterSettings.CombatPetBuffs);
 								BuffBots(E3.CharacterSettings.CombatPetOwnerBuffs, true);
 							}
 
@@ -756,6 +757,7 @@ namespace E3Core.Processors
 								//using (_log.Trace("Buffs-Pet"))
 								{
 									if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetBuffs, true);
+									if (!E3.ActionTaken) BuffMyExtraPets(E3.CharacterSettings.PetBuffs);
 									if (!E3.ActionTaken) BuffBots(E3.CharacterSettings.PetOwnerBuffs, true);
 								}
 
@@ -1082,7 +1084,45 @@ namespace E3Core.Processors
 			Continue,
 			ExitOut,
 		}
-		private static BuffBots_ReturnType BuffBots_SingleBuff(Data.Spell spell,bool usePets = false)
+		/// <summary>
+		/// Multi-Pet: BuffBots only reaches Me.Pet, so run the same buffs on each of our other pets.
+		/// They go down the "not one of our bots" path, which targets the pet and reads the real time left on the buff,
+		/// so it works on servers where pet buffs run out and on ones that keep them topped up (permanent).
+		/// </summary>
+		private static void BuffMyExtraPets(List<Data.Spell> buffs)
+		{
+			if (!E3.CharacterSettings.Pet_MultiPet) return;
+			Int32 mainPetID = MQ.Query<Int32>("${Me.Pet.ID}");
+			foreach (Int32 petID in Pets.GetMultiPetIDs())
+			{
+				if (petID == mainPetID) continue;
+				foreach (var spell in buffs)
+				{
+					if (E3.ActionTaken) return;
+					if (E3.IsMoving && !Assist.IsAssisting && spell.MyCastTime > 500) continue;
+					if (e3util.IsActionBlockingWindowOpen()) return;
+					if (e3util.IsRezDiaglogBoxOpen()) return;
+					//only buffs for our own pet, not ones aimed at someone else's pet
+					string previousTarget = spell.CastTarget;
+					if (!String.IsNullOrWhiteSpace(previousTarget) && !previousTarget.Equals("Self", StringComparison.OrdinalIgnoreCase) && !previousTarget.Equals(E3.CurrentName, StringComparison.OrdinalIgnoreCase)) continue;
+					BuffBots_ReturnType result;
+					try
+					{
+						BuffTargetID = -1;
+						//blank so the pet isn't mistaken for our own bot data (that is Me.Pet's)
+						spell.CastTarget = String.Empty;
+						result = BuffBots_SingleBuff(spell, true, petID);
+					}
+					finally
+					{
+						spell.CastTarget = previousTarget;
+					}
+					if (result == BuffBots_ReturnType.ExitOut) return;
+				}
+			}
+		}
+
+		private static BuffBots_ReturnType BuffBots_SingleBuff(Data.Spell spell,bool usePets = false, Int32 petIdOverride = 0)
 		{
 			if (!spell.Enabled) return BuffBots_ReturnType.Continue;
 
@@ -1127,16 +1167,16 @@ namespace E3Core.Processors
 
 				if (Heals.IgnoreHealTargets.Count>1) return BuffBots_ReturnType.Continue;
 
-				if (_spawns.TryByName(target, out s))
+				if (petIdOverride > 0 ? _spawns.TryByID(petIdOverride, out s) : _spawns.TryByName(target, out s))
 				{
-					
 
-					if (usePets && s.PetID < 1)
+
+					if (usePets && petIdOverride == 0 && s.PetID < 1)
 					{
 						return BuffBots_ReturnType.Continue;
 					}
 
-					if (usePets && s.PetID > 0)
+					if (usePets && petIdOverride == 0 && s.PetID > 0)
 					{
 						Spawn ts;
 						if (_spawns.TryByID(s.PetID, out ts))

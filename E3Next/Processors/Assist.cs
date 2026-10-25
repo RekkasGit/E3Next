@@ -574,7 +574,7 @@ namespace E3Core.Processors
 				MQ.Cmd("/autofire");
 				MQ.Delay(1000);
 			}
-			if (MQ.Query<Int32>("${Me.Pet.ID}") > 0) MQ.Cmd("/squelch /pet back off");
+			Pets.PetCommand("/squelch /pet back off", "back");
 
 
 			CurrentSecondsInCombat = 0;
@@ -746,18 +746,7 @@ namespace E3Core.Processors
 
 				}
 
-				if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
-				{
-					if (E3.CharacterSettings.Pet_DelayOnAttack > 0)
-					{
-						MQ.Cmd($"/timed {E3.CharacterSettings.Pet_DelayOnAttack * 10} /pet attack {AssistTargetID}");
-					}
-					else
-					{
-						MQ.Cmd($"/pet attack {AssistTargetID}");
-					}
-
-				}
+				Pets.PetCommand($"/pet attack {AssistTargetID}", "attack", E3.CharacterSettings.Pet_DelayOnAttack * 10);
 				if (e3util.IsEQLive())
 				{
 					MQ.Cmd("/pet swarm");
@@ -1171,11 +1160,7 @@ namespace E3Core.Processors
 						}
 						if (E3.CharacterSettings.Assist_PetBackOffOnenrage)
 						{
-							if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
-							{
-								MQ.Cmd("/pet back off");
-							}
-
+							Pets.PetCommand("/pet back off", "back");
 						}
 					}
 				}
@@ -1192,11 +1177,7 @@ namespace E3Core.Processors
 							E3.Bots.Broadcast("Disabling Assist Is Enraged");
 						}
 						_assistIsEnraged = false;
-						if (MQ.Query<Int32>("${Me.Pet.ID}") > 0)
-						{
-							MQ.Cmd("/pet attack");
-
-						}
+						Pets.PetCommand("/pet attack", "attack");
 						if (e3util.IsEQLive())
 						{
 							MQ.Cmd("/pet swarm");

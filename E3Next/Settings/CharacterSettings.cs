@@ -534,6 +534,8 @@ namespace E3Core.Settings
 		public bool Pet_AutoShrink;
 		[INI_Section("Pets", "Pet Summon Combat (On/Off)")]
 		public bool Pet_SummonCombat;
+		[INI_Section("Pets", "Multi-Pet (#petcmd) (On/Off)")]
+		public bool Pet_MultiPet = false;
 
 		//Alerts
 		[INI_Section("Alerts", "Damage Messages(On/Off)")]
@@ -1389,6 +1391,7 @@ namespace E3Core.Settings
 			LoadKeyData("Pets", "Pet Auto-Shrink (On/Off)", ParsedData, ref Pet_AutoShrink);
 			LoadKeyData("Pets", "Pet Summon Combat (On/Off)", ParsedData, ref Pet_SummonCombat);
 			LoadKeyData("Pets", "Pet Delay on attack", ParsedData, ref Pet_DelayOnAttack);
+			LoadKeyData("Pets", "Multi-Pet (#petcmd) (On/Off)", ParsedData, ref Pet_MultiPet);
 
 			LoadKeyData("Rez", "AutoRez", ParsedData, ref Rez_AutoRez);
 			LoadKeyData("Rez", "AutoAcceptRez", ParsedData, ref Rez_AutoAcceptRez);
@@ -1834,6 +1837,7 @@ namespace E3Core.Settings
 				section.Keys.AddKey("Pet Summon Combat (On/Off)", "Off");
 				section.Keys.AddKey("Blocked Pet Buff", "");
 				section.Keys.AddKey("Pet Delay on attack", "0");
+				section.Keys.AddKey("Multi-Pet (#petcmd) (On/Off)", "Off");
 				
 			}
 
@@ -2879,6 +2883,10 @@ namespace E3Core.Settings
 			{"Pets::Pet Auto-Shrink (On/Off)", "Will auto shrink your pet when summoned or illusioned."},
 			{"Pets::Pet Summon Combat (On/Off)",
 				"If your pet dies during combat will [color=purple]prioritize summoning[/color] your pet based on what is defined in [color=orange]Pet Spell=[/color]."},
+			{"Pets::Multi-Pet (#petcmd) (On/Off)",
+				"For servers that let you keep more than one pet out at once (e.g. Project Triune).\n"
+				+ "When [color=purple]On[/color], attack / back off / greater hold are also sent through the server's [color=orange]#petcmd[/color] command to [color=purple]all[/color] of your pets, not just the one /pet controls.\n"
+				+ "Each [color=orange]Pet Spell=[/color] line also keeps its own pet: a line whose pet is missing gets summoned, and [color=orange]Pet Heal=[/color] goes to whichever pet is lowest."},
 			{"Pets::Pet Buff Combat (On/Off)",
 				"If a buff drops off during combat your bot will rebuff during combat.\n"
 				+ "Good if you're casting puma/leopard line spells in combat."},
