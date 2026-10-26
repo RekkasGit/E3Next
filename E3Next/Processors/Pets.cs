@@ -97,7 +97,7 @@ namespace E3Core.Processors
 			}
 			if (E3.CharacterSettings.Pet_MultiPet)
 			{
-				//no leading slash so it has to go out as chat, which is where the server picks up # commands
+				//has to go out as chat (/say), which is where the server picks up # commands
 				MQ.Cmd($"{timed}/say #petcmd {multiPetVerb} all");
 			}
 		}
@@ -477,14 +477,17 @@ namespace E3Core.Processors
         {
             Int32 pctMendHps = E3.CharacterSettings.Pet_MendPercent;
             Int32 currentTarget = MQ.Query<Int32>("${Target.ID}");
-            //Mend Companion / Replenish Companion only work on Me.Pet. On multi-pet servers selecting a pet makes it Me.Pet.
-            if (pctHps < pctMendHps && petID != MQ.Query<Int32>("${Me.Pet.ID}") && E3.CharacterSettings.Pet_MultiPet)
+            if (pctHps < pctMendHps && MQ.Query<bool>("${Me.AltAbilityReady[Replenish Companion]}"))
             {
-                Casting.TrueTarget(petID);
-            }
-            if (pctHps < pctMendHps && petID == MQ.Query<Int32>("${Me.Pet.ID}"))
-            {
-                if (MQ.Query<bool>("${Me.AltAbilityReady[Replenish Companion]}"))
+                //Replenish Companion only works on Me.Pet. On multi-pet servers selecting a pet makes it Me.Pet.
+                //only swap targets when the AA is ready, and put the target back after, so a pet sitting under
+                //Mend % in combat doesn't pull us off the mob every check
+                if (E3.CharacterSettings.Pet_MultiPet && petID != MQ.Query<Int32>("${Me.Pet.ID}"))
+                {
+                    Casting.TrueTarget(petID);
+                    MQ.Delay(1000, () => MQ.Query<Int32>("${Me.Pet.ID}") == petID);
+                }
+                if (petID == MQ.Query<Int32>("${Me.Pet.ID}"))
                 {
                     Spell s;
                     if (!Spell.LoadedSpellsByName.TryGetValue("Replenish Companion", out s))
@@ -494,9 +497,11 @@ namespace E3Core.Processors
                     if (s.SpellID > 0)
                     {
                         Casting.Cast(petID, s);
+                        e3util.PutOriginalTargetBackIfNeeded(currentTarget);
                         return;
                     }
                 }
+                e3util.PutOriginalTargetBackIfNeeded(currentTarget);
             }
             foreach (var spell in E3.CharacterSettings.PetHeals)
             {
