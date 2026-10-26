@@ -1901,7 +1901,38 @@ namespace E3Core.Processors
 
 			return false;
 		}
+		//(pet spawn id, spell id) -> when a pet first read as missing the buff
+		private static Dictionary<(Int32, Int32), Int64> _petBuffFirstMissingAt = new Dictionary<(Int32, Int32), Int64>();
+		private const Int64 PetBuffMissingConfirmMs = 3000;
+		/// <summary>
+		/// The pet buff window can read empty for a moment after zoning, combat, or Me.Pet changing (on multi-pet servers selecting
+		/// a pet makes it Me.Pet), which made us mem a buff the pet already had. A pet only counts as missing a buff when two
+		/// reads at least PetBuffMissingConfirmMs apart agree.
+		/// </summary>
 		public static bool BuffTimerIsGood(Data.Spell spell, Spawn s, bool usePets)
+		{
+			bool isGood = BuffTimerIsGood_Read(spell, s, usePets);
+			if (!usePets) return isGood;
+
+			var key = (s.ID, spell.SpellID);
+			if (isGood)
+			{
+				_petBuffFirstMissingAt.Remove(key);
+				return true;
+			}
+			Int64 now = Core.StopWatch.ElapsedMilliseconds;
+			//no earlier miss, or one so old it wasn't part of this check, start over
+			if (!_petBuffFirstMissingAt.TryGetValue(key, out var firstMissingAt) || now - firstMissingAt > 30000)
+			{
+				_petBuffFirstMissingAt[key] = now;
+				return true;
+			}
+			if (now - firstMissingAt < PetBuffMissingConfirmMs) return true;
+			_petBuffFirstMissingAt.Remove(key);
+			return false;
+		}
+
+		private static bool BuffTimerIsGood_Read(Data.Spell spell, Spawn s, bool usePets)
 		{
 
 			//don't buff temp pets
