@@ -2229,6 +2229,37 @@ namespace E3Core.Utility
 			MQ.Write($"Hiest HP is mob:{highestHPMob} with percent of {currentHighestHP}");
 			return highestHPMob;
 		}
+
+		public static Int32 GetXTargetNextFreeSlot(Int32 startSlot)
+		{
+			unsafe
+			{
+				int length;
+				byte* p;
+
+				p = MQ.GetXtargetDataPtr(out length);
+				ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+				int dataStartingLength = data.Length;
+				Int32 slotNumber = 1;
+				while (data.Length > 0)
+				{
+					XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 id = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+					Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
+					data = data.Slice(4);
+
+					//found a mob!
+					if(id>0 && slotNumber>=startSlot && targetTypes== XTargetTypes.XTARGET_AUTO_HATER) return id;
+					slotNumber++;
+				}
+				return -1;//didn't find one
+			}
+		}
+
 		public static Int32 GetXtargetHighestHP()
 		{
 			Int32 tempHighestHP = 100;

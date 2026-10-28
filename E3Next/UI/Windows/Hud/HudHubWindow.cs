@@ -8,6 +8,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using MonoCore;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
@@ -4115,15 +4116,51 @@ namespace E3Core.UI.Windows.Hud
 											if (imgui_IsMouseDoubleClicked(0))
 											{
 
-												if(String.IsNullOrEmpty(state.XTargetDoubleClickOverrideFlags))
+												if(!string.IsNullOrWhiteSpace(state.XTargetDoubleClickOverrideCommand))
 												{
-													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID}");
-
+													
+													string command = state.XTargetDoubleClickOverrideCommand;
+													if(command.Contains("${slot}"))
+													{
+														command=command.Replace("${slot}", stats.SlotID.ToString());
+													}
+													if (command.Contains("${npcid}"))
+													{
+														command = command.Replace("${npcid}", stats.NPCID.ToString());
+													}
+													if (String.IsNullOrEmpty(state.XTargetDoubleClickOverrideFlags))
+													{
+												
+														E3ImGUI.MQCommandQueue.Enqueue($"{command}");
+													}
+													else
+													{
+														E3ImGUI.MQCommandQueue.Enqueue($"{command} {state.XTargetDoubleClickOverrideFlags}");
+													}
 												}
 												else
 												{
-													E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID} {state.XTargetDoubleClickOverrideFlags}");
+													if (String.IsNullOrEmpty(state.XTargetDoubleClickOverrideFlags))
+													{
+														E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID}");
+													}
+													else
+													{
+
+														string flags = state.XTargetDoubleClickOverrideFlags;
+														if (flags.Contains("${slot}"))
+														{
+															flags=flags.Replace("${slot}", stats.SlotID.ToString());
+														}
+														if (flags.Contains("${npcid}"))
+														{
+															flags = flags.Replace("${npcid}", stats.NPCID.ToString());
+														}
+														E3ImGUI.MQCommandQueue.Enqueue($"/assistme {stats.NPCID} {state.XTargetDoubleClickOverrideFlags}");
+													}
+
 												}
+
 											}
 											else
 											{

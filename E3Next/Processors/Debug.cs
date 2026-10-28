@@ -186,21 +186,17 @@ namespace E3Core.Processors
 
 						p =MQ.GetXtargetDataPtr(out length);
 						ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
-						//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
 						int dataStartingLength = data.Length;
-
 						while (data.Length > 0)
 						{
 							XTargetTypes targetTypes = (XTargetTypes)MemoryMarshal.Read<Int32>(data);
 							data = data.Slice(4);
-
 							Int32 id = MemoryMarshal.Read<Int32>(data);
 							data = data.Slice(4);
 							Int32 aggroPct = MemoryMarshal.Read<Int32>(data);
 							data = data.Slice(4);
 							Int32 pctHPs = MemoryMarshal.Read<Int32>(data);
 							data = data.Slice(4);
-
 							MQ.Write($"ID:{id} tt:{targetTypes.ToString()} apct:{aggroPct} hp:{pctHPs}");
 						}
 					}

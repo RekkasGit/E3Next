@@ -32,6 +32,9 @@ namespace E3Core.Processors
 		public static bool FindLowestHPTarget = false;
 		[ExposedData("ClearXTargets", "FindHighestHPTarget")]
 		public static bool FindHighestHPTarget = false;
+		[ExposedData("ClearXTargets", "FromXTargetSlotDown")]
+		public static Int32 FromXTargetSlotDown = -1;
+
 
 		[SubSystemInit]
 		public static void ClearTargets_Init()
@@ -101,18 +104,42 @@ namespace E3Core.Processors
 							ClearXTargets.UseMyTarget = true;
 							ClearXTargets.FindLowestHPTarget = false;
 							ClearXTargets.FindHighestHPTarget = false;
+							FromXTargetSlotDown = -1;
 						}
 						else if (argValue.Equals("FindLowestHPTarget", StringComparison.OrdinalIgnoreCase))
 						{
 							ClearXTargets.FindLowestHPTarget = true;
 							ClearXTargets.FindHighestHPTarget = false;
 							ClearXTargets.UseMyTarget = false;
+							FromXTargetSlotDown = -1;
 						}
 						else if (argValue.Equals("FindHighestHPTarget", StringComparison.OrdinalIgnoreCase))
 						{
 							ClearXTargets.FindHighestHPTarget = true;
 							ClearXTargets.FindLowestHPTarget = false;
 							ClearXTargets.UseMyTarget = false;
+							FromXTargetSlotDown = -1;
+						}
+						else if (argValue.Equals("FromXTargetSlotDown", StringComparison.OrdinalIgnoreCase) && x.args.Count>1)
+						{
+
+							if (Int32.TryParse(x.args[1], out var slotnumber))
+							{
+								if (slotnumber > 0 && slotnumber < e3util.XtargetMax)
+								{
+									FromXTargetSlotDown = slotnumber;
+									ClearXTargets.FindHighestHPTarget = false;
+									ClearXTargets.FindLowestHPTarget = false;
+									ClearXTargets.UseMyTarget = false;
+								}
+								else
+								{
+									FromXTargetSlotDown = -1;
+									ClearXTargets.Enabled = false;
+									return;
+								}
+							}
+							
 						}
 					}
 
@@ -204,6 +231,18 @@ namespace E3Core.Processors
 						}
 
 					}
+					else if(FromXTargetSlotDown>0)
+					{
+
+						MobToAttack = e3util.GetXTargetNextFreeSlot(FromXTargetSlotDown);
+						if(MobToAttack<=0)
+						{
+							Enabled = false;
+							MQ.Write("\agClear Targets complete.");
+							return;
+						}
+
+					}
 					if (MobToAttack < 1)
 					{
 						using (MQ.GetDelayLock())
@@ -219,7 +258,6 @@ namespace E3Core.Processors
 								if (s.CleanName.EndsWith("s pet", StringComparison.OrdinalIgnoreCase)) continue;
 								if (s.CleanName.EndsWith("s Animated Corpse", StringComparison.OrdinalIgnoreCase)) continue;
 								if (s.CleanName.EndsWith("s doppelganger", StringComparison.OrdinalIgnoreCase)) continue;
-
 								if (!MQ.Query<bool>($"${{Spawn[npc id {s.ID}].LineOfSight}}")) continue;
 								if (s.Distance3D > 60) break;//mob is too far away, and since it is ordered, kick out.
 															 //its valid to attack!
