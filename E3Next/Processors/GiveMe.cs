@@ -425,7 +425,7 @@ namespace E3Core.Processors
                         }
                     }
 
-                    e3util.GiveItemOnCursorToTarget();
+                    e3util.GiveItemOnCursorToTarget(targetSpawn:s);
                 }
             }
         }

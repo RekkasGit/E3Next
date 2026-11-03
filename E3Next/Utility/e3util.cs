@@ -1830,14 +1830,17 @@ namespace E3Core.Utility
 				}
 			}
 		}
-		public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true, bool clearTarget = true)
+		public static void GiveItemOnCursorToTarget(bool moveBackToOriginalLocation = true, bool clearTarget = true,Spawn targetSpawn=null)
 		{
 
 			double currentX = MQ.Query<double>("${Me.X}");
 			double currentY = MQ.Query<double>("${Me.Y}");
 			double currentZ = MQ.Query<double>("${Me.Z}");
-			TryMoveToTarget();
 
+			if(!(targetSpawn!=null && targetSpawn.Distance3D<20))
+			{
+				TryMoveToTarget();
+			}
 			Int32 tryTradeCount = 0;
 		tryTrade:
 			MQ.Cmd("/click left target");
@@ -2744,41 +2747,23 @@ namespace E3Core.Utility
 		}
 		public static bool IsRezDiaglogBoxOpen()
 		{
-			if (e3util.Is64Bit())
+			//For TOB style dialog box, just make it go away, so normal rez logic works.
+			bool dialogBoxOpen = MQ.Query<bool>("${Window[RespawnWnd].Open}");
+			if (dialogBoxOpen)
 			{
-				//in TOB the dialog box prevents the zoning form happening, let it happen so normal logic can take place for bots.
-				bool dialogBoxOpen = MQ.Query<bool>("${Window[RespawnWnd].Open}");
-				if (dialogBoxOpen)
+				MQ.Cmd("/notify RespawnWnd SelectButton leftmouseup");
+				return false;
+			}
+			dialogBoxOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
+			if (dialogBoxOpen)
+			{
+				string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
+				if ((message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
 				{
-					MQ.Cmd("/notify RespawnWnd SelectButton leftmouseup");
-					return false; 
-				}
-				dialogBoxOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
-				if (dialogBoxOpen)
-				{
-					string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
-					if ((message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
-					{
 						
-						return true; 
-					}
+					return true;
 				}
 			}
-			else
-			{
-				bool dialogBoxOpen = MQ.Query<bool>("${Window[ConfirmationDialogBox].Open}");
-				if (dialogBoxOpen)
-				{
-					string message = MQ.Query<string>("${Window[ConfirmationDialogBox].Child[cd_textoutput].Text}");
-					if ((message.Contains("percent)") || message.Contains("RESURRECT you.") || message.Contains(" later.")))
-					{
-						
-						return true;
-					}
-				}
-			}
-				
-
 			return false;
 		}
 		public static bool IsActionBlockingWindowOpen()
