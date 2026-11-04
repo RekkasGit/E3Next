@@ -472,14 +472,14 @@ namespace E3Core.Processors
 				MQ.Cmd("/consider", 1000);
 
 				//check for the event.
-				if (HasEventItem("CanRez"))
+				if (e3util.HasEventItemAndDrain("CanRez"))
 				{
 
 					_canRezCache.Add(corpseID, true);
 					//its rezable
 					return true;
 				}
-				else if (HasEventItem("CanNotRez"))
+				else if (e3util.HasEventItemAndDrain("CanNotRez"))
 				{
 					_canRezCache.Add(corpseID, false);
 					return false;
@@ -505,20 +505,7 @@ namespace E3Core.Processors
 			_skipAutoRez = false;
 		}
 
-		private static bool HasEventItem(string name)
-		{
-			if (EventProcessor.EventList[name].queuedEvents.Count > 0)
-			{
-				while (EventProcessor.EventList[name].queuedEvents.Count > 0)
-				{
-					EventProcessor.EventMatch e;
-					EventProcessor.EventList[name].queuedEvents.TryDequeue(out e);
-				}
-
-				return true;
-			}
-			return false;
-		}
+		
 
 		private static List<Int32> _corpseList = new List<int>();
 		private static void SingleRez(Int32 corpseID)

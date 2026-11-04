@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 
 
 namespace E3Core.Processors
@@ -94,14 +95,13 @@ namespace E3Core.Processors
 			var pattern = $@"(.+) YOU for ([0-9]+) points of damage. \(Rampage\)";
 			EventProcessor.RegisterEvent("RampageDamageAction", pattern, (x) =>
 			{
-
 				if (E3.CharacterSettings.RampageSpells.Count > 0)
 				{
 					if (x.match.Groups.Count > 2)
 					{
 						string mobname = x.match.Groups[1].Value;
 						string damage = x.match.Groups[2].Value;
-
+						bool castSpell = false;
 						foreach (var spell in E3.CharacterSettings.RampageSpells)
 						{
 							if (!String.IsNullOrWhiteSpace(spell.Ifs))
@@ -137,9 +137,16 @@ namespace E3Core.Processors
 							if (Casting.CheckMana(spell) && Casting.CheckReady(spell))
 							{
 								Casting.Cast(E3.CurrentId, spell);
+								castSpell = true;
 							}
 						}
+						if(castSpell)
+						{
+							//drain all the rampage damage events
+							e3util.HasEventItemAndDrain("RampageDamageAction");
+						}
 					}
+					
 				}
 			});
 

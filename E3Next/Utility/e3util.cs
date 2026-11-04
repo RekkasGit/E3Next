@@ -2845,12 +2845,31 @@ namespace E3Core.Utility
 
 			}
 		}
+		public static bool HasEventItemAndDrain(string name)
+		{
+			if (EventProcessor.EventList.ContainsKey(name))
+			{
+				if (EventProcessor.EventList[name].queuedEvents.Count > 0)
+				{
+					while (EventProcessor.EventList[name].queuedEvents.Count > 0)
+					{
+						EventProcessor.EventMatch e;
+						EventProcessor.EventList[name].queuedEvents.TryDequeue(out e);
+					}
+
+					return true;
+				}
+			}
+			return false;
+		}
 		public static List<Data.Spell> ListAllActiveAA()
 		{
 			List<Data.Spell> returnValue = new List<Data.Spell>();
 
 			if (Core._MQ2MonoVersion >= 0.419m || Debugger.IsAttached)
 			{
+				//GetProcAddress(GetModuleHandleA("dinput8.dll"), "AscendantGetOwnedAAs"), if null it doesn't exist
+				//extern "C" const int* AscendantGetOwnedAAs(int* count);
 
 				unsafe
 				{
