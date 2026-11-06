@@ -145,6 +145,19 @@ namespace E3Core.Settings
 		[INI_Section("E3Hud_Casting", "RGBA_NameColor")]
 		public float[] E3Hud_Casting_RGBA_NameColor = { 0.169f, 1f, 0f, 1f };
 
+		[INI_Section("E3Hud_Resist", "Alpha")]
+		public float E3Hud_Resist_Alpha = 1.0f;
+		[INI_Section("E3Hud_Resist", "Locked")]
+		public bool E3Hud_Resist_Locked = false;
+		[INI_Section("E3Hud_Resist", "BeepOnAlert")]
+		public bool E3Hud_Resist_BeepOnAlert = false;
+		[INI_Section("E3Hud_Resist", "ZoneDetached")]
+		public bool E3Hud_Resist_ZoneDetached = false;
+		[INI_Section("E3Hud_Resist", "ZoneAlpha")]
+		public float E3Hud_Resist_ZoneAlpha = 1.0f;
+		[INI_Section("E3Hud_Resist", "ZoneLocked")]
+		public bool E3Hud_Resist_ZoneLocked = false;
+
 
 
 		[INI_Section("E3Hud_Hub", "Alpha")]
@@ -1007,6 +1020,13 @@ namespace E3Core.Settings
 			LoadKeyData("E3Hud_Casting", "RGBA_NameColor", ParsedData_UI, E3Hud_Casting_RGBA_NameColor);
 			LoadKeyData("E3Hud_Casting", "ShowGroupOnly", ParsedData_UI, ref E3Hud_Casting_ShowGroupOnly);
 
+			LoadKeyData("E3Hud_Resist", "Alpha", ParsedData_UI, ref E3Hud_Resist_Alpha);
+			LoadKeyData("E3Hud_Resist", "Locked", ParsedData_UI, ref E3Hud_Resist_Locked);
+			LoadKeyData("E3Hud_Resist", "BeepOnAlert", ParsedData_UI, ref E3Hud_Resist_BeepOnAlert);
+			LoadKeyData("E3Hud_Resist", "ZoneDetached", ParsedData_UI, ref E3Hud_Resist_ZoneDetached);
+			LoadKeyData("E3Hud_Resist", "ZoneAlpha", ParsedData_UI, ref E3Hud_Resist_ZoneAlpha);
+			LoadKeyData("E3Hud_Resist", "ZoneLocked", ParsedData_UI, ref E3Hud_Resist_ZoneLocked);
+
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFont", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_SelectedFont);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "SelectedFontSize", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_SelectedFontSize);
 			LoadKeyData("E3Hud_Hub_PlayerInfo", "Alpha", ParsedData_UI, ref E3Hud_Hub_PlayerInfo_Alpha);
@@ -1530,6 +1550,15 @@ namespace E3Core.Settings
 			section.Keys.AddKey("Locked", "False");
 			section.Keys.AddKey("ShowGroupOnly", "True");
 			section.Keys.AddKey("ColumnCounts", "3");
+
+			newFile.Sections.AddSection("E3Hud_Resist");
+			section = newFile.Sections.GetSectionData("E3Hud_Resist");
+			section.Keys.AddKey("Alpha", "1.0");
+			section.Keys.AddKey("Locked", "False");
+			section.Keys.AddKey("BeepOnAlert", "False");
+			section.Keys.AddKey("ZoneDetached", "False");
+			section.Keys.AddKey("ZoneAlpha", "1.0");
+			section.Keys.AddKey("ZoneLocked", "False");
 
 			newFile.Sections.AddSection("E3Hud_Hub_PlayerInfo");
 			section = newFile.Sections.GetSectionData("E3Hud_Hub_PlayerInfo");
