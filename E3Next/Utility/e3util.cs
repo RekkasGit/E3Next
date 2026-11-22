@@ -33,8 +33,9 @@ namespace E3Core.Utility
 		private static IMQ MQ = E3.MQ;
 		private static ISpawns _spawns = E3.Spawns;
 		public static bool UseProtoBufForBuffs = false;
+		//0-41 = normal buffs, 42-61 = songs, 62 = hidden disc buff
 		public static Int32 MaxBuffSlots = 42;
-		public static Int32 MaxSongSlots = 30;
+		public static Int32 MaxSongSlots = 20;
 		public static Int32 MaxPetBuffSlots = 30;
 		public static Int32 MobMaxDebuffSlots = 60; //default of titanium EQ client, this is higher on RoF2, up to 97
 		public static Int32 MaxTempBuffs = 55;
@@ -1225,92 +1226,64 @@ namespace E3Core.Utility
 				}
 			}
 		}
+		[StructLayout(LayoutKind.Sequential, Pack = 1)]
+		public struct BuffBulkData
+		{
+			public int ID;
+			public int CasterID;
+			public int Duration;
+			public int Hitcount;
+			public int SpellType;
+			public int CounterType;
+			public int CounterTotal;
+			public byte IsSong; // Read as a 1-byte value to safely map C++ unsigned char
+		}
 		public static void GetBuffDataCounts(out int buffCount, out int songCount)
 		{
+			buffCount = 0;
+			songCount = 0;
 			unsafe
 			{
 				int length;
-				buffCount = 0;
+				
 				byte* p = MQ.GetMyBuffDataPtr(out length);
-				ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
+				if (p == null || length <= 0) return;
+
+				
 				//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
-				int dataStartingLength = data.Length;
-				for (int i = 0; i < e3util.MaxBuffSlots; i++)
+				int availableElements = length / sizeof(BuffBulkData);
+				int maxBuffSlots = (e3util.MaxBuffSlots + e3util.MaxSongSlots);
+				int loopLimit = Math.Min(maxBuffSlots, availableElements);
+
+				BuffBulkData* buffs = (BuffBulkData*)p;
+
+				for (int i = 0; i < loopLimit; i++)
 				{
-					Int32 spellID = MemoryMarshal.Read<Int32>(data);
-
-					data = data.Slice(4);
-					Int32 casterId = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 duration = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-
-					Int32 hitcount = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 spellType = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 counterType = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					bool IsSong = MemoryMarshal.Read<bool>(data);
-					data = data.Slice(1);
-
-					if (spellID > 0)
+					BuffBulkData buff = buffs[i];
+					int spellID = buff.ID;
+					int casterId = buff.CasterID;
+					int duration = buff.Duration;
+					int hitcount = buff.Hitcount;
+					int spellType = buff.SpellType;
+					int counterType = buff.CounterType;
+					int counterTotal = buff.CounterTotal;
+					bool isSong = buff.IsSong != 0; // Safe 1-byte boolean conversion
+					//0-41 = normal buffs, 42-61 = songs, 62 = hidden disc buff
+					if (spellID > 0 && !isSong)
 					{
 						buffCount++;
 					}
-
-
-					if (dataStartingLength - data.Length >= length)
-					{
-						//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
-						break;
-					}
-					//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
-
-				}
-				songCount = 0;
-				for (int i = 0; i < e3util.MaxSongSlots; i++)
-				{
-					Int32 spellID = MemoryMarshal.Read<Int32>(data);
-
-					data = data.Slice(4);
-					Int32 casterId = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 duration = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 hitcount = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 spellType = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 counterType = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
-					data = data.Slice(4);
-					bool IsSong = MemoryMarshal.Read<bool>(data);
-					data = data.Slice(1);
-					//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
-
-					if (spellID > 0)
+					if(spellID>0 && isSong)
 					{
 						songCount++;
 					}
-
-					if (dataStartingLength - data.Length >= length)
-					{
-						//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
-						break;
-					}
 				}
-
-
-				
-				
 			}
 		}
 		public static char[] GetBuffDataForPubSubHighPerf(out int returnLength,out int buffCount,out int songCount)
 		{
+			buffCount = 0;
+			songCount = 0;
 			unsafe
 			{
 				ValueStringBuilder buffInfoStringBuilder = new ValueStringBuilder();
@@ -1319,31 +1292,24 @@ namespace E3Core.Utility
 					int length;
 					buffCount = 0;
 					byte* p = MQ.GetMyBuffDataPtr(out length);
-					ReadOnlySpan<byte> data = new ReadOnlySpan<byte>(p, length);
-					//ID,CasterID,Duration,HitCount,SpellType,CounterType,CounterTotal,IsSong
-					int dataStartingLength = data.Length;
-					for (int i = 0; i < e3util.MaxBuffSlots; i++)
+					BuffBulkData* buffs = (BuffBulkData*)p;
+					int availableElements = length / sizeof(BuffBulkData);
+					int maxBuffSlots = (e3util.MaxBuffSlots + e3util.MaxSongSlots);
+					int loopLimit = Math.Min(maxBuffSlots, availableElements);
+									
+					for (int i = 0; i < loopLimit; i++)
 					{
-						Int32 spellID = MemoryMarshal.Read<Int32>(data);
-
-						data = data.Slice(4);
-						Int32 casterId = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						Int32 duration = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-
-						Int32 hitcount = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						Int32 spellType = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						Int32 counterType = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						bool IsSong = MemoryMarshal.Read<bool>(data);
-						data = data.Slice(1);
-
-						if (spellID > 0)
+						BuffBulkData buff = buffs[i];
+						int spellID = buff.ID;
+						int casterId = buff.CasterID;
+						int duration = buff.Duration;
+						int hitcount = buff.Hitcount;
+						int spellType = buff.SpellType;
+						int counterType = buff.CounterType;
+						int counterTotal = buff.CounterTotal;
+						bool isSong = buff.IsSong != 0; // Safe 1-byte boolean conversion
+														//0-41 = normal buffs, 42-61 = songs, 62 = hidden disc buff
+						if (spellID > 0 && !isSong)
 						{
 							buffCount++;
 							if (duration > 0) duration = duration * 6 * 1000;
@@ -1353,53 +1319,22 @@ namespace E3Core.Utility
 								BuffCheck.BuffCacheLookupQueue.TryAdd(spellID, spellID);
 							}
 							buffInfoStringBuilder.Append(GetIntStr(spellID));
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(duration));
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(hitcount));
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(spellType));
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(0)); //0 for buff
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(counterType));
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(counterTotal));
-							buffInfoStringBuilder.Append(":");
+							buffInfoStringBuilder.Append(':');
+
 						}
-
-
-						if (dataStartingLength - data.Length >= length)
-						{
-							//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
-							break;
-						}
-						//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
-
-					}
-					songCount = 0;
-					for (int i = 0; i < e3util.MaxSongSlots; i++)
-					{
-						Int32 spellID = MemoryMarshal.Read<Int32>(data);
-
-						data = data.Slice(4);
-						Int32 casterId = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						Int32 duration = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						Int32 hitcount = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						Int32 spellType = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						Int32 counterType = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						Int32 counterTotal = MemoryMarshal.Read<Int32>(data);
-						data = data.Slice(4);
-						bool IsSong = MemoryMarshal.Read<bool>(data);
-						data = data.Slice(1);
-						//MQ.Write($"ID:{ID} CID:{casterId} D:{duration} hc:{hitcount} st:{spellType} ct:{counterType} ctotal:{counterTotal} song:{IsSong}");
-
-						if (spellID > 0)
+						if (spellID > 0 && isSong)
 						{
 							songCount++;
 							if (!BuffCheck.BuffInfoCache.TryGetValue(spellID, out var spell))
@@ -1408,29 +1343,21 @@ namespace E3Core.Utility
 							}
 							if (duration > 0) duration = duration * 6 * 1000;
 							buffInfoStringBuilder.Append(GetIntStr(spellID));
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(duration));
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(hitcount));
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(spellType));
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(1)); //0 for buff
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(-1));
-							buffInfoStringBuilder.Append(",");
+							buffInfoStringBuilder.Append(',');
 							buffInfoStringBuilder.Append(GetIntStr(-1));
-							buffInfoStringBuilder.Append(":");
-						}
-
-						if (dataStartingLength - data.Length >= length)
-						{
-							//	MQ.Write($"End of array at {dataStartingLength - data.Length}");
-							break;
+							buffInfoStringBuilder.Append(':');
 						}
 					}
-
-
 					return buffInfoStringBuilder.ReturnCopyBufferFromPool(out returnLength);
 
 				}

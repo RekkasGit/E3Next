@@ -203,6 +203,13 @@ namespace E3Core.Processors
 				}
 			});
 
+			EventProcessor.RegisterCommand("/e3debug_listaa", x =>
+			{
+
+				e3util.ListAllActiveAA();
+
+			});
+
 			EventProcessor.RegisterCommand("/e3debug_check_lru", (x) =>
 			{
 			if (x.args.Count > 0)
@@ -517,7 +524,7 @@ namespace E3Core.Processors
 				{
 					if (_spawns.TryByID(spawnid, out var spawn))
 					{
-						MQ.Write($"ID:{spawn.ID} TD:{spawn.TypeDesc} Dead:{spawn.Dead} X:{spawn.X} Y:{spawn.Y} Z:{spawn.Z} N:{spawn.Name} CN:{spawn.CleanName}");
+						MQ.Write($"ID:{spawn.ID} RID:{spawn.RaceID}  RDES: {spawn.RaceName} TD:{spawn.TypeDesc} Dead:{spawn.Dead} X:{spawn.X} Y:{spawn.Y} Z:{spawn.Z} N:{spawn.Name} CN:{spawn.CleanName}");
 					}
 				}
 
