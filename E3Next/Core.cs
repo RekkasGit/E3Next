@@ -1197,8 +1197,6 @@ namespace MonoCore
 			{
 				//old version, does not have mq2mono method, warn user
 			}
-			// The ImGui enums' numbers, for the Dear ImGui the plugin draws with (before any window is drawn).
-			E3ImGUI.ImGuiVersion.Init();
 
 			if (!_isInit)
 			{
@@ -1212,6 +1210,10 @@ namespace MonoCore
 					spawnInstance = new Spawns();
 				}
 				logInstance = new Logging(mqInstance);
+				// The ImGui enums' numbers, for the Dear ImGui the plugin draws with (before any window is drawn).
+				// Not before this point: it runs E3ImGUI's static initializer, which reads E3.MQ, and E3 keeps
+				// whatever Core.mqInstance was when it first ran (null before the line above).
+				E3ImGUI.ImGuiVersion.Init();
 				StopWatch.Start();
 				IsProcessing = true;
 				MainProcessor.Init();
