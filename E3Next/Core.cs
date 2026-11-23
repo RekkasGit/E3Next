@@ -1197,6 +1197,8 @@ namespace MonoCore
 			{
 				//old version, does not have mq2mono method, warn user
 			}
+			// The ImGui enums' numbers, for the Dear ImGui the plugin draws with (before any window is drawn).
+			E3ImGUI.ImGuiVersion.Init();
 
 			if (!_isInit)
 			{

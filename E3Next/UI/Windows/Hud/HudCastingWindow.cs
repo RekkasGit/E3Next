@@ -220,7 +220,7 @@ namespace E3Core.UI.Windows.Hud
 			}
 			using (var popup = ImGUIPopUpContext.Aquire())
 			{
-				if (popup.BeginPopupContextItem($"##CastingHudPopup", 1))
+				if (popup.BeginPopupContextItem($"##CastingHudPopup", ImGuiPopupFlags.MouseButtonRight))
 				{
 					using (var style = PushStyle.Aquire())
 					{

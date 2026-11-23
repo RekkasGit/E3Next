@@ -1782,53 +1782,260 @@ namespace MonoCore
 			public const string FAYoutubeSquare = "\uf166";
 		}
 
-		public enum ImGuiColorEditFlags
+		// Dear ImGui's enums, numbered as the Dear ImGui the plugin draws with. Each is a static class of ints that its
+		// Init sets for a version (ImGuiVersion.Version) and branch (ImGuiVersion.Docking):
+		//   1.93 and later  Dear ImGui 1.93's numbers (Hailstone's HSMono);
+		//   older           Dear ImGui 1.92.5's (MQ's MQ2Mono, docking branch). 1.92.6 to 1.92.9 differ from both in
+		//                   places: popup flags (1.92.6), ImDrawFlags_Closed (1.92.8), new colours and style variables.
+		// A name the Dear ImGui lacks (a docking one outside the docking branch, a 1.93 one in 1.92.5 ...) is -1 for an
+		// index such as a colour, which HSMono ignores, or 0 for a flag, so that or-ing it in changes nothing.
+		// Renamed names work with both: ImDrawFlags.RoundAll and RoundCornersAll are the same flag.
+		// The docking names in 1.93 sit where 1.92.5's docking branch has them; not yet checked against 1.93's.
+		// They are ints, not enums, so they can't be constants: a default argument or a case label takes a literal.
+		public static class ImGuiVersion
 		{
-			None = 0,
-			NoAlpha = 1 << 1,   //              // ColorEdit, ColorPicker, ColorButton: ignore Alpha component (will only read 3 components from the input pointer).
-			NoPicker = 1 << 2,   //              // ColorEdit: disable picker when clicking on color square.
-			NoOptions = 1 << 3,   //              // ColorEdit: disable toggling options menu when right-clicking on inputs/small preview.
-			NoSmallPreview = 1 << 4,   //              // ColorEdit, ColorPicker: disable color square preview next to the inputs. (e.g. to show only the inputs)
-			NoInputs = 1 << 5,   //              // ColorEdit, ColorPicker: disable inputs sliders/text widgets (e.g. to show only the small preview color square).
-			NoTooltip = 1 << 6,   //              // ColorEdit, ColorPicker, ColorButton: disable tooltip when hovering the preview.
-			NoLabel = 1 << 7,   //              // ColorEdit, ColorPicker: disable display of inline text label (the label is still forwarded to the tooltip and picker).
-			NoSidePreview = 1 << 8,   //              // ColorPicker: disable bigger color preview on right side of the picker, use small color square preview instead.
-			NoDragDrop = 1 << 9,   //              // ColorEdit: disable drag and drop target. ColorButton: disable drag and drop source.
-			NoBorder = 1 << 10,  //              // ColorButton: disable border (which is enforced by default)
+			public static int Version = 19300;   // IMGUI_VERSION_NUM: 19300 is 1.93.0, 19250 is 1.92.5
+			public static bool Docking = false;  // the docking branch (IMGUI_HAS_DOCK)
 
-			// User Options (right-click on widget to change some of them).
-			AlphaBar = 1 << 16,  //              // ColorEdit, ColorPicker: show vertical alpha bar/gradient in picker.
-			HDR = 1 << 19,  //              // (WIP) ColorEdit: Currently only disable 0.0f..1.0f limits in RGBA edition (note: you probably want to use Float flag as well).
-			DisplayRGB = 1 << 20,  // [Display]    // ColorEdit: override _display_ type among RGB/HSV/Hex. ColorPicker: select any combination using one or more of RGB/HSV/Hex.
-			DisplayHSV = 1 << 21,  // [Display]    // "
-			DisplayHex = 1 << 22,  // [Display]    // "
-			Uint8 = 1 << 23,  // [DataType]   // ColorEdit, ColorPicker, ColorButton: _display_ values formatted as 0..255.
-			Float = 1 << 24,  // [DataType]   // ColorEdit, ColorPicker, ColorButton: _display_ values formatted as 0.0f..1.0f floats instead of 0..255 integers. No round-trip of value via integers.
-			PickerHueBar = 1 << 25,  // [Picker]     // ColorPicker: bar for Hue, rectangle for Sat/Value.
-			PickerHueWheel = 1 << 26,  // [Picker]     // ColorPicker: wheel for Hue, triangle for Sat/Value.
-			InputRGB = 1 << 27,  // [Input]      // ColorEdit, ColorPicker: input and output data in RGB format.
-			InputHSV = 1 << 28,  // [Input]      // ColorEdit, ColorPicker: input and output data in HSV format.
+			// Asks the plugin which Dear ImGui it draws with, then sets every enum below for it. Call it once from
+			// OnInit, before any window is drawn.
+			public static void Init()
+			{
+				try
+				{
+					QueryPlugin();
+				}
+				catch (Exception)
+				{
+					// No imgui_GetVersionNum: MQ2Mono, which draws with MQ's Dear ImGui 1.92.5, docking branch.
+					Version = 19250;
+					Docking = true;
+				}
+				InitAll(Version, Docking);
+			}
 
-			// Defaults Options. You can set application defaults using SetColorEditOptions(). The intent is that you probably don't want to
-			// override them in most of your calls. Let the user choose via the option menu and/or call SetColorEditOptions() once during startup.
-			DefaultOptions_ = Uint8 | DisplayRGB | InputRGB | PickerHueBar
+			// Its own method: a missing internal call throws when the method calling it runs, which Init catches.
+			[MethodImpl(MethodImplOptions.NoInlining)]
+			static void QueryPlugin()
+			{
+				Version = imgui_GetVersionNum();
+				Docking = imgui_HasDocking();
+			}
+
+			public static void InitAll(int version, bool docking)
+			{
+				Version = version;
+				Docking = docking;
+				ImGuiColorEditFlags.Init(version, docking);
+				ImGuiPopupFlags.Init(version, docking);
+				ImDrawFlags.Init(version, docking);
+				ImGuiWindowFlags.Init(version, docking);
+				ImGuiMouseButton.Init(version, docking);
+				ImGuiSelectableFlags.Init(version, docking);
+				ImGuiStyleVar.Init(version, docking);
+				ImGuiChildFlags.Init(version, docking);
+				ImGuiCol.Init(version, docking);
+				ImGuiTableBgTarget.Init(version, docking);
+				ImGuiCond.Init(version, docking);
+				ImGuiTreeNodeFlags.Init(version, docking);
+				ImGuiTableFlags.Init(version, docking);
+				ImGuiTableColumnFlags.Init(version, docking);
+			}
 		}
-		public enum ImGuiPopupFlags
+
+		public static class ImGuiColorEditFlags
 		{
-			None = 0,
-			MouseButtonLeft = 0,        // For BeginPopupContext*(): open on Left Mouse release. Guaranteed to always be == 0 (same as ImGuiMouseButton_Left)
-			MouseButtonRight = 1,        // For BeginPopupContext*(): open on Right Mouse release. Guaranteed to always be == 1 (same as ImGuiMouseButton_Right)
-			MouseButtonMiddle = 2,        // For BeginPopupContext*(): open on Middle Mouse release. Guaranteed to always be == 2 (same as ImGuiMouseButton_Middle)
-			MouseButtonMask_ = 0x1F,
-			MouseButtonDefault_ = 1,
-			NoReopen = 1 << 5,   // For OpenPopup*(), BeginPopupContext*(): don't reopen same popup if already open (won't reposition, won't reinitialize navigation)
-												 //NoReopenAlwaysNavInit = 1 << 6,   // For OpenPopup*(), BeginPopupContext*(): focus and initialize navigation even when not reopening.
-			NoOpenOverExistingPopup = 1 << 7,   // For OpenPopup*(), BeginPopupContext*(): don't open if there's already a popup at the same level of the popup stack
-			NoOpenOverItems = 1 << 8,   // For BeginPopupContextWindow(): don't return true when hovering items, only when hovering empty space
-			AnyPopupId = 1 << 10,  // For IsPopupOpen(): ignore the ImGuiID parameter and test for any popup.
-			AnyPopupLevel = 1 << 11,  // For IsPopupOpen(): search/test at any level of the popup stack (default test in the current level)
-			AnyPopup = AnyPopupId | AnyPopupLevel,
-		};
+			public static int None;
+			public static int NoAlpha;   // ColorEdit, ColorPicker, ColorButton: ignore Alpha component (will only read 3 components from the input ...
+			public static int NoPicker;   // ColorEdit: disable picker when clicking on color square.
+			public static int NoOptions;   // ColorEdit: disable toggling options menu when right-clicking on inputs/small preview.
+			public static int NoSmallPreview;   // ColorEdit, ColorPicker: disable color square preview next to the inputs. (e.g. to show only the inputs)
+			public static int NoInputs;   // ColorEdit, ColorPicker: disable inputs sliders/text widgets (e.g. to show only the small preview color ...
+			public static int NoTooltip;   // ColorEdit, ColorPicker, ColorButton: disable tooltip when hovering the preview.
+			public static int NoLabel;   // ColorEdit, ColorPicker: disable display of inline text label (the label is still forwarded to the tooltip and ...
+			public static int NoSidePreview;   // ColorPicker: disable bigger color preview on right side of the picker, use small color square preview instead.
+			public static int NoDragDrop;   // ColorEdit: disable drag and drop target/source. ColorButton: disable drag and drop source.
+			public static int NoBorder;   // ColorButton: disable border (which is enforced by default)
+			public static int NoColorMarkers;   // [1.93 only] ColorEdit: disable rendering R/G/B/A color marker. May also be disabled globally by setting ...
+			// Alpha preview
+			public static int AlphaOpaque;   // ColorEdit, ColorPicker, ColorButton: disable alpha in the preview,. Contrary to _NoAlpha it may still be ...
+			public static int AlphaNoBg;   // ColorEdit, ColorPicker, ColorButton: disable rendering a checkerboard background behind transparent color.
+			public static int AlphaPreviewHalf;   // ColorEdit, ColorPicker, ColorButton: display half opaque / half transparent preview.
+			// User Options (right-click on widget to change some of them)
+			// Current settings are stored in style.ColorEditFlags.
+			public static int AlphaBar;   // ColorEdit, ColorPicker: show vertical alpha bar/gradient in picker.
+			public static int HDR;   // (WIP) ColorEdit: Currently only disable 0.0f..1.0f limits in RGBA edition (note: you probably want to use ...
+			public static int DisplayRGB;   // [Display] ColorEdit: override _display_ type among RGB/HSV/Hex. ColorPicker: select any combination using one ...
+			public static int DisplayHSV;   // [Display] "
+			public static int DisplayHex;   // [Display] "
+			public static int Uint8;   // [DataType] ColorEdit, ColorPicker, ColorButton: _display_ values formatted as 0..255.
+			public static int Float;   // [DataType] ColorEdit, ColorPicker, ColorButton: _display_ values formatted as 0.0f..1.0f floats instead of ...
+			public static int PickerHueBar;   // [Picker] ColorPicker: bar for Hue, rectangle for Sat/Value.
+			public static int PickerHueWheel;   // [Picker] ColorPicker: wheel for Hue, triangle for Sat/Value.
+			public static int PickerNoRotate;   // [1.93 only] [Picker] ColorPicker: disable rotating Sat/Value triangle. Best set in io.ConfigColorEditFlags once.
+			public static int InputRGB;   // [Input] ColorEdit, ColorPicker: input and output data in RGB format.
+			public static int InputHSV;   // [Input] ColorEdit, ColorPicker: input and output data in HSV format.
+			public static int DefaultOptions_;
+			// [Internal] Masks
+			public static int AlphaMask_;
+			public static int DisplayMask_;
+			public static int DataTypeMask_;
+			public static int PickerMask_;
+			public static int InputMask_;
+
+			static ImGuiColorEditFlags() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiColorEditFlags_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				None = 0;
+				NoAlpha = 1 << 1;
+				NoPicker = 1 << 2;
+				NoOptions = 1 << 3;
+				NoSmallPreview = 1 << 4;
+				NoInputs = 1 << 5;
+				NoTooltip = 1 << 6;
+				NoLabel = 1 << 7;
+				NoSidePreview = 1 << 8;
+				NoDragDrop = 1 << 9;
+				NoBorder = 1 << 10;
+				NoColorMarkers = 1 << 11;
+				AlphaOpaque = 1 << 12;
+				AlphaNoBg = 1 << 13;
+				AlphaPreviewHalf = 1 << 14;
+				AlphaBar = 1 << 18;
+				HDR = 1 << 19;
+				DisplayRGB = 1 << 20;
+				DisplayHSV = 1 << 21;
+				DisplayHex = 1 << 22;
+				Uint8 = 1 << 23;
+				Float = 1 << 24;
+				PickerHueBar = 1 << 25;
+				PickerHueWheel = 1 << 26;
+				PickerNoRotate = 1 << 27;
+				InputRGB = 1 << 28;
+				InputHSV = 1 << 29;
+				DefaultOptions_ = Uint8 | DisplayRGB | InputRGB | PickerHueBar;
+				AlphaMask_ = NoAlpha | AlphaOpaque | AlphaNoBg | AlphaPreviewHalf;
+				DisplayMask_ = DisplayRGB | DisplayHSV | DisplayHex;
+				DataTypeMask_ = Uint8 | Float;
+				PickerMask_ = PickerHueWheel | PickerHueBar;
+				InputMask_ = InputRGB | InputHSV;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiColorEditFlags_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				// not in 1.92.5
+				NoColorMarkers = 0;
+				PickerNoRotate = 0;
+				None = 0;
+				NoAlpha = 1 << 1;
+				NoPicker = 1 << 2;
+				NoOptions = 1 << 3;
+				NoSmallPreview = 1 << 4;
+				NoInputs = 1 << 5;
+				NoTooltip = 1 << 6;
+				NoLabel = 1 << 7;
+				NoSidePreview = 1 << 8;
+				NoDragDrop = 1 << 9;
+				NoBorder = 1 << 10;
+				AlphaOpaque = 1 << 11;
+				AlphaNoBg = 1 << 12;
+				AlphaPreviewHalf = 1 << 13;
+				AlphaBar = 1 << 16;
+				HDR = 1 << 19;
+				DisplayRGB = 1 << 20;
+				DisplayHSV = 1 << 21;
+				DisplayHex = 1 << 22;
+				Uint8 = 1 << 23;
+				Float = 1 << 24;
+				PickerHueBar = 1 << 25;
+				PickerHueWheel = 1 << 26;
+				InputRGB = 1 << 27;
+				InputHSV = 1 << 28;
+				DefaultOptions_ = Uint8 | DisplayRGB | InputRGB | PickerHueBar;
+				AlphaMask_ = NoAlpha | AlphaOpaque | AlphaNoBg | AlphaPreviewHalf;
+				DisplayMask_ = DisplayRGB | DisplayHSV | DisplayHex;
+				DataTypeMask_ = Uint8 | Float;
+				PickerMask_ = PickerHueWheel | PickerHueBar;
+				InputMask_ = InputRGB | InputHSV;
+			}
+		}
+
+		public static class ImGuiPopupFlags
+		{
+			public static int None;
+			public static int MouseButtonLeft;   // For BeginPopupContext*(): open on Left Mouse release. Only one button allowed!
+			public static int MouseButtonRight;   // For BeginPopupContext*(): open on Right Mouse release. Only one button allowed! (default)
+			public static int MouseButtonMiddle;   // For BeginPopupContext*(): open on Middle Mouse release. Only one button allowed!
+			public static int NoReopen;   // For OpenPopup*(), BeginPopupContext*(): don't reopen same popup if already open (won't reposition, won't ...
+			public static int NoOpenOverExistingPopup;   // For OpenPopup*(), BeginPopupContext*(): don't open if there's already a popup at the same level of the popup ...
+			public static int NoOpenOverItems;   // For BeginPopupContextWindow(): don't return true when hovering items, only when hovering empty space
+			public static int AnyPopupId;   // For IsPopupOpen(): ignore the ImGuiID parameter and test for any popup.
+			public static int AnyPopupLevel;   // For IsPopupOpen(): search/test at any level of the popup stack (default test in the current level)
+			public static int AnyPopup;
+			public static int MouseButtonShift_;   // [1.93 only] [Internal]
+			public static int MouseButtonMask_;   // [Internal]
+			public static int InvalidMask_;   // [1.93 only] [Internal] Reserve legacy bits 0-1 to detect incorrectly passing 1 or 2 to the function.
+			public static int MouseButtonDefault_;
+
+			static ImGuiPopupFlags() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiPopupFlags_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				None = 0;
+				MouseButtonLeft = 1 << 2;
+				MouseButtonRight = 2 << 2;
+				MouseButtonMiddle = 3 << 2;
+				NoReopen = 1 << 5;
+				NoOpenOverExistingPopup = 1 << 7;
+				NoOpenOverItems = 1 << 8;
+				AnyPopupId = 1 << 10;
+				AnyPopupLevel = 1 << 11;
+				AnyPopup = AnyPopupId | AnyPopupLevel;
+				MouseButtonShift_ = 2;
+				MouseButtonMask_ = 0x0C;
+				InvalidMask_ = 0x03;
+				MouseButtonDefault_ = MouseButtonRight;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiPopupFlags_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				// not in 1.92.5
+				MouseButtonShift_ = 0;
+				InvalidMask_ = 0;
+				None = 0;
+				MouseButtonLeft = 0;
+				MouseButtonRight = 1;
+				MouseButtonMiddle = 2;
+				MouseButtonMask_ = 0x1F;
+				MouseButtonDefault_ = 1;
+				NoReopen = 1 << 5;
+				NoOpenOverExistingPopup = 1 << 7;
+				NoOpenOverItems = 1 << 8;
+				AnyPopupId = 1 << 10;
+				AnyPopupLevel = 1 << 11;
+				AnyPopup = AnyPopupId | AnyPopupLevel;
+			}
+		}
+
 		// Theme system with multiple themes
 		public enum UITheme
 		{
@@ -1838,316 +2045,1238 @@ namespace MonoCore
 			DarkOrange,    // Orange accent variant
 			DarkGreen      // Green accent variant
 		}
-		enum ImDrawFlags
-		{
-			None = 0,
-			Closed = 1 << 0, // PathStroke(), AddPolyline(): specify that shape should be closed (Important: this is always == 1 for legacy reason)
-			RoundCornersTopLeft = 1 << 4, // AddRect(), AddRectFilled(), PathRect(): enable rounding top-left corner only (when rounding > 0.0f, we default to all corners). Was 0x01.
-			RoundCornersTopRight = 1 << 5, // AddRect(), AddRectFilled(), PathRect(): enable rounding top-right corner only (when rounding > 0.0f, we default to all corners). Was 0x02.
-			RoundCornersBottomLeft = 1 << 6, // AddRect(), AddRectFilled(), PathRect(): enable rounding bottom-left corner only (when rounding > 0.0f, we default to all corners). Was 0x04.
-			RoundCornersBottomRight = 1 << 7, // AddRect(), AddRectFilled(), PathRect(): enable rounding bottom-right corner only (when rounding > 0.0f, we default to all corners). Wax 0x08.
-			RoundCornersNone = 1 << 8, // AddRect(), AddRectFilled(), PathRect(): disable rounding on all corners (when rounding > 0.0f). This is NOT zero, NOT an implicit flag!
-			RoundCornersTop = RoundCornersTopLeft | RoundCornersTopRight,
-			RoundCornersBottom = RoundCornersBottomLeft | RoundCornersBottomRight,
-			RoundCornersLeft = RoundCornersBottomLeft | RoundCornersTopLeft,
-			RoundCornersRight = RoundCornersBottomRight | RoundCornersTopRight,
-			RoundCornersAll = RoundCornersTopLeft | RoundCornersTopRight | RoundCornersBottomLeft | RoundCornersBottomRight,
-			RoundCornersDefault_ = RoundCornersAll, // Default to ALL corners if none of the _RoundCornersXX flags are specified.
-			RoundCornersMask_ = RoundCornersAll | RoundCornersNone,
-		};
-		public enum ImGuiWindowFlags
-		{
-			ImGuiWindowFlags_None = 0,
-			ImGuiWindowFlags_NoTitleBar = 1 << 0,   // Disable title-bar
-			ImGuiWindowFlags_NoResize = 1 << 1,   // Disable user resizing with the lower-right grip
-			ImGuiWindowFlags_NoMove = 1 << 2,   // Disable user moving the window
-			ImGuiWindowFlags_NoScrollbar = 1 << 3,   // Disable scrollbars (window can still scroll with mouse or programmatically)
-			ImGuiWindowFlags_NoScrollWithMouse = 1 << 4,   // Disable user vertically scrolling with mouse wheel. On child window, mouse wheel will be forwarded to the parent unless NoScrollbar is also set.
-			ImGuiWindowFlags_NoCollapse = 1 << 5,   // Disable user collapsing window by double-clicking on it. Also referred to as "window menu button" within a docking node.
-			ImGuiWindowFlags_AlwaysAutoResize = 1 << 6,   // Resize every window to its content every frame
-			ImGuiWindowFlags_NoBackground = 1 << 7,   // Disable drawing background color (WindowBg, etc.) and outside border. Similar as using SetNextWindowBgAlpha(0.0f).
-			ImGuiWindowFlags_NoSavedSettings = 1 << 8,   // Never load/save settings in .ini file
-			ImGuiWindowFlags_NoMouseInputs = 1 << 9,   // Disable catching mouse, hovering test with pass through.
-			ImGuiWindowFlags_MenuBar = 1 << 10,  // Has a menu-bar
-			ImGuiWindowFlags_HorizontalScrollbar = 1 << 11,  // Allow horizontal scrollbar to appear (off by default). You may use SetNextWindowContentSize(ImVec2(width,0.0f)); prior to calling Begin() to specify width. Read code in imgui_demo in the "Horizontal Scrolling" section.
-			ImGuiWindowFlags_NoFocusOnAppearing = 1 << 12,  // Disable taking focus when transitioning from hidden to visible state
-			ImGuiWindowFlags_NoBringToFrontOnFocus = 1 << 13,  // Disable bringing window to front when taking focus (e.g. clicking on it or programmatically giving it focus)
-			ImGuiWindowFlags_AlwaysVerticalScrollbar = 1 << 14,  // Always show vertical scrollbar (even if ContentSize.y < Size.y)
-			ImGuiWindowFlags_AlwaysHorizontalScrollbar = 1 << 15,  // Always show horizontal scrollbar (even if ContentSize.x < Size.x)
-			ImGuiWindowFlags_NoNavInputs = 1 << 16,  // No keyboard/gamepad navigation within the window
-			ImGuiWindowFlags_NoNavFocus = 1 << 17,  // No focusing toward this window with keyboard/gamepad navigation (e.g. skipped by CTRL+TAB)
-			ImGuiWindowFlags_UnsavedDocument = 1 << 18,  // Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
-			ImGuiWindowFlags_NoDocking = 1 << 19,  // Disable docking of this window
 
-			ImGuiWindowFlags_NoNav = ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus,
-			ImGuiWindowFlags_NoDecoration = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse,
-			ImGuiWindowFlags_NoInputs = ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus,
-
+		public static class ImDrawFlags
+		{
+			public static int None;
+			// Rounding for AddRectXXX(), PathRect()
+			public static int RoundTopLeft;   // OK -- Round top-left corner only (when 'rounding > 0.0f', we default to all corners).
+			public static int RoundTopRight;   // OK -- Round top-right corner only (when 'rounding > 0.0f', we default to all corners).
+			public static int RoundBottomLeft;   // OK -- Round bottom-left corner only (when 'rounding > 0.0f', we default to all corners).
+			public static int RoundBottomRight;   // OK -- Round bottom-right corner only (when 'rounding > 0.0f', we default to all corners).
+			public static int RoundNone;   // OK -- Disable rounding even when 'rounding > 0.0f'. This value is NOT zero, it is NOT an implicit flag!
+			public static int RoundAll;   // (Default!!)
+			public static int RoundTop;
+			public static int RoundBottom;
+			public static int RoundLeft;
+			public static int RoundRight;
+			// Stroke Options
+			public static int Closed;   // OK -- PathStroke(), AddPolyline(): specify that shape should be closed.
+			public static int JoinMiter;   // [1.93 only] OK -- PathStroke(), AddPolyline(): use miter joins/corners only. This assumes that the input polyline does ...
+			public static int CapSquare;   // [1.93 only] OK -- PathStroke(), AddPolyline(): use square cap line ends.
+			// Stroke/Fill Anti-aliasing
+			public static int AAFill;   // [1.93 only] OK* OK(1) Enable anti-aliasing for Filled shapes.
+			public static int AALines;   // [1.93 only] OK* OK(1) Enable anti-aliasing for Strokes (lines, borders).
+			public static int AALineEnds;   // [1.93 only] OK OK(0) Enable anti-aliasing for Strokes Ends. Requires AALines to also be enabled. Useful on thick strokes ...
+			// Stroke Position relative to shape outline
+			public static int StrokeInside;   // [1.93 only] OK -- Draw stroke inside of the shape outline (default for closed shapes and AddLineH, AddLineV functions)
+			public static int StrokeCenter;   // [1.93 only] OK -- Draw stroke at the center of the shape outline (default for paths, bezier, and AddLine functions)
+			public static int StrokeCenterBiased;   // [1.93 only] OK -- Draw stroke at the center of the shape outline, so that half thickness rounded down will be outside, ...
+			public static int StrokeOutside;   // [1.93 only] OK -- Draw stroke outside of the shape outline
+			public static int StrokeLegacy;   // [1.93 only] OK OK(0) Use legacy positioning + enable JoinMiter + disable AALineEnds. Must be all bits set.
+			// Other Options
+			public static int TextNoPixelSnap;   // [1.93 only] OK OK(0) Disable automatically snapping AddText() calls to pixel boundaries.
+			public static int UseTexForRoundCorners;   // [1.93 only] -- OK(1) Enable using textures instead of strokes to draw rounded corners/circles where possible (faster). ...
+			public static int UseVtxOffset;   // [1.93 only] -- OK(1) Can emit 'VtxOffset > 0' to allow large meshes with 16-bit ImDrawIdx. Used by default when ...
+			public static int AllowTexForRoundCorners_;   // [1.93 only] -- OK(1) [Internal]
 			// [Internal]
-			ImGuiWindowFlags_DockNodeHost = 1 << 23,  // Don't use! For internal use by Begin()/NewFrame()
-			ImGuiWindowFlags_ChildWindow = 1 << 24,  // Don't use! For internal use by BeginChild()
-			ImGuiWindowFlags_Tooltip = 1 << 25,  // Don't use! For internal use by BeginTooltip()
-			ImGuiWindowFlags_Popup = 1 << 26,  // Don't use! For internal use by BeginPopup()
-			ImGuiWindowFlags_Modal = 1 << 27,  // Don't use! For internal use by BeginPopupModal()
-			ImGuiWindowFlags_ChildMenu = 1 << 28,  // Don't use! For internal use by BeginMenu()
-	
-			// [Obsolete]
-			//ImGuiWindowFlags_ResizeFromAnySide    = 1 << 17,  // --> Set io.ConfigWindowsResizeFromEdges=true and make sure mouse cursors are supported by backend (io.BackendFlags & ImGuiBackendFlags_HasMouseCursors)
-		}
-		public enum ImGuiMouseButton
-		{
-			Left = 0,
-			Right = 1,
-			Middle = 2,
-			COUNT = 5
-		};
-		public enum ImGuiSelectableFlags
-		{
-			ImGuiSelectableFlags_None = 0,
-			ImGuiSelectableFlags_NoAutoClosePopups = 1 << 0,   // Clicking this doesn't close parent popup window (overrides ImGuiItemFlags_AutoClosePopups)
-			ImGuiSelectableFlags_SpanAllColumns = 1 << 1,   // Frame will span all columns of its container table (text will still fit in current column)
-			ImGuiSelectableFlags_AllowDoubleClick = 1 << 2,   // Generate press events on double clicks too
-			ImGuiSelectableFlags_Disabled = 1 << 3,   // Cannot be selected, display grayed out text
-			ImGuiSelectableFlags_AllowOverlap = 1 << 4,   // (WIP) Hit testing to allow subsequent widgets to overlap this one
-			ImGuiSelectableFlags_Highlight = 1 << 5,   // Make the item be displayed as if it is hovered
-		};
-		public enum ImGuiStyleVar
-		{
-			Alpha,                    // float     Alpha
-			DisabledAlpha,            // float     DisabledAlpha
-			WindowPadding,            // ImVec2    WindowPadding
-			WindowRounding,           // float     WindowRounding
-			WindowBorderSize,         // float     WindowBorderSize
-			WindowMinSize,            // ImVec2    WindowMinSize
-			WindowTitleAlign,         // ImVec2    WindowTitleAlign
-			ChildRounding,            // float     ChildRounding
-			ChildBorderSize,          // float     ChildBorderSize
-			PopupRounding,            // float     PopupRounding
-			PopupBorderSize,          // float     PopupBorderSize
-			FramePadding,             // ImVec2    FramePadding
-			FrameRounding,            // float     FrameRounding
-			FrameBorderSize,          // float     FrameBorderSize
-			ItemSpacing,              // ImVec2    ItemSpacing
-			ItemInnerSpacing,         // ImVec2    ItemInnerSpacing
-			IndentSpacing,            // float     IndentSpacing
-			CellPadding,              // ImVec2    CellPadding
-			ScrollbarSize,            // float     ScrollbarSize
-			ScrollbarRounding,        // float     ScrollbarRounding
-			ScrollbarPadding,         // float     ScrollbarPadding
-			GrabMinSize,              // float     GrabMinSize
-			GrabRounding,             // float     GrabRounding
-			LayoutAlign,              // float     LayoutAlign
-			ImageBorderSize,          // float     ImageBorderSize
-			TabRounding,              // float     TabRounding
-			TabBorderSize,            // float     TabBorderSize
-			TabMinWidthBase,          // float     TabMinWidthBase
-			TabMinWidthShrink,        // float     TabMinWidthShrink
-			TabBarBorderSize,         // float     TabBarBorderSize
-			TabBarOverlineSize,       // float     TabBarOverlineSize
-			TableAngledHeadersAngle,  // float     TableAngledHeadersAngle
-			TableAngledHeadersTextAlign,// ImVec2  TableAngledHeadersTextAlign
-			TreeLinesSize,            // float     TreeLinesSize
-			TreeLinesRounding,        // float     TreeLinesRounding
-			ButtonTextAlign,          // ImVec2    ButtonTextAlign
-			SelectableTextAlign,      // ImVec2    SelectableTextAlign
-			SeparatorTextBorderSize,  // float     SeparatorTextBorderSize
-			SeparatorTextAlign,       // ImVec2    SeparatorTextAlign
-			SeparatorTextPadding,     // ImVec2    SeparatorTextPadding
-			DockingSeparatorSize,     // float     DockingSeparatorSize
-			COUNT
-		}
-		public enum ImGuiChildFlags
-		{
-			None = 0,
-			Borders = 1 << 0,   // Show an outer border and enable WindowPadding. (IMPORTANT: this is always == 1 == true for legacy reason)
-			AlwaysUseWindowPadding = 1 << 1,   // Pad with style.WindowPadding even if no border are drawn (no padding by default for non-bordered child windows because it makes more sense)
-			ResizeX = 1 << 2,   // Allow resize from right border (layout direction). Enable .ini saving (unless ImGuiWindowFlags_NoSavedSettings passed to window flags)
-			ResizeY = 1 << 3,   // Allow resize from bottom border (layout direction). "
-			AutoResizeX = 1 << 4,   // Enable auto-resizing width. Read "IMPORTANT: Size measurement" details above.
-			AutoResizeY = 1 << 5,   // Enable auto-resizing height. Read "IMPORTANT: Size measurement" details above.
-			AlwaysAutoResize = 1 << 6,   // Combined with AutoResizeX/AutoResizeY. Always measure size even when child is hidden, always return true, always disable clipping optimization! NOT RECOMMENDED.
-			FrameStyle = 1 << 7,   // Style the child window like a framed item: use FrameBg, FrameRounding, FrameBorderSize, FramePadding instead of ChildBg, ChildRounding, ChildBorderSize, WindowPadding.
-			NavFlattened = 1 << 8,   // [BETA] Share focus scope, allow keyboard/gamepad navigation to cross over parent border to this child or between sibling child windows.
+			public static int RoundMask_;   // [Internal]
+			public static int AllowInPushScope_;   // [1.93 only] [Internal] Values allowed in PushDrawFlag() scope.
+			public static int AllowInFrameScope_;   // [1.93 only]
+			public static int StrokeMask_;   // [1.93 only] [Internal]
+			public static int InvalidMask_;   // [1.93 only] [Internal] == 0x8000000F. Reserved to detect misuses.
+			public static int RoundCornersTopLeft;   // AddRect(), AddRectFilled(), PathRect(): enable rounding top-left corner only (when rounding > 0.0f, we ...
+			public static int RoundCornersTopRight;   // AddRect(), AddRectFilled(), PathRect(): enable rounding top-right corner only (when rounding > 0.0f, we ...
+			public static int RoundCornersBottomLeft;   // AddRect(), AddRectFilled(), PathRect(): enable rounding bottom-left corner only (when rounding > 0.0f, we ...
+			public static int RoundCornersBottomRight;   // AddRect(), AddRectFilled(), PathRect(): enable rounding bottom-right corner only (when rounding > 0.0f, we ...
+			public static int RoundCornersNone;   // AddRect(), AddRectFilled(), PathRect(): disable rounding on all corners (when rounding > 0.0f). This is NOT ...
+			public static int RoundCornersAll;
+			public static int RoundCornersTop;
+			public static int RoundCornersBottom;
+			public static int RoundCornersLeft;
+			public static int RoundCornersRight;
+			public static int RoundCornersMask_;
+			public static int RoundCornersDefault_;   // Default to ALL corners if none of the _RoundCornersXX flags are specified.
 
-		};
-		public enum ImGuiCol
-		{
-			Text,
-			TextDisabled,
-			WindowBg,              // Background of normal windows
-			ChildBg,               // Background of child windows
-			PopupBg,               // Background of popups, menus, tooltips windows
-			Border,
-			BorderShadow,
-			FrameBg,               // Background of checkbox, radio button, plot, slider, text input
-			FrameBgHovered,
-			FrameBgActive,
-			TitleBg,               // Title bar
-			TitleBgActive,         // Title bar when focused
-			TitleBgCollapsed,      // Title bar when collapsed
-			MenuBarBg,
-			ScrollbarBg,
-			ScrollbarGrab,
-			ScrollbarGrabHovered,
-			ScrollbarGrabActive,
-			CheckMark,             // Checkbox tick and RadioButton circle
-			SliderGrab,
-			SliderGrabActive,
-			Button,
-			ButtonHovered,
-			ButtonActive,
-			Header,                // Header* colors are used for CollapsingHeader, TreeNode, Selectable, MenuItem
-			HeaderHovered,
-			HeaderActive,
-			Separator,
-			SeparatorHovered,
-			SeparatorActive,
-			ResizeGrip,            // Resize grip in lower-right and lower-left corners of windows.
-			ResizeGripHovered,
-			ResizeGripActive,
-			InputTextCursor,       // InputText cursor/caret
-			TabHovered,            // Tab background, when hovered
-			Tab,                   // Tab background, when tab-bar is focused & tab is unselected
-			TabSelected,           // Tab background, when tab-bar is focused & tab is selected
-			TabSelectedOverline,   // Tab horizontal overline, when tab-bar is focused & tab is selected
-			TabDimmed,             // Tab background, when tab-bar is unfocused & tab is unselected
-			TabDimmedSelected,     // Tab background, when tab-bar is unfocused & tab is selected
-			TabDimmedSelectedOverline,//..horizontal overline, when tab-bar is unfocused & tab is selected
-			DockingPreview,        // Preview overlay color when about to docking something
-			DockingEmptyBg,        // Background color for empty node (e.g. CentralNode with no window docked into it)
-			PlotLines,
-			PlotLinesHovered,
-			PlotHistogram,
-			PlotHistogramHovered,
-			TableHeaderBg,         // Table header background
-			TableBorderStrong,     // Table outer and header borders (prefer using Alpha=1.0 here)
-			TableBorderLight,      // Table inner borders (prefer using Alpha=1.0 here)
-			TableRowBg,            // Table row background (even rows)
-			TableRowBgAlt,         // Table row background (odd rows)
-			TextLink,              // Hyperlink color
-			TextSelectedBg,        // Selected text inside an InputText
-			TreeLines,             // Tree node hierarchy outlines when using ImGuiTreeNodeFlags_DrawLines
-			DragDropTarget,        // Rectangle border highlighting a drop target
-			DragDropTargetBg,      // Rectangle background highlighting a drop target
-			UnsavedMarker,         // Unsaved Document marker (in window title and tabs)
-			NavCursor,             // Color of keyboard/gamepad navigation cursor/rectangle, when visible
-			NavWindowingHighlight, // Highlight window when using Ctrl+Tab
-			NavWindowingDimBg,     // Darken/colorize entire screen behind the Ctrl+Tab window list, when active
-			ModalWindowDimBg,      // Darken/colorize entire screen behind a modal window, when one is active
-			COUNT
-		}
-		public enum ImGuiTableBgTarget
-		{
-			None = 0,
-			RowBg0 = 1,        // Set row background color 0 (generally used for background, automatically set when ImGuiTableFlags_RowBg is used)
-			RowBg1 = 2,        // Set row background color 1 (generally used for selection marking)
-			CellBg = 3,        // Set cell background color (top-most color)
-		};
-		public enum ImGuiCond
-		{
-			None = 0,        // No condition (always set the variable), same as _Always
-			Always = 1 << 0,   // No condition (always set the variable), same as _None
-			Once = 1 << 1,   // Set the variable once per runtime session (only the first call will succeed)
-			FirstUseEver = 1 << 2,   // Set the variable if the object/window has no persistently saved data (no entry in .ini file)
-			Appearing = 1 << 3,   // Set the variable if the object/window is appearing after being hidden/inactive (or the first time)
-		};
-		public enum ImGuiTreeNodeFlags
-		{
-			ImGuiTreeNodeFlags_None = 0,
-			ImGuiTreeNodeFlags_Selected = 1 << 0,   // Draw as selected
-			ImGuiTreeNodeFlags_Framed = 1 << 1,   // Draw frame with background (e.g. for CollapsingHeader)
-			ImGuiTreeNodeFlags_AllowOverlap = 1 << 2,   // Hit testing to allow subsequent widgets to overlap this one
-			ImGuiTreeNodeFlags_NoTreePushOnOpen = 1 << 3,   // Don't do a TreePush() when open (e.g. for CollapsingHeader) = no extra indent nor pushing on ID stack
-			ImGuiTreeNodeFlags_NoAutoOpenOnLog = 1 << 4,   // Don't automatically and temporarily open node when Logging is active (by default logging will automatically open tree nodes)
-			ImGuiTreeNodeFlags_DefaultOpen = 1 << 5,   // Default node to be open
-			ImGuiTreeNodeFlags_OpenOnDoubleClick = 1 << 6,   // Open on double-click instead of simple click (default for multi-select unless any _OpenOnXXX behavior is set explicitly). Both behaviors may be combined.
-			ImGuiTreeNodeFlags_OpenOnArrow = 1 << 7,   // Open when clicking on the arrow part (default for multi-select unless any _OpenOnXXX behavior is set explicitly). Both behaviors may be combined.
-			ImGuiTreeNodeFlags_Leaf = 1 << 8,   // No collapsing, no arrow (use as a convenience for leaf nodes).
-			ImGuiTreeNodeFlags_Bullet = 1 << 9,   // Display a bullet instead of arrow. IMPORTANT: node can still be marked open/close if you don't set the _Leaf flag!
-			ImGuiTreeNodeFlags_FramePadding = 1 << 10,  // Use FramePadding (even for an unframed text node) to vertically align text baseline to regular widget height. Equivalent to calling AlignTextToFramePadding() before the node.
-			ImGuiTreeNodeFlags_SpanAvailWidth = 1 << 11,  // Extend hit box to the right-most edge, even if not framed. This is not the default in order to allow adding other items on the same line without using AllowOverlap mode.
-			ImGuiTreeNodeFlags_SpanFullWidth = 1 << 12,  // Extend hit box to the left-most and right-most edges (cover the indent area).
-			ImGuiTreeNodeFlags_SpanLabelWidth = 1 << 13,  // Narrow hit box + narrow hovering highlight, will only cover the label text.
-			ImGuiTreeNodeFlags_SpanAllColumns = 1 << 14,  // Frame will span all columns of its container table (label will still fit in current column)
-			ImGuiTreeNodeFlags_LabelSpanAllColumns = 1 << 15,  // Label will span all columns of its container table
-															   //ImGuiTreeNodeFlags_NoScrollOnOpen     = 1 << 16,  // FIXME: TODO: Disable automatic scroll on TreePop() if node got just open and contents is not visible
-			ImGuiTreeNodeFlags_NavLeftJumpsToParent = 1 << 17,  // Nav: left arrow moves back to parent. This is processed in TreePop() when there's an unfulfilled Left nav request remaining.
-			ImGuiTreeNodeFlags_CollapsingHeader = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_NoAutoOpenOnLog,
+			static ImDrawFlags() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
 
-			// [EXPERIMENTAL] Draw lines connecting TreeNode hierarchy. Discuss in GitHub issue #2920.
-			// Default value is pulled from style.TreeLinesFlags. May be overridden in TreeNode calls.
-			ImGuiTreeNodeFlags_DrawLinesNone = 1 << 18,  // No lines drawn
-			ImGuiTreeNodeFlags_DrawLinesFull = 1 << 19,  // Horizontal lines to child nodes. Vertical line drawn down to TreePop() position: cover full contents. Faster (for large trees).
-			ImGuiTreeNodeFlags_DrawLinesToNodes = 1 << 20,  // Horizontal lines to child nodes. Vertical line drawn down to bottom-most child node. Slower (for large trees).
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImDrawFlags_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				None = 0;
+				RoundTopLeft = 1 << 4;
+				RoundTopRight = 1 << 5;
+				RoundBottomLeft = 1 << 6;
+				RoundBottomRight = 1 << 7;
+				RoundNone = 1 << 8;
+				RoundAll = RoundTopLeft | RoundTopRight | RoundBottomLeft | RoundBottomRight;
+				RoundTop = RoundTopLeft | RoundTopRight;
+				RoundBottom = RoundBottomLeft | RoundBottomRight;
+				RoundLeft = RoundBottomLeft | RoundTopLeft;
+				RoundRight = RoundBottomRight | RoundTopRight;
+				Closed = 1 << 9;
+				JoinMiter = 1 << 10;
+				CapSquare = 1 << 11;
+				AAFill = 1 << 12;
+				AALines = 1 << 13;
+				AALineEnds = 1 << 14;
+				StrokeInside = 1 << 17;
+				StrokeCenter = 2 << 17;
+				StrokeCenterBiased = 3 << 17;
+				StrokeOutside = 4 << 17;
+				StrokeLegacy = 7 << 17;
+				TextNoPixelSnap = 1 << 20;
+				UseTexForRoundCorners = 1 << 21;
+				UseVtxOffset = 1 << 22;
+				AllowTexForRoundCorners_ = 1 << 23;
+				RoundMask_ = RoundAll | RoundNone;
+				AllowInPushScope_ = AAFill | AALines | AALineEnds | StrokeLegacy | TextNoPixelSnap | UseTexForRoundCorners | UseVtxOffset | RoundMask_;
+				AllowInFrameScope_ = AllowInPushScope_ | AllowTexForRoundCorners_;
+				StrokeMask_ = 0x07 << 17;
+				InvalidMask_ = ~0x7FFFFFF0;
+				RoundCornersTopLeft = RoundTopLeft;
+				RoundCornersTopRight = RoundTopRight;
+				RoundCornersBottomLeft = RoundBottomLeft;
+				RoundCornersBottomRight = RoundBottomRight;
+				RoundCornersNone = RoundNone;
+				RoundCornersAll = RoundAll;
+				RoundCornersTop = RoundTop;
+				RoundCornersBottom = RoundBottom;
+				RoundCornersLeft = RoundLeft;
+				RoundCornersRight = RoundRight;
+				RoundCornersMask_ = RoundMask_;
+				RoundCornersDefault_ = RoundAll;
+			}
+
+			// Dear ImGui 1.92.5 (ImDrawFlags_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				// not in 1.92.5
+				JoinMiter = 0;
+				CapSquare = 0;
+				AAFill = 0;
+				AALines = 0;
+				AALineEnds = 0;
+				StrokeInside = 0;
+				StrokeCenter = 0;
+				StrokeCenterBiased = 0;
+				StrokeOutside = 0;
+				StrokeLegacy = 0;
+				TextNoPixelSnap = 0;
+				UseTexForRoundCorners = 0;
+				UseVtxOffset = 0;
+				AllowTexForRoundCorners_ = 0;
+				AllowInPushScope_ = 0;
+				AllowInFrameScope_ = 0;
+				StrokeMask_ = 0;
+				InvalidMask_ = 0;
+				None = 0;
+				Closed = 1 << 0;
+				RoundCornersTopLeft = 1 << 4;
+				RoundCornersTopRight = 1 << 5;
+				RoundCornersBottomLeft = 1 << 6;
+				RoundCornersBottomRight = 1 << 7;
+				RoundCornersNone = 1 << 8;
+				RoundCornersTop = RoundCornersTopLeft | RoundCornersTopRight;
+				RoundCornersBottom = RoundCornersBottomLeft | RoundCornersBottomRight;
+				RoundCornersLeft = RoundCornersBottomLeft | RoundCornersTopLeft;
+				RoundCornersRight = RoundCornersBottomRight | RoundCornersTopRight;
+				RoundCornersAll = RoundCornersTopLeft | RoundCornersTopRight | RoundCornersBottomLeft | RoundCornersBottomRight;
+				RoundCornersDefault_ = RoundCornersAll;
+				RoundCornersMask_ = RoundCornersAll | RoundCornersNone;
+				RoundTopLeft = RoundCornersTopLeft;
+				RoundTopRight = RoundCornersTopRight;
+				RoundBottomLeft = RoundCornersBottomLeft;
+				RoundBottomRight = RoundCornersBottomRight;
+				RoundNone = RoundCornersNone;
+				RoundAll = RoundCornersAll;
+				RoundTop = RoundCornersTop;
+				RoundBottom = RoundCornersBottom;
+				RoundLeft = RoundCornersLeft;
+				RoundRight = RoundCornersRight;
+				RoundMask_ = RoundCornersMask_;
+			}
 		}
 
-		public enum ImGuiTableFlags
+		public static class ImGuiWindowFlags
 		{
-			ImGuiTableFlags_None = 0,
-			ImGuiTableFlags_Resizable = 1 << 0,   // Enable resizing columns.
-			ImGuiTableFlags_Reorderable = 1 << 1,   // Enable reordering columns in header row (need calling TableSetupColumn() + TableHeadersRow() to display headers)
-			ImGuiTableFlags_Hideable = 1 << 2,   // Enable hiding/disabling columns in context menu.
-			ImGuiTableFlags_Sortable = 1 << 3,   // Enable sorting. Call TableGetSortSpecs() to obtain sort specs. Also see ImGuiTableFlags_SortMulti and ImGuiTableFlags_SortTristate.
-			ImGuiTableFlags_NoSavedSettings = 1 << 4,   // Disable persisting columns order, width and sort settings in the .ini file.
-			ImGuiTableFlags_ContextMenuInBody = 1 << 5,   // Right-click on columns body/contents will display table context menu. By default it is available in TableHeadersRow().
-														  // Decorations
-			ImGuiTableFlags_RowBg = 1 << 6,   // Set each RowBg color with ImGuiCol_TableRowBg or ImGuiCol_TableRowBgAlt (equivalent of calling TableSetBgColor with ImGuiTableBgFlags_RowBg0 on each row)
-			ImGuiTableFlags_BordersInnerH = 1 << 7,   // Draw horizontal borders between rows.
-			ImGuiTableFlags_BordersOuterH = 1 << 8,   // Draw horizontal borders at the top and bottom.
-			ImGuiTableFlags_BordersInnerV = 1 << 9,   // Draw vertical borders between columns.
-			ImGuiTableFlags_BordersOuterV = 1 << 10,  // Draw vertical borders on the left and right sides.
-			ImGuiTableFlags_BordersH = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_BordersOuterH, // Draw horizontal borders.
-			ImGuiTableFlags_BordersV = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuterV, // Draw vertical borders.
-			ImGuiTableFlags_BordersInner = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH, // Draw inner borders.
-			ImGuiTableFlags_BordersOuter = ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH, // Draw outer borders.
-			ImGuiTableFlags_Borders = ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter,   // Draw all borders.
-			ImGuiTableFlags_NoBordersInBody = 1 << 11,  // [ALPHA] Disable vertical borders in columns Body (borders will always appear in Headers). -> May move to style
-			ImGuiTableFlags_NoBordersInBodyUntilResize = 1 << 12,  // [ALPHA] Disable vertical borders in columns Body until hovered for resize (borders will always appear in Headers). -> May move to style
-																   // Sizing Policy (read above for defaults)
-			ImGuiTableFlags_SizingFixedFit = 1 << 13,  // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching contents width.
-			ImGuiTableFlags_SizingFixedSame = 2 << 13,  // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching the maximum contents width of all columns. Implicitly enable ImGuiTableFlags_NoKeepColumnsVisible.
-			ImGuiTableFlags_SizingStretchProp = 3 << 13,  // Columns default to _WidthStretch with default weights proportional to each columns contents widths.
-			ImGuiTableFlags_SizingStretchSame = 4 << 13,  // Columns default to _WidthStretch with default weights all equal, unless overridden by TableSetupColumn().
-														  // Sizing Extra Options
-			ImGuiTableFlags_NoHostExtendX = 1 << 16,  // Make outer width auto-fit to columns, overriding outer_size.x value. Only available when ScrollX/ScrollY are disabled and Stretch columns are not used.
-			ImGuiTableFlags_NoHostExtendY = 1 << 17,  // Make outer height stop exactly at outer_size.y (prevent auto-extending table past the limit). Only available when ScrollX/ScrollY are disabled. Data below the limit will be clipped and not visible.
-			ImGuiTableFlags_NoKeepColumnsVisible = 1 << 18,  // Disable keeping column always minimally visible when ScrollX is off and table gets too small. Not recommended if columns are resizable.
-			ImGuiTableFlags_PreciseWidths = 1 << 19,  // Disable distributing remainder width to stretched columns (width allocation on a 100-wide table with 3 columns: Without this flag: 33,33,34. With this flag: 33,33,33). With larger number of columns, resizing will appear to be less smooth.
-													  // Clipping
-			ImGuiTableFlags_NoClip = 1 << 20,  // Disable clipping rectangle for every individual columns (reduce draw command count, items will be able to overflow into other columns). Generally incompatible with TableSetupScrollFreeze().
-											   // Padding
-			ImGuiTableFlags_PadOuterX = 1 << 21,  // Default if BordersOuterV is on. Enable outer-most padding. Generally desirable if you have headers.
-			ImGuiTableFlags_NoPadOuterX = 1 << 22,  // Default if BordersOuterV is off. Disable outer-most padding.
-			ImGuiTableFlags_NoPadInnerX = 1 << 23,  // Disable inner padding between columns (double inner padding if BordersOuterV is on, single inner padding if BordersOuterV is off).
-													// Scrolling
-			ImGuiTableFlags_ScrollX = 1 << 24,  // Enable horizontal scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size. Changes default sizing policy. Because this creates a child window, ScrollY is currently generally recommended when using ScrollX.
-			ImGuiTableFlags_ScrollY = 1 << 25,  // Enable vertical scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size.
-												// Sorting
-			ImGuiTableFlags_SortMulti = 1 << 26,  // Hold shift when clicking headers to sort on multiple column. TableGetSortSpecs() may return specs where (SpecsCount > 1).
-			ImGuiTableFlags_SortTristate = 1 << 27,  // Allow no sorting, disable default sorting. TableGetSortSpecs() may return specs where (SpecsCount == 0).
+			public static int ImGuiWindowFlags_None;
+			public static int ImGuiWindowFlags_NoTitleBar;   // Disable title-bar
+			public static int ImGuiWindowFlags_NoResize;   // Disable user resizing with the lower-right grip
+			public static int ImGuiWindowFlags_NoMove;   // Disable user moving the window
+			public static int ImGuiWindowFlags_NoScrollbar;   // Disable scrollbars (window can still scroll with mouse or programmatically)
+			public static int ImGuiWindowFlags_NoScrollWithMouse;   // Disable user vertically scrolling with mouse wheel. On child window, mouse wheel will be forwarded to the ...
+			public static int ImGuiWindowFlags_NoCollapse;   // Disable user collapsing window by double-clicking on it. Also referred to as Window Menu Button (e.g. within ...
+			public static int ImGuiWindowFlags_AlwaysAutoResize;   // Resize every window to its content every frame
+			public static int ImGuiWindowFlags_NoBackground;   // Disable drawing background color (WindowBg, etc.) and outside border. Similar as using ...
+			public static int ImGuiWindowFlags_NoSavedSettings;   // Never load/save settings in .ini file
+			public static int ImGuiWindowFlags_NoMouseInputs;   // Disable catching mouse, hovering test with pass through.
+			public static int ImGuiWindowFlags_MenuBar;   // Has a menu-bar
+			public static int ImGuiWindowFlags_HorizontalScrollbar;   // Allow horizontal scrollbar to appear (off by default). You may use ...
+			public static int ImGuiWindowFlags_NoFocusOnAppearing;   // Disable taking focus when transitioning from hidden to visible state
+			public static int ImGuiWindowFlags_NoBringToFrontOnFocus;   // Disable bringing window to front when taking focus (e.g. clicking on it or programmatically giving it focus)
+			public static int ImGuiWindowFlags_AlwaysVerticalScrollbar;   // Always show vertical scrollbar (even if ContentSize.y < Size.y)
+			public static int ImGuiWindowFlags_AlwaysHorizontalScrollbar;   // Always show horizontal scrollbar (even if ContentSize.x < Size.x)
+			public static int ImGuiWindowFlags_NoNavInputs;   // No keyboard/gamepad navigation within the window
+			public static int ImGuiWindowFlags_NoNavFocus;   // No focusing toward this window with keyboard/gamepad navigation (e.g. skipped by Ctrl+Tab)
+			public static int ImGuiWindowFlags_UnsavedDocument;   // Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + ...
+			public static int ImGuiWindowFlags_NoDocking;   // [docking branch only] Disable docking of this window
+			public static int ImGuiWindowFlags_NoNav;
+			public static int ImGuiWindowFlags_NoDecoration;
+			public static int ImGuiWindowFlags_NoInputs;
+			// [Internal]
+			public static int ImGuiWindowFlags_ChildWindow;   // Don't use! For internal use by BeginChild()
+			public static int ImGuiWindowFlags_Tooltip;   // Don't use! For internal use by BeginTooltip()
+			public static int ImGuiWindowFlags_Popup;   // Don't use! For internal use by BeginPopup()
+			public static int ImGuiWindowFlags_Modal;   // Don't use! For internal use by BeginPopupModal()
+			public static int ImGuiWindowFlags_ChildMenu;   // Don't use! For internal use by BeginMenu()
+			public static int ImGuiWindowFlags_DockNodeHost;   // [docking branch only] Don't use! For internal use by Begin()/NewFrame()
+
+			static ImGuiWindowFlags() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiWindowFlags_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				ImGuiWindowFlags_None = 0;
+				ImGuiWindowFlags_NoTitleBar = 1 << 0;
+				ImGuiWindowFlags_NoResize = 1 << 1;
+				ImGuiWindowFlags_NoMove = 1 << 2;
+				ImGuiWindowFlags_NoScrollbar = 1 << 3;
+				ImGuiWindowFlags_NoScrollWithMouse = 1 << 4;
+				ImGuiWindowFlags_NoCollapse = 1 << 5;
+				ImGuiWindowFlags_AlwaysAutoResize = 1 << 6;
+				ImGuiWindowFlags_NoBackground = 1 << 7;
+				ImGuiWindowFlags_NoSavedSettings = 1 << 8;
+				ImGuiWindowFlags_NoMouseInputs = 1 << 9;
+				ImGuiWindowFlags_MenuBar = 1 << 10;
+				ImGuiWindowFlags_HorizontalScrollbar = 1 << 11;
+				ImGuiWindowFlags_NoFocusOnAppearing = 1 << 12;
+				ImGuiWindowFlags_NoBringToFrontOnFocus = 1 << 13;
+				ImGuiWindowFlags_AlwaysVerticalScrollbar = 1 << 14;
+				ImGuiWindowFlags_AlwaysHorizontalScrollbar = 1 << 15;
+				ImGuiWindowFlags_NoNavInputs = 1 << 16;
+				ImGuiWindowFlags_NoNavFocus = 1 << 17;
+				ImGuiWindowFlags_UnsavedDocument = 1 << 18;
+				ImGuiWindowFlags_NoDocking = docking ? 1 << 19 : 0;
+				ImGuiWindowFlags_NoNav = ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus;
+				ImGuiWindowFlags_NoDecoration = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse;
+				ImGuiWindowFlags_NoInputs = ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus;
+				ImGuiWindowFlags_ChildWindow = 1 << 24;
+				ImGuiWindowFlags_Tooltip = 1 << 25;
+				ImGuiWindowFlags_Popup = 1 << 26;
+				ImGuiWindowFlags_Modal = 1 << 27;
+				ImGuiWindowFlags_ChildMenu = 1 << 28;
+				ImGuiWindowFlags_DockNodeHost = docking ? 1 << 23 : 0;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiWindowFlags_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				ImGuiWindowFlags_None = 0;
+				ImGuiWindowFlags_NoTitleBar = 1 << 0;
+				ImGuiWindowFlags_NoResize = 1 << 1;
+				ImGuiWindowFlags_NoMove = 1 << 2;
+				ImGuiWindowFlags_NoScrollbar = 1 << 3;
+				ImGuiWindowFlags_NoScrollWithMouse = 1 << 4;
+				ImGuiWindowFlags_NoCollapse = 1 << 5;
+				ImGuiWindowFlags_AlwaysAutoResize = 1 << 6;
+				ImGuiWindowFlags_NoBackground = 1 << 7;
+				ImGuiWindowFlags_NoSavedSettings = 1 << 8;
+				ImGuiWindowFlags_NoMouseInputs = 1 << 9;
+				ImGuiWindowFlags_MenuBar = 1 << 10;
+				ImGuiWindowFlags_HorizontalScrollbar = 1 << 11;
+				ImGuiWindowFlags_NoFocusOnAppearing = 1 << 12;
+				ImGuiWindowFlags_NoBringToFrontOnFocus = 1 << 13;
+				ImGuiWindowFlags_AlwaysVerticalScrollbar = 1 << 14;
+				ImGuiWindowFlags_AlwaysHorizontalScrollbar = 1 << 15;
+				ImGuiWindowFlags_NoNavInputs = 1 << 16;
+				ImGuiWindowFlags_NoNavFocus = 1 << 17;
+				ImGuiWindowFlags_UnsavedDocument = 1 << 18;
+				ImGuiWindowFlags_NoDocking = docking ? 1 << 19 : 0;
+				ImGuiWindowFlags_NoNav = ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus;
+				ImGuiWindowFlags_NoDecoration = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse;
+				ImGuiWindowFlags_NoInputs = ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus;
+				ImGuiWindowFlags_DockNodeHost = docking ? 1 << 23 : 0;
+				ImGuiWindowFlags_ChildWindow = 1 << 24;
+				ImGuiWindowFlags_Tooltip = 1 << 25;
+				ImGuiWindowFlags_Popup = 1 << 26;
+				ImGuiWindowFlags_Modal = 1 << 27;
+				ImGuiWindowFlags_ChildMenu = 1 << 28;
+			}
 		}
 
-		public enum ImGuiTableColumnFlags
+		public static class ImGuiMouseButton
 		{
-			ImGuiTableColumnFlags_None = 0,
-			ImGuiTableColumnFlags_Disabled = 1 << 0,   // Overriding/master disable flag: hide column, won't show in context menu (unlike calling TableSetColumnEnabled() which manipulates the user accessible state)
-			ImGuiTableColumnFlags_DefaultHide = 1 << 1,   // Default as a hidden/disabled column.
-			ImGuiTableColumnFlags_DefaultSort = 1 << 2,   // Default as a sorting column.
-			ImGuiTableColumnFlags_WidthStretch = 1 << 3,   // Column will stretch. Preferable with horizontal scrolling disabled (default if table sizing policy is _SizingStretchSame or _SizingStretchProp).
-			ImGuiTableColumnFlags_WidthFixed = 1 << 4,   // Column will not stretch. Preferable with horizontal scrolling enabled (default if table sizing policy is _SizingFixedFit and table is resizable).
-			ImGuiTableColumnFlags_NoResize = 1 << 5,   // Disable manual resizing.
-			ImGuiTableColumnFlags_NoReorder = 1 << 6,   // Disable manual reordering this column, this will also prevent other columns from crossing over this column.
-			ImGuiTableColumnFlags_NoHide = 1 << 7,   // Disable ability to hide/disable this column.
-			ImGuiTableColumnFlags_NoClip = 1 << 8,   // Disable clipping for this column (all NoClip columns will render in a same draw command).
-			ImGuiTableColumnFlags_NoSort = 1 << 9,   // Disable ability to sort on this field (even if ImGuiTableFlags_Sortable is set on the table).
-			ImGuiTableColumnFlags_NoSortAscending = 1 << 10,  // Disable ability to sort in the ascending direction.
-			ImGuiTableColumnFlags_NoSortDescending = 1 << 11,  // Disable ability to sort in the descending direction.
-			ImGuiTableColumnFlags_NoHeaderLabel = 1 << 12,  // TableHeadersRow() will not submit label for this column. Convenient for some small columns. Name will still appear in context menu.
-			ImGuiTableColumnFlags_NoHeaderWidth = 1 << 13,  // Disable header text width contribution to automatic column width.
-			ImGuiTableColumnFlags_PreferSortAscending = 1 << 14,  // Make the initial sort direction Ascending when first sorting on this column (default).
-			ImGuiTableColumnFlags_PreferSortDescending = 1 << 15,  // Make the initial sort direction Descending when first sorting on this column.
-			ImGuiTableColumnFlags_IndentEnable = 1 << 16,  // Use current Indent value when entering cell (default for column 0).
-			ImGuiTableColumnFlags_IndentDisable = 1 << 17,  // Ignore current Indent value when entering cell (default for columns > 0). Indentation changes _within_ the cell will still be honored.
+			public static int Left;
+			public static int Right;
+			public static int Middle;
+			public static int COUNT;
+
+			static ImGuiMouseButton() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiMouseButton_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				Left = 0;
+				Right = 1;
+				Middle = 2;
+				COUNT = 5;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiMouseButton_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				Left = 0;
+				Right = 1;
+				Middle = 2;
+				COUNT = 5;
+			}
+		}
+
+		public static class ImGuiSelectableFlags
+		{
+			public static int ImGuiSelectableFlags_None;
+			public static int ImGuiSelectableFlags_NoAutoClosePopups;   // Clicking this doesn't close parent popup window (overrides ImGuiItemFlags_AutoClosePopups)
+			public static int ImGuiSelectableFlags_SpanAllColumns;   // Frame will span all columns of its container table (text will still fit in current column)
+			public static int ImGuiSelectableFlags_AllowDoubleClick;   // Generate press events on double clicks too
+			public static int ImGuiSelectableFlags_Disabled;   // Cannot be selected, display grayed out text
+			public static int ImGuiSelectableFlags_AllowOverlap;   // Hit testing will allow subsequent widgets to overlap this one. Require previous frame HoveredId to match ...
+			public static int ImGuiSelectableFlags_Highlight;   // Make the item be displayed as if it is hovered
+			public static int ImGuiSelectableFlags_SelectOnNav;   // Auto-select when moved into, unless Ctrl is held. Automatic when in a BeginMultiSelect() block.
+			public static int ImGuiSelectableFlags_DontClosePopups;   // Renamed in 1.91.0
+
+			static ImGuiSelectableFlags() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiSelectableFlags_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				ImGuiSelectableFlags_None = 0;
+				ImGuiSelectableFlags_NoAutoClosePopups = 1 << 0;
+				ImGuiSelectableFlags_SpanAllColumns = 1 << 1;
+				ImGuiSelectableFlags_AllowDoubleClick = 1 << 2;
+				ImGuiSelectableFlags_Disabled = 1 << 3;
+				ImGuiSelectableFlags_AllowOverlap = 1 << 4;
+				ImGuiSelectableFlags_Highlight = 1 << 5;
+				ImGuiSelectableFlags_SelectOnNav = 1 << 6;
+				ImGuiSelectableFlags_DontClosePopups = ImGuiSelectableFlags_NoAutoClosePopups;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiSelectableFlags_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				ImGuiSelectableFlags_None = 0;
+				ImGuiSelectableFlags_NoAutoClosePopups = 1 << 0;
+				ImGuiSelectableFlags_SpanAllColumns = 1 << 1;
+				ImGuiSelectableFlags_AllowDoubleClick = 1 << 2;
+				ImGuiSelectableFlags_Disabled = 1 << 3;
+				ImGuiSelectableFlags_AllowOverlap = 1 << 4;
+				ImGuiSelectableFlags_Highlight = 1 << 5;
+				ImGuiSelectableFlags_SelectOnNav = 1 << 6;
+				ImGuiSelectableFlags_DontClosePopups = ImGuiSelectableFlags_NoAutoClosePopups;
+			}
+		}
+
+		public static class ImGuiStyleVar
+		{
+			// Enum name
+			public static int Alpha;   // float Alpha
+			public static int DisabledAlpha;   // float DisabledAlpha
+			public static int WindowPadding;   // ImVec2 WindowPadding
+			public static int WindowRounding;   // float WindowRounding
+			public static int WindowBorderSize;   // float WindowBorderSize
+			public static int WindowMinSize;   // ImVec2 WindowMinSize
+			public static int WindowTitleAlign;   // ImVec2 WindowTitleAlign
+			public static int ChildRounding;   // float ChildRounding
+			public static int ChildBorderSize;   // float ChildBorderSize
+			public static int PopupRounding;   // float PopupRounding
+			public static int PopupBorderSize;   // float PopupBorderSize
+			public static int FramePadding;   // ImVec2 FramePadding
+			public static int FrameRounding;   // float FrameRounding
+			public static int FrameBorderSize;   // float FrameBorderSize
+			public static int ItemSpacing;   // ImVec2 ItemSpacing
+			public static int ItemInnerSpacing;   // ImVec2 ItemInnerSpacing
+			public static int IndentSpacing;   // float IndentSpacing
+			public static int CellPadding;   // ImVec2 CellPadding
+			public static int ScrollbarSize;   // float ScrollbarSize
+			public static int ScrollbarRounding;   // float ScrollbarRounding
+			public static int ScrollbarPadding;   // float ScrollbarPadding
+			public static int GrabMinSize;   // float GrabMinSize
+			public static int GrabRounding;   // float GrabRounding
+			public static int LayoutAlign;   // [1.92.5 only] float LayoutAlign
+			public static int ImageRounding;   // [1.93 only] float ImageRounding
+			public static int ImageBorderSize;   // float ImageBorderSize
+			public static int TabRounding;   // float TabRounding
+			public static int TabBorderSize;   // float TabBorderSize
+			public static int TabMinWidthBase;   // float TabMinWidthBase
+			public static int TabMinWidthShrink;   // float TabMinWidthShrink
+			public static int TabBarBorderSize;   // float TabBarBorderSize
+			public static int TabBarOverlineSize;   // float TabBarOverlineSize
+			public static int TableAngledHeadersAngle;   // float TableAngledHeadersAngle
+			public static int TableAngledHeadersTextAlign;   // ImVec2 TableAngledHeadersTextAlign
+			public static int TreeLinesSize;   // float TreeLinesSize
+			public static int TreeLinesRounding;   // float TreeLinesRounding
+			public static int MenuItemRounding;   // [1.93 only] float MenuItemRounding
+			public static int SelectableRounding;   // [1.93 only] float SelectableRounding
+			public static int DragDropTargetRounding;   // [1.93 only] float DragDropTargetRounding
+			public static int ButtonTextAlign;   // ImVec2 ButtonTextAlign
+			public static int SelectableTextAlign;   // ImVec2 SelectableTextAlign
+			public static int SeparatorSize;   // [1.93 only] float SeparatorSize
+			public static int SeparatorTextBorderSize;   // float SeparatorTextBorderSize
+			public static int SeparatorTextAlign;   // ImVec2 SeparatorTextAlign
+			public static int SeparatorTextPadding;   // ImVec2 SeparatorTextPadding
+			public static int DockingSeparatorSize;   // [docking branch only] float DockingSeparatorSize
+			public static int COUNT;
+
+			static ImGuiStyleVar() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiStyleVar_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				// not in 1.93
+				LayoutAlign = -1;
+				int i = 0;
+				Alpha = i++;
+				DisabledAlpha = i++;
+				WindowPadding = i++;
+				WindowRounding = i++;
+				WindowBorderSize = i++;
+				WindowMinSize = i++;
+				WindowTitleAlign = i++;
+				ChildRounding = i++;
+				ChildBorderSize = i++;
+				PopupRounding = i++;
+				PopupBorderSize = i++;
+				FramePadding = i++;
+				FrameRounding = i++;
+				FrameBorderSize = i++;
+				ItemSpacing = i++;
+				ItemInnerSpacing = i++;
+				IndentSpacing = i++;
+				CellPadding = i++;
+				ScrollbarSize = i++;
+				ScrollbarRounding = i++;
+				ScrollbarPadding = i++;
+				GrabMinSize = i++;
+				GrabRounding = i++;
+				ImageRounding = i++;
+				ImageBorderSize = i++;
+				TabRounding = i++;
+				TabBorderSize = i++;
+				TabMinWidthBase = i++;
+				TabMinWidthShrink = i++;
+				TabBarBorderSize = i++;
+				TabBarOverlineSize = i++;
+				TableAngledHeadersAngle = i++;
+				TableAngledHeadersTextAlign = i++;
+				TreeLinesSize = i++;
+				TreeLinesRounding = i++;
+				MenuItemRounding = i++;
+				SelectableRounding = i++;
+				DragDropTargetRounding = i++;
+				ButtonTextAlign = i++;
+				SelectableTextAlign = i++;
+				SeparatorSize = i++;
+				SeparatorTextBorderSize = i++;
+				SeparatorTextAlign = i++;
+				SeparatorTextPadding = i++;
+				DockingSeparatorSize = docking ? i++ : -1;
+				COUNT = i++;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiStyleVar_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				// not in 1.92.5
+				ImageRounding = -1;
+				MenuItemRounding = -1;
+				SelectableRounding = -1;
+				DragDropTargetRounding = -1;
+				SeparatorSize = -1;
+				int i = 0;
+				Alpha = i++;
+				DisabledAlpha = i++;
+				WindowPadding = i++;
+				WindowRounding = i++;
+				WindowBorderSize = i++;
+				WindowMinSize = i++;
+				WindowTitleAlign = i++;
+				ChildRounding = i++;
+				ChildBorderSize = i++;
+				PopupRounding = i++;
+				PopupBorderSize = i++;
+				FramePadding = i++;
+				FrameRounding = i++;
+				FrameBorderSize = i++;
+				ItemSpacing = i++;
+				ItemInnerSpacing = i++;
+				IndentSpacing = i++;
+				CellPadding = i++;
+				ScrollbarSize = i++;
+				ScrollbarRounding = i++;
+				ScrollbarPadding = i++;
+				GrabMinSize = i++;
+				GrabRounding = i++;
+				LayoutAlign = i++;
+				ImageBorderSize = i++;
+				TabRounding = i++;
+				TabBorderSize = i++;
+				TabMinWidthBase = i++;
+				TabMinWidthShrink = i++;
+				TabBarBorderSize = i++;
+				TabBarOverlineSize = i++;
+				TableAngledHeadersAngle = i++;
+				TableAngledHeadersTextAlign = i++;
+				TreeLinesSize = i++;
+				TreeLinesRounding = i++;
+				ButtonTextAlign = i++;
+				SelectableTextAlign = i++;
+				SeparatorTextBorderSize = i++;
+				SeparatorTextAlign = i++;
+				SeparatorTextPadding = i++;
+				DockingSeparatorSize = docking ? i++ : -1;
+				COUNT = i++;
+			}
+		}
+
+		public static class ImGuiChildFlags
+		{
+			public static int None;
+			public static int Borders;   // Show an outer border and enable WindowPadding. (IMPORTANT: this is always == 1 == true for legacy reason)
+			public static int AlwaysUseWindowPadding;   // Pad with style.WindowPadding even if no border are drawn (no padding by default for non-bordered child ...
+			public static int ResizeX;   // Allow resize from right border (layout direction). Enable .ini saving (unless ...
+			public static int ResizeY;   // Allow resize from bottom border (layout direction). "
+			public static int AutoResizeX;   // Enable auto-resizing width. Read "IMPORTANT: Size measurement" details above.
+			public static int AutoResizeY;   // Enable auto-resizing height. Read "IMPORTANT: Size measurement" details above.
+			public static int AlwaysAutoResize;   // Combined with AutoResizeX/AutoResizeY. Always measure size even when child is hidden, always return true, ...
+			public static int FrameStyle;   // Style the child window like a framed item: use FrameBg, FrameRounding, FrameBorderSize, FramePadding instead ...
+			public static int NavFlattened;   // [BETA] Share focus scope, allow keyboard/gamepad navigation to cross over parent border to this child or ...
+
+			static ImGuiChildFlags() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiChildFlags_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				None = 0;
+				Borders = 1 << 0;
+				AlwaysUseWindowPadding = 1 << 1;
+				ResizeX = 1 << 2;
+				ResizeY = 1 << 3;
+				AutoResizeX = 1 << 4;
+				AutoResizeY = 1 << 5;
+				AlwaysAutoResize = 1 << 6;
+				FrameStyle = 1 << 7;
+				NavFlattened = 1 << 8;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiChildFlags_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				None = 0;
+				Borders = 1 << 0;
+				AlwaysUseWindowPadding = 1 << 1;
+				ResizeX = 1 << 2;
+				ResizeY = 1 << 3;
+				AutoResizeX = 1 << 4;
+				AutoResizeY = 1 << 5;
+				AlwaysAutoResize = 1 << 6;
+				FrameStyle = 1 << 7;
+				NavFlattened = 1 << 8;
+			}
+		}
+
+		public static class ImGuiCol
+		{
+			public static int Text;
+			public static int TextDisabled;
+			public static int WindowBg;   // Background of normal windows
+			public static int ChildBg;   // Background of child windows
+			public static int PopupBg;   // Background of popups, menus, tooltips windows
+			public static int Border;
+			public static int BorderShadow;
+			public static int FrameBg;   // Background of checkbox, radio button, plot, slider, text input
+			public static int FrameBgHovered;
+			public static int FrameBgActive;
+			public static int TitleBg;   // Title bar
+			public static int TitleBgActive;   // Title bar when focused
+			public static int TitleBgCollapsed;   // Title bar when collapsed
+			public static int MenuBarBg;
+			public static int ScrollbarBg;
+			public static int ScrollbarGrab;
+			public static int ScrollbarGrabHovered;
+			public static int ScrollbarGrabActive;
+			public static int CheckMark;   // Checkbox tick and RadioButton circle
+			public static int CheckboxSelectedBg;   // [1.93 only] Checkbox background when Selected, otherwise use FrameBg
+			public static int SliderGrab;
+			public static int SliderGrabActive;
+			public static int Button;
+			public static int ButtonHovered;
+			public static int ButtonActive;
+			public static int Header;   // Header* colors are used for CollapsingHeader, TreeNode, Selectable, MenuItem
+			public static int HeaderHovered;
+			public static int HeaderActive;
+			public static int Separator;
+			public static int SeparatorHovered;
+			public static int SeparatorActive;
+			public static int ResizeGrip;   // Resize grip in lower-right and lower-left corners of windows.
+			public static int ResizeGripHovered;
+			public static int ResizeGripActive;
+			public static int InputTextCursor;   // InputText cursor/caret
+			public static int TabHovered;   // Tab background, when hovered
+			public static int Tab;   // Tab background, when tab-bar is focused & tab is unselected
+			public static int TabSelected;   // Tab background, when tab-bar is focused & tab is selected
+			public static int TabSelectedOverline;   // Tab horizontal overline, when tab-bar is focused & tab is selected
+			public static int TabDimmed;   // Tab background, when tab-bar is unfocused & tab is unselected
+			public static int TabDimmedSelected;   // Tab background, when tab-bar is unfocused & tab is selected
+			public static int TabDimmedSelectedOverline;   // ..horizontal overline, when tab-bar is unfocused & tab is selected
+			public static int DockingPreview;   // [docking branch only] Preview overlay color when about to docking something
+			public static int DockingEmptyBg;   // [docking branch only] Background color for empty node (e.g. CentralNode with no window docked into it)
+			public static int PlotLines;
+			public static int PlotLinesHovered;
+			public static int PlotHistogram;
+			public static int PlotHistogramHovered;
+			public static int TableHeaderBg;   // Table header background
+			public static int TableBorderStrong;   // Table outer and header borders (prefer using Alpha=1.0 here)
+			public static int TableBorderLight;   // Table inner borders (prefer using Alpha=1.0 here)
+			public static int TableRowBg;   // Table row background (even rows)
+			public static int TableRowBgAlt;   // Table row background (odd rows)
+			public static int TextLink;   // Hyperlink color
+			public static int TextSelectedBg;   // Selected text inside an InputText
+			public static int TreeLines;   // Tree node hierarchy outlines when using ImGuiTreeNodeFlags_DrawLines
+			public static int DragDropTarget;   // Rectangle border highlighting a drop target
+			public static int DragDropTargetBg;   // Rectangle background highlighting a drop target
+			public static int UnsavedMarker;   // Unsaved Document marker (in window title and tabs)
+			public static int NavCursor;   // Color of keyboard/gamepad navigation cursor/rectangle, when visible
+			public static int NavWindowingHighlight;   // Highlight window when using Ctrl+Tab
+			public static int NavWindowingDimBg;   // Darken/colorize entire screen behind the Ctrl+Tab window list, when active
+			public static int ModalWindowDimBg;   // Darken/colorize entire screen behind a modal window, when one is active
+			public static int COUNT;
+			public static int TabActive;   // [renamed in 1.90.9]
+			public static int TabUnfocused;   // [renamed in 1.90.9]
+			public static int TabUnfocusedActive;   // [renamed in 1.90.9]
+			public static int NavHighlight;   // [renamed in 1.91.4]
+
+			static ImGuiCol() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiCol_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				int i = 0;
+				Text = i++;
+				TextDisabled = i++;
+				WindowBg = i++;
+				ChildBg = i++;
+				PopupBg = i++;
+				Border = i++;
+				BorderShadow = i++;
+				FrameBg = i++;
+				FrameBgHovered = i++;
+				FrameBgActive = i++;
+				TitleBg = i++;
+				TitleBgActive = i++;
+				TitleBgCollapsed = i++;
+				MenuBarBg = i++;
+				ScrollbarBg = i++;
+				ScrollbarGrab = i++;
+				ScrollbarGrabHovered = i++;
+				ScrollbarGrabActive = i++;
+				CheckMark = i++;
+				CheckboxSelectedBg = i++;
+				SliderGrab = i++;
+				SliderGrabActive = i++;
+				Button = i++;
+				ButtonHovered = i++;
+				ButtonActive = i++;
+				Header = i++;
+				HeaderHovered = i++;
+				HeaderActive = i++;
+				Separator = i++;
+				SeparatorHovered = i++;
+				SeparatorActive = i++;
+				ResizeGrip = i++;
+				ResizeGripHovered = i++;
+				ResizeGripActive = i++;
+				InputTextCursor = i++;
+				TabHovered = i++;
+				Tab = i++;
+				TabSelected = i++;
+				TabSelectedOverline = i++;
+				TabDimmed = i++;
+				TabDimmedSelected = i++;
+				TabDimmedSelectedOverline = i++;
+				DockingPreview = docking ? i++ : -1;
+				DockingEmptyBg = docking ? i++ : -1;
+				PlotLines = i++;
+				PlotLinesHovered = i++;
+				PlotHistogram = i++;
+				PlotHistogramHovered = i++;
+				TableHeaderBg = i++;
+				TableBorderStrong = i++;
+				TableBorderLight = i++;
+				TableRowBg = i++;
+				TableRowBgAlt = i++;
+				TextLink = i++;
+				TextSelectedBg = i++;
+				TreeLines = i++;
+				DragDropTarget = i++;
+				DragDropTargetBg = i++;
+				UnsavedMarker = i++;
+				NavCursor = i++;
+				NavWindowingHighlight = i++;
+				NavWindowingDimBg = i++;
+				ModalWindowDimBg = i++;
+				COUNT = i++;
+				TabActive = TabSelected;
+				TabUnfocused = TabDimmed;
+				TabUnfocusedActive = TabDimmedSelected;
+				NavHighlight = NavCursor;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiCol_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				// not in 1.92.5
+				CheckboxSelectedBg = -1;
+				int i = 0;
+				Text = i++;
+				TextDisabled = i++;
+				WindowBg = i++;
+				ChildBg = i++;
+				PopupBg = i++;
+				Border = i++;
+				BorderShadow = i++;
+				FrameBg = i++;
+				FrameBgHovered = i++;
+				FrameBgActive = i++;
+				TitleBg = i++;
+				TitleBgActive = i++;
+				TitleBgCollapsed = i++;
+				MenuBarBg = i++;
+				ScrollbarBg = i++;
+				ScrollbarGrab = i++;
+				ScrollbarGrabHovered = i++;
+				ScrollbarGrabActive = i++;
+				CheckMark = i++;
+				SliderGrab = i++;
+				SliderGrabActive = i++;
+				Button = i++;
+				ButtonHovered = i++;
+				ButtonActive = i++;
+				Header = i++;
+				HeaderHovered = i++;
+				HeaderActive = i++;
+				Separator = i++;
+				SeparatorHovered = i++;
+				SeparatorActive = i++;
+				ResizeGrip = i++;
+				ResizeGripHovered = i++;
+				ResizeGripActive = i++;
+				InputTextCursor = i++;
+				TabHovered = i++;
+				Tab = i++;
+				TabSelected = i++;
+				TabSelectedOverline = i++;
+				TabDimmed = i++;
+				TabDimmedSelected = i++;
+				TabDimmedSelectedOverline = i++;
+				DockingPreview = docking ? i++ : -1;
+				DockingEmptyBg = docking ? i++ : -1;
+				PlotLines = i++;
+				PlotLinesHovered = i++;
+				PlotHistogram = i++;
+				PlotHistogramHovered = i++;
+				TableHeaderBg = i++;
+				TableBorderStrong = i++;
+				TableBorderLight = i++;
+				TableRowBg = i++;
+				TableRowBgAlt = i++;
+				TextLink = i++;
+				TextSelectedBg = i++;
+				TreeLines = i++;
+				DragDropTarget = i++;
+				DragDropTargetBg = i++;
+				UnsavedMarker = i++;
+				NavCursor = i++;
+				NavWindowingHighlight = i++;
+				NavWindowingDimBg = i++;
+				ModalWindowDimBg = i++;
+				COUNT = i++;
+				TabActive = TabSelected;
+				TabUnfocused = TabDimmed;
+				TabUnfocusedActive = TabDimmedSelected;
+				NavHighlight = NavCursor;
+			}
+		}
+
+		public static class ImGuiTableBgTarget
+		{
+			public static int None;
+			public static int RowBg0;   // Set row background color 0 (generally used for background, automatically set when ImGuiTableFlags_RowBg is ...
+			public static int RowBg1;   // Set row background color 1 (generally used for selection marking)
+			public static int CellBg;   // Set cell background color (top-most color)
+
+			static ImGuiTableBgTarget() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiTableBgTarget_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				None = 0;
+				RowBg0 = 1;
+				RowBg1 = 2;
+				CellBg = 3;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiTableBgTarget_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				None = 0;
+				RowBg0 = 1;
+				RowBg1 = 2;
+				CellBg = 3;
+			}
+		}
+
+		public static class ImGuiCond
+		{
+			public static int None;   // No condition (always set the variable), same as _Always
+			public static int Always;   // No condition (always set the variable), same as _None
+			public static int Once;   // Set the variable once per runtime session (only the first call will succeed)
+			public static int FirstUseEver;   // Set the variable if the object/window has no persistently saved data (no entry in .ini file)
+			public static int Appearing;   // Set the variable if the object/window is appearing after being hidden/inactive (or the first time)
+
+			static ImGuiCond() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiCond_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				None = 0;
+				Always = 1 << 0;
+				Once = 1 << 1;
+				FirstUseEver = 1 << 2;
+				Appearing = 1 << 3;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiCond_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				None = 0;
+				Always = 1 << 0;
+				Once = 1 << 1;
+				FirstUseEver = 1 << 2;
+				Appearing = 1 << 3;
+			}
+		}
+
+		public static class ImGuiTreeNodeFlags
+		{
+			public static int ImGuiTreeNodeFlags_None;
+			public static int ImGuiTreeNodeFlags_Selected;   // Draw as selected
+			public static int ImGuiTreeNodeFlags_Framed;   // Draw frame with background (e.g. for CollapsingHeader)
+			public static int ImGuiTreeNodeFlags_AllowOverlap;   // Hit testing will allow subsequent widgets to overlap this one. Require previous frame HoveredId to match ...
+			public static int ImGuiTreeNodeFlags_NoTreePushOnOpen;   // Don't do a TreePush() when open (e.g. for CollapsingHeader) = no extra indent nor pushing on ID stack
+			public static int ImGuiTreeNodeFlags_NoAutoOpenOnLog;   // Don't automatically and temporarily open node when Logging is active (by default logging will automatically ...
+			public static int ImGuiTreeNodeFlags_DefaultOpen;   // Default node to be open
+			public static int ImGuiTreeNodeFlags_OpenOnDoubleClick;   // Open on double-click instead of simple click (default for multi-select unless any _OpenOnXXX behavior is set ...
+			public static int ImGuiTreeNodeFlags_OpenOnArrow;   // Open when clicking on the arrow part (default for multi-select unless any _OpenOnXXX behavior is set ...
+			public static int ImGuiTreeNodeFlags_Leaf;   // No collapsing, no arrow (use as a convenience for leaf nodes). Note: will always open a tree/id scope and ...
+			public static int ImGuiTreeNodeFlags_Bullet;   // Display a bullet instead of arrow. IMPORTANT: node can still be marked open/close if you don't set the _Leaf ...
+			public static int ImGuiTreeNodeFlags_FramePadding;   // Use FramePadding (even for an unframed text node) to vertically align text baseline to regular widget height. ...
+			public static int ImGuiTreeNodeFlags_SpanAvailWidth;   // Extend hit box to the right-most edge, even if not framed. This is not the default in order to allow adding ...
+			public static int ImGuiTreeNodeFlags_SpanFullWidth;   // Extend hit box to the left-most and right-most edges (cover the indent area).
+			public static int ImGuiTreeNodeFlags_SpanLabelWidth;   // Narrow hit box + narrow hovering highlight, will only cover the label text.
+			public static int ImGuiTreeNodeFlags_SpanAllColumns;   // Frame will span all columns of its container table (label will still fit in current column)
+			public static int ImGuiTreeNodeFlags_LabelSpanAllColumns;   // Label will span all columns of its container table
+			public static int ImGuiTreeNodeFlags_NavLeftJumpsToParent;   // Nav: left arrow moves back to parent. This is processed in TreePop() when there's an unfulfilled Left nav ...
+			public static int ImGuiTreeNodeFlags_CollapsingHeader;
+			public static int ImGuiTreeNodeFlags_DrawLinesNone;   // No lines drawn
+			public static int ImGuiTreeNodeFlags_DrawLinesFull;   // Horizontal lines to child nodes. Vertical line drawn down to TreePop() position: cover full contents. Faster ...
+			public static int ImGuiTreeNodeFlags_DrawLinesToNodes;   // Horizontal lines to child nodes. Vertical line drawn down to bottom-most child node. Slower (for large trees).
+			public static int ImGuiTreeNodeFlags_NavLeftJumpsBackHere;   // Renamed in 1.92.0
+
+			static ImGuiTreeNodeFlags() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiTreeNodeFlags_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				ImGuiTreeNodeFlags_None = 0;
+				ImGuiTreeNodeFlags_Selected = 1 << 0;
+				ImGuiTreeNodeFlags_Framed = 1 << 1;
+				ImGuiTreeNodeFlags_AllowOverlap = 1 << 2;
+				ImGuiTreeNodeFlags_NoTreePushOnOpen = 1 << 3;
+				ImGuiTreeNodeFlags_NoAutoOpenOnLog = 1 << 4;
+				ImGuiTreeNodeFlags_DefaultOpen = 1 << 5;
+				ImGuiTreeNodeFlags_OpenOnDoubleClick = 1 << 6;
+				ImGuiTreeNodeFlags_OpenOnArrow = 1 << 7;
+				ImGuiTreeNodeFlags_Leaf = 1 << 8;
+				ImGuiTreeNodeFlags_Bullet = 1 << 9;
+				ImGuiTreeNodeFlags_FramePadding = 1 << 10;
+				ImGuiTreeNodeFlags_SpanAvailWidth = 1 << 11;
+				ImGuiTreeNodeFlags_SpanFullWidth = 1 << 12;
+				ImGuiTreeNodeFlags_SpanLabelWidth = 1 << 13;
+				ImGuiTreeNodeFlags_SpanAllColumns = 1 << 14;
+				ImGuiTreeNodeFlags_LabelSpanAllColumns = 1 << 15;
+				ImGuiTreeNodeFlags_NavLeftJumpsToParent = 1 << 17;
+				ImGuiTreeNodeFlags_CollapsingHeader = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_NoAutoOpenOnLog;
+				ImGuiTreeNodeFlags_DrawLinesNone = 1 << 18;
+				ImGuiTreeNodeFlags_DrawLinesFull = 1 << 19;
+				ImGuiTreeNodeFlags_DrawLinesToNodes = 1 << 20;
+				ImGuiTreeNodeFlags_NavLeftJumpsBackHere = ImGuiTreeNodeFlags_NavLeftJumpsToParent;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiTreeNodeFlags_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				ImGuiTreeNodeFlags_None = 0;
+				ImGuiTreeNodeFlags_Selected = 1 << 0;
+				ImGuiTreeNodeFlags_Framed = 1 << 1;
+				ImGuiTreeNodeFlags_AllowOverlap = 1 << 2;
+				ImGuiTreeNodeFlags_NoTreePushOnOpen = 1 << 3;
+				ImGuiTreeNodeFlags_NoAutoOpenOnLog = 1 << 4;
+				ImGuiTreeNodeFlags_DefaultOpen = 1 << 5;
+				ImGuiTreeNodeFlags_OpenOnDoubleClick = 1 << 6;
+				ImGuiTreeNodeFlags_OpenOnArrow = 1 << 7;
+				ImGuiTreeNodeFlags_Leaf = 1 << 8;
+				ImGuiTreeNodeFlags_Bullet = 1 << 9;
+				ImGuiTreeNodeFlags_FramePadding = 1 << 10;
+				ImGuiTreeNodeFlags_SpanAvailWidth = 1 << 11;
+				ImGuiTreeNodeFlags_SpanFullWidth = 1 << 12;
+				ImGuiTreeNodeFlags_SpanLabelWidth = 1 << 13;
+				ImGuiTreeNodeFlags_SpanAllColumns = 1 << 14;
+				ImGuiTreeNodeFlags_LabelSpanAllColumns = 1 << 15;
+				ImGuiTreeNodeFlags_NavLeftJumpsToParent = 1 << 17;
+				ImGuiTreeNodeFlags_CollapsingHeader = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_NoAutoOpenOnLog;
+				ImGuiTreeNodeFlags_DrawLinesNone = 1 << 18;
+				ImGuiTreeNodeFlags_DrawLinesFull = 1 << 19;
+				ImGuiTreeNodeFlags_DrawLinesToNodes = 1 << 20;
+				ImGuiTreeNodeFlags_NavLeftJumpsBackHere = ImGuiTreeNodeFlags_NavLeftJumpsToParent;
+			}
+		}
+
+		public static class ImGuiTableFlags
+		{
+			// Features
+			public static int ImGuiTableFlags_None;
+			public static int ImGuiTableFlags_Resizable;   // Enable resizing columns.
+			public static int ImGuiTableFlags_Reorderable;   // Enable reordering columns in header row. (Need calling TableSetupColumn() + TableHeadersRow() to display ...
+			public static int ImGuiTableFlags_Hideable;   // Enable hiding/disabling columns in context menu.
+			public static int ImGuiTableFlags_Sortable;   // Enable sorting. Call TableGetSortSpecs() to obtain sort specs. Also see ImGuiTableFlags_SortMulti and ...
+			public static int ImGuiTableFlags_NoSavedSettings;   // Disable persisting columns order, width, visibility and sort settings in the .ini file.
+			public static int ImGuiTableFlags_ContextMenuInBody;   // Right-click on columns body/contents will also display table context menu. By default it is available in ...
+			// Decorations
+			public static int ImGuiTableFlags_RowBg;   // Set each RowBg color with ImGuiCol_TableRowBg or ImGuiCol_TableRowBgAlt (equivalent of calling ...
+			public static int ImGuiTableFlags_BordersInnerH;   // Draw horizontal borders between rows.
+			public static int ImGuiTableFlags_BordersOuterH;   // Draw horizontal borders at the top and bottom.
+			public static int ImGuiTableFlags_BordersInnerV;   // Draw vertical borders between columns.
+			public static int ImGuiTableFlags_BordersOuterV;   // Draw vertical borders on the left and right sides.
+			public static int ImGuiTableFlags_BordersH;   // Draw horizontal borders.
+			public static int ImGuiTableFlags_BordersV;   // Draw vertical borders.
+			public static int ImGuiTableFlags_BordersInner;   // Draw inner borders.
+			public static int ImGuiTableFlags_BordersOuter;   // Draw outer borders.
+			public static int ImGuiTableFlags_Borders;   // Draw all borders.
+			public static int ImGuiTableFlags_NoBordersInBody;   // [ALPHA] Disable vertical borders in columns Body (borders will always appear in Headers). -> May move to style
+			public static int ImGuiTableFlags_NoBordersInBodyUntilResize;   // [ALPHA] Disable vertical borders in columns Body until hovered for resize (borders will always appear in ...
+			// Sizing Policy (read above for defaults)
+			public static int ImGuiTableFlags_SizingFixedFit;   // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching contents width.
+			public static int ImGuiTableFlags_SizingFixedSame;   // Columns default to _WidthFixed or _WidthAuto (if resizable or not resizable), matching the maximum contents ...
+			public static int ImGuiTableFlags_SizingStretchProp;   // Columns default to _WidthStretch with default weights proportional to each columns contents widths.
+			public static int ImGuiTableFlags_SizingStretchSame;   // Columns default to _WidthStretch with default weights all equal, unless overridden by TableSetupColumn().
+			// Sizing Extra Options
+			public static int ImGuiTableFlags_NoHostExtendX;   // Make outer width auto-fit to columns, overriding outer_size.x value. Only available when ScrollX/ScrollY are ...
+			public static int ImGuiTableFlags_NoHostExtendY;   // Make outer height stop exactly at outer_size.y (prevent auto-extending table past the limit). Only available ...
+			public static int ImGuiTableFlags_NoKeepColumnsVisible;   // Disable keeping column always minimally visible when ScrollX is off and table gets too small. Not recommended ...
+			public static int ImGuiTableFlags_PreciseWidths;   // Disable distributing remainder width to stretched columns (width allocation on a 100-wide table with 3 ...
+			// Clipping
+			public static int ImGuiTableFlags_NoClip;   // Disable clipping rectangle for every individual columns (reduce draw command count, items will be able to ...
+			// Padding
+			public static int ImGuiTableFlags_PadOuterX;   // Default if BordersOuterV is on. Enable outermost padding. Generally desirable if you have headers.
+			public static int ImGuiTableFlags_NoPadOuterX;   // Default if BordersOuterV is off. Disable outermost padding.
+			public static int ImGuiTableFlags_NoPadInnerX;   // Disable inner padding between columns (double inner padding if BordersOuterV is on, single inner padding if ...
+			// Scrolling
+			public static int ImGuiTableFlags_ScrollX;   // Enable horizontal scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size. ...
+			public static int ImGuiTableFlags_ScrollY;   // Enable vertical scrolling. Require 'outer_size' parameter of BeginTable() to specify the container size.
+			// Sorting
+			public static int ImGuiTableFlags_SortMulti;   // Hold shift when clicking headers to sort on multiple column. TableGetSortSpecs() may return specs where ...
+			public static int ImGuiTableFlags_SortTristate;   // Allow no sorting, disable default sorting. TableGetSortSpecs() may return specs where (SpecsCount == 0).
+			// Miscellaneous
+			public static int ImGuiTableFlags_HighlightHoveredColumn;   // Highlight column headers when hovered (may evolve into a fuller highlight)
+			// [Internal] Combinations and masks
+			public static int ImGuiTableFlags_SizingMask_;
+
+			static ImGuiTableFlags() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiTableFlags_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				ImGuiTableFlags_None = 0;
+				ImGuiTableFlags_Resizable = 1 << 0;
+				ImGuiTableFlags_Reorderable = 1 << 1;
+				ImGuiTableFlags_Hideable = 1 << 2;
+				ImGuiTableFlags_Sortable = 1 << 3;
+				ImGuiTableFlags_NoSavedSettings = 1 << 4;
+				ImGuiTableFlags_ContextMenuInBody = 1 << 5;
+				ImGuiTableFlags_RowBg = 1 << 6;
+				ImGuiTableFlags_BordersInnerH = 1 << 7;
+				ImGuiTableFlags_BordersOuterH = 1 << 8;
+				ImGuiTableFlags_BordersInnerV = 1 << 9;
+				ImGuiTableFlags_BordersOuterV = 1 << 10;
+				ImGuiTableFlags_BordersH = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_BordersOuterH;
+				ImGuiTableFlags_BordersV = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuterV;
+				ImGuiTableFlags_BordersInner = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH;
+				ImGuiTableFlags_BordersOuter = ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH;
+				ImGuiTableFlags_Borders = ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter;
+				ImGuiTableFlags_NoBordersInBody = 1 << 11;
+				ImGuiTableFlags_NoBordersInBodyUntilResize = 1 << 12;
+				ImGuiTableFlags_SizingFixedFit = 1 << 13;
+				ImGuiTableFlags_SizingFixedSame = 2 << 13;
+				ImGuiTableFlags_SizingStretchProp = 3 << 13;
+				ImGuiTableFlags_SizingStretchSame = 4 << 13;
+				ImGuiTableFlags_NoHostExtendX = 1 << 16;
+				ImGuiTableFlags_NoHostExtendY = 1 << 17;
+				ImGuiTableFlags_NoKeepColumnsVisible = 1 << 18;
+				ImGuiTableFlags_PreciseWidths = 1 << 19;
+				ImGuiTableFlags_NoClip = 1 << 20;
+				ImGuiTableFlags_PadOuterX = 1 << 21;
+				ImGuiTableFlags_NoPadOuterX = 1 << 22;
+				ImGuiTableFlags_NoPadInnerX = 1 << 23;
+				ImGuiTableFlags_ScrollX = 1 << 24;
+				ImGuiTableFlags_ScrollY = 1 << 25;
+				ImGuiTableFlags_SortMulti = 1 << 26;
+				ImGuiTableFlags_SortTristate = 1 << 27;
+				ImGuiTableFlags_HighlightHoveredColumn = 1 << 28;
+				ImGuiTableFlags_SizingMask_ = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_SizingFixedSame | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_SizingStretchSame;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiTableFlags_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				ImGuiTableFlags_None = 0;
+				ImGuiTableFlags_Resizable = 1 << 0;
+				ImGuiTableFlags_Reorderable = 1 << 1;
+				ImGuiTableFlags_Hideable = 1 << 2;
+				ImGuiTableFlags_Sortable = 1 << 3;
+				ImGuiTableFlags_NoSavedSettings = 1 << 4;
+				ImGuiTableFlags_ContextMenuInBody = 1 << 5;
+				ImGuiTableFlags_RowBg = 1 << 6;
+				ImGuiTableFlags_BordersInnerH = 1 << 7;
+				ImGuiTableFlags_BordersOuterH = 1 << 8;
+				ImGuiTableFlags_BordersInnerV = 1 << 9;
+				ImGuiTableFlags_BordersOuterV = 1 << 10;
+				ImGuiTableFlags_BordersH = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_BordersOuterH;
+				ImGuiTableFlags_BordersV = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuterV;
+				ImGuiTableFlags_BordersInner = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH;
+				ImGuiTableFlags_BordersOuter = ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH;
+				ImGuiTableFlags_Borders = ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuter;
+				ImGuiTableFlags_NoBordersInBody = 1 << 11;
+				ImGuiTableFlags_NoBordersInBodyUntilResize = 1 << 12;
+				ImGuiTableFlags_SizingFixedFit = 1 << 13;
+				ImGuiTableFlags_SizingFixedSame = 2 << 13;
+				ImGuiTableFlags_SizingStretchProp = 3 << 13;
+				ImGuiTableFlags_SizingStretchSame = 4 << 13;
+				ImGuiTableFlags_NoHostExtendX = 1 << 16;
+				ImGuiTableFlags_NoHostExtendY = 1 << 17;
+				ImGuiTableFlags_NoKeepColumnsVisible = 1 << 18;
+				ImGuiTableFlags_PreciseWidths = 1 << 19;
+				ImGuiTableFlags_NoClip = 1 << 20;
+				ImGuiTableFlags_PadOuterX = 1 << 21;
+				ImGuiTableFlags_NoPadOuterX = 1 << 22;
+				ImGuiTableFlags_NoPadInnerX = 1 << 23;
+				ImGuiTableFlags_ScrollX = 1 << 24;
+				ImGuiTableFlags_ScrollY = 1 << 25;
+				ImGuiTableFlags_SortMulti = 1 << 26;
+				ImGuiTableFlags_SortTristate = 1 << 27;
+				ImGuiTableFlags_HighlightHoveredColumn = 1 << 28;
+				ImGuiTableFlags_SizingMask_ = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_SizingFixedSame | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_SizingStretchSame;
+			}
+		}
+
+		public static class ImGuiTableColumnFlags
+		{
+			// Input configuration flags
+			public static int ImGuiTableColumnFlags_None;
+			public static int ImGuiTableColumnFlags_Disabled;   // Overriding/master disable flag: hide column, won't show in context menu (unlike calling ...
+			public static int ImGuiTableColumnFlags_DefaultHide;   // Default as a hidden/disabled column.
+			public static int ImGuiTableColumnFlags_DefaultSort;   // Default as a sorting column.
+			public static int ImGuiTableColumnFlags_WidthStretch;   // Column will stretch. Preferable with horizontal scrolling disabled (default if table sizing policy is ...
+			public static int ImGuiTableColumnFlags_WidthFixed;   // Column will not stretch. Preferable with horizontal scrolling enabled (default if table sizing policy is ...
+			public static int ImGuiTableColumnFlags_NoResize;   // Disable manual resizing.
+			public static int ImGuiTableColumnFlags_NoReorder;   // Disable manual reordering this column, this will also prevent other columns from crossing over this column.
+			public static int ImGuiTableColumnFlags_NoHide;   // Disable ability to hide/disable this column.
+			public static int ImGuiTableColumnFlags_NoClip;   // Disable clipping for this column (all NoClip columns will render in a same draw command).
+			public static int ImGuiTableColumnFlags_NoSort;   // Disable ability to sort on this field (even if ImGuiTableFlags_Sortable is set on the table).
+			public static int ImGuiTableColumnFlags_NoSortAscending;   // Disable ability to sort in the ascending direction.
+			public static int ImGuiTableColumnFlags_NoSortDescending;   // Disable ability to sort in the descending direction.
+			public static int ImGuiTableColumnFlags_NoHeaderLabel;   // TableHeadersRow() will submit an empty label for this column. Convenient for some small columns. Name will ...
+			public static int ImGuiTableColumnFlags_NoHeaderWidth;   // Disable header text width contribution to automatic column width.
+			public static int ImGuiTableColumnFlags_PreferSortAscending;   // Make the initial sort direction Ascending when first sorting on this column (default).
+			public static int ImGuiTableColumnFlags_PreferSortDescending;   // Make the initial sort direction Descending when first sorting on this column.
+			public static int ImGuiTableColumnFlags_IndentEnable;   // Use current Indent value when entering cell (default for column 0).
+			public static int ImGuiTableColumnFlags_IndentDisable;   // Ignore current Indent value when entering cell (default for columns > 0). Indentation changes _within_ the ...
+			public static int ImGuiTableColumnFlags_AngledHeader;   // TableHeadersRow() will submit an angled header row for this column. Note this will add an extra row.
+			// Output status flags, read-only via TableGetColumnFlags()
+			public static int ImGuiTableColumnFlags_IsEnabled;   // Status: is enabled == not hidden by user/api (referred to as "Hide" in _DefaultHide and _NoHide) flags.
+			public static int ImGuiTableColumnFlags_IsVisible;   // Status: is visible == is enabled AND not clipped by scrolling.
+			public static int ImGuiTableColumnFlags_IsSorted;   // Status: is currently part of the sort specs
+			public static int ImGuiTableColumnFlags_IsHovered;   // Status: is hovered by mouse
+			// [Internal] Combinations and masks
+			public static int ImGuiTableColumnFlags_WidthMask_;
+			public static int ImGuiTableColumnFlags_IndentMask_;
+			public static int ImGuiTableColumnFlags_StatusMask_;
+			public static int ImGuiTableColumnFlags_NoDirectResize_;   // [Internal] Disable user resizing this column directly (it may however we resized indirectly from its left ...
+			public static int ImGuiTableColumnFlags_WidthAlwaysAutoResize;   // [1.92.5 only]
+
+			static ImGuiTableColumnFlags() { Init(ImGuiVersion.Version, ImGuiVersion.Docking); }
+
+			// 1.93 and later get 1.93's numbers; anything older gets 1.92.5's.
+			public static void Init(int version, bool docking)
+			{
+				if (version >= 19300) Init193(docking);
+				else Init1925(docking);
+			}
+
+			// Dear ImGui 1.93 (ImGuiTableColumnFlags_ in imgui.h)
+			static void Init193(bool docking)
+			{
+				// not in 1.93
+				ImGuiTableColumnFlags_WidthAlwaysAutoResize = 0;
+				ImGuiTableColumnFlags_None = 0;
+				ImGuiTableColumnFlags_Disabled = 1 << 0;
+				ImGuiTableColumnFlags_DefaultHide = 1 << 1;
+				ImGuiTableColumnFlags_DefaultSort = 1 << 2;
+				ImGuiTableColumnFlags_WidthStretch = 1 << 3;
+				ImGuiTableColumnFlags_WidthFixed = 1 << 4;
+				ImGuiTableColumnFlags_NoResize = 1 << 5;
+				ImGuiTableColumnFlags_NoReorder = 1 << 6;
+				ImGuiTableColumnFlags_NoHide = 1 << 7;
+				ImGuiTableColumnFlags_NoClip = 1 << 8;
+				ImGuiTableColumnFlags_NoSort = 1 << 9;
+				ImGuiTableColumnFlags_NoSortAscending = 1 << 10;
+				ImGuiTableColumnFlags_NoSortDescending = 1 << 11;
+				ImGuiTableColumnFlags_NoHeaderLabel = 1 << 12;
+				ImGuiTableColumnFlags_NoHeaderWidth = 1 << 13;
+				ImGuiTableColumnFlags_PreferSortAscending = 1 << 14;
+				ImGuiTableColumnFlags_PreferSortDescending = 1 << 15;
+				ImGuiTableColumnFlags_IndentEnable = 1 << 16;
+				ImGuiTableColumnFlags_IndentDisable = 1 << 17;
+				ImGuiTableColumnFlags_AngledHeader = 1 << 18;
+				ImGuiTableColumnFlags_IsEnabled = 1 << 24;
+				ImGuiTableColumnFlags_IsVisible = 1 << 25;
+				ImGuiTableColumnFlags_IsSorted = 1 << 26;
+				ImGuiTableColumnFlags_IsHovered = 1 << 27;
+				ImGuiTableColumnFlags_WidthMask_ = ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_WidthFixed;
+				ImGuiTableColumnFlags_IndentMask_ = ImGuiTableColumnFlags_IndentEnable | ImGuiTableColumnFlags_IndentDisable;
+				ImGuiTableColumnFlags_StatusMask_ = ImGuiTableColumnFlags_IsEnabled | ImGuiTableColumnFlags_IsVisible | ImGuiTableColumnFlags_IsSorted | ImGuiTableColumnFlags_IsHovered;
+				ImGuiTableColumnFlags_NoDirectResize_ = 1 << 30;
+			}
+
+			// Dear ImGui 1.92.5 (ImGuiTableColumnFlags_ in imgui.h)
+			static void Init1925(bool docking)
+			{
+				ImGuiTableColumnFlags_None = 0;
+				ImGuiTableColumnFlags_Disabled = 1 << 0;
+				ImGuiTableColumnFlags_DefaultHide = 1 << 1;
+				ImGuiTableColumnFlags_DefaultSort = 1 << 2;
+				ImGuiTableColumnFlags_WidthStretch = 1 << 3;
+				ImGuiTableColumnFlags_WidthFixed = 1 << 4;
+				ImGuiTableColumnFlags_NoResize = 1 << 5;
+				ImGuiTableColumnFlags_NoReorder = 1 << 6;
+				ImGuiTableColumnFlags_NoHide = 1 << 7;
+				ImGuiTableColumnFlags_NoClip = 1 << 8;
+				ImGuiTableColumnFlags_NoSort = 1 << 9;
+				ImGuiTableColumnFlags_NoSortAscending = 1 << 10;
+				ImGuiTableColumnFlags_NoSortDescending = 1 << 11;
+				ImGuiTableColumnFlags_NoHeaderLabel = 1 << 12;
+				ImGuiTableColumnFlags_NoHeaderWidth = 1 << 13;
+				ImGuiTableColumnFlags_PreferSortAscending = 1 << 14;
+				ImGuiTableColumnFlags_PreferSortDescending = 1 << 15;
+				ImGuiTableColumnFlags_IndentEnable = 1 << 16;
+				ImGuiTableColumnFlags_IndentDisable = 1 << 17;
+				ImGuiTableColumnFlags_AngledHeader = 1 << 18;
+				ImGuiTableColumnFlags_IsEnabled = 1 << 24;
+				ImGuiTableColumnFlags_IsVisible = 1 << 25;
+				ImGuiTableColumnFlags_IsSorted = 1 << 26;
+				ImGuiTableColumnFlags_IsHovered = 1 << 27;
+				ImGuiTableColumnFlags_WidthMask_ = ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_WidthFixed;
+				ImGuiTableColumnFlags_IndentMask_ = ImGuiTableColumnFlags_IndentEnable | ImGuiTableColumnFlags_IndentDisable;
+				ImGuiTableColumnFlags_StatusMask_ = ImGuiTableColumnFlags_IsEnabled | ImGuiTableColumnFlags_IsVisible | ImGuiTableColumnFlags_IsSorted | ImGuiTableColumnFlags_IsHovered;
+				ImGuiTableColumnFlags_NoDirectResize_ = 1 << 30;
+				ImGuiTableColumnFlags_WidthAlwaysAutoResize = (ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize);
+			}
 		}
 
 		public static uint GetColor(uint r, uint g, uint b, uint a)
@@ -2290,6 +3419,11 @@ namespace MonoCore
 		public extern static string imgui_InputText_Get(string id);
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_End();
+		// HSMono's own (not in MQ2Mono): the Dear ImGui the plugin draws with, for ImGuiVersion.Init.
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static int imgui_GetVersionNum();   // IMGUI_VERSION_NUM, e.g. 19300
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		public extern static bool imgui_HasDocking();
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static bool imgui_BeginPopupContextItem(string id, int flags);
 		[MethodImpl(MethodImplOptions.InternalCall)]
@@ -2427,9 +3561,9 @@ namespace MonoCore
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static float imgui_GetFrameHeight();
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_GetWindowDrawList_AddRectFilled(float x1, float y1, float x2, float y2, uint color, float rounding = 0.0f, int rounding_corners_flags = (int)ImDrawFlags.RoundCornersAll);
+		public extern static void imgui_GetWindowDrawList_AddRectFilled(float x1, float y1, float x2, float y2, uint color, float rounding = 0.0f, int rounding_corners_flags = 0);   // 0: every corner, when rounding > 0
 		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern static void imgui_GetWindowDrawList_AddRect(float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint color, float rounding = 0.0f, int rounding_corners_flags = (int)ImDrawFlags.RoundCornersAll, float thickness=1.0f);
+		public extern static void imgui_GetWindowDrawList_AddRect(float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint color, float rounding = 0.0f, int rounding_corners_flags = 0, float thickness=1.0f);   // 0: every corner, when rounding > 0
 	
 		[MethodImpl(MethodImplOptions.InternalCall)]
 		public extern static void imgui_GetWindowDrawList_AddText(float x, float y, uint color, string text);

@@ -1564,7 +1564,7 @@ namespace E3Core.UI.Windows.Hud
 							font2.PushFont("robo");
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								if (popup.BeginPopupContextItem("##PlayerInfoDockedSettingsPopup", 1))
+								if (popup.BeginPopupContextItem("##PlayerInfoDockedSettingsPopup", ImGuiPopupFlags.MouseButtonRight))
 								{
 									using (var style = PushStyle.Aquire())
 									{
@@ -1691,7 +1691,7 @@ namespace E3Core.UI.Windows.Hud
 						font2.PushFont("robo");
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
-							if (popup.BeginPopupContextItem("##PlayerInfoSettingsPopup", 1))
+							if (popup.BeginPopupContextItem("##PlayerInfoSettingsPopup", ImGuiPopupFlags.MouseButtonRight))
 							{
 								if (imgui_MenuItem("Dock"))
 								{
@@ -2238,7 +2238,7 @@ namespace E3Core.UI.Windows.Hud
 							nofontSize.PushFontSize(16);
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", 1))
+								if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", ImGuiPopupFlags.MouseButtonRight))
 								{
 									if (imgui_MenuItem("Dock"))
 									{
@@ -2426,7 +2426,7 @@ namespace E3Core.UI.Windows.Hud
 						nofontSize.PushFontSize(16);
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
-							if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", 1))
+							if (popup.BeginPopupContextItem("##TargetInfoSettingsPopup", ImGuiPopupFlags.MouseButtonRight))
 							{
 								if (imgui_MenuItem("Dock"))
 								{
@@ -3032,7 +3032,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem("##SongWindowSettingsPopup", 1))
+					if (popup.BeginPopupContextItem("##SongWindowSettingsPopup", ImGuiPopupFlags.MouseButtonRight))
 					{
 						if (imgui_MenuItem("Dock"))
 						{
@@ -3259,7 +3259,7 @@ namespace E3Core.UI.Windows.Hud
 
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
-									if (popup.BeginPopupContextItemPerf("HC_RenderSongTableSimpleIconContext", "SongTableIconContext-", counter, 1))
+									if (popup.BeginPopupContextItemPerf("HC_RenderSongTableSimpleIconContext", "SongTableIconContext-", counter, ImGuiPopupFlags.MouseButtonRight))
 									{
 										using (var style = PushStyle.Aquire())
 										{
@@ -3374,7 +3374,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem("##Hotbutton_WindowSettingsPopup", 1))
+					if (popup.BeginPopupContextItem("##Hotbutton_WindowSettingsPopup", ImGuiPopupFlags.MouseButtonRight))
 					{
 
 						if (imgui_MenuItem("Dock"))
@@ -3605,7 +3605,7 @@ namespace E3Core.UI.Windows.Hud
 						}
 						using (var popup = ImGUIPopUpContext.Aquire())
 						{
-							if (popup.BeginPopupContextItemPerf("Hub_HotButtonDetachPopup", "##Hotbutton_detach-", counter, 1))
+							if (popup.BeginPopupContextItemPerf("Hub_HotButtonDetachPopup", "##Hotbutton_detach-", counter, ImGuiPopupFlags.MouseButtonRight))
 							{
 								using (var style = PushStyle.Aquire())
 								{
@@ -3845,7 +3845,7 @@ namespace E3Core.UI.Windows.Hud
 			//right click options
 			using (var popup = ImGUIPopUpContext.Aquire())
 			{
-				if (popup.BeginPopupContextItem("##XTargetWindowSettingsPopup", 1))
+				if (popup.BeginPopupContextItem("##XTargetWindowSettingsPopup", ImGuiPopupFlags.MouseButtonRight))
 				{
 					using (var style = PushStyle.Aquire())
 					{
@@ -4195,7 +4195,7 @@ namespace E3Core.UI.Windows.Hud
 										{
 											sb.Dispose();
 										}
-										if (popup.BeginPopupContextItem(selectableKey, 1))
+										if (popup.BeginPopupContextItem(selectableKey, ImGuiPopupFlags.MouseButtonRight))
 										{
 											using (var style = PushStyle.Aquire())
 											{
@@ -4455,7 +4455,7 @@ namespace E3Core.UI.Windows.Hud
 										{
 											sb.Dispose();
 										}
-										if (popup.BeginPopupContextItem(selectableKey, 1))
+										if (popup.BeginPopupContextItem(selectableKey, ImGuiPopupFlags.MouseButtonRight))
 										{
 											using (var style = PushStyle.Aquire())
 											{
@@ -4705,7 +4705,7 @@ namespace E3Core.UI.Windows.Hud
 					}
 					using (var popup = ImGUIPopUpContext.Aquire())
 					{
-						if (popup.BeginPopupContextItem("##PetBuffgWindowSettingsPopup", 1))
+						if (popup.BeginPopupContextItem("##PetBuffgWindowSettingsPopup", ImGuiPopupFlags.MouseButtonRight))
 						{
 							if (imgui_MenuItem("Dock"))
 							{
@@ -4932,7 +4932,7 @@ namespace E3Core.UI.Windows.Hud
 									}
 									using (var popup = ImGUIPopUpContext.Aquire())
 									{
-										if (popup.BeginPopupContextItemPerf("HC_RenderPetBuffTableSimpleIconContext", "PetBuffTableIconContext-", counter, 1))
+										if (popup.BeginPopupContextItemPerf("HC_RenderPetBuffTableSimpleIconContext", "PetBuffTableIconContext-", counter, ImGuiPopupFlags.MouseButtonRight))
 										{
 											using (var style = PushStyle.Aquire())
 											{
@@ -5220,7 +5220,7 @@ namespace E3Core.UI.Windows.Hud
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem("##BuffgWindowSettingsPopup", 1))
+					if (popup.BeginPopupContextItem("##BuffgWindowSettingsPopup", ImGuiPopupFlags.MouseButtonRight))
 					{
 						if (imgui_MenuItem("Dock"))
 						{
@@ -5448,7 +5448,7 @@ namespace E3Core.UI.Windows.Hud
 
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
-									if (popup.BeginPopupContextItemPerf("HC_RenderBuffTableSimpleIconContext", "BuffTableIconContext-", counter, 1))
+									if (popup.BeginPopupContextItemPerf("HC_RenderBuffTableSimpleIconContext", "BuffTableIconContext-", counter, ImGuiPopupFlags.MouseButtonRight))
 									{
 										using (var style = PushStyle.Aquire())
 										{
@@ -5598,7 +5598,7 @@ namespace E3Core.UI.Windows.Hud
 
 							using (var popup = ImGUIPopUpContext.Aquire())
 							{
-								int flags = 1;
+								int flags = ImGuiPopupFlags.MouseButtonRight;
 								if (popup.BeginPopupContextItemPerf("Hud_GroupTableHeaderContext", "##GroupTableHeaderContext-", i, flags))
 								{
 									using (var style = PushStyle.Aquire())
@@ -5959,7 +5959,7 @@ namespace E3Core.UI.Windows.Hud
 								}
 								using (var popup = ImGUIPopUpContext.Aquire())
 								{
-									if (popup.BeginPopupContextItemPerf("Hub_RenderGroupTablePopupRows", "##row_selected_context_", rowCount, 1))
+									if (popup.BeginPopupContextItemPerf("Hub_RenderGroupTablePopupRows", "##row_selected_context_", rowCount, ImGuiPopupFlags.MouseButtonRight))
 									{
 
 										using (var style = PushStyle.Aquire())

@@ -606,7 +606,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem(null, 1))
+					if (popup.BeginPopupContextItem(null, ImGuiPopupFlags.MouseButtonRight))
 					{
 						using (var style = PushStyle.Aquire())
 						{
@@ -628,7 +628,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem(null, 1))
+					if (popup.BeginPopupContextItem(null, ImGuiPopupFlags.MouseButtonRight))
 					{
 						using (var style = PushStyle.Aquire())
 						{
@@ -651,7 +651,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem(null, 1))
+					if (popup.BeginPopupContextItem(null, ImGuiPopupFlags.MouseButtonRight))
 					{
 						using (var style = PushStyle.Aquire())
 						{
@@ -673,7 +673,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem(null, 1))
+					if (popup.BeginPopupContextItem(null, ImGuiPopupFlags.MouseButtonRight))
 					{
 						using (var style = PushStyle.Aquire())
 						{
@@ -695,7 +695,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem(null, 1))
+					if (popup.BeginPopupContextItem(null, ImGuiPopupFlags.MouseButtonRight))
 					{
 						using (var style = PushStyle.Aquire())
 						{
@@ -717,7 +717,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem(null, 1))
+					if (popup.BeginPopupContextItem(null, ImGuiPopupFlags.MouseButtonRight))
 					{
 						using (var style = PushStyle.Aquire())
 						{
@@ -742,7 +742,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem(null, 1))
+					if (popup.BeginPopupContextItem(null, ImGuiPopupFlags.MouseButtonRight))
 					{
 						using (var style = PushStyle.Aquire())
 						{
@@ -766,7 +766,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 			{
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem(null, 1))
+					if (popup.BeginPopupContextItem(null, ImGuiPopupFlags.MouseButtonRight))
 					{
 						using (var style = PushStyle.Aquire())
 						{
@@ -870,7 +870,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 											// Context menu for all keys (right-click)
 											using (var popup = ImGUIPopUpContext.Aquire())
 											{
-												if (popup.BeginPopupContextItem(null, 1))
+												if (popup.BeginPopupContextItem(null, ImGuiPopupFlags.MouseButtonRight))
 												{
 													if (imgui_MenuItem("Delete Key"))
 													{
@@ -1664,7 +1664,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				}
 				using (var popup = ImGUIPopUpContext.Aquire())
 				{
-					if (popup.BeginPopupContextItem($"ValueCtx_{itemUid}", 1))
+					if (popup.BeginPopupContextItem($"ValueCtx_{itemUid}", ImGuiPopupFlags.MouseButtonRight))
 					{
 						if (canMoveUp && imgui_MenuItem("Move Up")) SwapAndMark(i, i - 1, out listChanged);
 						if (canMoveDown && imgui_MenuItem("Move Down")) SwapAndMark(i, i + 1, out listChanged);
@@ -1995,9 +1995,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var mainWindowState = _state.GetState<State_MainWindow>();
 
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Basics");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			int FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			int LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			int ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
 			const float ComboFieldWidth = 220f;
 			var currentSpell = mainWindowState.Currently_EditableSpell;
 
@@ -2213,7 +2213,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				return;
 			}
 
-			const ImGuiWindowFlags pickerFlags = ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize
+			int pickerFlags = ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoDocking
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoResize;
@@ -2298,7 +2298,7 @@ namespace E3Core.UI.Windows.CharacterSettings
 				spellEditorState.ShowCastTargetPicker = false;
 				return;
 			}
-			const ImGuiWindowFlags pickerFlags = ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize
+			int pickerFlags = ImGuiWindowFlags.ImGuiWindowFlags_AlwaysAutoResize
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoDocking
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoCollapse
 				| ImGuiWindowFlags.ImGuiWindowFlags_NoResize;
@@ -2501,9 +2501,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 			var currentSpell = mainWindowState.Currently_EditableSpell;
 
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			int FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			int LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			int ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
 
 			using (var table = ImGUITable.Aquire())
 			{
@@ -2573,9 +2573,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Logic");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			int FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			int LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			int ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var currentSpell = mainWindowState.Currently_EditableSpell;
 			using (var table = ImGUITable.Aquire())
@@ -2612,9 +2612,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Delays");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			int FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			int LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			int ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var currentSpell = mainWindowState.Currently_EditableSpell;
 			using (var table = ImGUITable.Aquire())
@@ -2655,9 +2655,9 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Ordering");
-			const ImGuiTableFlags FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			int FieldTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			int LabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			int ValueColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
 			var mainWindowState = _state.GetState<State_MainWindow>();
 			var currentSpell = mainWindowState.Currently_EditableSpell;
 			using (var table = ImGUITable.Aquire())
@@ -2805,10 +2805,10 @@ namespace E3Core.UI.Windows.CharacterSettings
 		{
 			var spellEditorState = _state.GetState<State_SpellEditor>();
 			imgui_TextColored(0.8f, 0.9f, 0.95f, 1.0f, "Flags");
-			const ImGuiTableFlags FlagTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
-			const ImGuiTableColumnFlags FlagLabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags FlagCheckboxColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
-			const ImGuiTableColumnFlags FlagSpacerColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
+			int FlagTableFlags = (ImGuiTableFlags.ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags.ImGuiTableFlags_PadOuterX);
+			int FlagLabelColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			int FlagCheckboxColumnFlags = (ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags.ImGuiTableColumnFlags_NoResize);
+			int FlagSpacerColumnFlags = ImGuiTableColumnFlags.ImGuiTableColumnFlags_WidthStretch;
 			const float FlagLabelPadding = 12f;
 			const float FlagCheckboxColumnWidth = 32f;
 			var mainWindowState = _state.GetState<State_MainWindow>();
