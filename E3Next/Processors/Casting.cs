@@ -2213,6 +2213,7 @@ namespace E3Core.Processors
 			});
 			EventProcessor.RegisterCommand("/e3varvalue", (x) =>
 			{
+				if (Core.CurrentClient == Core.ClientBuild.HailStone) return;
 
 				if (x.args.Count == 1)
 				{

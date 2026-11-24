@@ -1141,12 +1141,19 @@ namespace MonoCore
 	//This class is for C++ thread to come in and call. for the most part, leave this alone. 
 	public unsafe static partial class Core
 	{
+		public enum ClientBuild
+		{
+			ROF2 = 1,
+			TOB = 2,
+			HailStone = 3,
+		}
 		public static IMQ mqInstance; //needs to be declared first
 		public static ISpawns spawnInstance;
 		public static Logging logInstance;
 		public volatile static bool IsProcessing = false;
 		public const string _coreVersion = "0.442";
 		public static Decimal _MQ2MonoVersion = 0.442m;
+		public static ClientBuild CurrentClient = ClientBuild.ROF2;
 
 		//Note, if you comment out a method, this will tell MQ2Mono to not try and execute it
 		//only use the events you need to prevent string allocations to be passed in
@@ -1192,6 +1199,15 @@ namespace MonoCore
 			{
 				Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 				_MQ2MonoVersion = Decimal.Parse(Core.mq_GetMQ2MonoVersion());
+				if (_MQ2MonoVersion >= 10)
+				{
+					CurrentClient = ClientBuild.HailStone;
+				}
+				else if (e3util.Is64Bit())
+				{
+					CurrentClient = ClientBuild.TOB;
+				}
+
 			}
 			catch (Exception)
 			{

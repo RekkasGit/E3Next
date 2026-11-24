@@ -79,22 +79,34 @@ namespace E3Core.Processors
 				
 				RegisterEvents();
 				E3.MQBuildVersion = (MQBuild)MQ.Query<Int32>("${MacroQuest.Build}");
-                if(MQ.Query<bool>("!${Defined[E3N_var]}"))
-                {
-                    MQ.Cmd("/declare E3N_var string global false");
-                }
 
-                //lets init server name
-                //laz server specific,otherwise default
-                if (MQ.Query<bool>($"${{MacroQuest.Server.Equal[Project Lazarus]}}"))
+				if (Core.CurrentClient != Core.ClientBuild.HailStone)
+				{
+					if (MQ.Query<bool>("!${Defined[E3N_var]}"))
+					{
+						MQ.Cmd("/declare E3N_var string global false");
+					}
+				}
+
+				//lets init server name
+				//laz server specific,otherwise default
+				if (MQ.Query<bool>($"${{MacroQuest.Server.Equal[Project Lazarus]}}"))
                 {
                     _serverNameForIni = "Lazarus";
                 }
 				BuildDate = Properties.Resources.BuildDate;
 				BuildDate = BuildDate.Replace("\r\n", "");
-				MQ.Write($"Loading nE³xt v{E3Version} builddate:{BuildDate}...Mq2Mono v{Core._MQ2MonoVersion}");
 
-             
+				if(Core.CurrentClient== Core.ClientBuild.HailStone)
+				{
+					MQ.Write($"Loading nE³xt v{E3Version} builddate:{BuildDate}...HSMono v{Core._MQ2MonoVersion}");
+				}
+				else
+				{
+					MQ.Write($"Loading nE³xt v{E3Version} builddate:{BuildDate}...Mq2Mono v{Core._MQ2MonoVersion}");
+}
+
+
 				InitPlugins();
                 InitSubSystems();
 
@@ -130,16 +142,19 @@ namespace E3Core.Processors
 			//try and startup the systray
 			string mqpath = MQ.Query<string>("${MacroQuest.Path}");
 			string systrayFullPath = mqpath + @"\E3NextSysTray.exe";
-			try
+			if(Core.CurrentClient!= Core.ClientBuild.HailStone)
 			{
-				if (!SysTrayIsRunning() && System.IO.File.Exists(systrayFullPath))
+				try
 				{
-					MQ.Cmd($@"/exec {systrayFullPath} bg");
+					if (!SysTrayIsRunning() && System.IO.File.Exists(systrayFullPath))
+					{
+						MQ.Cmd($@"/exec {systrayFullPath} bg");
+					}
 				}
-			}
-			catch (Exception ex)
-			{
-				MQ.Write("Error starting systray. Message:" + ex.Message + " path:" + systrayFullPath);
+				catch (Exception ex)
+				{
+					MQ.Write("Error starting systray. Message:" + ex.Message + " path:" + systrayFullPath);
+				}
 			}
 		}
 
@@ -234,72 +249,83 @@ namespace E3Core.Processors
         }
         private static void InitPlugins()
         {
-            using (_log.Trace())
-            {
-            
-                if (!MQ.Query<bool>("${Plugin[MQ2Debuffs]}"))
-                {
-					MQ.Cmd("/plugin mq2debuffs");
-					if (!MQ.Delay(3000, "${Plugin[MQ2Debuffs]}"))
+
+			if(Core.CurrentClient== Core.ClientBuild.HailStone)
+			{
+				//going to need to replace the below plugins
+
+			}
+			else
+			{
+				using (_log.Trace())
+				{
+
+					if (!MQ.Query<bool>("${Plugin[MQ2Debuffs]}"))
 					{
-						MQ.Write("\ar***WARNING*** Could not load MQ2Debuffs! Macro functionality may be limited.");
+						MQ.Cmd("/plugin mq2debuffs");
+						if (!MQ.Delay(3000, "${Plugin[MQ2Debuffs]}"))
+						{
+							MQ.Write("\ar***WARNING*** Could not load MQ2Debuffs! Macro functionality may be limited.");
+						}
+					}
+
+					if (!MQ.Query<bool>($"${{Plugin[MQ2AdvPath].Name.Length}}"))
+					{
+						MQ.Write("Plugin MQ2AdvPath is not loaded, attempting to resolve...");
+						MQ.Cmd("/plugin MQ2AdvPath");
+						if (!MQ.Delay(3000, "${AdvPath}"))
+						{
+							MQ.Write("\ar***WARNING*** Could not load MQ2AdvPath. Please ensure you're using a copy of MQ which was compiled with the MQ2AdvPath plugin and try again.");
+						}
+
+					}
+					if (!MQ.Query<bool>("${Plugin[MQ2MoveUtils]}"))
+					{
+						MQ.Write("Plugin MQ2MoveUtils is not loaded, attempting to resolve...");
+						MQ.Cmd("/plugin MQ2MoveUtils");
+						if (!MQ.Delay(3000, "${Stick.Status}"))
+						{
+							MQ.Write("\ar***WARNING*** Could not load MQ2MoveUtils! Macro functionality may be limited.");
+						}
+						if (!MQ.Query<bool>("${Stick.Status}"))
+						{
+							if (!MQ.Query<bool>("${AdvPath}"))
+							{
+								MQ.Write("\arFollow and Assist stick DISABLED.");
+							}
+							else
+							{
+								MQ.Write("\arFollow and Assist stick DISABLED.");
+							}
+						}
+					}
+					if (!MQ.Query<bool>("${Plugin[MQ2Exchange]}"))
+					{
+						MQ.Write("Plugin MQ2Exchange is not loaded, attempting to resolve...");
+						MQ.Cmd("/plugin MQ2Exchange");
+						if (!MQ.Delay(3000, "${Plugin[MQ2Exchange]}"))
+						{
+							MQ.Write("\ar***WARNING*** Could not load MQ2Exchange! Macro functionality may be limited. Item swapping is DISABLED.");
+						}
+					}
+					if (!MQ.Query<bool>($"${{Plugin[mq2itemdisplay]}}"))
+					{
+						MQ.Cmd("/plugin MQ2ItemDisplay");
+
+					}
+					if (!MQ.Query<bool>($"${{Plugin[MQ2LinkDB]}}"))
+					{
+						MQ.Cmd("/plugin MQ2LinkDB");
+						MQ.Cmd("/link /scan off");
+					}
+					if (MQ.Query<bool>($"${{Plugin[MQ2Log]}}"))
+					{
+						MQ.Write("\ar***WARNING*** MQ2Log detected, could cause unforseen performance issues..");
 					}
 				}
-			
-				if (!MQ.Query<bool>($"${{Plugin[MQ2AdvPath].Name.Length}}"))
-                {
-                    MQ.Write("Plugin MQ2AdvPath is not loaded, attempting to resolve...");
-                    MQ.Cmd("/plugin MQ2AdvPath");
-                    if (!MQ.Delay(3000, "${AdvPath}"))
-                    {
-                        MQ.Write("\ar***WARNING*** Could not load MQ2AdvPath. Please ensure you're using a copy of MQ which was compiled with the MQ2AdvPath plugin and try again.");
-                    }
 
-                }
-                if (!MQ.Query<bool>("${Plugin[MQ2MoveUtils]}"))
-                {
-                    MQ.Write("Plugin MQ2MoveUtils is not loaded, attempting to resolve...");
-                    MQ.Cmd("/plugin MQ2MoveUtils");
-                    if (!MQ.Delay(3000, "${Stick.Status}"))
-                    {
-                        MQ.Write("\ar***WARNING*** Could not load MQ2MoveUtils! Macro functionality may be limited.");
-                    }
-                    if (!MQ.Query<bool>("${Stick.Status}"))
-                    {
-                        if (!MQ.Query<bool>("${AdvPath}"))
-                        {
-                            MQ.Write("\arFollow and Assist stick DISABLED.");
-                        }
-                        else
-                        {
-                            MQ.Write("\arFollow and Assist stick DISABLED.");
-                        }
-                    }
-                }
-                if (!MQ.Query<bool>("${Plugin[MQ2Exchange]}"))
-                {
-                    MQ.Write("Plugin MQ2Exchange is not loaded, attempting to resolve...");
-                    MQ.Cmd("/plugin MQ2Exchange");
-                    if (!MQ.Delay(3000, "${Plugin[MQ2Exchange]}"))
-                    {
-                        MQ.Write("\ar***WARNING*** Could not load MQ2Exchange! Macro functionality may be limited. Item swapping is DISABLED.");
-                    }
-                }
-                if (!MQ.Query<bool>($"${{Plugin[mq2itemdisplay]}}"))
-                {
-                    MQ.Cmd("/plugin MQ2ItemDisplay");
-
-                }
-                if (!MQ.Query<bool>($"${{Plugin[MQ2LinkDB]}}"))
-                {
-                    MQ.Cmd("/plugin MQ2LinkDB");
-                    MQ.Cmd("/link /scan off");
-                }
-				if (MQ.Query<bool>($"${{Plugin[MQ2Log]}}"))
-				{
-					MQ.Write("\ar***WARNING*** MQ2Log detected, could cause unforseen performance issues..");
-				}
 			}
+				
         }
 		public static void GetExposedDataMappedToDictionary()
 		{

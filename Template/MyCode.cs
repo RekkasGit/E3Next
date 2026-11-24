@@ -1,5 +1,7 @@
-﻿using MonoCore;
+﻿using Template.Debugging;
+using MonoCore;
 using System;
+using System.Diagnostics;
 namespace Template
 {
     public static class MyCode
@@ -15,9 +17,9 @@ namespace Template
             if (!_isInit) { Init(); }
             #endregion
             ///Write your code here.
-            string name = MQ.Query<string>("${Me.Name}");
+            //string name = MQ.Query<string>("${Me.Name}");
 
-            MQ.Write($"Hello {name}! DomainId:{System.Threading.Thread.GetDomainID()}");
+            //MQ.Write($"Hello {name}! DomainId:{System.Threading.Thread.GetDomainID()}");
         }
 
         private static void Init()
@@ -28,11 +30,13 @@ namespace Template
                 Logging.MinLogLevelTolog = Logging.LogLevels.Debug; //set to the min value to log. look at the int values. if set to Info, you will not log debugs.
                 Logging.DefaultLogLevel = Logging.LogLevels.Debug; //the default if a level is not passed into the _log.write statement. useful to hide/show things.
                 MainProcessor.ApplicationName = "MyApplication"; //application name, used in some outputs
-                MainProcessor.ProcessDelay = 2000; //how much time we will wait until we start our next processing once we are done with a loop. in milliseconds. 1000 = 1 second.
+                MainProcessor.ProcessDelay = 100; //how much time we will wait until we start our next processing once we are done with a loop. in milliseconds. 1000 = 1 second.
                 MonoCore.MQ.MaxMillisecondsToWork = 40;  //how long you allow script to process before auto yield is engaged. generally should't need to mess with this, but an example.
                 EventProcessor.EventLimiterPerRegisteredEvent = 20;//max event count for each registered event before spilling over.
                 _isInit = true;
-            }
+                Debugging.Debugging.Debug_Init();
+
+			}
         }
     }
 }

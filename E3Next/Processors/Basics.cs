@@ -747,7 +747,7 @@ namespace E3Core.Processors
 			 argumentLine = argumentLine.Replace("$\\{", "${");
 			 string processedLine = Casting.Ifs_Results(argumentLine);
 			 MQ.Cmd($"/echo {processedLine}");
-			 MQ.Cmd($"/varset E3N_var {processedLine}");
+			 if(Core.CurrentClient!= Core.ClientBuild.HailStone) MQ.Cmd($"/varset E3N_var {processedLine}");
 		 }, "echo out statements using E3N, this allows you to print out variables that are specific to E3N");
 			EventProcessor.RegisterCommand("/e3echobool", (x) =>
 			{

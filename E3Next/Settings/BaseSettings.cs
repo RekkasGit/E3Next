@@ -18,7 +18,6 @@ namespace E3Core.Settings
         public static Logging _log = E3.Log;
         protected static IMQ MQ = E3.MQ;
 
-        protected static string _macroFolder = MQ.Query<string>("${MacroQuest.Path[macros]}");
         protected static string _configFolder = MQ.Query<string>("${MacroQuest.Path[config]}");
 
         protected static string _settingsFolder = @"\e3 Macro Inis\";
@@ -64,21 +63,8 @@ namespace E3Core.Settings
         }
         public static string GetSettingsFilePath(string fileName)
         {
-            string macroFile = _macroFolder + _settingsFolder + fileName;
-            string configFile = _configFolder + _settingsFolder + fileName;
-            string fullPathToUse = macroFile;
-
-            if (!System.IO.File.Exists(macroFile) && !System.IO.File.Exists(configFile))
-            {
-
-                fullPathToUse = configFile;
-            }
-            else
-            {
-                fullPathToUse = macroFile;
-                if (System.IO.File.Exists(configFile)) fullPathToUse = configFile;
-            }
-            return fullPathToUse;
+           string configFile = _configFolder + _settingsFolder + fileName;
+            return configFile;
         }
         public String ToStringFields()
         {

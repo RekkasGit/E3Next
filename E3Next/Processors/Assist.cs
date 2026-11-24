@@ -278,7 +278,7 @@ namespace E3Core.Processors
 						{
 							if (e3util.IsEQLive())
 							{
-								MQ.Cmd($"/squelch fast id {AssistTargetID}", 500);
+								MQ.Cmd($"/squelch /face fast id {AssistTargetID}", 500);
 							}
 							else
 							{
