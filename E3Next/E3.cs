@@ -967,7 +967,7 @@ namespace E3Core.Processors
 				//BufferPool.SetBufferManagerBufferPool(1024 * 1024 *10, (1024 *1024));
 				MQ.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
-				return;
+				
 				e3util.XtargetMax = MQ.Query<Int32>("${Me.XTargetSlots}");
 				if (e3util.IsEQLive())
 				{

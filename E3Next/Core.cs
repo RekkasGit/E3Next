@@ -1203,7 +1203,7 @@ namespace MonoCore
 				{
 					CurrentClient = ClientBuild.HailStone;
 				}
-				else if (e3util.Is64Bit())
+				else if (IntPtr.Size == 8) //if 64bit
 				{
 					CurrentClient = ClientBuild.TOB;
 				}
