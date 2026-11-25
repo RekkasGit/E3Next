@@ -907,6 +907,7 @@ namespace E3Core.Processors
 									ResistCounters[targetID].SpellCounters[spell.SpellID] = 0;
 								}
 							}
+							AutoLearnSpellLanded(spell, s);
 						}
 						else if (returnValue == CastReturn.CAST_RESIST || returnValue == CastReturn.CAST_TAKEHOLD)
 						{
@@ -921,6 +922,13 @@ namespace E3Core.Processors
 								resist.SpellCounters.Add(spell.SpellID, 0);
 							}
 							resist.SpellCounters[spell.SpellID]++;
+							resist.SpellMaxTries[spell.SpellID] = spell.MaxTries;
+
+							//takehold is a stacking issue, not a resist, so only learn from real resists
+							if (returnValue == CastReturn.CAST_RESIST)
+							{
+								AutoSaveResist(spell, s);
+							}
 
 						}
 						else if (returnValue == CastReturn.CAST_IMMUNE || returnValue == CastReturn.CAST_NOMEZ || returnValue == CastReturn.CAST_NOCHARM)
@@ -940,6 +948,7 @@ namespace E3Core.Processors
 								resist.SpellCounters.Add(spell.SpellID, 0);
 							}
 							resist.SpellCounters[spell.SpellID] = 99;
+							resist.SpellMaxTries[spell.SpellID] = spell.MaxTries;
 
 						}
 						//MQ.Write($"{spell.CastName} Result:{returnValue.ToString()}");
@@ -1007,33 +1016,169 @@ namespace E3Core.Processors
 					ZoneData.Add(s.CleanName, Resist);
 				}
 
+				string immuneType = String.Empty;
 				if (spell.Subcategory == "Slow" && returnValue == CastReturn.CAST_IMMUNE && !Resist.SlowImmune)
 				{
 					Resist.SlowImmune = true;
 					immuneTypeNeedsSaving = true;
+					immuneType = "Slow";
 				}
 				else if (spell.Subcategory == "Charm" && returnValue == CastReturn.CAST_NOCHARM && !Resist.CharmImmune)
 				{
 					Resist.CharmImmune = true;
 					immuneTypeNeedsSaving = true;
+					immuneType = "Charm";
 				}
 				else if (spell.Subcategory == "Enthrall" && returnValue == CastReturn.CAST_NOMEZ && !Resist.MezImmune)
 				{
 					Resist.MezImmune = true;
 					immuneTypeNeedsSaving = true;
+					immuneType = "Mez";
 				}
 				else if (spell.Subcategory == "Snare" && returnValue == CastReturn.CAST_IMMUNE && !Resist.SnareImmune)
 				{
 					Resist.SnareImmune = true;
 					immuneTypeNeedsSaving = true;
+					immuneType = "Snare";
 				}
 				else if (spell.Subcategory == "Calm" && returnValue == CastReturn.CAST_IMMUNE && !Resist.PacifyImmune)
 				{
 					Resist.PacifyImmune = true;
 					immuneTypeNeedsSaving = true;
+					immuneType = "Pacify";
 				}
-				if (immuneTypeNeedsSaving) E3.ResistSettings.SaveData();
+				if (immuneTypeNeedsSaving)
+				{
+					MQ.Write($"\ay[E3Resist] \agAuto-flagged \ay{s.CleanName} \agas \ar{immuneType} Immune");
+					E3.ResistSettings.SaveData();
+				}
 			}
+		}
+		//CleanName|type -> resists counted across every spawn with that name, in the current zone
+		private static Dictionary<string, Int32> _autoLearnResists = new Dictionary<string, Int32>();
+		private static Int32 _autoLearnZoneID = 0;
+		//slows learn as Slow, everything else by its element. other control spells (mez/charm/etc) aren't learned.
+		private static string GetAutoLearnType(Spell spell)
+		{
+			if (spell.Subcategory == "Slow") return "Slow";
+			if (IsControlSpell(spell)) return null;
+			switch (spell.ResistType)
+			{
+				case "Magic":
+				case "Fire":
+				case "Cold":
+				case "Poison":
+				case "Disease":
+				case "Corruption":
+					return spell.ResistType;
+			}
+			return null;
+		}
+		private static void CheckAutoLearnZone()
+		{
+			if (_autoLearnZoneID != E3.ResistSettings.Current_ZoneID)
+			{
+				_autoLearnZoneID = E3.ResistSettings.Current_ZoneID;
+				_autoLearnResists.Clear();
+			}
+		}
+		private static void AutoLearnSpellLanded(Spell spell, Spawn s)
+		{
+			if (E3.ResistSettings == null || s == null) return;
+			string learnType = GetAutoLearnType(spell);
+			if (learnType == null) return;
+			CheckAutoLearnZone();
+			//it landed, so the name isn't resistant to this type
+			_autoLearnResists.Remove(s.CleanName + "|" + learnType);
+		}
+		private static void AutoSaveResist(Spell spell, Spawn s)
+		{
+			if (!E3.GeneralSettings.General_AutoLearnResists) return;
+			if (E3.ResistSettings == null) return;
+			//the user asked for this spell to ignore the resist flags, so don't let it set them either
+			if (spell.IgnoreResistanceCheck) return;
+			if (String.IsNullOrWhiteSpace(s.CleanName)) return;
+			string learnType = GetAutoLearnType(spell);
+			if (learnType == null) return;
+
+			var ZoneData = E3.ResistSettings.ZoneData;
+			ZoneData.TryGetValue(s.CleanName, out var Resist);
+			if (Resist != null && IsAutoLearnFlagSet(Resist, learnType)) return;
+
+			//named mobs are unique so they learn on their own resists, everything else counts resists
+			//across all spawns with that name (E3 stops casting a spell on one mob after MaxTries)
+			CheckAutoLearnZone();
+			Int32 resistsRequired = Math.Max(1, s.Named ? E3.GeneralSettings.General_AutoLearnResistsNamed : E3.GeneralSettings.General_AutoLearnResistsOther);
+			string learnKey = s.CleanName + "|" + learnType;
+			_autoLearnResists.TryGetValue(learnKey, out var resists);
+			resists++;
+			if (resists < resistsRequired)
+			{
+				_autoLearnResists[learnKey] = resists;
+				if (resists % 5 == 0)
+				{
+					MQ.Write($"\ay[E3Resist] \ag{s.CleanName} has resisted {learnType} {resists} times \ay({resists} of {resistsRequired} needed to flag {learnType} Resistant)");
+				}
+				return;
+			}
+			_autoLearnResists.Remove(learnKey);
+
+			if (Resist == null)
+			{
+				Resist = new ResistData() { NPCName = s.CleanName };
+				ZoneData.Add(s.CleanName, Resist);
+			}
+			switch (learnType)
+			{
+				case "Magic": Resist.MagicResistant = true; break;
+				case "Fire": Resist.FireResistant = true; break;
+				case "Cold": Resist.ColdResistant = true; break;
+				case "Poison": Resist.PoisonResistant = true; break;
+				case "Disease": Resist.DiseaseResistant = true; break;
+				case "Corruption": Resist.CorruptResistant = true; break;
+				case "Slow": Resist.SlowResistant = true; break;
+			}
+			MQ.Write($"\ay[E3Resist] \agAuto-flagged \ay{s.CleanName} \agas \ay{learnType} Resistant \ag(resisted {resists} times)");
+			E3.ResistSettings.SaveData();
+		}
+		private static bool IsAutoLearnFlagSet(ResistData resist, string learnType)
+		{
+			switch (learnType)
+			{
+				case "Magic": return resist.MagicResistant || resist.MagicImmune;
+				case "Fire": return resist.FireResistant || resist.FireImmune;
+				case "Cold": return resist.ColdResistant || resist.ColdImmune;
+				case "Poison": return resist.PoisonResistant || resist.PoisonImmune;
+				case "Disease": return resist.DiseaseResistant || resist.DiseaseImmune;
+				case "Corruption": return resist.CorruptResistant || resist.CorruptImmune;
+				case "Slow": return resist.SlowResistant || resist.SlowImmune;
+			}
+			return true;
+		}
+		//${E3N.State.Resist.Counters.<spawnID>} -> spellID:count:maxTries,... for that mob
+		private const string _resistCountersKey = "${E3N.State.Resist.Counters.";
+		private static string ReplaceResistCounters(string tIF)
+		{
+			Int32 start = tIF.IndexOf(_resistCountersKey, 0, StringComparison.OrdinalIgnoreCase);
+			while (start > -1)
+			{
+				Int32 end = tIF.IndexOf('}', start);
+				if (end < 0) break;
+				string idText = tIF.Substring(start + _resistCountersKey.Length, end - start - _resistCountersKey.Length);
+				_ifsStringBuilder.Clear();
+				if (Int32.TryParse(idText, out var mobID) && ResistCounters.TryGetValue(mobID, out var counter))
+				{
+					foreach (var pair in counter.SpellCounters)
+					{
+						if (_ifsStringBuilder.Length > 0) _ifsStringBuilder.Append(",");
+						counter.SpellMaxTries.TryGetValue(pair.Key, out var maxTries);
+						_ifsStringBuilder.Append($"{pair.Key}:{pair.Value}:{maxTries}");
+					}
+				}
+				tIF = tIF.Substring(0, start) + _ifsStringBuilder.ToString() + tIF.Substring(end + 1);
+				start = tIF.IndexOf(_resistCountersKey, start, StringComparison.OrdinalIgnoreCase);
+			}
+			return tIF;
 		}
 		public static void CastSpell(Spell spell)
 		{
@@ -2364,6 +2509,10 @@ namespace E3Core.Processors
 				{
 					tIF = tIF.ReplaceInsensitive("${E3N.State.Me.SongCount}", songCount.ToString());
 				}
+			}
+			if (tIF.IndexOf(_resistCountersKey, 0, StringComparison.OrdinalIgnoreCase) > -1)
+			{
+				tIF = ReplaceResistCounters(tIF);
 			}
 			if (tIF.IndexOf("${E3N.State.Bots.", 0, StringComparison.OrdinalIgnoreCase) > -1)
 			{

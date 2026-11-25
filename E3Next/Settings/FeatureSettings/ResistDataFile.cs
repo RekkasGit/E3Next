@@ -46,6 +46,7 @@ namespace E3Core.Settings.FeatureSettings
 		}
 		public Dictionary<string, ResistData> ZoneData = new Dictionary<string, ResistData>();
 		string fileName;
+		public string FileName { get { return fileName; } }
 
 	
 
@@ -53,6 +54,19 @@ namespace E3Core.Settings.FeatureSettings
 		{
 			RegisterEvents();
 			fileName = GetSettingsFilePath($"E3Resist_{E3.ServerName}.db");
+		}
+		public static bool IsControlSpell(Spell spell)
+		{
+			switch (spell.Subcategory)
+			{
+				case "Slow":
+				case "Snare":
+				case "Calm":
+				case "Enthrall":
+				case "Charm":
+					return true;
+			}
+			return false;
 		}
 		public bool ShouldSkip(Spell spell, Spawn s)
 		{
@@ -73,14 +87,27 @@ namespace E3Core.Settings.FeatureSettings
 				else if (spell.Subcategory == "Calm" && resistInfo.PacifyImmune) return true;
 				else if (spell.Subcategory == "Enthrall" && resistInfo.MezImmune) return true;
 				else if (spell.Subcategory == "Charm" && resistInfo.CharmImmune) return true;
+				else if (spell.Subcategory == "Slow" && resistInfo.SlowImmune) return true;
 
 
-				if (spell.ResistType == "Magic" && resistInfo.MagicResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.ResistType == "Fire" && resistInfo.FireResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.ResistType == "Cold" && resistInfo.ColdResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.ResistType == "Poison" && resistInfo.PoisonResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.ResistType == "Disease" && resistInfo.DiseaseResistant && !spell.IgnoreResistanceCheck) return true;
-				else if (spell.ResistType == "Corruption" && resistInfo.CorruptResistant && !spell.IgnoreResistanceCheck) return true;
+				if (spell.IgnoreResistanceCheck) return false;
+
+				//slow/snare/calm/mez/charm only go by their own resistant flags, being resistant to the
+				//element (ex: Magic) shouldn't stop a slow unless the mob is also flagged for slows.
+				if (!IsControlSpell(spell))
+				{
+					if (spell.ResistType == "Magic" && resistInfo.MagicResistant) return true;
+					else if (spell.ResistType == "Fire" && resistInfo.FireResistant) return true;
+					else if (spell.ResistType == "Cold" && resistInfo.ColdResistant) return true;
+					else if (spell.ResistType == "Poison" && resistInfo.PoisonResistant) return true;
+					else if (spell.ResistType == "Disease" && resistInfo.DiseaseResistant) return true;
+					else if (spell.ResistType == "Corruption" && resistInfo.CorruptResistant) return true;
+				}
+				else if (spell.Subcategory == "Slow" && resistInfo.SlowResistant) return true;
+				else if (spell.Subcategory == "Snare" && resistInfo.SnareResistant) return true;
+				else if (spell.Subcategory == "Calm" && resistInfo.PacifyResistant) return true;
+				else if (spell.Subcategory == "Enthrall" && resistInfo.MezResistant) return true;
+				else if (spell.Subcategory == "Charm" && resistInfo.CharmResistant) return true;
 
 			}
 			return false;
@@ -107,6 +134,11 @@ namespace E3Core.Settings.FeatureSettings
 					if (d.DiseaseImmune) sb.Append($"\ayDRI ");
 					if (d.CorruptResistant) sb.Append($"\ayCUR ");
 					if (d.CorruptImmune) sb.Append($"\ayCURI ");
+					if (d.SnareResistant) sb.Append($"\aySnareR ");
+					if (d.CharmResistant) sb.Append($"\ayCharmR ");
+					if (d.PacifyResistant) sb.Append($"\ayPacifyR ");
+					if (d.MezResistant) sb.Append($"\ayMezR ");
+					if (d.SlowResistant) sb.Append($"\aySlowR ");
 					if (d.SnareImmune) sb.Append($"\aySnareI ");
 					if (d.CharmImmune) sb.Append($"\ayCharmI ");
 					if (d.PacifyImmune) sb.Append($"\ayPacifyI ");
@@ -434,7 +466,7 @@ namespace E3Core.Settings.FeatureSettings
 									var z = pair.Value;
 									
 									command.CommandText = $"insert into resist_data (zoneid,name,mr,mri,fr,fri,cr,cri,pr,pri,dr,dri,cur,curi,slowr, slowi, snarer, snarei, mezr, mezi, charmr, charmi, pacifyr, pacifyi) " +
-														  $"values({Current_ZoneID},$name,$mr,$mri,$fr,$fri,$cr,$cri,$dr,$dri,$pr,$pri,$cur,$curi,$slowr, $slowi, $snarer, $snarei, $mezr, $mezi, $charmr, $charmi, $pacifyr, $pacifyi);";
+														  $"values({Current_ZoneID},$name,$mr,$mri,$fr,$fri,$cr,$cri,$pr,$pri,$dr,$dri,$cur,$curi,$slowr, $slowi, $snarer, $snarei, $mezr, $mezi, $charmr, $charmi, $pacifyr, $pacifyi);";
 									command.Parameters.Clear();
 									command.Parameters.AddWithValue("name", z.NPCName);
 									command.Parameters.AddWithValue("mr", z.MagicResistant);
