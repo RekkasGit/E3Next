@@ -726,7 +726,7 @@ namespace E3Core.Processors
             {
               
                 //lets loot it if we can!
-                MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} leftmouseup", 300);
+                MQ.Cmd($"/shiftkey /itemnotify loot{i} leftmouseup", 300);
                 MQ.Delay(1000, "${Cursor.ID}");
                 Int32 cursorid = MQ.Query<Int32>("${Cursor.ID}");
                 if(cursorid>0)
@@ -1022,7 +1022,7 @@ namespace E3Core.Processors
                     e3util.ClearCursor();
 
                     //lets loot it if we can!
-                    MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} leftmouseup", 300);
+                    MQ.Cmd($"/shiftkey /itemnotify loot{i} leftmouseup", 300);
 					MQ.Delay(1000, "${Cursor.ID}");
                     var cursorid = MQ.Query<int>("${Cursor.ID}");
                     if (cursorid == itemId)
@@ -1222,7 +1222,7 @@ namespace E3Core.Processors
                 if (importantItem || bypassLootSettings)
                 {
                     //lets loot it if we can!
-                    MQ.Cmd($"/nomodkey /shift /itemnotify loot{i} rightmouseup", E3.GeneralSettings.Loot_LootItemDelay + e3util.Latency());
+                    MQ.Cmd($"/shiftkey /itemnotify loot{i} rightmouseup", E3.GeneralSettings.Loot_LootItemDelay + e3util.Latency());
                     //loot nodrop items if important
                     if (nodropImportantItem)
                     {

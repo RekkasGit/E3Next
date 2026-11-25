@@ -440,7 +440,7 @@ namespace E3Core.Processors
 					E3.GeneralSettings.General_BeepNotifications = true;
 
 					//delete the mage armor bag if it is still on cursor
-					MQ.Cmd($"/if (${{Select[${{Cursor.ID}},17310]}}>0) /destroy");
+					MQ.Cmd($"/docommand ${{If[${{Select[${{Cursor.ID}},17310]}}>0,/destroy,/squelch /echo]}}");
 
 				}
 			});

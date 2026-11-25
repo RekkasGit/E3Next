@@ -25,6 +25,7 @@ namespace E3Core.Processors
 		/// </summary>
 		public static void Process()
 		{
+		
 			_amIDead = Basics.AmIDead();
 			if (!ShouldRun())
 			{
@@ -32,6 +33,7 @@ namespace E3Core.Processors
 			}
 			//Init is here to make sure we only Init while InGame, as some queries will fail if not in game
 			if (!IsInit) { Init(); }
+			
 			//auto X min gc check
 			CheckGC();
 
@@ -960,11 +962,12 @@ namespace E3Core.Processors
 
             if (!IsInit)
 			{
+				
 				BufferPool.SetCustomBufferPool(new ArrayBufferPool());
 				//BufferPool.SetBufferManagerBufferPool(1024 * 1024 *10, (1024 *1024));
 				MQ.ClearCommands();
                 AsyncIO.ForceDotNet.Force();
-
+				return;
 				e3util.XtargetMax = MQ.Query<Int32>("${Me.XTargetSlots}");
 				if (e3util.IsEQLive())
 				{

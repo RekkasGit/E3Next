@@ -12,8 +12,18 @@ namespace E3Core.Settings.FeatureSettings
 
         public SavedGroupDataFile()
         {
-            LoadData();
-        }
+            try
+            {
+				LoadData();
+
+			}
+            catch(Exception ex)
+            {
+
+                //MQ.Write("Exception: " + ex.Message);
+            }
+
+		}
 
         public void LoadData()
         {

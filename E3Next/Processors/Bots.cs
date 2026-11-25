@@ -179,7 +179,7 @@ namespace E3Core.Processors
 					int hitPoints = MQ.Query<Int32>("${Me.CurrentHPs}");
 					int manaPoints = MQ.Query<Int32>("${Me.CurrentMana}");
 
-					Int32 plat = MQ.Query<Int32>("${Me.Platinum}") + MQ.Query<Int32>("${PlatinumBank}");
+					Int32 plat = MQ.Query<Int32>("${Me.Platinum}") + MQ.Query<Int32>("${Me.PlatinumBank}");
 
 					Int32 AAPts = MQ.Query<Int32>("${Me.AAPoints}");
 					Int32 AAAsigned = MQ.Query<Int32>("${Me.AAPointsAssigned}");
