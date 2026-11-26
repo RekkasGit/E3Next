@@ -3369,15 +3369,27 @@ namespace E3Core.Processors
 				if (buffExists)
 				{
 					millisecondsLeft = MQ.Query<Int64>($"${{Me.Song[{spell.SpellName}].Duration}}");
-					if (millisecondsLeft == 0)
+
+					if (Core.CurrentClient== Core.ClientBuild.HailStone)
 					{
-						//check if perma spell
-						Int32 duration = MQ.Query<Int32>($"${{Spell[{spell.SpellName}].Duration}}");
-						if (duration < 0)
+						if (millisecondsLeft < 0)
 						{
 							millisecondsLeft = Int32.MaxValue;
 						}
 					}
+					else
+					{
+						if (millisecondsLeft == 0)
+						{
+							//check if perma spell
+							Int32 duration = MQ.Query<Int32>($"${{Spell[{spell.SpellName}].Duration}}");
+							if (duration < 0)
+							{
+								millisecondsLeft = Int32.MaxValue;
+							}
+						}
+					}
+					
 				}
 
 			}

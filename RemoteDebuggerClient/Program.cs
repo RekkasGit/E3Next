@@ -565,7 +565,7 @@ namespace MQServerClient
                     Decimal value;
                     if (decimal.TryParse(mqReturnValue, out value))
                     {
-                        return (T)(object)value;
+                        return (T)(object)(int)value;
                     }
                     else { return (T)(object)-1; }
 
