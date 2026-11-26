@@ -1832,6 +1832,8 @@ namespace MonoCore
 		}
 		public T Query<T>(string query)
 		{
+			//Core.mq_Echo("query recieved:" + query);
+
 			if (!Core.IsProcessing)
 			{
 				//we are terminating, kill this thread
@@ -1862,7 +1864,7 @@ namespace MonoCore
 					Decimal value;
 					if (decimal.TryParse(mqReturnValue, out value))
 					{
-						return (T)(object)value;
+						return (T)(object)(int)value;
 					}
 					else { return (T)(object)-1; }
 

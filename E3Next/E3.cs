@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace E3Core.Processors
@@ -1030,20 +1031,33 @@ namespace E3Core.Processors
 		private static void SetupLibPaths()
 		{
 			//setup the library path loading, mainly used for sqlite atm
-			string MQPath = MQ.Query<String>("${MacroQuest.Path}");
-
-			if (!e3util.Is64Bit())
+			if (Core.CurrentClient == Core.ClientBuild.HailStone)
 			{
-				_libPath = MQPath + @"\mono\libs\32bit\";
+				var dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+
+				//C:\Projects\EQ\hailstone-client\build\x64\hailstone\plugins\HSMono\macros\e3\Rekka\
+				Int32 indexOfE3Path = dllFullPath.IndexOf(@"macros\e3");
+				string libPath = dllFullPath.Substring(0, indexOfE3Path);
+
+				_libPath = libPath + @"\libs\64bit\";
+				Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + _libPath);
 			}
 			else
 			{
-				_libPath = MQPath + @"\mono\libs\64bit\";
+				string MQPath = MQ.Query<String>("${MacroQuest.Path}");
 
+				if (!e3util.Is64Bit())
+				{
+					_libPath = MQPath + @"\mono\libs\32bit\";
+				}
+				else
+				{
+					_libPath = MQPath + @"\mono\libs\64bit\";
+
+				}
+				//temp add the path for just this process/app domain
+				Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + _libPath);
 			}
-			//temp add the path for just this process/app domain
-			Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + _libPath);
-
 		}
 		private static bool ShouldRun()
         {
