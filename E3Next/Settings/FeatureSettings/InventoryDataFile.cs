@@ -4,7 +4,7 @@ using IniParser;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Data.SQLite;
+using Mono.Data.Sqlite;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -17,7 +17,7 @@ namespace E3Core.Settings.FeatureSettings
 {
 	public class InventoryDataFile : BaseSettings
 	{
-		public SQLiteConnection _sqlite;
+		public SqliteConnection _sqlite;
 		private readonly List<string> _invSlots = new List<string>() { "charm", "leftear", "head", "face", "rightear", "neck", "shoulder", "arms", "back", "leftwrist", "rightwrist", "ranged", "hands", "mainhand", "offhand", "leftfinger", "rightfinger", "chest", "legs", "feet", "waist", "powersource", "ammo" };
 
 		public InventoryDataFile()
@@ -36,7 +36,7 @@ namespace E3Core.Settings.FeatureSettings
 
 		
 		//this is needed as we only drop the table if the bank data is available
-		private void CreateBankTable(SQLiteCommand command)
+		private void CreateBankTable(SqliteCommand command)
 		{
 
 			command.CommandText = "DROP TABLE IF EXISTS gear_bank;";
@@ -77,20 +77,12 @@ namespace E3Core.Settings.FeatureSettings
 		public void SaveData()
 		{
 			string fileName = GetSettingsFilePath($"Inventory_{E3.CurrentName}_{E3.ServerName}.db");
-			bool fileExists = File.Exists(fileName);
-		
+
 			try
 			{
 				//TryToLoadSQLite();
 				MQ.Write($"Connecting to {fileName}");
-				if (fileExists)
-				{
-					_sqlite = new SQLiteConnection($"Data Source={fileName};New=False;");
-				}
-				else
-				{
-					_sqlite = new SQLiteConnection($"Data Source={fileName};");
-				}
+				_sqlite = new SqliteConnection($"Data Source={fileName}");
 				using (_sqlite)
 				{
 					_sqlite.Open();

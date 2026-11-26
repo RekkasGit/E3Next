@@ -90,6 +90,11 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <!-- E3's SQLite under .NET Framework, which has no Mono.Data.Sqlite of its own (see E3Next.csproj) -->
+    <None Include="..\E3Next\References\Mono.Data.Sqlite.dll">
+      <Link>Mono.Data.Sqlite.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\E3Next\E3Next.csproj">

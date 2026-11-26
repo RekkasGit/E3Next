@@ -1009,15 +1009,16 @@ namespace E3Core.Processors
                 AdvancedSettings = new Settings.AdvancedSettings();
 			
 				SetupLibPaths();
-				string driverPathName =_libPath + "SQLite.Interop.dll";
-				if (File.Exists(driverPathName))
+				string sqliteError = TrySqlite();
+				if (sqliteError == null)
 				{
 					ResistSettings = new ResistDataFile();
 					InventoryDataFile = new InventoryDataFile();
 				}
 				else
 				{
-					MQ.Write($"\ar Warning: SQLite driver doesn't exist in:\ay{driverPathName} \ar. SQlite Features disabled!");
+					string where = Environment.OSVersion.Platform == PlatformID.Win32NT ? $"sqlite3.dll in:\ay{_libPath}" : "the system's libsqlite3";
+					MQ.Write($"\ar Warning: SQLite isn't available (needs {where}\ar): {sqliteError}. SQlite Features disabled!");
 				}
 				//setup is done after the settings are setup.
 				//as there is an order dependecy
@@ -1028,19 +1029,70 @@ namespace E3Core.Processors
 
 
         }
+		[DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
+		private static extern IntPtr LoadLibraryW(string fileName);
+
+		//Windows: load libs\<bits>\sqlite3.dll by its full path, so Mono.Data.Sqlite's DllImport("sqlite3"), asked for
+		//by name only, finds it already loaded. Hailstone takes PATH out of the DLL search
+		//(SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)), so the PATH entry alone doesn't reach it there.
+		//Elsewhere Mono's dllmap finds the system libsqlite3. Null when loaded (or not needed), else why not.
+		private static string PreloadSqlite()
+		{
+			if (Environment.OSVersion.Platform != PlatformID.Win32NT) return null;
+			string dll = _libPath + "sqlite3.dll";
+			if (!File.Exists(dll)) return $"{dll} not found";
+			if (LoadLibraryW(dll) == IntPtr.Zero) return $"LoadLibrary({dll}) failed, error {Marshal.GetLastWin32Error()}";
+			return null;
+		}
+		//Opens an in-memory database to see if Mono.Data.Sqlite and its native sqlite3 load; null when they do.
+		private static string TrySqlite()
+		{
+			string preloadError = PreloadSqlite();
+			if (preloadError != null) return preloadError;
+			try
+			{
+				OpenMemoryDatabase();
+				return null;
+			}
+			catch (Exception ex)
+			{
+				//every exception in the chain with its type (a DllNotFoundException can arrive wrapped in a
+				//TypeInitializationException). Not ex.ToString() or StackTrace: building a trace hangs in process.
+				var parts = new List<string>();
+				for (Exception e = ex; e != null; e = e.InnerException) parts.Add($"{e.GetType().Name}: {e.Message}");
+				return String.Join(" -> ", parts);
+			}
+		}
+		//Kept apart from TrySqlite so a missing Mono.Data.Sqlite assembly fails inside its try, when this is compiled, not before.
+		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+		private static void OpenMemoryDatabase()
+		{
+			using (var connection = new Mono.Data.Sqlite.SqliteConnection("Data Source=:memory:"))
+			{
+				connection.Open();
+			}
+		}
 		private static void SetupLibPaths()
 		{
 			//setup the library path loading, mainly used for sqlite atm
 			if (Core.CurrentClient == Core.ClientBuild.HailStone)
 			{
-				var dllFullPath = Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "").Replace("/", "\\").Replace("e3.dll", "");
+				//Hailstone runs on Windows, Linux and macOS, so no hard-coded separators.
+				//e.g. C:\Projects\EQ\hailstone-client\build\x64\hailstone\plugins\HSMono\macros\e3\Rekka\e3.dll
+				//  or /home/me/hailstone/plugins/hsmono/macros/e3/e3.dll
+				var assembly = Assembly.GetExecutingAssembly();
+				//CodeBase, as before: it is where e3.dll was loaded from, even if the runtime shadow-copies it
+				string dllFullPath = String.IsNullOrEmpty(assembly.CodeBase) ? assembly.Location : new Uri(assembly.CodeBase).LocalPath;
+				string dllFolder = Path.GetDirectoryName(dllFullPath);
 
-				//C:\Projects\EQ\hailstone-client\build\x64\hailstone\plugins\HSMono\macros\e3\Rekka\
-				Int32 indexOfE3Path = dllFullPath.IndexOf(@"macros\e3");
-				string libPath = dllFullPath.Substring(0, indexOfE3Path);
+				string e3Folder = Path.DirectorySeparatorChar + "macros" + Path.DirectorySeparatorChar + "e3";
+				Int32 indexOfE3Path = dllFolder.IndexOf(e3Folder, StringComparison.OrdinalIgnoreCase);
+				string libPath = indexOfE3Path >= 0 ? dllFolder.Substring(0, indexOfE3Path) : dllFolder;
 
-				_libPath = libPath + @"\libs\64bit\";
-				Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + _libPath);
+				_libPath = Path.Combine(libPath, "libs", Environment.Is64BitProcess ? "64bit" : "32bit") + Path.DirectorySeparatorChar;
+				//Hailstone leaves PATH out of the DLL search, so PreloadSqlite loads sqlite3.dll from _libPath by its full path;
+				//the PATH entry is kept for anything else here. Elsewhere Mono's dllmap points at the system libsqlite3.
+				Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + Path.PathSeparator + _libPath);
 			}
 			else
 			{

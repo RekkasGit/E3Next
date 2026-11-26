@@ -4,7 +4,7 @@ using E3Core.Processors;
 using MonoCore;
 using System;
 using System.Collections.Generic;
-using System.Data.SQLite;
+using Mono.Data.Sqlite;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -15,7 +15,7 @@ namespace E3Core.Settings.FeatureSettings
 {
 	public  class ResistDataFile : BaseSettings 
 	{
-		public SQLiteConnection _sqlite;
+		public SqliteConnection _sqlite;
 		public Int32 Current_ZoneID = 0;
 		private static ISpawns _spawns = E3.Spawns;
 		public class ResistData
@@ -290,7 +290,7 @@ namespace E3Core.Settings.FeatureSettings
 		}
 
 		//this is needed as we only drop the table if the bank data is available
-		private void CreateResistTable(SQLiteCommand command)
+		private void CreateResistTable(SqliteCommand command)
 		{
 
 			string sql_Create_Resists = @"CREATE TABLE IF NOT EXISTS resist_data (
@@ -335,7 +335,8 @@ namespace E3Core.Settings.FeatureSettings
 			//MQ.Write($"Connecting to {fileName}");
 			if (fileExists)
 			{
-				_sqlite = new SQLiteConnection($"Data Source={fileName};Mode=ReadOnly;New=False;");
+				//opened read-write: the columns added or dropped below need it (System.Data.SQLite ignored the old Mode=ReadOnly)
+				_sqlite = new SqliteConnection($"Data Source={fileName}");
 				_sqlite.Open();
 
 				HashSet<string> columnNames = _sqlite.Query<string>("select name from pragma_table_info('resist_data')").ToList().ToHashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -376,7 +377,7 @@ namespace E3Core.Settings.FeatureSettings
 			}
 			else
 			{
-				_sqlite = new SQLiteConnection($"Data Source={fileName}");
+				_sqlite = new SqliteConnection($"Data Source={fileName}");
 				_sqlite.Open();
 				using (var command = _sqlite.CreateCommand())
 				{
@@ -404,16 +405,8 @@ namespace E3Core.Settings.FeatureSettings
 		{
 			try
 			{
-				bool fileExists = File.Exists(fileName);
 				MQ.Write($"Connecting to {fileName}");
-				if (fileExists)
-				{
-					_sqlite = new SQLiteConnection($"Data Source={fileName};New=False;");
-				}
-				else
-				{
-					_sqlite = new SQLiteConnection($"Data Source={fileName};");
-				}
+				_sqlite = new SqliteConnection($"Data Source={fileName}");
 				using (_sqlite)
 				{
 					_sqlite.Open();
